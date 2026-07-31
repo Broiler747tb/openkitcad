@@ -4,7 +4,7 @@ import { activeSketchFeature, newId, useStore } from '../doc/store'
 import { frameFromPlaneRefLocal } from '../doc/planes'
 import { findSnap, hitTestSketch, toggleSelection } from '../sketch/inference'
 import { SketchMenu } from '../ui/SketchMenu'
-import { ObjectMenu, objectActions } from '../ui/ObjectMenu'
+import { ObjectMenu, objectActions, type PickedFace } from '../ui/ObjectMenu'
 import { fmt, frameToWorld, v2, type Frame, type Vec2 } from '../core/math'
 import type { Constraint, NewConstraint, Sketch2D } from '../sketch/types'
 
@@ -49,8 +49,13 @@ export function Viewport() {
   const doc = useStore((s) => s.doc)
   const gizmoMode = useStore((s) => s.gizmoMode)
   const sketchSelection = useStore((s) => s.sketchSelection)
-  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
-  const [objectMenu, setObjectMenu] = useState<{ x: number; y: number } | null>(null)
+  const sketchStatus = useStore((s) => s.sketchStatus)
+  const [menu, setMenu] = useState<{ x: number; y: number; cursor: Vec2 } | null>(null)
+  const [objectMenu, setObjectMenu] = useState<{
+    x: number
+    y: number
+    picked: PickedFace | null
+  } | null>(null)
 
   // Memoised so they keep a stable identity across the renders the animation
   // loop triggers. Recomputing them on every render made the sketch-redraw
@@ -172,9 +177,15 @@ export function Viewport() {
     const engine = engineRef.current
     if (!engine) return
     if (!sketchFeature || !frame) return
-    engine.setSketch(sketchFeature.sketch, frame, null, selectionHighlight(sketchSelection))
-    engine.setLabels(dimensionLabels(sketchFeature.sketch, frame))
-  }, [doc, sketchFeature, frame, sketchSelection])
+    engine.setSketch(
+      sketchFeature.sketch,
+      frame,
+      null,
+      selectionHighlight(sketchSelection),
+      looseGeometry(sketchFeature.sketch, sketchStatus),
+    )
+    engine.setLabels(sketchLabels(sketchFeature.sketch, frame))
+  }, [doc, sketchFeature, frame, sketchSelection, sketchStatus])
 
   // --- helpers -------------------------------------------------------------
 
@@ -405,7 +416,13 @@ export function Viewport() {
       const highlight = selectionHighlight(store.sketchSelection)
       if (snap.snapToPointId) highlight.points.push(snap.snapToPointId)
       if (snap.onEntityId) highlight.entities.push(snap.onEntityId)
-      engine.setSketch(sketch, frame, preview, highlight)
+      engine.setSketch(
+        sketch,
+        frame,
+        preview,
+        highlight,
+        looseGeometry(sketch, store.sketchStatus),
+      )
       return
     }
 
@@ -497,6 +514,13 @@ export function Viewport() {
 
     const store = useStore.getState()
     const hit = engine.pick(e.clientX, e.clientY)
+
+    if (store.tool === 'measure') {
+      if (hit) store.addMeasurePoint(hit.point)
+      else store.setStatus('Click on a part, not empty space.')
+      return
+    }
+
     store.select(hit ? { kind: hit.kind, id: hit.id } : { kind: 'none' })
   }
 
@@ -590,7 +614,18 @@ export function Viewport() {
             const hit = engine.pick(e.clientX, e.clientY)
             const store = useStore.getState()
             store.select(hit ? { kind: hit.kind, id: hit.id } : { kind: 'none' })
-            if (hit) setObjectMenu({ x: e.clientX, y: e.clientY })
+            if (hit) {
+              setObjectMenu({
+                x: e.clientX,
+                y: e.clientY,
+                // Remember the exact face, so "draw on this face" lands where
+                // the user pointed rather than on some default plane.
+                picked:
+                  hit.kind === 'body'
+                    ? { bodyId: hit.id, point: hit.point, normal: hit.normal }
+                    : null,
+              })
+            }
             return
           }
           // Mid-drawing, right-click means "stop this chain" - that has to keep
@@ -613,7 +648,7 @@ export function Viewport() {
             const hit = hitTestSketch(sketch, cursor, toleranceAt())
             if (hit) store.setSketchSelection([hit])
           }
-          setMenu({ x: e.clientX, y: e.clientY })
+          setMenu({ x: e.clientX, y: e.clientY, cursor })
         }}
       />
 
@@ -622,6 +657,34 @@ export function Viewport() {
           key={label.id}
           className={`vp-label vp-label-${label.kind}`}
           style={{ left: label.x, top: label.y }}
+          title={
+            label.kind === 'constraint'
+              ? 'Click to remove this rule'
+              : 'Click to change this size'
+          }
+          onPointerDown={(e) => {
+            if (!activeSketch) return
+            e.stopPropagation()
+            if (label.kind === 'constraint') {
+              useStore
+                .getState()
+                .applySketchAction({ kind: 'deleteConstraint', constraintId: label.id })
+            } else {
+              setPrompt({
+                x: e.clientX,
+                y: e.clientY,
+                value: label.text.replace(/[^0-9.\-]/g, ''),
+                apply: (value) => {
+                  const store = useStore.getState()
+                  store.editSketch((sketch) => {
+                    const c = sketch.constraints.find((x) => x.id === label.id)
+                    if (c && 'value' in c) c.value = value
+                  })
+                  store.solveActiveSketch()
+                },
+              })
+            }
+          }}
         >
           {label.text}
         </div>
@@ -656,14 +719,19 @@ export function Viewport() {
       )}
 
       {menu && activeSketch && (
-        <SketchMenu x={menu.x} y={menu.y} onClose={() => setMenu(null)} />
+        <SketchMenu
+          x={menu.x}
+          y={menu.y}
+          cursor={menu.cursor}
+          onClose={() => setMenu(null)}
+        />
       )}
 
       {objectMenu && !activeSketch && (
         <ObjectMenu
           x={objectMenu.x}
           y={objectMenu.y}
-          actions={objectActions(selection)}
+          actions={objectActions(selection, objectMenu.picked)}
           onClose={() => setObjectMenu(null)}
         />
       )}
@@ -684,29 +752,139 @@ function selectionHighlight(selection: { kind: string; id: string }[]): {
   }
 }
 
-/** Dimension labels for constraints the user typed a number into. */
-function dimensionLabels(sketch: Sketch2D, frame: Frame) {
+/**
+ * Which geometry the solver still lets move. An edge counts as loose if either
+ * of its ends does, which is what makes a half-pinned rectangle read correctly:
+ * the two edges touching the anchored corner stay white, the rest go blue.
+ */
+function looseGeometry(
+  sketch: Sketch2D,
+  status: { freePoints: string[]; freeRadii: string[] } | null,
+): { points: string[]; entities: string[] } {
+  if (!status) return { points: [], entities: [] }
+  const freePoints = new Set(status.freePoints)
+  const entities: string[] = []
+  for (const e of sketch.entities) {
+    const moves =
+      e.kind === 'line'
+        ? freePoints.has(e.p1) || freePoints.has(e.p2)
+        : e.kind === 'circle'
+          ? freePoints.has(e.c) || status.freeRadii.includes(e.id)
+          : freePoints.has(e.c) || freePoints.has(e.p1) || freePoints.has(e.p2)
+    if (moves) entities.push(e.id)
+  }
+  return { points: status.freePoints, entities }
+}
+
+/** Short symbols for the constraints that carry no number. */
+const GLYPH: Partial<Record<Constraint['kind'], string>> = {
+  horizontal: 'H',
+  vertical: 'V',
+  parallel: '//',
+  perpendicular: '⊥',
+  equal: '=',
+  tangent: '⌒',
+  coincident: '•',
+  fix: '×',
+  pointOnLine: '—',
+  pointOnCircle: '○',
+  midpoint: '|',
+  symmetric: '><',
+}
+
+/**
+ * Everything the sketch has been told, drawn on the sketch.
+ *
+ * Dimensions show their number; the rest show a small symbol. Both are
+ * clickable, because a constraint you cannot see is a constraint you cannot
+ * remove, and "why won't this move?" with no way to find out is the single
+ * most demoralising thing about parametric CAD.
+ */
+function sketchLabels(sketch: Sketch2D, frame: Frame) {
   const pts = new Map(sketch.points.map((p) => [p.id, [p.x, p.y] as Vec2]))
-  const out: Array<{ id: string; text: string; at: [number, number, number]; kind: 'dimension' }> = []
+  const out: Array<{
+    id: string
+    text: string
+    at: [number, number, number]
+    kind: 'dimension' | 'constraint'
+  }> = []
+
+  const entityAnchor = (entityId: string): Vec2 | null => {
+    const entity = sketch.entities.find((e) => e.id === entityId)
+    if (!entity) return null
+    if (entity.kind === 'line') {
+      const a = pts.get(entity.p1)
+      const b = pts.get(entity.p2)
+      return a && b ? v2.mid(a, b) : null
+    }
+    return pts.get(entity.c) ?? null
+  }
+
+  // Spread glyphs that land on the same spot so they do not stack up.
+  const used = new Map<string, number>()
+  const nudge = (p: Vec2): Vec2 => {
+    const key = `${Math.round(p[0])},${Math.round(p[1])}`
+    const n = used.get(key) ?? 0
+    used.set(key, n + 1)
+    return [p[0], p[1] - n * 4]
+  }
+
   for (const c of sketch.constraints) {
     if (c.kind === 'distance' || c.kind === 'distanceX' || c.kind === 'distanceY') {
       const a = pts.get(c.a)
       const b = pts.get(c.b)
       if (!a || !b) continue
-      const mid = v2.mid(a, b)
-      out.push({ id: c.id, text: `${fmt(c.value)}`, at: frameToWorld(frame, mid), kind: 'dimension' })
-    } else if (c.kind === 'radius' || c.kind === 'diameter') {
-      const entity = sketch.entities.find((e) => e.id === c.e)
-      if (!entity || entity.kind === 'line') continue
-      const centre = pts.get(entity.c)
-      if (!centre) continue
+      out.push({
+        id: c.id,
+        text: fmt(c.value),
+        at: frameToWorld(frame, v2.mid(a, b)),
+        kind: 'dimension',
+      })
+      continue
+    }
+    if (c.kind === 'radius' || c.kind === 'diameter') {
+      const anchor = entityAnchor(c.e)
+      if (!anchor) continue
       out.push({
         id: c.id,
         text: c.kind === 'radius' ? `R${fmt(c.value)}` : `⌀${fmt(c.value)}`,
-        at: frameToWorld(frame, centre),
+        at: frameToWorld(frame, anchor),
         kind: 'dimension',
       })
+      continue
     }
+    if (c.kind === 'angle') {
+      const anchor = entityAnchor(c.a)
+      if (!anchor) continue
+      out.push({
+        id: c.id,
+        text: `${fmt(c.value)}°`,
+        at: frameToWorld(frame, anchor),
+        kind: 'dimension',
+      })
+      continue
+    }
+
+    const glyph = GLYPH[c.kind]
+    if (!glyph) continue
+    // The origin's own pin is noise: it is there in every sketch and can never
+    // be removed, so drawing it just trains people to ignore glyphs.
+    if (c.kind === 'fix' && c.p === 'origin') continue
+
+    let anchor: Vec2 | null = null
+    if ('e' in c && typeof c.e === 'string') anchor = entityAnchor(c.e)
+    else if ('line' in c) anchor = entityAnchor(c.line)
+    else if ('a' in c && typeof c.a === 'string') {
+      anchor = pts.get(c.a) ?? entityAnchor(c.a)
+    } else if ('p' in c) anchor = pts.get(c.p) ?? null
+    if (!anchor) continue
+
+    out.push({
+      id: c.id,
+      text: glyph,
+      at: frameToWorld(frame, nudge(anchor)),
+      kind: 'constraint',
+    })
   }
   return out
 }

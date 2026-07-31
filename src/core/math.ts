@@ -51,8 +51,18 @@ export interface Frame {
 
 export function makeFrame(origin: Vec3, normal: Vec3, xHint?: Vec3): Frame {
   const n = v3.norm(normal)
-  // Pick any axis not parallel to the normal to seed the in-plane x direction.
-  let x = xHint ?? (Math.abs(n[2]) < 0.9 ? ([0, 0, 1] as Vec3) : ([1, 0, 0] as Vec3))
+  let x: Vec3
+  if (xHint) {
+    x = xHint
+  } else if (Math.abs(n[2]) < 0.9) {
+    // A wall or any tilted face: run the sketch's x horizontally so that "up"
+    // in the sketch is up in the world. Anything else means drawing a panel
+    // cutout sideways, which nobody expects.
+    x = v3.cross([0, 0, 1], n)
+  } else {
+    // A floor or ceiling: keep world x.
+    x = [1, 0, 0]
+  }
   x = v3.norm(v3.sub(x, v3.scale(n, v3.dot(x, n))))
   if (v3.len(x) < 1e-9) x = Math.abs(n[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0]
   const y = v3.norm(v3.cross(n, x))

@@ -16,6 +16,7 @@ import {
 } from '../sketch/types'
 import { applySolve, solveSketch } from '../sketch/solver'
 import { chamferCorner, filletCorner } from '../sketch/corner'
+import { circularPattern, linearPattern, trimLine } from '../sketch/edit'
 
 export interface TestResult {
   name: string
@@ -271,6 +272,39 @@ export function runSelfTest(): TestResult[] {
     )
   })
 
+  test('the solver says which geometry is still loose, not just how much', () => {
+    const b = builder()
+    const a = b.point(0, 0)
+    const p2 = b.point(40, 0)
+    const p3 = b.point(40, 30)
+    const p4 = b.point(0, 30)
+    b.con({ kind: 'coincident', a, b: 'origin' })
+    b.con({ kind: 'horizontal', e: b.line(a, p2) })
+    b.con({ kind: 'horizontal', e: b.line(p3, p4) })
+    b.con({ kind: 'vertical', e: b.line(p2, p3) })
+    b.con({ kind: 'vertical', e: b.line(p4, a) })
+
+    const r = solveSketch(b.sketch)
+    check(r.dof === 2, `two degrees of freedom (got ${r.dof})`)
+    // The pinned corner and the origin are nailed down; the other three
+    // corners all still move, because width and height are unset.
+    check(!r.freePoints.includes('origin'), 'origin is not listed as loose')
+    check(!r.freePoints.includes(a), 'the anchored corner is not listed as loose')
+    check(
+      [p2, p3, p4].every((id) => r.freePoints.includes(id)),
+      `the other three corners are listed as loose (${r.freePoints.length} loose in total)`,
+    )
+
+    // Dimension it and nothing should be loose any more.
+    b.con({ kind: 'distanceX', a, b: p2, value: 40 })
+    b.con({ kind: 'distanceY', a, b: p4, value: 30 })
+    const r2 = solveSketch(b.sketch)
+    check(
+      r2.dof === 0 && r2.freePoints.length === 0,
+      `once dimensioned nothing is loose (dof ${r2.dof}, ${r2.freePoints.length} loose)`,
+    )
+  })
+
   test('rounding a corner keeps the sketch just as defined as it was', () => {
     const b = builder()
     const a = b.point(0, 0)
@@ -359,6 +393,121 @@ export function runSelfTest(): TestResult[] {
     check(
       b.sketch.entities.every((e) => e.kind === 'line'),
       'the sketch was left alone',
+    )
+  })
+
+  test('trim cuts a line back to where it crosses another', () => {
+    const b = builder()
+    // A long horizontal line crossed by a vertical one at x = 30.
+    const a1 = b.point(0, 0)
+    const a2 = b.point(100, 0)
+    const c1 = b.point(30, -20)
+    const c2 = b.point(30, 20)
+    const long = b.line(a1, a2)
+    b.line(c1, c2)
+
+    // Click the right-hand piece, past the crossing.
+    const result = trimLine(b.sketch, long, [70, 0], nid)
+    check(result.ok, `trimmed (${result.message ?? 'no error'})`)
+    const line = b.sketch.entities.find((e) => e.id === long) as any
+    const P = Object.fromEntries(b.sketch.points.map((p) => [p.id, p]))
+    near(P[line.p2].x, 30, 'the line now stops at the crossing')
+    near(P[line.p1].x, 0, 'the other end is untouched')
+  })
+
+  test('trim through the middle leaves two lines', () => {
+    const b = builder()
+    const a1 = b.point(0, 0)
+    const a2 = b.point(100, 0)
+    const long = b.line(a1, a2)
+    b.line(b.point(30, -20), b.point(30, 20))
+    b.line(b.point(70, -20), b.point(70, 20))
+
+    const before = b.sketch.entities.length
+    // Click between the two crossings.
+    const result = trimLine(b.sketch, long, [50, 0], nid)
+    check(result.ok, 'trimmed the middle out')
+    check(
+      b.sketch.entities.length === before + 1,
+      `left two pieces behind (${b.sketch.entities.length - before + 1} lines from one)`,
+    )
+    const P = Object.fromEntries(b.sketch.points.map((p) => [p.id, p]))
+    const pieces = b.sketch.entities
+      .filter((e) => e.kind === 'line')
+      .map((e: any) => [P[e.p1].x, P[e.p2].x].sort((x, y) => x - y))
+      .filter((r) => Math.abs(r[0] - r[1]) > 1 && r[0] < 101 && r[1] < 101)
+    const spans = pieces.map((r) => `${r[0]}..${r[1]}`).join(' ')
+    check(
+      pieces.some((r) => Math.abs(r[0]) < 1e-6 && Math.abs(r[1] - 30) < 1e-6),
+      `one piece runs 0 to 30 (${spans})`,
+    )
+    check(
+      pieces.some((r) => Math.abs(r[0] - 70) < 1e-6 && Math.abs(r[1] - 100) < 1e-6),
+      'the other runs 70 to 100',
+    )
+  })
+
+  test('a row of holes stays fully defined and correctly spaced', () => {
+    const b = builder()
+    const c = b.point(10, 10)
+    const circ = b.circle(c, 1.5)
+    b.con({ kind: 'coincident', a: c, b: 'origin' })
+    b.con({ kind: 'radius', e: circ, value: 1.5 })
+    check(solveSketch(b.sketch).dof === 0, 'the first hole is fully defined')
+
+    const result = linearPattern(b.sketch, [circ], { count: 5, dx: 20, dy: 0 }, nid)
+    check(result.ok, `patterned (${result.message ?? 'no error'})`)
+    check(
+      b.sketch.entities.filter((e) => e.kind === 'circle').length === 5,
+      'five holes in total',
+    )
+
+    const solved = solveSketch(b.sketch)
+    applySolve(b.sketch, solved)
+    check(solved.dof === 0, `the row is fully defined (dof ${solved.dof})`)
+
+    const centres = b.sketch.entities
+      .filter((e) => e.kind === 'circle')
+      .map((e: any) => b.sketch.points.find((p) => p.id === e.c)!.x)
+      .sort((x, y) => x - y)
+    near(centres[0], 0, 'first hole sits on the origin')
+    near(centres[4], 80, 'last hole is four spacings along')
+    const gaps = centres.slice(1).map((x, i) => x - centres[i])
+    check(
+      gaps.every((g) => Math.abs(g - 20) < 1e-6),
+      `every gap is 20 mm (${gaps.map((g) => g.toFixed(2)).join(', ')})`,
+    )
+  })
+
+  test('a ring of holes lands on a true bolt circle', () => {
+    const b = builder()
+    const c = b.point(25, 0)
+    const circ = b.circle(c, 2)
+    b.con({ kind: 'radius', e: circ, value: 2 })
+    b.con({ kind: 'distanceX', a: 'origin', b: c, value: 25 })
+    b.con({ kind: 'distanceY', a: 'origin', b: c, value: 0 })
+
+    const result = circularPattern(
+      b.sketch,
+      [circ],
+      { count: 6, centre: [0, 0], totalAngle: 360 },
+      nid,
+    )
+    check(result.ok, `patterned (${result.message ?? 'no error'})`)
+    const solved = solveSketch(b.sketch)
+    applySolve(b.sketch, solved)
+    check(solved.dof === 0, `the ring is fully defined (dof ${solved.dof})`)
+
+    const radii = b.sketch.entities
+      .filter((e) => e.kind === 'circle')
+      .map((e: any) => {
+        const p = b.sketch.points.find((q) => q.id === e.c)!
+        return Math.hypot(p.x, p.y)
+      })
+    check(radii.length === 6, `six holes (${radii.length})`)
+    check(
+      radii.every((r) => Math.abs(r - 25) < 1e-6),
+      `all exactly 25 mm from the centre (${radii.map((r) => r.toFixed(3)).join(', ')})`,
     )
   })
 

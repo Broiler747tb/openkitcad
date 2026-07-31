@@ -157,6 +157,7 @@ export function Toolbar({ onExport, onTutorial }: { onExport: () => void; onTuto
       <GizmoButtons />
 
       <span className="tb-sep" />
+      <MeasureButton />
       <button className="tb" onClick={() => window.dispatchEvent(new CustomEvent('okc:fit'))} title="Zoom to fit everything">
         Fit
       </button>
@@ -169,6 +170,25 @@ export function Toolbar({ onExport, onTutorial }: { onExport: () => void; onTuto
         Guide
       </button>
     </div>
+  )
+}
+
+function MeasureButton() {
+  const tool = useStore((s) => s.tool)
+  const active = tool === 'measure'
+  return (
+    <button
+      className={`tb ${active ? 'active' : ''}`}
+      title="Click two places on your parts to find the distance between them"
+      onClick={() => {
+        const store = useStore.getState()
+        store.clearMeasure()
+        store.setTool(active ? 'select' : 'measure')
+        store.setStatus(active ? null : 'Click the first point.')
+      }}
+    >
+      Measure
+    </button>
   )
 }
 

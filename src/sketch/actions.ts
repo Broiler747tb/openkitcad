@@ -23,6 +23,27 @@ export type ActionResult =
   | { kind: 'deleteConstraint'; constraintId: string }
   | { kind: 'filletCorner'; pointId: string; radius: number }
   | { kind: 'chamferCorner'; pointId: string; distance: number }
+  | { kind: 'trim'; entityId: string; at: Vec2 }
+  | {
+      kind: 'linearPattern'
+      entityIds: string[]
+      count: number
+      dx: number
+      dy: number
+    }
+  | {
+      kind: 'circularPattern'
+      entityIds: string[]
+      count: number
+      centre: Vec2
+      totalAngle: number
+    }
+
+export interface PromptField {
+  label: string
+  initial: number
+  unit: string
+}
 
 export interface SketchAction {
   id: string
@@ -30,8 +51,10 @@ export interface SketchAction {
   /** One line under the label, in plain English. */
   hint?: string
   /** When set, the menu asks for a number before applying. */
-  prompt?: { label: string; initial: number; unit: string }
-  build: (value: number) => ActionResult
+  prompt?: PromptField
+  /** A second number, for the handful of things that genuinely need two. */
+  prompt2?: PromptField
+  build: (value: number, value2?: number) => ActionResult
 }
 
 const lines = (entities: SketchEntity[]) => entities.filter((e) => e.kind === 'line')
@@ -62,6 +85,8 @@ function tangentSide(
 export function sketchActions(
   sketch: Sketch2D,
   selection: SketchTarget[],
+  /** Where the user right-clicked, needed by trim to know which piece to cut. */
+  cursor?: Vec2,
 ): SketchAction[] {
   const pts = new Map<string, Vec2>()
   for (const p of sketch.points) pts.set(p.id, [p.x, p.y])
@@ -111,6 +136,14 @@ export function sketchActions(
         : 'Helps you line things up, but is not part of the shape',
       build: () => ({ kind: 'toggleConstruction', entityId: line.id }),
     })
+    if (cursor) {
+      push({
+        id: 'trim',
+        label: 'Trim this piece away',
+        hint: 'Cuts back to where it crosses something else',
+        build: () => ({ kind: 'trim', entityId: line.id, at: cursor }),
+      })
+    }
     push({
       id: 'delete',
       label: 'Delete this line',
@@ -314,6 +347,57 @@ export function sketchActions(
       id: 'point-on-circle',
       label: 'Put it on the circle',
       build: () => constraint({ kind: 'pointOnCircle', p: pointIds[0], e: curved[0].id }),
+    })
+  }
+
+  // ---- repeating whatever is selected ------------------------------------
+  if (entities.length >= 1) {
+    const ids = entities.map((e) => e.id)
+    // Work out how wide the selection is, so the suggested spacing clears it
+    // instead of stacking every copy on top of the last.
+    let minX = Infinity
+    let maxX = -Infinity
+    for (const e of entities) {
+      const touching =
+        e.kind === 'line' ? [e.p1, e.p2] : e.kind === 'arc' ? [e.c, e.p1, e.p2] : [e.c]
+      for (const id of touching) {
+        const p = pts.get(id)
+        if (!p) continue
+        const pad = e.kind === 'circle' ? e.r : 0
+        minX = Math.min(minX, p[0] - pad)
+        maxX = Math.max(maxX, p[0] + pad)
+      }
+    }
+    const width = Number.isFinite(minX) ? maxX - minX : 10
+    const suggested = Math.max(5, Math.round((width + 5) * 10) / 10)
+
+    push({
+      id: 'linear-pattern',
+      label: 'Repeat in a row',
+      hint: 'Evenly spaced copies, held in place by their spacing',
+      prompt: { label: 'How many', initial: 4, unit: 'total' },
+      prompt2: { label: 'Spacing', initial: suggested, unit: 'mm' },
+      build: (count, spacing) => ({
+        kind: 'linearPattern',
+        entityIds: ids,
+        count: Math.round(count),
+        dx: spacing ?? suggested,
+        dy: 0,
+      }),
+    })
+    push({
+      id: 'circular-pattern',
+      label: 'Repeat in a ring',
+      hint: 'Copies swung around the sketch origin, for a bolt circle',
+      prompt: { label: 'How many', initial: 6, unit: 'total' },
+      prompt2: { label: 'Around', initial: 360, unit: 'deg' },
+      build: (count, angle) => ({
+        kind: 'circularPattern',
+        entityIds: ids,
+        count: Math.round(count),
+        centre: pts.get('origin') ?? [0, 0],
+        totalAngle: angle ?? 360,
+      }),
     })
   }
 

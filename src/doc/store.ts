@@ -28,6 +28,7 @@ import { applySolve, solveSketch, type SolveResult } from '../sketch/solver'
 import type { SketchTarget } from '../sketch/inference'
 import type { ActionResult } from '../sketch/actions'
 import { chamferCorner, filletCorner, type CornerResult } from '../sketch/corner'
+import { circularPattern, linearPattern, trimLine } from '../sketch/edit'
 import { getPart } from '../catalogue'
 
 let counter = 0
@@ -75,7 +76,14 @@ interface AppState {
   tool: ToolId
   /** Set while a sketch is open for editing. */
   activeSketch: { bodyId: string; featureId: string } | null
-  sketchStatus: { dof: number; failing: string[]; closed: boolean } | null
+  sketchStatus: {
+    dof: number
+    failing: string[]
+    closed: boolean
+    /** Geometry the solver says can still move, for colouring it differently. */
+    freePoints: string[]
+    freeRadii: string[]
+  } | null
 
   section: SectionState
   showPlacements: boolean
@@ -93,6 +101,10 @@ interface AppState {
   select: (selection: Selection) => void
   setHovered: (id: string | null) => void
   setStatus: (message: string | null) => void
+  /** Two picked points, for the measure tool. */
+  measure: { a: [number, number, number] | null; b: [number, number, number] | null }
+  addMeasurePoint: (point: [number, number, number]) => void
+  clearMeasure: () => void
   setSection: (patch: Partial<SectionState>) => void
   setShowPlacements: (show: boolean) => void
 
@@ -136,6 +148,7 @@ interface AppState {
 }
 
 const HISTORY_LIMIT = 80
+let statusTimer: number | undefined
 
 function clone<T>(v: T): T {
   return structuredClone(v)
@@ -231,6 +244,39 @@ export const useStore = create<AppState>((set, get) => ({
   },
   setStatus(statusMessage) {
     set({ statusMessage })
+    // Clear itself after a few seconds. A message that stays forever stops
+    // being read, and the next one then goes unnoticed too.
+    clearTimeout(statusTimer)
+    if (statusMessage) {
+      statusTimer = setTimeout(() => {
+        if (get().statusMessage === statusMessage) set({ statusMessage: null })
+      }, 6000) as unknown as number
+    }
+  },
+
+  measure: { a: null, b: null },
+  addMeasurePoint(point) {
+    const current = get().measure
+    // Third click starts a fresh measurement rather than extending the old one.
+    const next =
+      current.a && current.b ? { a: point, b: null } : current.a
+        ? { a: current.a, b: point }
+        : { a: point, b: null }
+    set({ measure: next })
+    if (next.a && next.b) {
+      const dx = next.b[0] - next.a[0]
+      const dy = next.b[1] - next.a[1]
+      const dz = next.b[2] - next.a[2]
+      const d = Math.hypot(dx, dy, dz)
+      get().setStatus(
+        `${d.toFixed(2)} mm apart  (across ${dx.toFixed(2)}, along ${dy.toFixed(2)}, up ${dz.toFixed(2)})`,
+      )
+    } else {
+      get().setStatus('Now click the second point.')
+    }
+  },
+  clearMeasure() {
+    set({ measure: { a: null, b: null } })
   },
   setSection(patch) {
     set({ section: { ...get().section, ...patch } })
@@ -411,6 +457,8 @@ export const useStore = create<AppState>((set, get) => ({
         dof: result.dof,
         failing: result.failing,
         closed: feature.sketch.entities.some((e) => !e.construction),
+        freePoints: result.freePoints,
+        freeRadii: result.freeRadii,
       },
     })
     return result
@@ -470,13 +518,43 @@ export const useStore = create<AppState>((set, get) => ({
         get().solveActiveSketch()
         break
       case 'filletCorner':
-      case 'chamferCorner': {
+      case 'chamferCorner':
+      case 'trim':
+      case 'linearPattern':
+      case 'circularPattern': {
         let outcome: CornerResult = { ok: true }
         get().editSketch((sketch) => {
-          outcome =
-            result.kind === 'filletCorner'
-              ? filletCorner(sketch, result.pointId, result.radius, newId)
-              : chamferCorner(sketch, result.pointId, result.distance, newId)
+          switch (result.kind) {
+            case 'filletCorner':
+              outcome = filletCorner(sketch, result.pointId, result.radius, newId)
+              break
+            case 'chamferCorner':
+              outcome = chamferCorner(sketch, result.pointId, result.distance, newId)
+              break
+            case 'trim':
+              outcome = trimLine(sketch, result.entityId, result.at, newId)
+              break
+            case 'linearPattern':
+              outcome = linearPattern(
+                sketch,
+                result.entityIds,
+                { count: result.count, dx: result.dx, dy: result.dy },
+                newId,
+              )
+              break
+            case 'circularPattern':
+              outcome = circularPattern(
+                sketch,
+                result.entityIds,
+                {
+                  count: result.count,
+                  centre: result.centre,
+                  totalAngle: result.totalAngle,
+                },
+                newId,
+              )
+              break
+          }
         })
         if (!outcome.ok) {
           // The edit above cannot have changed anything on failure, so undoing

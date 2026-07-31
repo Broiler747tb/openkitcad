@@ -785,3 +785,27 @@ input[type='checkbox'] {
 .sketch-menu-item.danger:hover strong {
   color: var(--err);
 }
+
+.vp-label-constraint {
+  border-color: rgba(122, 190, 255, 0.45);
+  color: #8fc0f0;
+  font-weight: 600;
+  padding: 0 4px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.vp-label-constraint:hover {
+  border-color: var(--err);
+  color: var(--err);
+}
+
+.vp-label-dimension {
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.vp-label-dimension:hover {
+  background: var(--accent);
+  color: #201400;
+}

@@ -19,7 +19,7 @@ export interface ScreenLabel {
   text: string
   x: number
   y: number
-  kind: 'dimension' | 'hint' | 'measure'
+  kind: 'dimension' | 'hint' | 'measure' | 'constraint'
 }
 
 export interface PickResult {
@@ -34,6 +34,8 @@ const ACCENT = 0xff9f2e
 const ACCENT_DIM = 0xc4761c
 const SKETCH_LINE = 0xf2ede4
 const CONSTRUCTION = 0x6f7681
+/** Geometry that is not yet pinned down. */
+const UNDERDEFINED = 0x5aa9e6
 
 export class ViewportEngine {
   readonly scene = new THREE.Scene()
@@ -251,6 +253,12 @@ export class ViewportEngine {
     frame: Frame,
     preview: Vec2[][] | null,
     highlight: { points: string[]; entities: string[] } = { points: [], entities: [] },
+    /**
+     * Geometry the solver says is still free. Drawn in a cool blue against the
+     * warm white of locked-down geometry, which is the convention every other
+     * parametric CAD uses and the fastest way to answer "what is still loose?".
+     */
+    loose: { points: string[]; entities: string[] } = { points: [], entities: [] },
   ) {
     this.clearSketch()
     const pts = new Map<string, Vec2>()
@@ -260,13 +268,16 @@ export class ViewportEngine {
     const solid: THREE.Vector3[] = []
     const construction: THREE.Vector3[] = []
     const accent: THREE.Vector3[] = []
+    const undefined3: THREE.Vector3[] = []
 
     for (const entity of sketch.entities) {
       const target = entity.construction
         ? construction
         : highlight.entities.includes(entity.id)
           ? accent
-          : solid
+          : loose.entities.includes(entity.id)
+            ? undefined3
+            : solid
       if (entity.kind === 'line') {
         target.push(to3(pts.get(entity.p1)!), to3(pts.get(entity.p2)!))
       } else if (entity.kind === 'circle') {
@@ -315,6 +326,7 @@ export class ViewportEngine {
     }
 
     addLines(solid, SKETCH_LINE)
+    addLines(undefined3, UNDERDEFINED)
     addLines(accent, ACCENT)
     addLines(construction, CONSTRUCTION, true)
 
@@ -328,28 +340,32 @@ export class ViewportEngine {
       addLines(previewPoints, ACCENT, true)
     }
 
-    // Sketch points, drawn as small camera-facing squares.
-    const pointPositions: number[] = []
+    // Sketch points, split by whether the solver still lets them move.
+    const locked: number[] = []
+    const free: number[] = []
     for (const p of sketch.points) {
       const w = frameToWorld(frame, [p.x, p.y])
-      pointPositions.push(w[0], w[1], w[2])
+      const target = loose.points.includes(p.id) ? free : locked
+      target.push(w[0], w[1], w[2])
     }
-    if (pointPositions.length) {
+    const addPoints = (coords: number[], colour: number, size: number) => {
+      if (coords.length === 0) return
       const geometry = new THREE.BufferGeometry()
-      geometry.setAttribute(
-        'position',
-        new THREE.Float32BufferAttribute(pointPositions, 3),
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(coords, 3))
+      const points = new THREE.Points(
+        geometry,
+        new THREE.PointsMaterial({
+          color: colour,
+          size,
+          sizeAttenuation: false,
+          depthTest: false,
+        }),
       )
-      const material = new THREE.PointsMaterial({
-        color: 0xffffff,
-        size: 6,
-        sizeAttenuation: false,
-        depthTest: false,
-      })
-      const points = new THREE.Points(geometry, material)
       points.renderOrder = 11
       this.sketchGroup.add(points)
     }
+    addPoints(locked, 0xffffff, 6)
+    addPoints(free, UNDERDEFINED, 7)
   }
 
   /** Faint filled plane so the user can see what they are drawing on. */

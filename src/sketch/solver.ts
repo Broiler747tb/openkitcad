@@ -48,6 +48,10 @@ export interface SolveResult {
   dof: number
   /** Constraint ids that could not be satisfied, for highlighting in red. */
   failing: string[]
+  /** Points that are still free to move, so the UI can colour them. */
+  freePoints: string[]
+  /** Circles whose radius is still free. */
+  freeRadii: string[]
 }
 
 /**
@@ -543,12 +547,27 @@ function solveDense(A: Float64Array, rhs: Float64Array, n: number): Float64Array
 }
 
 /**
- * Numerical rank of the Jacobian by Gaussian elimination with full pivoting.
- * Degrees of freedom = variables - rank.
+ * Rank of the Jacobian, plus which individual variables are still free to move.
+ *
+ * Degrees of freedom = variables - rank, which is the number the status bar
+ * shows. Knowing *which* variables make up that number is far more useful: it
+ * lets the sketch draw loose geometry in a different colour, so "4 things can
+ * still move" becomes something the user can point at instead of a riddle.
+ *
+ * Reduces the Jacobian to row-reduced echelon form. Columns without a pivot are
+ * free outright; a pivot column can also move if it has any dependence on a
+ * free column, which is exactly a non-zero entry in that column of its own
+ * pivot row.
  */
-function jacobianRank(rows: Row[], n: number): number {
+function jacobianAnalysis(rows: Row[], n: number): { rank: number; free: Uint8Array } {
+  const free = new Uint8Array(n)
   const m = rows.length
-  if (m === 0 || n === 0) return 0
+  if (n === 0) return { rank: 0, free }
+  if (m === 0) {
+    free.fill(1)
+    return { rank: 0, free }
+  }
+
   const M = new Float64Array(m * n)
   for (let r = 0; r < m; r++) {
     for (const [i, g] of rows[r].grad) M[r * n + i] += g
@@ -559,8 +578,11 @@ function jacobianRank(rows: Row[], n: number): number {
     for (let k = 0; k < n; k++) norm = Math.max(norm, Math.abs(M[r * n + k]))
     if (norm > 1e-12) for (let k = 0; k < n; k++) M[r * n + k] /= norm
   }
+
   const used = new Uint8Array(m)
+  const pivotRowOfCol = new Int32Array(n).fill(-1)
   let rank = 0
+
   for (let col = 0; col < n; col++) {
     let piv = -1
     let best = 1e-8
@@ -574,16 +596,33 @@ function jacobianRank(rows: Row[], n: number): number {
     }
     if (piv < 0) continue
     used[piv] = 1
+    pivotRowOfCol[col] = piv
     rank++
     const d = M[piv * n + col]
+    for (let k = 0; k < n; k++) M[piv * n + k] /= d
+    // Full reduction, including rows already used as pivots: the null space
+    // basis below is only readable off a fully reduced matrix.
     for (let r = 0; r < m; r++) {
-      if (r === piv || used[r]) continue
-      const f = M[r * n + col] / d
+      if (r === piv) continue
+      const f = M[r * n + col]
       if (f === 0) continue
-      for (let k = col; k < n; k++) M[r * n + k] -= f * M[piv * n + k]
+      for (let k = 0; k < n; k++) M[r * n + k] -= f * M[piv * n + k]
     }
   }
-  return rank
+
+  const NULL_TOLERANCE = 1e-7
+  for (let col = 0; col < n; col++) {
+    if (pivotRowOfCol[col] >= 0) continue
+    // A column with no pivot moves freely...
+    free[col] = 1
+    // ...and drags every pivot variable that depends on it.
+    for (let p = 0; p < n; p++) {
+      const row = pivotRowOfCol[p]
+      if (row >= 0 && Math.abs(M[row * n + col]) > NULL_TOLERANCE) free[p] = 1
+    }
+  }
+
+  return { rank, free }
 }
 
 function rms(rows: Row[]): number {
@@ -613,6 +652,8 @@ export function solveSketch(sketch: Sketch2D, opts: SolveOptions = {}): SolveRes
     residual: 0,
     dof: n,
     failing: [],
+    freePoints: sketch.points.map((p) => p.id),
+    freeRadii: sketch.entities.filter((e) => e.kind === 'circle').map((e) => e.id),
   })
 
   if (n === 0) return emptyResult()
@@ -699,7 +740,18 @@ export function solveSketch(sketch: Sketch2D, opts: SolveOptions = {}): SolveRes
 
   // Rank the Jacobian at the solution, excluding the temporary interaction rows.
   const dofRows = rows.filter((r) => r.id !== 'drag' && r.id !== 'reg')
-  const dof = Math.max(0, n - jacobianRank(dofRows, n))
+  const { rank, free } = jacobianAnalysis(dofRows, n)
+  const dof = Math.max(0, n - rank)
+
+  const freePoints: string[] = []
+  for (const p of sketch.points) {
+    const i = idx.point.get(p.id)!
+    if (free[i] || free[i + 1]) freePoints.push(p.id)
+  }
+  const freeRadii: string[] = []
+  for (const [entityId, i] of idx.radius) {
+    if (free[i]) freeRadii.push(entityId)
+  }
 
   return {
     ok: failing.length === 0,
@@ -709,6 +761,8 @@ export function solveSketch(sketch: Sketch2D, opts: SolveOptions = {}): SolveRes
     residual: err,
     dof,
     failing: [...new Set(failing)],
+    freePoints,
+    freeRadii,
   }
 }
 

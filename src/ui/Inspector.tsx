@@ -644,18 +644,28 @@ function SketchSelectionPanel() {
                   key={action.id}
                   className="btn"
                   onClick={() => {
-                    if (action.prompt) {
-                      const raw = window.prompt(
-                        `${action.prompt.label} in ${action.prompt.unit}`,
-                        String(action.prompt.initial),
-                      )
-                      const value = Number(raw)
-                      if (raw !== null && Number.isFinite(value)) {
-                        store.applySketchAction(action.build(value))
-                      }
-                    } else {
+                    if (!action.prompt) {
                       store.applySketchAction(action.build(0))
+                      return
                     }
+                    const raw = window.prompt(
+                      `${action.prompt.label} in ${action.prompt.unit}`,
+                      String(action.prompt.initial),
+                    )
+                    if (raw === null) return
+                    const value = Number(raw)
+                    if (!Number.isFinite(value)) return
+                    let second: number | undefined
+                    if (action.prompt2) {
+                      const raw2 = window.prompt(
+                        `${action.prompt2.label} in ${action.prompt2.unit}`,
+                        String(action.prompt2.initial),
+                      )
+                      if (raw2 === null) return
+                      second = Number(raw2)
+                      if (!Number.isFinite(second)) return
+                    }
+                    store.applySketchAction(action.build(value, second))
                   }}
                 >
                   {action.label}

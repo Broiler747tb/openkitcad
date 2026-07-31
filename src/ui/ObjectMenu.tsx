@@ -26,7 +26,17 @@ function mainExtrude(doc: OkcDocument, bodyId: string): ExtrudeFeature | undefin
   return body?.features.find((f): f is ExtrudeFeature => f.kind === 'extrude')
 }
 
-export function objectActions(selection: Selection): ObjectAction[] {
+/** Where the user right-clicked, so "draw on this face" knows which face. */
+export interface PickedFace {
+  bodyId: string
+  point: [number, number, number]
+  normal: [number, number, number]
+}
+
+export function objectActions(
+  selection: Selection,
+  picked?: PickedFace | null,
+): ObjectAction[] {
   const store = useStore.getState()
   const doc = store.doc
   const out: ObjectAction[] = []
@@ -37,6 +47,26 @@ export function objectActions(selection: Selection): ObjectAction[] {
     if (!body) return out
     const extrude = mainExtrude(doc, bodyId)
     const sketchId = extrude?.sketchId ?? body.features.find((f) => f.kind === 'sketch')?.id
+
+    // The headline action: draw directly on the face under the cursor. Without
+    // this you can only ever sketch on the three base planes, which means you
+    // cannot put a hole in the side of a box.
+    if (picked && picked.bodyId === bodyId) {
+      out.push({
+        id: 'sketch-on-face',
+        label: 'Draw on this face',
+        hint: 'Start an outline right where you clicked',
+        run: () =>
+          store.startSketch(
+            {
+              kind: 'face',
+              face: { bodyId, anchor: picked.point, normal: picked.normal },
+              offset: 0,
+            },
+            bodyId,
+          ),
+      })
+    }
 
     if (sketchId) {
       out.push({

@@ -18,7 +18,13 @@ So the modelling here is real parametric CAD, and the catalogue does the remembe
 
 Sketching works the way you'd hope. Drag out a rectangle and it works out that you meant the edges to be horizontal and vertical. Click an edge and type 100 and it becomes exactly 100 mm. The status bar tells you in plain English how much of your shape is still loose, instead of saying "underconstrained" and leaving you to it.
 
-Right-click anything in a sketch and you get a short list of what you can do to it. Two lines gives you parallel, square, same length, or an angle. Two corners gives you distances. A line and a circle gives you a smooth tangent. You never have to know which of seventeen constraint types you wanted.
+Right-click anything in a sketch and you get a short list of what you can do to it. Two lines gives you parallel, square, same length, or an angle. Two corners gives you distances. A line and a circle gives you a smooth tangent. A corner gives you the option to round it off or cut it away. You never have to know which of seventeen constraint types you wanted.
+
+Anything still free to move is drawn in blue, and every rule you have applied shows as a small symbol you can click to remove. Between them those two answer the question that makes people give up on parametric CAD: why won't this move, or why won't it stay still.
+
+There is trim for cleaning up lines that overshoot, and patterns for repeating geometry in a row or a ring, which is how you get a vent grille or a bolt circle without drawing sixteen identical circles by hand. Both keep the sketch fully defined afterwards.
+
+Right-click a finished solid and you can go back and edit the outline it came from, change its thickness, round its edges, or start a new sketch directly on the face you clicked.
 
 The catalogue covers single-board computers, microcontroller boards, ports and connectors, screws and inserts, aluminium extrusion, motors, and bearings. Every part carries its outline, its mounting holes, the volumes that need to stay clear, and where its connectors sit. Boards also carry voltage, current draw and a link to the datasheet.
 
@@ -83,11 +89,13 @@ The constraint solver is written from scratch, in `src/sketch/solver.ts`. Levenb
 
 ## What it doesn't do yet
 
-Sketches go on the three standard planes plus an offset. Sketching on a face you picked works in the kernel and in the document model, but there's no UI for it. That's the biggest gap.
-
 Face and edge references are geometric fingerprints, not proper persistent names. A reference re-finds the closest matching face after a rebuild. Small parameter changes keep the right face, big ones might not. Topological naming is genuinely hard and no open source CAD has fully cracked it either.
 
-Fillet and chamfer hit every edge. Per-edge picking is in the document model with no UI on top.
+Fillet and chamfer on a *solid* hit every edge. Per-edge picking is in the document model with no UI on top. Rounding a single corner in a *sketch* works fine.
+
+Trim works on straight lines. Trimming an arc out of a circle is not implemented yet.
+
+There is no engraved text, and no typing a length mid-drag while you draw. Both are on the list.
 
 No assembly mates. Parts get positioned, not constrained to each other. That was a deliberate call, not an oversight, and it should stay that way until someone actually needs it.
 
