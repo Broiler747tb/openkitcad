@@ -2,7 +2,9 @@
 
 Parametric CAD for people who build things on a bench. It runs in a browser, it's free, and it knows where the holes go.
 
-There's no server involved. Your design stays on your machine.
+**[Try it here.](https://broiler747tb.github.io/openkitcad/)** Nothing to install.
+
+There's no server involved. Your design stays on your machine, and the first load pulls an 11 MB WebAssembly build of the geometry kernel, so give it a few seconds on a slow connection. After that it's cached and works offline.
 
 ## Why
 
@@ -40,7 +42,9 @@ npm run build
 npm run typecheck
 ```
 
-Add `?selftest` to the URL on any build and it runs the solver and kernel checks in front of you. That's shipped on purpose. If something's broken on your machine, that page says so before you file an issue.
+Add `?selftest` to the URL on any build and it runs the solver and kernel checks in front of you. That works on the [live site](https://broiler747tb.github.io/openkitcad/?selftest) too. It's shipped on purpose: if something's broken on your machine, that page says so before you file an issue.
+
+Pushing to `main` builds and publishes to GitHub Pages. The workflow runs `typecheck` first, so a build that doesn't compile never goes live.
 
 ## Adding a part
 
