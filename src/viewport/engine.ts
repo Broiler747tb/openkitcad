@@ -63,6 +63,8 @@ const HOME_CAMERA: Vec3 = [-220, -180, 160]
 
 const ACCENT = 0xff9f2e
 const ACCENT_DIM = 0xc4761c
+/** Pre-selection: what a click would take. */
+const HOVER = 0xffd9a0
 const SKETCH_LINE = 0xf2ede4
 const CONSTRUCTION = 0x6f7681
 /** Geometry that is not yet pinned down. */
@@ -714,8 +716,31 @@ export class ViewportEngine {
     return total
   }
 
+  private selectedPicks: SubPick[] = []
+  private hoverPick: SubPick | null = null
+
   /** Draw whatever is selected on top of the solid. */
   setSubHighlight(picks: SubPick[]) {
+    this.selectedPicks = picks
+    this.rebuildHighlight()
+  }
+
+  /**
+   * Show what a click would select, before it is clicked. This is the whole
+   * difference between selection that feels precise and selection that feels
+   * like guessing, and it costs one extra pick per pointer move.
+   */
+  setHoverPick(pick: SubPick | null) {
+    const same =
+      (pick?.id ?? null) === (this.hoverPick?.id ?? null) &&
+      (pick?.bodyId ?? null) === (this.hoverPick?.bodyId ?? null)
+    if (same) return
+    this.hoverPick = pick
+    this.rebuildHighlight()
+  }
+
+  private rebuildHighlight() {
+    const picks = this.selectedPicks
     for (const child of [...this.highlightGroup.children]) {
       this.highlightGroup.remove(child)
       ;(child as any).geometry?.dispose?.()
@@ -724,43 +749,52 @@ export class ViewportEngine {
     const faceTriangles: number[] = []
     const edgeVertices: number[] = []
     const cornerVertices: number[] = []
+    const hoverFaces: number[] = []
+    const hoverEdges: number[] = []
+    const hoverCorners: number[] = []
 
-    for (const pick of picks) {
+    const alreadySelected = (p: SubPick) =>
+      picks.some((s) => s.bodyId === p.bodyId && s.id === p.id)
+    const all = this.hoverPick && !alreadySelected(this.hoverPick)
+      ? [...picks, this.hoverPick]
+      : picks
+
+    for (const pick of all) {
+      const isHover = pick === this.hoverPick && !alreadySelected(pick)
       const data = this.groups.get(pick.bodyId)
       if (!data) continue
 
       if (pick.kind === 'vertex') {
-        cornerVertices.push(...pick.point)
+        ;(isHover ? hoverCorners : cornerVertices).push(...pick.point)
       } else if (pick.kind === 'edge') {
         const group = data.edgeGroups.find((g) => `e:${g.edgeId}` === pick.id)
         if (!group) continue
+        const into = isHover ? hoverEdges : edgeVertices
         for (let i = group.start; i < group.start + group.count; i++) {
-          edgeVertices.push(
-            data.lines[i * 3],
-            data.lines[i * 3 + 1],
-            data.lines[i * 3 + 2],
-          )
+          into.push(data.lines[i * 3], data.lines[i * 3 + 1], data.lines[i * 3 + 2])
         }
       } else {
         const group = data.faceGroups.find((g) => `f:${g.faceId}` === pick.id)
         if (!group) continue
+        const into = isHover ? hoverFaces : faceTriangles
         for (let i = group.start; i < group.start + group.count; i++) {
           const v = data.triangles[i] * 3
-          faceTriangles.push(data.vertices[v], data.vertices[v + 1], data.vertices[v + 2])
+          into.push(data.vertices[v], data.vertices[v + 1], data.vertices[v + 2])
         }
       }
     }
 
-    if (faceTriangles.length) {
+    const drawFaces = (coords: number[], opacity: number) => {
+    if (coords.length) {
       const geometry = new THREE.BufferGeometry()
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(faceTriangles, 3))
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(coords, 3))
       geometry.computeVertexNormals()
       const mesh = new THREE.Mesh(
         geometry,
         new THREE.MeshBasicMaterial({
           color: ACCENT,
           transparent: true,
-          opacity: 0.45,
+          opacity,
           side: THREE.DoubleSide,
           depthWrite: false,
           // Lift it off the surface it covers, or the two z-fight.
@@ -772,26 +806,29 @@ export class ViewportEngine {
       mesh.renderOrder = 5
       this.highlightGroup.add(mesh)
     }
+    }
 
-    if (edgeVertices.length) {
+    const drawEdges = (coords: number[], colour: number) => {
+      if (!coords.length) return
       const geometry = new THREE.BufferGeometry()
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(edgeVertices, 3))
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(coords, 3))
       const lines = new THREE.LineSegments(
         geometry,
-        new THREE.LineBasicMaterial({ color: ACCENT, depthTest: false }),
+        new THREE.LineBasicMaterial({ color: colour, depthTest: false }),
       )
       lines.renderOrder = 12
       this.highlightGroup.add(lines)
     }
 
-    if (cornerVertices.length) {
+    const drawCorners = (coords: number[], colour: number, size: number) => {
+      if (!coords.length) return
       const geometry = new THREE.BufferGeometry()
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(cornerVertices, 3))
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(coords, 3))
       const points = new THREE.Points(
         geometry,
         new THREE.PointsMaterial({
-          color: ACCENT,
-          size: 9,
+          color: colour,
+          size,
           sizeAttenuation: false,
           depthTest: false,
         }),
@@ -799,6 +836,15 @@ export class ViewportEngine {
       points.renderOrder = 13
       this.highlightGroup.add(points)
     }
+
+    // Hover is drawn fainter and smaller than a real selection, so the two are
+    // never confused for one another.
+    drawFaces(hoverFaces, 0.18)
+    drawEdges(hoverEdges, HOVER)
+    drawCorners(hoverCorners, HOVER, 8)
+    drawFaces(faceTriangles, 0.45)
+    drawEdges(edgeVertices, ACCENT)
+    drawCorners(cornerVertices, ACCENT, 9)
   }
 
   /** Millimetres per screen pixel at a point, for size-independent snapping. */

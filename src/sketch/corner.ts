@@ -444,6 +444,220 @@ export function chamferCorner(
   return { ok: true }
 }
 
+// ---------------------------------------------------------------------------
+// Rounding between two curves that were never joined
+// ---------------------------------------------------------------------------
+
+/** Where two edges cross, treating lines as infinite so they can be extended to meet. */
+function crossingsOf(a: CornerEntity, b: CornerEntity, pts: Map<string, Vec2>): Vec2[] {
+  const asLine = (e: CornerEntity) => {
+    const p = pts.get((e as LineEntity).p1)!
+    const q = pts.get((e as LineEntity).p2)!
+    return { p, dir: v2.sub(q, p) }
+  }
+  const asCircle = (e: CornerEntity) => {
+    const arc = e as ArcEntity
+    const c = pts.get(arc.c)!
+    return { c, r: v2.dist(c, pts.get(arc.p1)!) }
+  }
+
+  if (a.kind === 'line' && b.kind === 'line') {
+    const la = asLine(a)
+    const lb = asLine(b)
+    const denominator = v2.cross(la.dir, lb.dir)
+    if (Math.abs(denominator) < 1e-12) return []
+    const t = v2.cross(v2.sub(lb.p, la.p), lb.dir) / denominator
+    return [[la.p[0] + la.dir[0] * t, la.p[1] + la.dir[1] * t]]
+  }
+
+  if (a.kind !== 'line' && b.kind !== 'line') {
+    const ca = asCircle(a)
+    const cb = asCircle(b)
+    const d = v2.dist(ca.c, cb.c)
+    if (d < 1e-9 || d > ca.r + cb.r || d < Math.abs(ca.r - cb.r)) return []
+    const x = (d * d - cb.r * cb.r + ca.r * ca.r) / (2 * d)
+    const hSq = ca.r * ca.r - x * x
+    if (hSq < 0) return []
+    const h = Math.sqrt(hSq)
+    const u = v2.norm(v2.sub(cb.c, ca.c))
+    const mid = v2.add(ca.c, v2.scale(u, x))
+    const n = perp(u)
+    return [v2.add(mid, v2.scale(n, h)), v2.sub(mid, v2.scale(n, h))]
+  }
+
+  const line = asLine(a.kind === 'line' ? a : b)
+  const circle = asCircle(a.kind === 'line' ? b : a)
+  const m = v2.sub(line.p, circle.c)
+  const qa = v2.dot(line.dir, line.dir)
+  const qb = 2 * v2.dot(m, line.dir)
+  const qc = v2.dot(m, m) - circle.r * circle.r
+  const disc = qb * qb - 4 * qa * qc
+  if (disc < 0 || qa < 1e-12) return []
+  const root = Math.sqrt(disc)
+  return [(-qb - root) / (2 * qa), (-qb + root) / (2 * qa)].map((t) => [
+    line.p[0] + line.dir[0] * t,
+    line.p[1] + line.dir[1] * t,
+  ])
+}
+
+/** The two ways you can leave a curve from a point on it. */
+function tangentsAt(e: CornerEntity, at: Vec2, pts: Map<string, Vec2>): [Vec2, Vec2] {
+  if (e.kind === 'line') {
+    const d = v2.norm(v2.sub(pts.get(e.p2)!, pts.get(e.p1)!))
+    return [d, v2.scale(d, -1)]
+  }
+  const t = perp(v2.norm(v2.sub(at, pts.get(e.c)!)))
+  return [t, v2.scale(t, -1)]
+}
+
+/**
+ * Round the corner between two edges that were never joined - they cross, or
+ * merely point at each other. This is what Fusion's sketch fillet does, and it
+ * is the one people reach for: geometry drawn separately rarely shares an
+ * endpoint, so waiting for a shared corner means waiting forever.
+ *
+ * Which of the four quadrants around the crossing gets rounded is decided by
+ * where the user right-clicked, because it is genuinely ambiguous otherwise.
+ */
+export function filletBetween(
+  sketch: Sketch2D,
+  aId: string,
+  bId: string,
+  radius: number,
+  cursor: Vec2,
+  nextId: (prefix: string) => string,
+): CornerResult {
+  const find = (id: string) =>
+    sketch.entities.find((e): e is CornerEntity => e.id === id && e.kind !== 'circle')
+  const a = find(aId)
+  const b = find(bId)
+  if (!a || !b) {
+    return {
+      ok: false,
+      message:
+        'A whole circle has no ends to join onto. Trim it back to where it crosses first, then round the corner.',
+    }
+  }
+  if (!(radius > 0)) return { ok: false, message: 'The radius has to be more than zero.' }
+
+  const pts = new Map<string, Vec2>()
+  for (const p of sketch.points) pts.set(p.id, [p.x, p.y])
+
+  const crossings = crossingsOf(a, b, pts)
+  if (crossings.length === 0) {
+    return { ok: false, message: 'These two never meet, even extended, so there is no corner.' }
+  }
+  const at = crossings.reduce((best, c) =>
+    v2.dist(c, cursor) < v2.dist(best, cursor) ? c : best,
+  )
+
+  // Pick the quadrant the user clicked in.
+  const toward = v2.norm(v2.sub(cursor, at))
+  const [a1, a2] = tangentsAt(a, at, pts)
+  const [b1, b2] = tangentsAt(b, at, pts)
+  let choice: { da: Vec2; db: Vec2; score: number } | null = null
+  for (const da of [a1, a2]) {
+    for (const db of [b1, b2]) {
+      const bisector = v2.norm(v2.add(da, db))
+      if (v2.len(bisector) < 1e-9) continue
+      const score = v2.len(toward) < 1e-9 ? 0 : v2.dot(bisector, toward)
+      if (!choice || score > choice.score) choice = { da, db, score }
+    }
+  }
+  if (!choice) return { ok: false, message: 'These run straight through each other.' }
+
+  const bisector = v2.norm(v2.add(choice.da, choice.db))
+  const angle = Math.acos(Math.max(-1, Math.min(1, v2.dot(choice.da, choice.db))))
+  if (angle < 0.05 || angle > Math.PI - 0.05) {
+    return { ok: false, message: 'They meet almost straight on, so there is no corner to round.' }
+  }
+
+  const legFor = (e: CornerEntity, dir: Vec2): CornerLeg => ({
+    entity: e,
+    pointId: e.p1,
+    dir,
+    length: Infinity,
+    arc:
+      e.kind === 'arc'
+        ? { centre: pts.get(e.c)!, radius: v2.dist(pts.get(e.c)!, pts.get(e.p1)!) }
+        : undefined,
+  })
+  const legA = legFor(a, choice.da)
+  const legB = legFor(b, choice.db)
+
+  const centre = intersect(
+    offsetOf(legA, at, bisector, radius),
+    offsetOf(legB, at, bisector, radius),
+    at,
+  )
+  if (!centre) return { ok: false, message: 'No curve of that size fits between these two.' }
+
+  const t1 = tangentPoint(legA, at, centre)
+  const t2 = tangentPoint(legB, at, centre)
+
+  /** Move the end that falls on the discarded side up to the tangent point. */
+  const attach = (e: CornerEntity, dir: Vec2, tangent: Vec2): string => {
+    const s1 = v2.dot(v2.sub(pts.get(e.p1)!, at), dir)
+    const s2 = v2.dot(v2.sub(pts.get(e.p2)!, at), dir)
+    // Whichever end is furthest back along the kept direction is the one being
+    // cut away; if both are ahead, the edge is being extended to reach.
+    const replaceP1 = s1 < s2
+    const id = nextId('p')
+    sketch.points.push({ id, x: tangent[0], y: tangent[1] })
+    const stale = replaceP1 ? e.p1 : e.p2
+    if (replaceP1) e.p1 = id
+    else e.p2 = id
+    pruneDuplicates(sketch, [stale])
+    return id
+  }
+
+  const t1Id = attach(a, choice.da, t1)
+  const t2Id = attach(b, choice.db, t2)
+  const centreId = nextId('p')
+  sketch.points.push({ id: centreId, x: centre[0], y: centre[1] })
+
+  const ang1 = Math.atan2(t1[1] - centre[1], t1[0] - centre[0])
+  const ang2 = Math.atan2(t2[1] - centre[1], t2[0] - centre[0])
+  const TAU = Math.PI * 2
+  const ccwSweep = (((ang2 - ang1) % TAU) + TAU) % TAU
+  const arcId = nextId('e')
+  sketch.entities.push({
+    id: arcId,
+    kind: 'arc',
+    c: centreId,
+    p1: t1Id,
+    p2: t2Id,
+    ccw: ccwSweep <= Math.PI,
+    construction: false,
+  })
+
+  const after = new Map<string, Vec2>()
+  for (const p of sketch.points) after.set(p.id, [p.x, p.y])
+  const add = (c: NewConstraint) =>
+    sketch.constraints.push({ ...c, id: nextId('c') } as never)
+
+  add({ kind: 'radius', e: arcId, value: radius })
+  for (const leg of [legA, legB]) {
+    if (leg.arc) {
+      const gap = v2.dist(centre, leg.arc.centre)
+      add({
+        kind: 'tangentArcs',
+        a: leg.entity.id,
+        b: arcId,
+        side: gap < leg.arc.radius ? -1 : 1,
+      })
+    } else {
+      add({
+        kind: 'tangent',
+        line: leg.entity.id,
+        circle: arcId,
+        side: tangentSideToLine(leg, after, centre),
+      })
+    }
+  }
+  return { ok: true }
+}
+
 /** Say why a point is not a corner, rather than just refusing. */
 function describeRefusal(sketch: Sketch2D, pointId: string): string {
   const pts = new Map<string, Vec2>()

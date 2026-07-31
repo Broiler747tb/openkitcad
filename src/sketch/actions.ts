@@ -25,6 +25,13 @@ export type ActionResult =
   | { kind: 'chamferCorner'; pointId: string; distance: number }
   | { kind: 'trim'; entityId: string; at: Vec2 }
   | {
+      kind: 'filletBetween'
+      aId: string
+      bId: string
+      radius: number
+      cursor: Vec2
+    }
+  | {
       kind: 'linearPattern'
       entityIds: string[]
       count: number
@@ -355,6 +362,25 @@ export function sketchActions(
       id: 'point-on-circle',
       label: 'Put it on the circle',
       build: () => constraint({ kind: 'pointOnCircle', p: pointIds[0], e: curved[0].id }),
+    })
+  }
+
+  // ---- two edges of any kind: round where they meet -----------------------
+  if (entities.length === 2 && pointIds.length === 0 && cursor) {
+    const [e1, e2] = entities
+    const suggested = 3
+    push({
+      id: 'fillet-between',
+      label: 'Round where these meet',
+      hint: 'Works even if they only cross, or do not touch at all',
+      prompt: { label: 'Radius', initial: suggested, unit: 'mm' },
+      build: (radius) => ({
+        kind: 'filletBetween',
+        aId: e1.id,
+        bId: e2.id,
+        radius,
+        cursor,
+      }),
     })
   }
 

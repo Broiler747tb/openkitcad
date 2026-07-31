@@ -28,7 +28,12 @@ import { applySolve, solveSketch, type SolveResult } from '../sketch/solver'
 import type { SketchTarget } from '../sketch/inference'
 import type { SubPick } from '../viewport/engine'
 import type { ActionResult } from '../sketch/actions'
-import { chamferCorner, filletCorner, type CornerResult } from '../sketch/corner'
+import {
+  chamferCorner,
+  filletBetween,
+  filletCorner,
+  type CornerResult,
+} from '../sketch/corner'
 import { circularPattern, linearPattern, trimLine, trimRound } from '../sketch/edit'
 import { getPart } from '../catalogue'
 
@@ -539,6 +544,7 @@ export const useStore = create<AppState>((set, get) => ({
         break
       case 'filletCorner':
       case 'chamferCorner':
+      case 'filletBetween':
       case 'trim':
       case 'linearPattern':
       case 'circularPattern': {
@@ -550,6 +556,16 @@ export const useStore = create<AppState>((set, get) => ({
               break
             case 'chamferCorner':
               outcome = chamferCorner(sketch, result.pointId, result.distance, newId)
+              break
+            case 'filletBetween':
+              outcome = filletBetween(
+                sketch,
+                result.aId,
+                result.bId,
+                result.radius,
+                result.cursor,
+                newId,
+              )
               break
             case 'trim': {
               const target = sketch.entities.find((e) => e.id === result.entityId)

@@ -15,7 +15,12 @@ import {
   type SketchPoint,
 } from '../sketch/types'
 import { applySolve, solveSketch } from '../sketch/solver'
-import { chamferCorner, filletCorner, findCorner } from '../sketch/corner'
+import {
+  chamferCorner,
+  filletBetween,
+  filletCorner,
+  findCorner,
+} from '../sketch/corner'
 import { circularPattern, linearPattern, trimLine, trimRound } from '../sketch/edit'
 
 export interface TestResult {
@@ -593,6 +598,93 @@ export function runSelfTest(): TestResult[] {
     )
     const joined = findCorner(b.sketch, leftEnd.id)
     check(!!joined, 'and the two now form a corner that can be rounded')
+  })
+
+  test('two curves that merely cross can still be rounded', () => {
+    // A line running down past a circle, crossing it rather than ending on it.
+    // There is no shared corner anywhere, which is precisely the case the
+    // corner-based rounding cannot help with.
+    const b = builder()
+    const centre = b.point(0, 0)
+    const circleArc = nid('e')
+    const arcStart = b.point(20, 0)
+    const arcEnd = b.point(-20, 0)
+    b.sketch.entities.push({
+      id: circleArc,
+      kind: 'arc',
+      c: centre,
+      p1: arcStart,
+      p2: arcEnd,
+      ccw: false,
+      construction: false,
+    })
+    const top = b.point(14, 30)
+    const bottom = b.point(14, -30)
+    const line = b.line(top, bottom)
+
+    const result = filletBetween(b.sketch, line, circleArc, 4, [18, -18], nid)
+    check(result.ok, `rounded between them (${result.message ?? 'no error'})`)
+
+    const solved = solveSketch(b.sketch)
+    applySolve(b.sketch, solved)
+    check(solved.ok, `solves cleanly (${solved.failing.join(',') || 'no conflicts'})`)
+
+    const arcs = b.sketch.entities.filter((e) => e.kind === 'arc')
+    check(arcs.length === 2, `a fillet arc was added (${arcs.length} arcs)`)
+    const P = Object.fromEntries(b.sketch.points.map((p) => [p.id, p]))
+    const fillet = arcs.find((e) => e.id !== circleArc) as any
+    const fc = P[fillet.c]
+    near(
+      Math.hypot(P[fillet.p1].x - fc.x, P[fillet.p1].y - fc.y),
+      4,
+      'fillet radius',
+      1e-3,
+    )
+    // Tangent to the vertical line at x = 14 means the centre sits 4 mm off it.
+    near(Math.abs(fc.x - 14), 4, 'centre is one radius off the straight edge', 1e-3)
+    // The click at (18, -18) is outside the 20 mm circle, so the corner being
+    // rounded is the one outside it and the fillet is externally tangent:
+    // centres 20 + 4 apart. Clicking inside would give 20 - 4 instead, which is
+    // the next check.
+    near(Math.hypot(fc.x, fc.y), 24, 'externally tangent to the circle', 1e-3)
+  })
+
+  test('which side you click decides which corner gets rounded', () => {
+    const b = builder()
+    const centre = b.point(0, 0)
+    const circleArc = nid('e')
+    b.sketch.entities.push({
+      id: circleArc,
+      kind: 'arc',
+      c: centre,
+      p1: b.point(20, 0),
+      p2: b.point(-20, 0),
+      ccw: false,
+      construction: false,
+    })
+    const line = b.line(b.point(14, 30), b.point(14, -30))
+
+    // Click inside the circle this time.
+    const result = filletBetween(b.sketch, line, circleArc, 4, [8, -12], nid)
+    check(result.ok, `rounded (${result.message ?? 'no error'})`)
+    applySolve(b.sketch, solveSketch(b.sketch))
+    const P = Object.fromEntries(b.sketch.points.map((p) => [p.id, p]))
+    const fillet = b.sketch.entities.filter((e) => e.kind === 'arc').find((e) => e.id !== circleArc) as any
+    const fc = P[fillet.c]
+    near(Math.hypot(fc.x, fc.y), 16, 'now nested inside the circle, 20 - 4 apart', 1e-3)
+  })
+
+  test('rounding against a whole circle explains what to do instead', () => {
+    const b = builder()
+    const c = b.point(0, 0)
+    const circ = b.circle(c, 20)
+    const line = b.line(b.point(0, 0), b.point(0, -40))
+    const result = filletBetween(b.sketch, line, circ, 3, [2, -18], nid)
+    check(!result.ok, 'refused')
+    check(
+      !!result.message && /trim it back/i.test(result.message),
+      `and says what to do: "${result.message}"`,
+    )
   })
 
   test('a row of holes stays fully defined and correctly spaced', () => {

@@ -433,6 +433,16 @@ export function Viewport() {
 
     const hit = engine.pick(e.clientX, e.clientY)
     if (hit?.id !== store.hovered) store.setHovered(hit?.id ?? null)
+    // Show what a click would take. Set straight on the engine rather than
+    // through the store: this fires on every pointer move and does not need a
+    // React render.
+    //
+    // Deliberately not gated on the surface hit above. Corners sit on the
+    // silhouette where that raycast misses, and gating on it made exactly the
+    // corners people aim for un-hoverable.
+    const sub = engine.pickSub(e.clientX, e.clientY)
+    const onABody = sub && store.doc.bodies.some((b) => b.id === sub.bodyId)
+    engine.setHoverPick(onABody ? sub : null)
   }
 
   const onPointerDown = (e: React.PointerEvent) => {
