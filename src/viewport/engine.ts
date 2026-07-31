@@ -30,6 +30,16 @@ export interface PickResult {
   faceId: number
 }
 
+/**
+ * Where the camera sits before anything else has moved it.
+ *
+ * Turned a quarter of a turn from the obvious front-right-above position, so
+ * the model reads rotated 90 degrees anticlockwise compared with the first
+ * version. Rotating the camera clockwise about the vertical axis is what makes
+ * the *content* appear to turn to the left: they go opposite ways.
+ */
+const HOME_CAMERA: Vec3 = [-220, -180, 160]
+
 const ACCENT = 0xff9f2e
 const ACCENT_DIM = 0xc4761c
 const SKETCH_LINE = 0xf2ede4
@@ -65,7 +75,7 @@ export class ViewportEngine {
     container.appendChild(this.renderer.domElement)
 
     this.camera = new THREE.PerspectiveCamera(38, 1, 0.5, 20000)
-    this.camera.position.set(180, -220, 160)
+    this.camera.position.set(...HOME_CAMERA)
     this.camera.up.set(0, 0, 1)
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement)
@@ -580,7 +590,9 @@ export class ViewportEngine {
     this.camera.position
       .copy(centre)
       .addScaledVector(new THREE.Vector3(...frame.normal), distance)
-    this.camera.up.set(...frame.yDir)
+    // Sketch x points up the screen rather than across it, which turns the
+    // drawing a quarter turn anticlockwise to match the 3D view's home angle.
+    this.camera.up.set(...frame.xDir)
     this.camera.lookAt(centre)
   }
 
@@ -591,7 +603,8 @@ export class ViewportEngine {
       top: [[0, 0, 1], [0, 1, 0]],
       front: [[0, -1, 0], [0, 0, 1]],
       right: [[1, 0, 0], [0, 0, 1]],
-      iso: [[0.6, -0.72, 0.55], [0, 0, 1]],
+      // Matches HOME_CAMERA, so pressing 3D returns to the view you started at.
+      iso: [[-0.72, -0.6, 0.55], [0, 0, 1]],
     }
     const [dir, up] = dirs[view]
     this.camera.up.set(...up)
