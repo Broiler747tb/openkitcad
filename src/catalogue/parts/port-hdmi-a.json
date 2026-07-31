@@ -1,0 +1,49 @@
+{
+  "id": "port-hdmi-a",
+  "name": "HDMI socket, full size (Type A)",
+  "category": "connector",
+  "summary": "The big HDMI port you see on a TV or a laptop. Needs a 15 x 6 mm panel slot.",
+  "confidence": "approximate",
+  "source": "The HDMI Type A plug shell is 13.9 x 4.45 mm, which is fixed by the HDMI connector specification. Everything else here is a working figure, not a verified drawing: the 15.0 x 6.0 mm cutout is the shell plus clearance, and the socket body behind the panel is a typical through-hole receptacle. Receptacle bodies differ between manufacturers, so check yours. Note also that many HDMI cables have a fat moulded plug body starting right behind the metal shell; if yours does, and the panel is thick or the socket is set back from it, the plug will bottom out on the panel before it seats. In that case either mount the socket hard against the panel, or open the hole out to roughly 21 x 10 mm so the whole plug body passes through.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 15.5,
+    "bodyHeight": 7.0,
+    "bodyDepth": 12.0,
+    "protrusion": 0,
+    "cutout": { "shape": "rect", "w": 15.0, "h": 6.0, "cornerRadius": 0.5 },
+    "panelThickness": 2
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "HDMI Type A opening",
+      "side": "+y",
+      "shape": "rect",
+      "x": 7.75,
+      "y": 12.0,
+      "z": 0.5,
+      "width": 15.0,
+      "height": 6.0,
+      "protrusion": 0
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-plug",
+      "label": "Room for the plug body and cable",
+      "x": -4.25,
+      "y": 12.0,
+      "w": 24,
+      "h": 50,
+      "z": -2.5,
+      "height": 12
+    }
+  ],
+  "electrical": {
+    "voltage": [5],
+    "currentPeak": 0.055,
+    "note": "Signal only. One pin carries 5 V so the far end can read the display's ID; the source is only obliged to supply about 55 mA on it, so do not treat an HDMI port as a power supply."
+  },
+  "tags": ["hdmi", "hdmi-a", "type-a", "video", "display", "port", "socket", "connector", "panel"]
+}

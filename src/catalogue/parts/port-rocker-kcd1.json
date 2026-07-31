@@ -1,0 +1,59 @@
+{
+  "id": "port-rocker-kcd1",
+  "name": "Rocker on/off switch (KCD1)",
+  "category": "connector",
+  "summary": "The small square rocker switch found on power strips. Clips into a 19 x 13 mm rectangular hole, no screws needed.",
+  "confidence": "approximate",
+  "source": "KCD1 is a shape that many factories copy rather than a controlled standard, so the numbers move. The 19.0 x 13.0 mm snap-in cutout is what the common KCD1-101 wants and is the size most sellers quote, but parts also sold as KCD1 exist with a 21 x 15 mm cutout, and the illuminated versions are usually deeper. Nothing behind the panel is verified: housing depth, terminal type (solder lug or 4.8 mm spade) and terminal length all vary. Check the cutout drawing that came with your switch, and test-fit in scrap before cutting the real panel.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 19,
+    "bodyHeight": 13,
+    "bodyDepth": 19,
+    "protrusion": 8,
+    "cutout": { "shape": "rect", "w": 19.0, "h": 13.0, "cornerRadius": 0.8 },
+    "panelThickness": 2
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "Rocker switch cutout",
+      "side": "+y",
+      "shape": "rect",
+      "x": 9.5,
+      "y": 19,
+      "z": 0,
+      "width": 19.0,
+      "height": 13.0,
+      "protrusion": 8
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-bezel",
+      "label": "Room for the front bezel and the rocker to tilt",
+      "x": -2,
+      "y": 19,
+      "w": 23,
+      "h": 10,
+      "z": -2,
+      "height": 17
+    },
+    {
+      "id": "k-wires",
+      "label": "Room for the terminals and wires behind the panel",
+      "x": 1,
+      "y": -20,
+      "w": 17,
+      "h": 20,
+      "z": 1,
+      "height": 11
+    }
+  ],
+  "electrical": {
+    "voltage": [125, 250],
+    "currentPeak": 6,
+    "note": "Typically rated 6 A at 250 V AC or 10 A at 125 V AC. These are usually wired to mains, which is dangerous: insulate the terminals and keep them out of reach."
+  },
+  "tags": ["rocker", "switch", "kcd1", "kcd1-101", "power", "on-off", "snap-in", "panel"]
+}

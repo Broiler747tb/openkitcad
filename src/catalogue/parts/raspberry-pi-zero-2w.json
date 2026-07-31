@@ -1,0 +1,46 @@
+{
+  "id": "raspberry-pi-zero-2w",
+  "name": "Raspberry Pi Zero 2 W",
+  "category": "sbc",
+  "manufacturer": "Raspberry Pi Ltd",
+  "summary": "Tiny 65 x 30 mm Pi. Four M2.5 holes on a 58 x 23 mm pattern.",
+  "confidence": "datasheet",
+  "source": "Outline and the four M2.5 mounting holes are from the official Raspberry Pi Zero mechanical drawing (shared by Zero, Zero W and Zero 2 W). Connector openings are approximate.",
+  "geometry": {
+    "kind": "board",
+    "outline": { "shape": "rect", "w": 65, "h": 30, "cornerRadius": 3 },
+    "thickness": 1.4,
+    "bumps": [
+      { "x": 26, "y": 8, "w": 12, "h": 12, "z": 1.4, "height": 1.2, "colour": "#20262c", "label": "RP3A0" },
+      { "x": 3.5, "y": 21, "w": 51, "h": 5.5, "z": 1.4, "height": 8.5, "colour": "#111417", "label": "40-pin header" }
+    ]
+  },
+  "mountingHoles": [
+    { "id": "h1", "x": 3.5, "y": 3.5, "diameter": 2.75, "screw": "M2.5" },
+    { "id": "h2", "x": 61.5, "y": 3.5, "diameter": 2.75, "screw": "M2.5" },
+    { "id": "h3", "x": 3.5, "y": 26.5, "diameter": 2.75, "screw": "M2.5" },
+    { "id": "h4", "x": 61.5, "y": 26.5, "diameter": 2.75, "screw": "M2.5" }
+  ],
+  "keepouts": [
+    { "id": "k-under", "label": "Solder side clearance", "x": 0, "y": 0, "w": 65, "h": 30, "z": -2, "height": 2 },
+    { "id": "k-gpio", "label": "GPIO header space", "x": 3.5, "y": 19, "w": 51, "h": 9, "z": 1.4, "height": 14 }
+  ],
+  "connectors": [
+    { "id": "pwr", "label": "micro USB power", "side": "-y", "x": 54, "y": 0, "z": 1.4, "width": 8, "height": 3, "protrusion": 1.5 },
+    { "id": "usb", "label": "micro USB data", "side": "-y", "x": 41.4, "y": 0, "z": 1.4, "width": 8, "height": 3, "protrusion": 1.5 },
+    { "id": "hdmi", "label": "mini HDMI", "side": "-y", "x": 12.4, "y": 0, "z": 1.4, "width": 11.5, "height": 4, "protrusion": 1.5 },
+    { "id": "sd", "label": "microSD card", "side": "-x", "x": 0, "y": 15, "z": 0, "width": 12, "height": 2, "protrusion": 0 }
+  ],
+  "electrical": {
+    "voltage": [5],
+    "currentTypical": 0.35,
+    "currentPeak": 1.2
+  },
+  "pinHeaders": [
+    { "id": "gpio", "label": "40-pin GPIO", "x": 3.5, "y": 23.0, "rows": 2, "cols": 20, "pitch": 2.54 }
+  ],
+  "links": [
+    { "label": "Product page", "url": "https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/" }
+  ],
+  "tags": ["pi", "raspberry", "zero", "sbc", "small"]
+}

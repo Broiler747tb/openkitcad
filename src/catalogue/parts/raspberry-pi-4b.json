@@ -1,0 +1,54 @@
+{
+  "id": "raspberry-pi-4b",
+  "name": "Raspberry Pi 4 Model B",
+  "category": "sbc",
+  "manufacturer": "Raspberry Pi Ltd",
+  "summary": "The most common Pi. 85 x 56 mm, four M2.5 holes on a 58 x 49 mm pattern.",
+  "confidence": "datasheet",
+  "source": "Outline, board thickness and the four M2.5 mounting holes are from the official Raspberry Pi 4B mechanical drawing. Connector positions along the edges are approximate to about 1 mm - check them against your own board before cutting a panel.",
+  "geometry": {
+    "kind": "board",
+    "outline": { "shape": "rect", "w": 85, "h": 56, "cornerRadius": 3 },
+    "thickness": 1.4,
+    "bumps": [
+      { "x": 23, "y": 24, "w": 15, "h": 15, "z": 1.4, "height": 2.4, "colour": "#20262c", "label": "BCM2711" },
+      { "x": 3.5, "y": 47, "w": 51, "h": 5.5, "z": 1.4, "height": 8.5, "colour": "#111417", "label": "40-pin header" },
+      { "x": 66, "y": 2, "w": 17, "h": 15, "z": 1.4, "height": 13.5, "colour": "#8b9096", "label": "USB 2.0" },
+      { "x": 66, "y": 20, "w": 17, "h": 15, "z": 1.4, "height": 13.5, "colour": "#8b9096", "label": "USB 3.0" },
+      { "x": 66, "y": 38, "w": 17, "h": 16, "z": 1.4, "height": 13.5, "colour": "#8b9096", "label": "Ethernet" }
+    ]
+  },
+  "mountingHoles": [
+    { "id": "h1", "x": 3.5, "y": 3.5, "diameter": 2.7, "screw": "M2.5" },
+    { "id": "h2", "x": 61.5, "y": 3.5, "diameter": 2.7, "screw": "M2.5" },
+    { "id": "h3", "x": 3.5, "y": 52.5, "diameter": 2.7, "screw": "M2.5" },
+    { "id": "h4", "x": 61.5, "y": 52.5, "diameter": 2.7, "screw": "M2.5" }
+  ],
+  "keepouts": [
+    { "id": "k-under", "label": "Solder side clearance", "x": 0, "y": 0, "w": 85, "h": 56, "z": -2.5, "height": 2.5 },
+    { "id": "k-gpio", "label": "GPIO header + hat space", "x": 3.5, "y": 45, "w": 51, "h": 9, "z": 1.4, "height": 16 }
+  ],
+  "connectors": [
+    { "id": "usbc", "label": "USB-C power", "side": "-y", "x": 11.2, "y": 0, "z": 1.4, "width": 9.2, "height": 3.4, "protrusion": 1.5 },
+    { "id": "hdmi0", "label": "micro HDMI 0", "side": "-y", "x": 26, "y": 0, "z": 1.4, "width": 7.2, "height": 3.4, "protrusion": 1.5 },
+    { "id": "hdmi1", "label": "micro HDMI 1", "side": "-y", "x": 39.5, "y": 0, "z": 1.4, "width": 7.2, "height": 3.4, "protrusion": 1.5 },
+    { "id": "av", "label": "3.5 mm A/V jack", "side": "-y", "x": 54, "y": 0, "z": 1.4, "width": 7, "height": 6, "protrusion": 2 },
+    { "id": "usb2", "label": "USB 2.0 (pair)", "side": "+x", "x": 85, "y": 9.5, "z": 1.4, "width": 15.5, "height": 16.5, "protrusion": 2 },
+    { "id": "usb3", "label": "USB 3.0 (pair)", "side": "+x", "x": 85, "y": 27.5, "z": 1.4, "width": 15.5, "height": 16.5, "protrusion": 2 },
+    { "id": "eth", "label": "Ethernet", "side": "+x", "x": 85, "y": 45.75, "z": 1.4, "width": 16, "height": 14, "protrusion": 2 },
+    { "id": "sd", "label": "microSD card", "side": "-x", "x": 0, "y": 22.6, "z": 0, "width": 12, "height": 2, "protrusion": 0 }
+  ],
+  "electrical": {
+    "voltage": [5],
+    "currentTypical": 1.25,
+    "currentPeak": 3,
+    "note": "Needs a 5 V 3 A supply. Undervoltage warnings are the usual cause of odd crashes."
+  },
+  "pinHeaders": [
+    { "id": "gpio", "label": "40-pin GPIO", "x": 3.5, "y": 49.0, "rows": 2, "cols": 20, "pitch": 2.54 }
+  ],
+  "links": [
+    { "label": "Mechanical drawing", "url": "https://datasheets.raspberrypi.com/rpi4/raspberry-pi-4-mechanical-drawing.pdf" }
+  ],
+  "tags": ["pi", "raspberry", "sbc", "linux", "computer"]
+}

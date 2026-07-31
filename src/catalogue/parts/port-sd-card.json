@@ -1,0 +1,59 @@
+{
+  "id": "port-sd-card",
+  "name": "Full-size SD card slot",
+  "category": "connector",
+  "summary": "Edge-mount socket for a normal SD memory card. Needs a 26 x 3.5 mm letterbox slot.",
+  "confidence": "approximate",
+  "source": "The card is the only part of this that is fixed: a full-size SD card is 32.0 x 24.0 x 2.1 mm by the SD Card Association standard, and the 26 x 3.5 mm slot here is that card plus enough clearance to get it in by hand. The socket body around it is generic. Shell width, height and how far the socket sits back from the panel all vary between makers, and push-push and push-pull types eject differently, so line the slot up against the socket you actually have.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 28,
+    "bodyHeight": 4.0,
+    "bodyDepth": 32,
+    "protrusion": 0,
+    "cutout": { "shape": "rect", "w": 26.0, "h": 3.5, "cornerRadius": 0.5 },
+    "panelThickness": 2
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "SD card slot",
+      "side": "+y",
+      "shape": "rect",
+      "x": 14,
+      "y": 32,
+      "z": 0.25,
+      "width": 26.0,
+      "height": 3.5,
+      "protrusion": 0
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-plug",
+      "label": "Room to slide the card in and get hold of it",
+      "x": -2,
+      "y": 32,
+      "w": 32,
+      "h": 48,
+      "z": -3,
+      "height": 10
+    },
+    {
+      "id": "k-tail",
+      "label": "Room behind the socket for the contacts and solder tails",
+      "x": 0,
+      "y": -4,
+      "w": 28,
+      "h": 4,
+      "z": -2,
+      "height": 8
+    }
+  ],
+  "electrical": {
+    "voltage": [3.3],
+    "currentPeak": 0.2,
+    "note": "SD cards are 3.3 V parts. Feeding one 5 V on its data lines will kill it. Current is usually well under 100 mA, but a fast card can pull a couple of hundred milliamps in bursts while writing."
+  },
+  "tags": ["sd", "sd card", "card", "slot", "socket", "memory", "storage", "panel", "port"]
+}

@@ -1,0 +1,49 @@
+{
+  "id": "port-usb-b",
+  "name": "USB-B socket",
+  "category": "connector",
+  "summary": "The big chunky square port you find on printers. Needs a 13 x 12 mm panel hole.",
+  "confidence": "approximate",
+  "source": "The USB Series B plug shell is about 11.5 x 10.5 mm with the top two corners bevelled, and that shape is fixed by the USB specification. The rest is not verified. The 13.0 x 12.0 mm cutout here is a plain rectangle rather than the bevelled outline, so the plug will sit with a little slop, and it is sized to clear the shell only, not the plug's moulded body. The socket body behind the panel is a generic through-hole PCB receptacle and varies by a couple of millimetres between suppliers. This entry is the bare socket, which does not bolt on; panel-mount USB-B feedthroughs with screw flanges are a different part.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 15.5,
+    "bodyHeight": 13.5,
+    "bodyDepth": 16.5,
+    "protrusion": 0,
+    "cutout": { "shape": "rect", "w": 13.0, "h": 12.0, "cornerRadius": 1.0 },
+    "panelThickness": 2
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "USB-B opening",
+      "side": "+y",
+      "shape": "rect",
+      "x": 7.75,
+      "y": 16.5,
+      "z": 0.75,
+      "width": 13.0,
+      "height": 12.0,
+      "protrusion": 0
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-plug",
+      "label": "Room for the plug and cable",
+      "x": -7.25,
+      "y": 16.5,
+      "w": 30,
+      "h": 50,
+      "z": -6,
+      "height": 25
+    }
+  ],
+  "electrical": {
+    "voltage": [5],
+    "currentPeak": 0.5,
+    "note": "This is the socket on the device end of a USB 2.0 cable. The host supplies 500 mA unless the device negotiates more."
+  },
+  "tags": ["usb", "usb-b", "type-b", "printer", "port", "socket", "connector", "panel", "square"]
+}

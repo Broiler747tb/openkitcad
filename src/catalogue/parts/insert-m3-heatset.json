@@ -1,0 +1,16 @@
+{
+  "id": "insert-m3-heatset",
+  "name": "M3 heat-set insert",
+  "category": "fastener",
+  "summary": "Brass insert melted into a printed part. Needs a 4.0 mm pilot hole.",
+  "confidence": "approximate",
+  "source": "Matches the widely used M3 x 5.7 x 4.6 knurled insert (the CNC Kitchen recommended size). Insert dimensions vary noticeably between suppliers - check yours, and always test-fit one before printing a whole enclosure.",
+  "geometry": {
+    "kind": "insert",
+    "thread": "M3",
+    "outerDiameter": 4.6,
+    "length": 5.7,
+    "pilotDiameter": 4.0
+  },
+  "tags": ["m3", "insert", "heatset", "threaded", "brass", "fastener"]
+}

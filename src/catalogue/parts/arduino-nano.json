@@ -1,0 +1,33 @@
+{
+  "id": "arduino-nano",
+  "name": "Arduino Nano",
+  "category": "mcu",
+  "manufacturer": "Arduino",
+  "summary": "43.2 x 17.8 mm breadboard board. Note: the original has no mounting holes.",
+  "confidence": "datasheet",
+  "source": "Outline from the Arduino Nano board footprint (1.70 x 0.70 inch). Deliberately has no mountingHoles entry, because the genuine Nano has none - many clones add four 1.8 mm corner holes, so check your board. Mount it by its headers or a socket.",
+  "geometry": {
+    "kind": "board",
+    "outline": { "shape": "rect", "w": 43.18, "h": 17.78, "cornerRadius": 1 },
+    "thickness": 1.6,
+    "bumps": [
+      { "x": 14, "y": 5, "w": 10, "h": 8, "z": 1.6, "height": 1.1, "colour": "#20262c", "label": "ATmega328P" },
+      { "x": 0, "y": 4.9, "w": 8, "h": 8, "z": 1.6, "height": 3.2, "colour": "#8b9096", "label": "mini USB" },
+      { "x": 1.27, "y": 0, "w": 40.6, "h": 2.6, "z": 1.6, "height": 8.5, "colour": "#111417", "label": "Header" },
+      { "x": 1.27, "y": 15.2, "w": 40.6, "h": 2.6, "z": 1.6, "height": 8.5, "colour": "#111417", "label": "Header" }
+    ]
+  },
+  "keepouts": [
+    { "id": "k-under", "label": "Header pins below", "x": 0, "y": 0, "w": 43.18, "h": 17.78, "z": -3.5, "height": 3.5 }
+  ],
+  "connectors": [
+    { "id": "usb", "label": "mini USB", "side": "-x", "x": 0, "y": 8.89, "z": 1.6, "width": 8, "height": 4, "protrusion": 1.5 }
+  ],
+  "electrical": { "voltage": [5, 7, 12], "currentTypical": 0.02, "currentPeak": 0.2 },
+  "pinHeaders": [
+    { "id": "left", "label": "Left header", "x": 1.27, "y": 1.27, "rows": 15, "cols": 1, "pitch": 2.54 },
+    { "id": "right", "label": "Right header", "x": 1.27, "y": 16.51, "rows": 15, "cols": 1, "pitch": 2.54 }
+  ],
+  "links": [{ "label": "Product page", "url": "https://docs.arduino.cc/hardware/nano/" }],
+  "tags": ["arduino", "nano", "atmega", "breadboard"]
+}

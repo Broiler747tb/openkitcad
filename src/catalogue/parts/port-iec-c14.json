@@ -1,0 +1,59 @@
+{
+  "id": "port-iec-c14",
+  "name": "IEC C14 mains inlet",
+  "category": "connector",
+  "summary": "The three-pin socket a kettle lead plugs into. Needs a 27 x 19.5 mm rectangular hole.",
+  "confidence": "datasheet",
+  "source": "The C14 mating face is fixed by IEC 60320, and the 27.0 x 19.5 mm snap-in panel cutout with roughly 3 mm corner radii is the same figure across the major suppliers. Modelled here as the plain snap-in version. What is not verified: the flange size and the 22 mm body depth behind the panel, which differ by a few millimetres between makers, and inlets with a built-in fuse holder or switch, which are much deeper than this. Snap-in inlets only grip thin panels, roughly 0.8 to 2 mm, so on a thicker printed panel use the screw-mount version instead: it takes the same cutout plus two M3 holes on 40 mm centres, but its flange is wider than the body modelled here.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 31,
+    "bodyHeight": 24,
+    "bodyDepth": 22,
+    "protrusion": 2,
+    "cutout": { "shape": "rect", "w": 27.0, "h": 19.5, "cornerRadius": 3.0 },
+    "panelThickness": 1.5
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "IEC C14 opening",
+      "side": "+y",
+      "shape": "rect",
+      "x": 15.5,
+      "y": 22,
+      "z": 2.25,
+      "width": 27.0,
+      "height": 19.5,
+      "protrusion": 2
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-terminals",
+      "label": "Room for the spade terminals and mains wiring",
+      "x": 0,
+      "y": -14,
+      "w": 31,
+      "h": 14,
+      "z": 0,
+      "height": 24
+    },
+    {
+      "id": "k-plug",
+      "label": "Room for the mains lead and its plug",
+      "x": -5,
+      "y": 22,
+      "w": 41,
+      "h": 60,
+      "z": -4,
+      "height": 32
+    }
+  ],
+  "electrical": {
+    "voltage": [120, 230],
+    "currentPeak": 10,
+    "note": "Mains voltage. Usually rated 10 A at 250 V AC. The earth pin is the longer centre one and must be connected to any metal panel."
+  },
+  "tags": ["iec", "c14", "iec60320", "mains", "ac", "power", "inlet", "kettle", "port", "socket", "panel"]
+}

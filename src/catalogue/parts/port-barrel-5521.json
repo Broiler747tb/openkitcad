@@ -1,0 +1,60 @@
+{
+  "id": "port-barrel-5521",
+  "name": "DC barrel jack 5.5 / 2.1 mm",
+  "category": "connector",
+  "summary": "Threaded panel-mount power socket. Needs an 8 mm round hole.",
+  "confidence": "measured",
+  "source": "The common threaded panel-mount barrel jack for a 5.5 mm outer / 2.1 mm inner plug. The threaded barrel is 8 mm across, so the panel needs an 8 mm hole and a nut on the inside. The 5.5/2.1 plug size itself is standard; the body length behind the panel varies by a couple of millimetres between suppliers.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 11,
+    "bodyHeight": 11,
+    "bodyDepth": 16,
+    "protrusion": 3,
+    "cutout": { "shape": "circle", "d": 8.0 },
+    "panelThickness": 3
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "Barrel jack hole",
+      "side": "+y",
+      "shape": "circle",
+      "x": 5.5,
+      "y": 16,
+      "z": 5.5,
+      "width": 8.0,
+      "height": 8.0,
+      "diameter": 8.0,
+      "protrusion": 3
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-nut",
+      "label": "Room for the fixing nut",
+      "x": -1.5,
+      "y": 10,
+      "w": 14,
+      "h": 6,
+      "z": -1.5,
+      "height": 14
+    },
+    {
+      "id": "k-plug",
+      "label": "Room for the plug and cable",
+      "x": -2,
+      "y": 16,
+      "w": 15,
+      "h": 40,
+      "z": -2,
+      "height": 15
+    }
+  ],
+  "electrical": {
+    "voltage": [12, 24],
+    "currentPeak": 5,
+    "note": "Rated around 5 A, but the thin solder tags are usually the weak point well before that."
+  },
+  "tags": ["barrel", "dc", "jack", "power", "5.5", "2.1", "port", "socket", "panel"]
+}

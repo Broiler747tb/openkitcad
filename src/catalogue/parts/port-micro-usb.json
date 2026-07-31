@@ -1,0 +1,49 @@
+{
+  "id": "port-micro-usb",
+  "name": "Micro USB socket",
+  "category": "connector",
+  "summary": "The small flat port used on older phones and cheap dev boards. Needs an 8 x 3.2 mm panel slot.",
+  "confidence": "approximate",
+  "source": "The Micro-B plug shell is 6.85 x 1.8 mm, which is fixed by the USB Micro-B specification. The rest is not verified: the 8.0 x 3.2 mm cutout is a working opening with clearance added by hand, and the socket body is a generic surface-mount receptacle whose depth and height vary between suppliers. The plug's moulded body is roughly 11 x 6.5 mm, much larger than the shell, so the socket must sit right at the panel face on a thin panel or the plug will not push in far enough to latch.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 8.5,
+    "bodyHeight": 4.0,
+    "bodyDepth": 5.5,
+    "protrusion": 0,
+    "cutout": { "shape": "rect", "w": 8.0, "h": 3.2, "cornerRadius": 0.8 },
+    "panelThickness": 1.5
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "Micro USB opening",
+      "side": "+y",
+      "shape": "rect",
+      "x": 4.25,
+      "y": 5.5,
+      "z": 0.4,
+      "width": 8.0,
+      "height": 3.2,
+      "protrusion": 0
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-plug",
+      "label": "Room for the plug and cable",
+      "x": -5.75,
+      "y": 5.5,
+      "w": 20,
+      "h": 35,
+      "z": -6,
+      "height": 16
+    }
+  ],
+  "electrical": {
+    "voltage": [5],
+    "currentPeak": 1.8,
+    "note": "The connector itself is rated around 1.8 A. A plain USB 2.0 host only supplies 500 mA unless it is a dedicated charging port."
+  },
+  "tags": ["usb", "micro", "micro-usb", "micro-b", "type-b", "port", "socket", "connector", "panel", "phone"]
+}

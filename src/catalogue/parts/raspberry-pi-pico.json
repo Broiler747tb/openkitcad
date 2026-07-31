@@ -1,0 +1,44 @@
+{
+  "id": "raspberry-pi-pico",
+  "name": "Raspberry Pi Pico",
+  "category": "mcu",
+  "manufacturer": "Raspberry Pi Ltd",
+  "summary": "51 x 21 mm RP2040 microcontroller board with four 2.1 mm corner holes.",
+  "confidence": "datasheet",
+  "source": "Outline, thickness and the four mounting holes are from the Raspberry Pi Pico datasheet (hole pattern 47 x 11.4 mm, 2.1 mm diameter). Applies to Pico, Pico H, Pico W and Pico 2.",
+  "geometry": {
+    "kind": "board",
+    "outline": { "shape": "rect", "w": 51, "h": 21, "cornerRadius": 2 },
+    "thickness": 1.0,
+    "bumps": [
+      { "x": 20, "y": 6.5, "w": 7, "h": 7, "z": 1.0, "height": 0.9, "colour": "#20262c", "label": "RP2040" },
+      { "x": 0, "y": 6.5, "w": 8, "h": 8, "z": 1.0, "height": 2.6, "colour": "#8b9096", "label": "micro USB" }
+    ]
+  },
+  "mountingHoles": [
+    { "id": "h1", "x": 2.0, "y": 4.8, "diameter": 2.1, "screw": "M2" },
+    { "id": "h2", "x": 49.0, "y": 4.8, "diameter": 2.1, "screw": "M2" },
+    { "id": "h3", "x": 2.0, "y": 16.2, "diameter": 2.1, "screw": "M2" },
+    { "id": "h4", "x": 49.0, "y": 16.2, "diameter": 2.1, "screw": "M2" }
+  ],
+  "keepouts": [
+    { "id": "k-under", "label": "Solder side clearance", "x": 0, "y": 0, "w": 51, "h": 21, "z": -2, "height": 2 }
+  ],
+  "connectors": [
+    { "id": "usb", "label": "micro USB", "side": "-x", "x": 0, "y": 10.5, "z": 1.0, "width": 8, "height": 3, "protrusion": 1.2 }
+  ],
+  "electrical": {
+    "voltage": [5, 3.3],
+    "currentTypical": 0.03,
+    "currentPeak": 0.1,
+    "note": "Powered over USB, or 1.8-5.5 V into VSYS."
+  },
+  "pinHeaders": [
+    { "id": "left", "label": "Left header", "x": 1.61, "y": 3.81, "rows": 20, "cols": 1, "pitch": 2.54 },
+    { "id": "right", "label": "Right header", "x": 49.39, "y": 3.81, "rows": 20, "cols": 1, "pitch": 2.54 }
+  ],
+  "links": [
+    { "label": "Datasheet", "url": "https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf" }
+  ],
+  "tags": ["pico", "rp2040", "microcontroller", "raspberry"]
+}

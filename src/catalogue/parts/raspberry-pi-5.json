@@ -1,0 +1,56 @@
+{
+  "id": "raspberry-pi-5",
+  "name": "Raspberry Pi 5",
+  "category": "sbc",
+  "manufacturer": "Raspberry Pi Ltd",
+  "summary": "Single-board computer. Same 85 x 56 mm outline and hole pattern as the Pi 4.",
+  "confidence": "datasheet",
+  "source": "Outline, board thickness and the four M2.5 mounting holes are from the official Raspberry Pi 5 mechanical drawing. Connector positions along the edges are approximate to about 1 mm - check them against your own board before cutting a panel.",
+  "geometry": {
+    "kind": "board",
+    "outline": { "shape": "rect", "w": 85, "h": 56, "cornerRadius": 3 },
+    "thickness": 1.4,
+    "bumps": [
+      { "x": 21.5, "y": 25.5, "w": 15, "h": 15, "z": 1.4, "height": 2.4, "colour": "#20262c", "label": "BCM2712" },
+      { "x": 41, "y": 25.5, "w": 12, "h": 12, "z": 1.4, "height": 1.2, "colour": "#20262c", "label": "RP1" },
+      { "x": 3.5, "y": 47, "w": 51, "h": 5.5, "z": 1.4, "height": 8.5, "colour": "#111417", "label": "40-pin header" },
+      { "x": 66, "y": 2, "w": 17, "h": 15, "z": 1.4, "height": 13.5, "colour": "#8b9096", "label": "USB 3.0" },
+      { "x": 66, "y": 20, "w": 17, "h": 15, "z": 1.4, "height": 13.5, "colour": "#8b9096", "label": "USB 3.0" },
+      { "x": 66, "y": 38, "w": 17, "h": 16, "z": 1.4, "height": 13.5, "colour": "#8b9096", "label": "Ethernet" }
+    ]
+  },
+  "mountingHoles": [
+    { "id": "h1", "x": 3.5, "y": 3.5, "diameter": 2.7, "screw": "M2.5" },
+    { "id": "h2", "x": 61.5, "y": 3.5, "diameter": 2.7, "screw": "M2.5" },
+    { "id": "h3", "x": 3.5, "y": 52.5, "diameter": 2.7, "screw": "M2.5" },
+    { "id": "h4", "x": 61.5, "y": 52.5, "diameter": 2.7, "screw": "M2.5" }
+  ],
+  "keepouts": [
+    { "id": "k-under", "label": "Solder side clearance", "x": 0, "y": 0, "w": 85, "h": 56, "z": -2.5, "height": 2.5 },
+    { "id": "k-gpio", "label": "GPIO header + hat space", "x": 3.5, "y": 45, "w": 51, "h": 9, "z": 1.4, "height": 16 },
+    { "id": "k-fan", "label": "Cooler / airflow", "x": 18, "y": 21, "w": 24, "h": 24, "z": 1.4, "height": 12 }
+  ],
+  "connectors": [
+    { "id": "usbc", "label": "USB-C power", "side": "-y", "x": 11.2, "y": 0, "z": 1.4, "width": 9.2, "height": 3.4, "protrusion": 1.5 },
+    { "id": "hdmi0", "label": "micro HDMI 0", "side": "-y", "x": 26, "y": 0, "z": 1.4, "width": 7.2, "height": 3.4, "protrusion": 1.5 },
+    { "id": "hdmi1", "label": "micro HDMI 1", "side": "-y", "x": 39.5, "y": 0, "z": 1.4, "width": 7.2, "height": 3.4, "protrusion": 1.5 },
+    { "id": "usb3a", "label": "USB 3.0 (pair)", "side": "+x", "x": 85, "y": 9.5, "z": 1.4, "width": 15.5, "height": 16.5, "protrusion": 2 },
+    { "id": "usb3b", "label": "USB 3.0 (pair)", "side": "+x", "x": 85, "y": 27.5, "z": 1.4, "width": 15.5, "height": 16.5, "protrusion": 2 },
+    { "id": "eth", "label": "Ethernet", "side": "+x", "x": 85, "y": 45.75, "z": 1.4, "width": 16, "height": 14, "protrusion": 2 },
+    { "id": "sd", "label": "microSD card", "side": "-x", "x": 0, "y": 22.6, "z": 0, "width": 12, "height": 2, "protrusion": 0 }
+  ],
+  "electrical": {
+    "voltage": [5],
+    "currentTypical": 2.5,
+    "currentPeak": 5,
+    "note": "Officially wants a 5 V 5 A USB-C supply. It will boot on 3 A but limits USB current."
+  },
+  "pinHeaders": [
+    { "id": "gpio", "label": "40-pin GPIO", "x": 3.5, "y": 49.0, "rows": 2, "cols": 20, "pitch": 2.54 }
+  ],
+  "links": [
+    { "label": "Product brief", "url": "https://www.raspberrypi.com/products/raspberry-pi-5/" },
+    { "label": "Mechanical drawing", "url": "https://datasheets.raspberrypi.com/rpi5/raspberry-pi-5-mechanical-drawing.pdf" }
+  ],
+  "tags": ["pi", "raspberry", "sbc", "linux", "computer"]
+}

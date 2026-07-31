@@ -1,0 +1,49 @@
+{
+  "id": "port-usb-c",
+  "name": "USB-C socket",
+  "category": "connector",
+  "summary": "The small oval port that plugs in either way up. Needs a 9.5 x 3.5 mm slot with rounded ends.",
+  "confidence": "approximate",
+  "source": "The USB Type-C plug shell is 8.34 x 2.56 mm with fully rounded ends, and that figure is fixed by the USB Type-C specification. Everything else here is not verified: the 9.5 x 3.5 mm cutout is a working opening with clearance added by hand, and the 10.0 x 4.5 x 8.0 mm body is a nominal envelope sized to sit around that opening rather than a measured receptacle. A bare surface-mount USB-C receptacle is nearer 9 x 3.2 x 7.5 mm, so treat the body here as a conservative clearance volume, not a part outline. Panel-mount USB-C modules and pigtail feedthroughs are much larger than this and need their own entry. Note also that a USB-C plug's moulded body is far wider than the shell, so the socket has to sit right at the panel face or the plug will not seat.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 10.0,
+    "bodyHeight": 4.5,
+    "bodyDepth": 8.0,
+    "protrusion": 0,
+    "cutout": { "shape": "rect", "w": 9.5, "h": 3.5, "cornerRadius": 1.75 },
+    "panelThickness": 1.5
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "USB-C opening",
+      "side": "+y",
+      "shape": "rect",
+      "x": 5.0,
+      "y": 8.0,
+      "z": 0.5,
+      "width": 9.5,
+      "height": 3.5,
+      "protrusion": 0
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-plug",
+      "label": "Room for the plug and cable",
+      "x": -6,
+      "y": 8,
+      "w": 22,
+      "h": 40,
+      "z": -7,
+      "height": 18
+    }
+  ],
+  "electrical": {
+    "voltage": [5, 9, 15, 20],
+    "currentPeak": 5,
+    "note": "5 V at up to 3 A on a plain cable. Higher voltages and up to 5 A only happen when both ends agree over USB Power Delivery."
+  },
+  "tags": ["usb", "usb-c", "type-c", "usbc", "port", "socket", "connector", "panel", "reversible"]
+}

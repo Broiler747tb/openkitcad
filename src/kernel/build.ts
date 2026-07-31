@@ -1,0 +1,726 @@
+/**
+ * Feature evaluation: turning a document into solids.
+ *
+ * Runs entirely inside the worker. Every function here may allocate OpenCascade
+ * objects, so it must never be imported from the main thread.
+ */
+import {
+  draw,
+  drawCircle,
+  drawPolysides,
+  drawRectangle,
+  drawRoundedRectangle,
+  makeBox,
+  makeCylinder,
+  Plane,
+  sketchCircle,
+  type Drawing,
+} from 'replicad'
+import {
+  frameToLocal,
+  makeFrame,
+  NAMED_FRAMES,
+  v3,
+  type Frame,
+  type Vec2,
+  type Vec3,
+} from '../core/math'
+import type {
+  Body,
+  BooleanOp,
+  EdgeRef,
+  FaceRef,
+  Feature,
+  HoleFeature,
+  OkcDocument,
+  Placement,
+  PlaneRef,
+  SketchFeature,
+  StandoffFeature,
+} from '../doc/types'
+import { placementToWorld } from '../doc/placement'
+import { getPart, type CataloguePart } from '../catalogue'
+import { sketchToProfile } from './profile'
+
+export interface BuildError {
+  featureId: string
+  message: string
+  hint?: string
+}
+
+/** How far cutters overshoot the material, so nothing is left paper-thin. */
+const CUT_MARGIN = 0.5
+/** Length used for "through" cuts when the body size is unknown. */
+const THROUGH_LENGTH = 1000
+
+// ---------------------------------------------------------------------------
+// Planes
+// ---------------------------------------------------------------------------
+
+export function frameFromPlaneRef(
+  ref: PlaneRef,
+  shapes: Map<string, any>,
+): Frame {
+  if (ref.kind === 'named') {
+    const base = NAMED_FRAMES[ref.name]
+    return {
+      ...base,
+      origin: v3.add(base.origin, v3.scale(base.normal, ref.offset)),
+    }
+  }
+  const resolved = resolveFace(shapes.get(ref.face.bodyId), ref.face)
+  const normal = resolved?.normal ?? ref.face.normal
+  const anchor = resolved?.centre ?? ref.face.anchor
+  return makeFrame(v3.add(anchor, v3.scale(normal, ref.offset)), normal)
+}
+
+export function toReplicadPlane(frame: Frame, offset = 0): Plane {
+  const origin = offset ? v3.add(frame.origin, v3.scale(frame.normal, offset)) : frame.origin
+  return new Plane(origin, frame.xDir, frame.normal)
+}
+
+/**
+ * Place a drawing on a frame, optionally offset along its normal.
+ *
+ * replicad's `sketchOnPlane` only accepts an offset alongside a *named* plane,
+ * so for an arbitrary frame the offset has to be baked into the plane's origin.
+ * The return is deliberately `any`: the declared type is a union that does not
+ * expose `extrude`, even though every value this can produce does.
+ */
+function sketchOn(drawing: Drawing, frame: Frame, offset = 0): any {
+  return drawing.sketchOnPlane(toReplicadPlane(frame, offset)) as any
+}
+
+// ---------------------------------------------------------------------------
+// Resolving picked faces and edges after a rebuild
+// ---------------------------------------------------------------------------
+
+function faceCentre(face: any): Vec3 {
+  const c = face.center
+  return [c.x, c.y, c.z]
+}
+
+function faceNormal(face: any): Vec3 {
+  const n = face.normalAt()
+  return v3.norm([n.x, n.y, n.z])
+}
+
+/**
+ * Find the face that best matches a stored fingerprint: the closest one whose
+ * normal still points roughly the same way.
+ */
+export function resolveFace(
+  shape: any,
+  ref: FaceRef,
+): { face: any; centre: Vec3; normal: Vec3 } | null {
+  if (!shape) return null
+  let best: { face: any; centre: Vec3; normal: Vec3; score: number } | null = null
+  for (const face of shape.faces) {
+    let centre: Vec3
+    let normal: Vec3
+    try {
+      centre = faceCentre(face)
+      normal = faceNormal(face)
+    } catch {
+      continue
+    }
+    // Reject anything facing more than 60 degrees away from the original pick.
+    if (v3.dot(normal, ref.normal) < 0.5) continue
+    const score = v3.dist(centre, ref.anchor)
+    if (!best || score < best.score) best = { face, centre, normal, score }
+  }
+  return best ? { face: best.face, centre: best.centre, normal: best.normal } : null
+}
+
+function edgeAnchor(edge: any): Vec3 | null {
+  try {
+    const [min, max] = edge.boundingBox.bounds
+    return [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2]
+  } catch {
+    return null
+  }
+}
+
+/** Predicate matching an edge against any of the stored fingerprints. */
+function edgeMatcher(refs: EdgeRef[]): (edge: any) => boolean {
+  if (refs.length === 0) return () => true
+  return (edge: any) => {
+    const anchor = edgeAnchor(edge)
+    if (!anchor) return false
+    return refs.some((r) => v3.dist(anchor, r.anchor) < 0.75)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Booleans
+// ---------------------------------------------------------------------------
+
+function combine(current: any | null, next: any, op: BooleanOp): any {
+  if (!current || op === 'new') return next
+  switch (op) {
+    case 'add':
+      return current.fuse(next)
+    case 'cut':
+      return current.cut(next)
+    case 'intersect':
+      return current.intersect(next)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Catalogue parts
+// ---------------------------------------------------------------------------
+
+function boardOutlineDrawing(part: CataloguePart): Drawing | null {
+  const g = part.geometry
+  if (g.kind !== 'board') return null
+  if (g.outline.shape === 'rect') {
+    const { w, h, cornerRadius } = g.outline
+    const base = cornerRadius
+      ? drawRoundedRectangle(w, h, cornerRadius)
+      : drawRectangle(w, h)
+    // Catalogue parts are dimensioned from their lower-left corner, replicad
+    // draws rectangles about their centre.
+    return base.translate(w / 2, h / 2)
+  }
+  const pts = g.outline.points
+  const pen = draw(pts[0])
+  for (let i = 1; i < pts.length; i++) pen.lineTo(pts[i])
+  return pen.close()
+}
+
+/**
+ * Build a catalogue part in its own local frame (origin at the lower-left of
+ * its footprint, Z up).
+ */
+export function buildPartLocal(part: CataloguePart, overrides?: Record<string, number>): any {
+  const g = part.geometry
+  switch (g.kind) {
+    case 'board': {
+      const outline = boardOutlineDrawing(part)
+      if (!outline) return null
+      let solid: any = outline.sketchOnPlane('XY').extrude(g.thickness)
+      for (const hole of part.mountingHoles ?? []) {
+        solid = solid.cut(
+          makeCylinder(hole.diameter / 2, g.thickness + 2, [hole.x, hole.y, -1], [0, 0, 1]),
+        )
+      }
+      for (const bump of g.bumps ?? []) {
+        const box = drawRectangle(bump.w, bump.h)
+          .translate(bump.x + bump.w / 2, bump.y + bump.h / 2)
+          .sketchOnPlane('XY', bump.z)
+          .extrude(bump.height)
+        solid = solid.fuse(box)
+      }
+      return solid
+    }
+
+    case 'extrusion': {
+      const s = g.size
+      const length = overrides?.length ?? g.length
+      const slot = 6
+      const inner = 11
+      // Profile drawn in the YZ plane so the bar runs along X.
+      let profile: Drawing = drawRectangle(s, s).translate(s / 2, s / 2)
+      // Four T-slots, one per face.
+      for (let i = 0; i < (g.slots ?? 4); i++) {
+        const mouth = drawRectangle(slot, 6).translate(s / 2, s - 3)
+        const throat = drawRectangle(inner, 5).translate(s / 2, s - 8.5)
+        let cutter = mouth.fuse(throat)
+        cutter = cutter.rotate(i * 90, [s / 2, s / 2])
+        profile = profile.cut(cutter)
+      }
+      profile = profile.cut(drawCircle(2.1).translate(s / 2, s / 2))
+      return profile.sketchOnPlane('YZ').extrude(length)
+    }
+
+    case 'screw': {
+      const r = g.headDiameter / 2
+      let solid: any = makeCylinder(g.diameter / 2, g.length, [r, r, 0], [0, 0, 1])
+      if (g.head === 'countersunk') {
+        const cone = sketchCircle(g.headDiameter / 2, { origin: [r, r, g.length] })
+          .loftWith(sketchCircle(g.diameter / 2, { origin: [r, r, g.length - g.headHeight] }))
+        solid = solid.fuse(cone)
+      } else {
+        solid = solid.fuse(
+          makeCylinder(g.headDiameter / 2, g.headHeight, [r, r, g.length], [0, 0, 1]),
+        )
+      }
+      return solid
+    }
+
+    case 'insert': {
+      const r = g.outerDiameter / 2
+      return makeCylinder(r, g.length, [r, r, 0], [0, 0, 1]).cut(
+        makeCylinder(1.5, g.length + 2, [r, r, -1], [0, 0, 1]),
+      )
+    }
+
+    case 'standoff': {
+      const circumradius = g.acrossFlats / Math.sqrt(3)
+      const r = g.acrossFlats / 2
+      const body: any = drawPolysides(circumradius, 6)
+        .translate(r, r)
+        .sketchOnPlane('XY')
+        .extrude(g.length)
+      const boreRadius = Number(g.thread.replace(/[^0-9.]/g, '')) / 2 || 1.25
+      return body.cut(makeCylinder(boreRadius, g.length + 2, [r, r, -1], [0, 0, 1]))
+    }
+
+    case 'motor': {
+      const f = g.frame
+      let solid: any = drawRoundedRectangle(f, f, 4)
+        .translate(f / 2, f / 2)
+        .sketchOnPlane('XY')
+        .extrude(g.bodyLength)
+      solid = solid.fuse(
+        makeCylinder(g.bossDiameter / 2, g.bossHeight, [f / 2, f / 2, g.bodyLength], [0, 0, 1]),
+      )
+      solid = solid.fuse(
+        makeCylinder(
+          g.shaftDiameter / 2,
+          g.shaftLength,
+          [f / 2, f / 2, g.bodyLength + g.bossHeight],
+          [0, 0, 1],
+        ),
+      )
+      for (const hole of part.mountingHoles ?? []) {
+        solid = solid.cut(
+          makeCylinder(hole.diameter / 2, 6, [hole.x, hole.y, g.bodyLength - 5], [0, 0, 1]),
+        )
+      }
+      return solid
+    }
+
+    case 'bearing': {
+      const r = g.outerDiameter / 2
+      return makeCylinder(r, g.width, [r, r, 0], [0, 0, 1]).cut(
+        makeCylinder(g.innerDiameter / 2, g.width + 2, [r, r, -1], [0, 0, 1]),
+      )
+    }
+
+    case 'connector': {
+      // Body sits behind the panel, running back along +y; anything that pokes
+      // out the front is drawn in the shape of the cutout so the part reads as
+      // the socket it is.
+      const { bodyWidth: w, bodyHeight: h, bodyDepth: d, protrusion } = g
+      let solid: any = makeBox([0, 0, 0], [w, d, h])
+      if (protrusion > 0) {
+        if (g.cutout.shape === 'rect') {
+          const halfW = g.cutout.w / 2
+          const halfH = g.cutout.h / 2
+          solid = solid.fuse(
+            makeBox(
+              [w / 2 - halfW, d, h / 2 - halfH],
+              [w / 2 + halfW, d + protrusion, h / 2 + halfH],
+            ),
+          )
+        } else {
+          solid = solid.fuse(
+            makeCylinder(g.cutout.d / 2, protrusion, [w / 2, d, h / 2], [0, 1, 0]),
+          )
+        }
+      }
+      for (const hole of part.mountingHoles ?? []) {
+        solid = solid.cut(
+          makeCylinder(hole.diameter / 2, d + 2, [hole.x, -1, hole.y], [0, 1, 0]),
+        )
+      }
+      return solid
+    }
+  }
+}
+
+/** Build a placed catalogue part in world space. */
+export function buildPlacement(placement: Placement): any | null {
+  const part = getPart(placement.partId)
+  if (!part) return null
+  let solid = buildPartLocal(part, placement.overrides)
+  if (!solid) return null
+  if (placement.flipped) solid = solid.rotate(180, [0, 0, 0], [1, 0, 0])
+  if (placement.rotation) solid = solid.rotate(placement.rotation, [0, 0, 0], [0, 0, 1])
+  return solid.translate(placement.position)
+}
+
+// ---------------------------------------------------------------------------
+// Hole and standoff positions
+// ---------------------------------------------------------------------------
+
+/**
+ * Where a hole feature's holes actually are, in the coordinates of its own
+ * plane. Placement-sourced holes are recomputed here on every rebuild, which
+ * is what makes moving a board drag its mounting holes along with it.
+ */
+export function resolvePositions(
+  source: HoleFeature['source'] | StandoffFeature['source'],
+  frame: Frame,
+  doc: OkcDocument,
+): Vec2[] {
+  if (source.kind === 'explicit') return source.positions
+  const placement = doc.placements.find((p) => p.id === source.placementId)
+  if (!placement) return []
+  const part = getPart(placement.partId)
+  if (!part?.mountingHoles) return []
+  const wanted = source.holeIds?.length
+    ? part.mountingHoles.filter((h) => source.holeIds!.includes(h.id))
+    : part.mountingHoles
+  return wanted.map((h) => {
+    const world = placementToWorld(placement, [h.x, h.y, 0])
+    return frameToLocal(frame, world)
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Feature evaluation
+// ---------------------------------------------------------------------------
+
+interface EvalContext {
+  doc: OkcDocument
+  /** Bodies already built this pass, for face references. */
+  shapes: Map<string, any>
+}
+
+function buildHoleCutter(
+  feature: HoleFeature,
+  frame: Frame,
+  positions: Vec2[],
+): any | null {
+  const depth = feature.depth === 'through' ? THROUGH_LENGTH : feature.depth
+  let cutter: any = null
+
+  for (const [u, v] of positions) {
+    // Drill into the material, i.e. against the plane normal.
+    const shaft = sketchOn(
+      drawCircle(feature.diameter / 2).translate(u, v),
+      frame,
+      CUT_MARGIN,
+    ).extrude(-(depth + CUT_MARGIN))
+    let piece: any = shaft
+
+    if (feature.style === 'counterbore' && feature.counterboreDiameter) {
+      const cb = sketchOn(
+        drawCircle(feature.counterboreDiameter / 2).translate(u, v),
+        frame,
+        CUT_MARGIN,
+      ).extrude(-((feature.counterboreDepth ?? 3) + CUT_MARGIN))
+      piece = piece.fuse(cb)
+    }
+
+    if (feature.style === 'countersink') {
+      const angle = ((feature.countersinkAngle ?? 90) * Math.PI) / 180
+      const headRadius = (feature.counterboreDiameter ?? feature.diameter * 2) / 2
+      // Depth a cone of this included angle needs to reach the head diameter.
+      const coneDepth = (headRadius - feature.diameter / 2) / Math.tan(angle / 2)
+      const top = sketchOn(drawCircle(headRadius).translate(u, v), frame, 0)
+      const bottom = sketchOn(
+        drawCircle(feature.diameter / 2).translate(u, v),
+        frame,
+        -coneDepth,
+      )
+      piece = piece.fuse(top.loftWith(bottom))
+    }
+
+    cutter = cutter ? cutter.fuse(piece) : piece
+  }
+  return cutter
+}
+
+function buildStandoffs(
+  feature: StandoffFeature,
+  frame: Frame,
+  positions: Vec2[],
+): { solid: any | null; bores: any | null } {
+  let solid: any = null
+  let bores: any = null
+
+  for (const [u, v] of positions) {
+    const pillar = sketchOn(
+      drawCircle(feature.outerDiameter / 2).translate(u, v),
+      frame,
+    ).extrude(feature.height)
+    solid = solid ? solid.fuse(pillar) : pillar
+
+    const bore = sketchOn(
+      drawCircle(feature.boreDiameter / 2).translate(u, v),
+      frame,
+      feature.height + CUT_MARGIN,
+    ).extrude(-(feature.boreDepth + CUT_MARGIN))
+    bores = bores ? bores.fuse(bore) : bore
+  }
+  return { solid, bores }
+}
+
+function buildPortCutters(
+  placement: Placement,
+  connectorIds: string[],
+  tolerance: number,
+): any | null {
+  const part = getPart(placement.partId)
+  if (!part?.connectors?.length) return null
+  const wanted = connectorIds.length
+    ? part.connectors.filter((c) => connectorIds.includes(c.id))
+    : part.connectors
+
+  let cutter: any = null
+  const REACH = 60 // far enough to punch through any sane wall
+
+  for (const c of wanted) {
+    const along = c.protrusion + REACH
+    // Which way the opening faces, in the part's own frame.
+    const dir: Vec3 =
+      c.side === '+x'
+        ? [1, 0, 0]
+        : c.side === '-x'
+          ? [-1, 0, 0]
+          : c.side === '+y'
+            ? [0, 1, 0]
+            : [0, -1, 0]
+
+    let piece: any
+    if (c.shape === 'circle') {
+      // A round port cut as a rectangle is a ruined panel, and round ports -
+      // barrel jacks, audio sockets, LED bezels - are exactly what a beginner
+      // reaches for first. For these, `z` is the centre of the hole.
+      const radius = (c.diameter ?? c.width) / 2 + tolerance
+      const start: Vec3 = [c.x - dir[0] * 2, c.y - dir[1] * 2, c.z]
+      piece = makeCylinder(radius, along + 2, start, dir)
+    } else {
+      const halfW = c.width / 2 + tolerance
+      // For rectangular openings `z` is the base, matching how datasheets
+      // dimension a socket sitting on a board.
+      const zLo = c.z - tolerance
+      const zHi = c.z + c.height + tolerance
+      let lo: Vec3
+      let hi: Vec3
+      switch (c.side) {
+        case '+x':
+          lo = [c.x - 2, c.y - halfW, zLo]
+          hi = [c.x + along, c.y + halfW, zHi]
+          break
+        case '-x':
+          lo = [c.x - along, c.y - halfW, zLo]
+          hi = [c.x + 2, c.y + halfW, zHi]
+          break
+        case '+y':
+          lo = [c.x - halfW, c.y - 2, zLo]
+          hi = [c.x + halfW, c.y + along, zHi]
+          break
+        case '-y':
+          lo = [c.x - halfW, c.y - along, zLo]
+          hi = [c.x + halfW, c.y + 2, zHi]
+          break
+      }
+      piece = drawRectangle(hi[0] - lo[0], hi[1] - lo[1])
+        .translate((lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2)
+        .sketchOnPlane('XY', lo[2])
+        .extrude(hi[2] - lo[2])
+    }
+
+    if (placement.flipped) piece = piece.rotate(180, [0, 0, 0], [1, 0, 0])
+    if (placement.rotation) piece = piece.rotate(placement.rotation, [0, 0, 0], [0, 0, 1])
+    piece = piece.translate(placement.position)
+
+    cutter = cutter ? cutter.fuse(piece) : piece
+  }
+  return cutter
+}
+
+/** Evaluate one body's feature history into a single solid. */
+export function evaluateBody(
+  body: Body,
+  ctx: EvalContext,
+): { shape: any | null; errors: BuildError[] } {
+  const errors: BuildError[] = []
+  const sketches = new Map<string, SketchFeature>()
+  let shape: any = null
+
+  for (const feature of body.features) {
+    if (feature.suppressed) continue
+    try {
+      switch (feature.kind) {
+        case 'sketch': {
+          sketches.set(feature.id, feature)
+          break
+        }
+
+        case 'extrude':
+        case 'revolve': {
+          const sketchFeature = sketches.get(feature.sketchId)
+          if (!sketchFeature) {
+            errors.push({
+              featureId: feature.id,
+              message: 'The sketch this was built from is missing.',
+              hint: 'It may have been deleted. Delete this step or point it at another sketch.',
+            })
+            break
+          }
+          const profile = sketchToProfile(sketchFeature.sketch)
+          if (!profile.drawing) {
+            errors.push({
+              featureId: feature.id,
+              message: 'That sketch does not enclose an area yet.',
+              hint:
+                profile.openChains > 0
+                  ? `${profile.openChains} line(s) do not join up into a closed shape. Zoom in on the corners and drag the loose ends together.`
+                  : 'Draw a closed shape - a rectangle or circle - before extruding.',
+            })
+            break
+          }
+          const frame = frameFromPlaneRef(sketchFeature.plane, ctx.shapes)
+
+          if (feature.kind === 'extrude') {
+            const distance = feature.reverse ? -feature.distance : feature.distance
+            const offset = feature.symmetric ? -Math.abs(distance) / 2 : 0
+            const length = feature.symmetric ? Math.abs(distance) : distance
+            const solid = sketchOn(profile.drawing, frame, offset).extrude(length)
+            shape = combine(shape, solid, feature.operation)
+          } else {
+            const axis: Vec3 = feature.axis === 'x' ? frame.xDir : frame.yDir
+            const solid = sketchOn(profile.drawing, frame).revolve(axis, {
+              origin: frame.origin,
+            })
+            shape = combine(shape, solid, feature.operation)
+          }
+          break
+        }
+
+        case 'box': {
+          const frame = frameFromPlaneRef(feature.plane, ctx.shapes)
+          const base = feature.cornerRadius
+            ? drawRoundedRectangle(feature.width, feature.depth, feature.cornerRadius)
+            : drawRectangle(feature.width, feature.depth)
+          const solid = sketchOn(
+            base.translate(
+              feature.origin[0] + feature.width / 2,
+              feature.origin[1] + feature.depth / 2,
+            ),
+            frame,
+          ).extrude(feature.height)
+          shape = combine(shape, solid, feature.operation)
+          break
+        }
+
+        case 'cylinder': {
+          const frame = frameFromPlaneRef(feature.plane, ctx.shapes)
+          const solid = sketchOn(
+            drawCircle(feature.radius).translate(feature.centre[0], feature.centre[1]),
+            frame,
+          ).extrude(feature.height)
+          shape = combine(shape, solid, feature.operation)
+          break
+        }
+
+        case 'fillet':
+        case 'chamfer': {
+          if (!shape) {
+            errors.push({
+              featureId: feature.id,
+              message: 'There is nothing to round or bevel yet.',
+              hint: 'Add a solid shape before this step.',
+            })
+            break
+          }
+          const size = feature.kind === 'fillet' ? feature.radius : feature.distance
+          const match = edgeMatcher(feature.edges)
+          const config = (edge: any) => (match(edge) ? size : null)
+          shape =
+            feature.kind === 'fillet' ? shape.fillet(config) : shape.chamfer(config)
+          break
+        }
+
+        case 'shell': {
+          if (!shape) break
+          const openFaces = feature.openFaces
+          shape = shape.shell(
+            {
+              // Negative thickness hollows inward, leaving the outside size alone.
+              thickness: -Math.abs(feature.thickness),
+              filter: undefined as never,
+            } as never,
+            (f: any) => {
+              let finder = f
+              for (const ref of openFaces) {
+                const resolved = resolveFace(shape, ref)
+                const normal = resolved?.normal ?? ref.normal
+                const centre = resolved?.centre ?? ref.anchor
+                finder = finder.inPlane(new Plane(centre, null, normal))
+              }
+              return finder
+            },
+          )
+          break
+        }
+
+        case 'hole': {
+          if (!shape) {
+            errors.push({
+              featureId: feature.id,
+              message: 'There is nothing to drill into yet.',
+              hint: 'Make a plate or a box first, then add holes.',
+            })
+            break
+          }
+          const frame = frameFromPlaneRef(feature.plane, ctx.shapes)
+          const positions = resolvePositions(feature.source, frame, ctx.doc)
+          if (positions.length === 0) break
+          const cutter = buildHoleCutter(feature, frame, positions)
+          if (cutter) shape = shape.cut(cutter)
+          break
+        }
+
+        case 'standoff': {
+          const frame = frameFromPlaneRef(feature.plane, ctx.shapes)
+          const positions = resolvePositions(feature.source, frame, ctx.doc)
+          if (positions.length === 0) break
+          const { solid, bores } = buildStandoffs(feature, frame, positions)
+          if (solid) shape = shape ? shape.fuse(solid) : solid
+          if (bores && shape) shape = shape.cut(bores)
+          break
+        }
+
+        case 'portCutout': {
+          if (!shape) break
+          const placement = ctx.doc.placements.find((p) => p.id === feature.placementId)
+          if (!placement) {
+            errors.push({
+              featureId: feature.id,
+              message: 'The part these openings were made for is gone.',
+              hint: 'Delete this step, or place the part again.',
+            })
+            break
+          }
+          const cutter = buildPortCutters(
+            placement,
+            feature.connectorIds,
+            feature.tolerance,
+          )
+          if (cutter) shape = shape.cut(cutter)
+          break
+        }
+      }
+    } catch (e) {
+      errors.push({
+        featureId: feature.id,
+        message: (e as Error)?.message || 'This step could not be built.',
+        hint: hintForFailure(feature, (e as Error)?.message ?? ''),
+      })
+    }
+  }
+
+  return { shape, errors }
+}
+
+/** Translate kernel failures into something a beginner can act on. */
+function hintForFailure(feature: Feature, message: string): string | undefined {
+  const m = message.toLowerCase()
+  if (feature.kind === 'fillet' || feature.kind === 'chamfer') {
+    return 'The radius is probably too big for the edge it is being applied to. Try a smaller number.'
+  }
+  if (feature.kind === 'shell') {
+    return 'Hollowing fails when the wall is thicker than the smallest detail on the shape. Try a thinner wall.'
+  }
+  if (m.includes('null') || m.includes('undefined')) {
+    return 'Something this step depends on is missing. Check the steps above it.'
+  }
+  return undefined
+}

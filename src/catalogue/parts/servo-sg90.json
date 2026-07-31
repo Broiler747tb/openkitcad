@@ -1,0 +1,32 @@
+{
+  "id": "servo-sg90",
+  "name": "SG90 micro servo",
+  "category": "motor",
+  "summary": "The 9 g blue hobby servo. Mounting tabs 28 mm apart, 2 mm holes.",
+  "confidence": "approximate",
+  "source": "SG90 is a clone family with no single official drawing and real variation between sellers. Values here are the commonly published ones: 32.2 x 12.2 mm overall including tabs, 22.8 mm body, tab holes about 28 mm apart. The part is modelled flange-up, with the body hanging below as a keepout. Measure yours before cutting the mounting slot.",
+  "geometry": {
+    "kind": "board",
+    "outline": { "shape": "rect", "w": 32.2, "h": 12.2, "cornerRadius": 1 },
+    "thickness": 2.5,
+    "bumps": [
+      { "x": 4.7, "y": 0, "w": 22.8, "h": 12.2, "z": 2.5, "height": 6.5, "colour": "#2f6fb5", "label": "Body top" },
+      { "x": 9.2, "y": 1.7, "w": 8.8, "h": 8.8, "z": 9.0, "height": 4.2, "colour": "#2a3138", "label": "Output boss" }
+    ]
+  },
+  "mountingHoles": [
+    { "id": "t1", "x": 2.1, "y": 6.1, "diameter": 2.2, "screw": "M2" },
+    { "id": "t2", "x": 30.1, "y": 6.1, "diameter": 2.2, "screw": "M2" }
+  ],
+  "keepouts": [
+    { "id": "k-body", "label": "Servo body below the flange", "x": 4.7, "y": 0, "w": 22.8, "h": 12.2, "z": -16, "height": 16 },
+    { "id": "k-horn", "label": "Horn sweep", "x": 4.0, "y": -4.0, "w": 19, "h": 20, "z": 13.2, "height": 6 }
+  ],
+  "electrical": {
+    "voltage": [5],
+    "currentTypical": 0.1,
+    "currentPeak": 0.75,
+    "note": "Stall current is far above the running current. Do not power it from a board's 5 V pin."
+  },
+  "tags": ["servo", "sg90", "9g", "micro", "hobby", "motor", "rc"]
+}

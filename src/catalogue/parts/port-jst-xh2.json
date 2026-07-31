@@ -1,0 +1,47 @@
+{
+  "id": "port-jst-xh2",
+  "name": "JST-XH 2-pin header",
+  "category": "connector",
+  "summary": "The small white 2-pin socket used for batteries and sensors, soldered onto a circuit board. Needs a 10 x 8 mm slot if the plug has to come through a wall.",
+  "confidence": "approximate",
+  "source": "The 2.5 mm pin pitch and the shape of the XH plug are fixed by JST's own drawings. Everything else here is approximate: the body sizes are typical of a 2-pin XH header and vary between the genuine JST part and the many clones sold under the same name. Modelled facing sideways, as the right-angle version does; the more common vertical header has the same board footprint but the plug goes in from above, so turn it accordingly. The 10 x 8 mm panel slot is a suggested opening for passing the plug through a wall, not a manufacturer figure. This part solders to a board, so it has no fixing holes of its own.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 8.0,
+    "bodyHeight": 6.5,
+    "bodyDepth": 6.0,
+    "protrusion": 0,
+    "cutout": { "shape": "rect", "w": 10.0, "h": 8.0, "cornerRadius": 1.0 }
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "JST-XH plug opening",
+      "side": "+y",
+      "shape": "rect",
+      "x": 4.0,
+      "y": 6.0,
+      "z": -0.75,
+      "width": 10.0,
+      "height": 8.0,
+      "protrusion": 0
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-plug",
+      "label": "Room for the plug and its two wires",
+      "x": -2,
+      "y": 6.0,
+      "w": 12,
+      "h": 25,
+      "z": -2,
+      "height": 11
+    }
+  ],
+  "electrical": {
+    "currentPeak": 3,
+    "note": "Rated about 3 A per pin. Almost always used for low-voltage things: small batteries, fans and sensor leads."
+  },
+  "tags": ["jst", "xh", "jst-xh", "2.5", "pitch", "header", "pcb", "plug", "battery", "connector"]
+}

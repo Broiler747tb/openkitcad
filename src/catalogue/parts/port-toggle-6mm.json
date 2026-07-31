@@ -1,0 +1,70 @@
+{
+  "id": "port-toggle-6mm",
+  "name": "Miniature toggle switch (6 mm bushing)",
+  "category": "connector",
+  "summary": "The little metal flick switch with a threaded collar and a nut. Needs a 6.2 mm round hole.",
+  "confidence": "measured",
+  "source": "The threaded bushing on miniature toggle switches of the MTS-102 family is M6 x 0.75, so it is 6 mm across and a 6.2 mm hole lets it drop in without forcing. That bushing size is consistent across the whole commodity family, which is why the hole is trustworthy. The rest is not: body size, how far the terminals reach behind the panel and the lever length differ between the two-position and three-position versions and between suppliers. Some of these also have a small anti-rotation tab beside the bushing, which needs its own notch in the panel or must be snapped off.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 13,
+    "bodyHeight": 8.5,
+    "bodyDepth": 19,
+    "protrusion": 20,
+    "cutout": { "shape": "circle", "d": 6.2 },
+    "panelThickness": 2
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "Toggle switch hole",
+      "side": "+y",
+      "shape": "circle",
+      "x": 6.5,
+      "y": 19,
+      "z": 4.25,
+      "width": 6.2,
+      "height": 6.2,
+      "diameter": 6.2,
+      "protrusion": 20
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-nut",
+      "label": "Room for the washer and fixing nut",
+      "x": 1,
+      "y": 19,
+      "w": 11,
+      "h": 8,
+      "z": -1.25,
+      "height": 11
+    },
+    {
+      "id": "k-lever",
+      "label": "Room to flick the lever from side to side",
+      "x": -1.5,
+      "y": 19,
+      "w": 16,
+      "h": 24,
+      "z": -3.75,
+      "height": 16
+    },
+    {
+      "id": "k-wires",
+      "label": "Room for the solder tags and wires behind the panel",
+      "x": 2,
+      "y": -15,
+      "w": 9,
+      "h": 15,
+      "z": 0.5,
+      "height": 7.5
+    }
+  ],
+  "electrical": {
+    "voltage": [125, 250],
+    "currentPeak": 6,
+    "note": "Commonly rated 6 A at 125 V AC or 3 A at 250 V AC. Most hobby uses switch low-voltage DC far below that."
+  },
+  "tags": ["toggle", "switch", "mts-102", "spdt", "flick", "on-off", "6mm", "panel"]
+}

@@ -1,0 +1,70 @@
+{
+  "id": "port-led-5mm",
+  "name": "5 mm LED holder, screw-in bezel",
+  "category": "connector",
+  "summary": "Chrome ring that holds a 5 mm indicator LED in a panel. Needs a 7 mm round hole.",
+  "confidence": "approximate",
+  "source": "The 5 mm LED itself is a fixed size, but the holders sold for it are not. This entry describes the common chrome bezel type with a threaded barrel and a nut on the inside, which wants a 7 mm hole. Other holders you will find need 6.4 mm (plastic snap-in), 7.9 mm, or 8 mm, and the barrel length and bezel height vary between suppliers. Measure the holder in your hand before you drill.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 10,
+    "bodyHeight": 10,
+    "bodyDepth": 11,
+    "protrusion": 4,
+    "cutout": { "shape": "circle", "d": 7.0 },
+    "panelThickness": 3
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "LED holder hole",
+      "side": "+y",
+      "shape": "circle",
+      "x": 5,
+      "y": 11,
+      "z": 5,
+      "width": 7.0,
+      "height": 7.0,
+      "diameter": 7.0,
+      "protrusion": 4
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-nut",
+      "label": "Room for the fixing nut",
+      "x": -1,
+      "y": 5,
+      "w": 12,
+      "h": 6,
+      "z": -1,
+      "height": 12
+    },
+    {
+      "id": "k-legs",
+      "label": "Room for the LED legs and wires",
+      "x": 1,
+      "y": -18,
+      "w": 8,
+      "h": 18,
+      "z": 1,
+      "height": 8
+    },
+    {
+      "id": "k-bezel",
+      "label": "Room for the bezel sticking out of the panel",
+      "x": -1,
+      "y": 11,
+      "w": 12,
+      "h": 5,
+      "z": -1,
+      "height": 12
+    }
+  ],
+  "electrical": {
+    "voltage": [2, 3.2],
+    "currentPeak": 0.03,
+    "note": "An LED is not a lamp: it must have a series resistor or it will burn out. Forward voltage is roughly 2 V for red, yellow or green and 3.2 V for blue or white, at about 20 mA."
+  },
+  "tags": ["led", "5mm", "indicator", "light", "lamp", "bezel", "holder", "panel", "port"]
+}

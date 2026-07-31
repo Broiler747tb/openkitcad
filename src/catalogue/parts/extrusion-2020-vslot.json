@@ -1,0 +1,19 @@
+{
+  "id": "extrusion-2020-vslot",
+  "name": "2020 aluminium extrusion",
+  "category": "extrusion",
+  "summary": "20 x 20 mm profile with 6 mm slots. The default framing material.",
+  "confidence": "datasheet",
+  "source": "Standard 20 x 20 mm T-slot / V-slot profile: 6 mm slot opening on all four faces and a 4.2 mm centre bore that takes an M5 self-tapping screw. Length is adjustable after placing.",
+  "geometry": {
+    "kind": "extrusion",
+    "size": 20,
+    "length": 200,
+    "slots": 4
+  },
+  "keepouts": [
+    { "id": "k-slot", "label": "Slot access for T-nuts", "x": 0, "y": 0, "w": 200, "h": 20, "z": 20, "height": 6 }
+  ],
+  "links": [{ "label": "About V-slot", "url": "https://openbuilds.com/" }],
+  "tags": ["2020", "extrusion", "vslot", "tslot", "frame", "aluminium", "profile"]
+}

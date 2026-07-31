@@ -1,0 +1,49 @@
+{
+  "id": "arduino-uno-r3",
+  "name": "Arduino Uno R3",
+  "category": "mcu",
+  "manufacturer": "Arduino",
+  "summary": "The classic 68.6 x 53.4 mm Arduino outline, with its famously off-grid holes.",
+  "confidence": "datasheet",
+  "source": "Outline and the four mounting holes follow the published Arduino Uno R3 board footprint. Note the holes are deliberately NOT on a neat rectangle - that is correct, not a mistake in the catalogue.",
+  "geometry": {
+    "kind": "board",
+    "outline": { "shape": "rect", "w": 68.6, "h": 53.4, "cornerRadius": 2 },
+    "thickness": 1.6,
+    "bumps": [
+      { "x": 26, "y": 18, "w": 14, "h": 8, "z": 1.6, "height": 1.2, "colour": "#20262c", "label": "ATmega328P" },
+      { "x": 1.5, "y": 30, "w": 12, "h": 16, "z": 1.6, "height": 11, "colour": "#8b9096", "label": "USB-B" },
+      { "x": 1.5, "y": 3, "w": 9, "h": 11, "z": 1.6, "height": 11, "colour": "#2a2f34", "label": "Barrel jack" },
+      { "x": 17, "y": 48.4, "w": 25, "h": 2.6, "z": 1.6, "height": 8.5, "colour": "#111417", "label": "Digital header" },
+      { "x": 17, "y": 2.5, "w": 25, "h": 2.6, "z": 1.6, "height": 8.5, "colour": "#111417", "label": "Analog header" }
+    ]
+  },
+  "mountingHoles": [
+    { "id": "h1", "x": 13.97, "y": 2.54, "diameter": 3.2, "screw": "M3" },
+    { "id": "h2", "x": 15.24, "y": 50.8, "diameter": 3.2, "screw": "M3" },
+    { "id": "h3", "x": 66.04, "y": 17.78, "diameter": 3.2, "screw": "M3" },
+    { "id": "h4", "x": 66.04, "y": 45.72, "diameter": 3.2, "screw": "M3" }
+  ],
+  "keepouts": [
+    { "id": "k-under", "label": "Solder side clearance", "x": 0, "y": 0, "w": 68.6, "h": 53.4, "z": -3, "height": 3 },
+    { "id": "k-shield", "label": "Shield stacking space", "x": 0, "y": 0, "w": 68.6, "h": 53.4, "z": 1.6, "height": 12 }
+  ],
+  "connectors": [
+    { "id": "usb", "label": "USB-B", "side": "-x", "x": 0, "y": 38, "z": 1.6, "width": 12.5, "height": 11.5, "protrusion": 2 },
+    { "id": "power", "label": "Barrel jack 2.1 mm", "side": "-x", "x": 0, "y": 8.5, "z": 1.6, "width": 9.5, "height": 11, "protrusion": 1.5 }
+  ],
+  "electrical": {
+    "voltage": [5, 7, 12],
+    "currentTypical": 0.05,
+    "currentPeak": 0.5,
+    "note": "USB 5 V, or 7-12 V into the barrel jack. The onboard regulator gets hot above 9 V."
+  },
+  "pinHeaders": [
+    { "id": "digital-hi", "label": "Digital 8-13 + GND/AREF", "x": 46.0, "y": 50.8, "rows": 1, "cols": 8, "pitch": 2.54 },
+    { "id": "digital-lo", "label": "Digital 0-7", "x": 26.0, "y": 50.8, "rows": 1, "cols": 8, "pitch": 2.54 },
+    { "id": "analog", "label": "Analog in A0-A5", "x": 49.0, "y": 2.54, "rows": 1, "cols": 6, "pitch": 2.54 },
+    { "id": "power", "label": "Power header", "x": 26.0, "y": 2.54, "rows": 1, "cols": 8, "pitch": 2.54 }
+  ],
+  "links": [{ "label": "Product page", "url": "https://docs.arduino.cc/hardware/uno-rev3/" }],
+  "tags": ["arduino", "uno", "atmega", "microcontroller"]
+}

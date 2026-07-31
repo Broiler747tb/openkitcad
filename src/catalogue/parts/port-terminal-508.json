@@ -1,0 +1,57 @@
+{
+  "id": "port-terminal-508",
+  "name": "Screw terminal block, 2-way, 5.08 mm",
+  "category": "connector",
+  "summary": "Two screws you clamp bare wire ends into, soldered onto a circuit board. Needs a 12 x 9 mm slot if the wires come in through a wall.",
+  "confidence": "approximate",
+  "source": "The 5.08 mm pitch is exact, being 0.2 inch, so a 2-way block is 10.16 mm wide and its two board pins sit 5.08 mm apart. The body height and depth given here are typical of the common KF128 / DG128 style block and are not taken from any one datasheet: other 5.08 mm families are taller, and the plug-and-socket types add 20 mm or more in front. The 12 x 9 mm panel slot is a suggested wire-entry opening, not a manufacturer figure. This part solders to a board rather than clamping onto a panel, so it has no fixing holes of its own.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 10.16,
+    "bodyHeight": 10.0,
+    "bodyDepth": 8.5,
+    "protrusion": 0,
+    "cutout": { "shape": "rect", "w": 12.0, "h": 9.0, "cornerRadius": 1.0 }
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "Wire entry opening",
+      "side": "+y",
+      "shape": "rect",
+      "x": 5.08,
+      "y": 8.5,
+      "z": 0.5,
+      "width": 12.0,
+      "height": 9.0,
+      "protrusion": 0
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-driver",
+      "label": "Room to get a screwdriver in from above",
+      "x": 0,
+      "y": 0,
+      "w": 10.16,
+      "h": 8.5,
+      "z": 10.0,
+      "height": 30
+    },
+    {
+      "id": "k-wires",
+      "label": "Room for the wires going in",
+      "x": -3,
+      "y": 8.5,
+      "w": 16,
+      "h": 30,
+      "z": -2,
+      "height": 14
+    }
+  ],
+  "electrical": {
+    "currentPeak": 10,
+    "note": "Blocks of this size are usually rated around 10 A at 300 V, but the rating depends on the exact part and on the wire you put in it. Check what is printed on the block before using it anywhere near mains."
+  },
+  "tags": ["terminal", "screw", "block", "5.08", "pitch", "pcb", "wire", "connector", "kf128", "phoenix"]
+}

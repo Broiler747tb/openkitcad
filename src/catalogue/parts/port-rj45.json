@@ -1,0 +1,63 @@
+{
+  "id": "port-rj45",
+  "name": "Ethernet socket (RJ45), panel mount",
+  "category": "connector",
+  "summary": "Network socket for a normal Ethernet cable. Needs a 16.5 x 15 mm panel hole plus two M3 screws 25 mm apart.",
+  "confidence": "approximate",
+  "source": "This models the common panel-mount RJ45 feedthrough coupler: a socket on each end with a screw flange in the middle, so a cable plugs in on the outside and another on the inside. The 8P8C plug that goes into it is standardised by ANSI/TIA-968, about 11.7 mm wide and 8.3 mm tall over the latch, and that part is dependable. Nothing else here is: the flange size, the 25 mm screw spacing, the 16.5 x 15.0 mm body cutout and the depths are typical of cheap couplers and vary noticeably between suppliers. Measure the one you actually bought. Be aware too that the other common panel RJ45 is a keystone jack, which snaps into a completely different rectangular opening of roughly 14.5 x 19.3 mm and uses no screws at all, so these numbers do not transfer to it.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 32.0,
+    "bodyHeight": 22.0,
+    "bodyDepth": 32.0,
+    "protrusion": 14.0,
+    "cutout": { "shape": "rect", "w": 16.5, "h": 15.0, "cornerRadius": 1.0 },
+    "panelThickness": 2
+  },
+  "mountingHoles": [
+    { "id": "m1", "label": "Left flange screw", "x": 3.5, "y": 11.0, "diameter": 3.2, "screw": "M3" },
+    { "id": "m2", "label": "Right flange screw", "x": 28.5, "y": 11.0, "diameter": 3.2, "screw": "M3" }
+  ],
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "RJ45 opening",
+      "side": "+y",
+      "shape": "rect",
+      "x": 16.0,
+      "y": 32.0,
+      "z": 3.5,
+      "width": 16.5,
+      "height": 15.0,
+      "protrusion": 14.0
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-plug-front",
+      "label": "Room for the outside plug and cable",
+      "x": 5,
+      "y": 32.0,
+      "w": 22,
+      "h": 55,
+      "z": 0,
+      "height": 22
+    },
+    {
+      "id": "k-plug-rear",
+      "label": "Room for the inside plug and cable",
+      "x": 5,
+      "y": -45,
+      "w": 22,
+      "h": 45,
+      "z": 0,
+      "height": 22
+    }
+  ],
+  "electrical": {
+    "voltage": [48],
+    "currentPeak": 0.96,
+    "note": "Plain Ethernet carries signals only. If Power over Ethernet is in use the pairs sit at around 48 V, up to roughly 0.96 A per pair on the higher PoE grades, so treat the wiring as live."
+  },
+  "tags": ["rj45", "ethernet", "network", "lan", "8p8c", "poe", "port", "socket", "connector", "panel"]
+}

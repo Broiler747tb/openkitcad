@@ -1,0 +1,18 @@
+{
+  "id": "bearing-lm8uu",
+  "name": "LM8UU linear bearing",
+  "category": "motion",
+  "summary": "Slides on an 8 mm smooth rod. 15 mm outside, 24 mm long.",
+  "confidence": "datasheet",
+  "source": "LM8UU standard dimensions: 8 mm bore for an 8 mm linear rod, 15 mm outside diameter, 24 mm length. Housings usually clamp on the outside diameter.",
+  "geometry": {
+    "kind": "bearing",
+    "innerDiameter": 8,
+    "outerDiameter": 15,
+    "width": 24
+  },
+  "keepouts": [
+    { "id": "k-rod", "label": "Rod passes through", "x": -50, "y": 3.5, "w": 124, "h": 8, "z": 3.5, "height": 8 }
+  ],
+  "tags": ["lm8uu", "linear", "bearing", "8mm", "rod", "motion", "slide"]
+}

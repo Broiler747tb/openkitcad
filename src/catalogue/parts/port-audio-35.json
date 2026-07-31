@@ -1,0 +1,58 @@
+{
+  "id": "port-audio-35",
+  "name": "3.5 mm headphone socket",
+  "category": "connector",
+  "summary": "Panel-mount audio jack for ordinary headphones. Needs a 6 mm round hole.",
+  "confidence": "approximate",
+  "source": "The 3.5 mm plug itself is standard: a 3.5 mm barrel about 14 mm long. The socket around it is not standardised. The cheap threaded panel jacks (PJ-392 and lookalikes) use a 6 mm threaded barrel and so need a 6 mm hole, but studio-grade jacks such as the Neutrik NYS229 use a 9.5 mm barrel and need a 9.5 mm hole. Nothing behind the panel is verified: body length, body shape and lug positions differ between suppliers. Measure the barrel on the jack you actually bought before drilling.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 9,
+    "bodyHeight": 9,
+    "bodyDepth": 15,
+    "protrusion": 3.5,
+    "cutout": { "shape": "circle", "d": 6.0 },
+    "panelThickness": 2
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "Headphone socket hole",
+      "side": "+y",
+      "shape": "circle",
+      "x": 4.5,
+      "y": 15,
+      "z": 4.5,
+      "width": 6.0,
+      "height": 6.0,
+      "diameter": 6.0,
+      "protrusion": 3.5
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-nut",
+      "label": "Room for the fixing nut",
+      "x": -1.5,
+      "y": 9,
+      "w": 12,
+      "h": 6,
+      "z": -1.5,
+      "height": 12
+    },
+    {
+      "id": "k-plug",
+      "label": "Room for the plug and cable",
+      "x": -2,
+      "y": 15,
+      "w": 13,
+      "h": 45,
+      "z": -2,
+      "height": 13
+    }
+  ],
+  "electrical": {
+    "note": "Carries a line-level or headphone-level audio signal, well under a volt in normal use. This is not a power connector."
+  },
+  "tags": ["audio", "3.5", "3.5mm", "headphone", "jack", "aux", "trs", "port", "socket", "panel"]
+}

@@ -1,0 +1,34 @@
+{
+  "id": "esp32-devkit-v1",
+  "name": "ESP32 DevKit V1 (30-pin)",
+  "category": "mcu",
+  "manufacturer": "Various",
+  "summary": "The common 30-pin ESP32 dev board. Sizes vary between makers - measure yours.",
+  "confidence": "approximate",
+  "source": "There is no single official drawing for this board: it is a widely cloned design and the outline varies by about 1-2 mm between sellers, with some revisions having no mounting holes at all. Values here match the common DOIT 30-pin board. Measure your own before committing to a panel cut.",
+  "geometry": {
+    "kind": "board",
+    "outline": { "shape": "rect", "w": 51.5, "h": 28.5, "cornerRadius": 1.5 },
+    "thickness": 1.6,
+    "bumps": [
+      { "x": 14, "y": 8.5, "w": 18, "h": 16, "z": 1.6, "height": 3.2, "colour": "#a8adb3", "label": "ESP32-WROOM-32" },
+      { "x": 0, "y": 10.5, "w": 8, "h": 8, "z": 1.6, "height": 2.8, "colour": "#8b9096", "label": "micro USB" },
+      { "x": 1.5, "y": 0, "w": 48, "h": 2.6, "z": 1.6, "height": 8.5, "colour": "#111417", "label": "Header" },
+      { "x": 1.5, "y": 25.9, "w": 48, "h": 2.6, "z": 1.6, "height": 8.5, "colour": "#111417", "label": "Header" }
+    ]
+  },
+  "keepouts": [
+    { "id": "k-under", "label": "Header pins below", "x": 0, "y": 0, "w": 51.5, "h": 28.5, "z": -3.5, "height": 3.5 },
+    { "id": "k-antenna", "label": "Antenna - keep metal away", "x": 32, "y": 8.5, "w": 18, "h": 16, "z": 1.6, "height": 10 }
+  ],
+  "connectors": [
+    { "id": "usb", "label": "micro USB", "side": "-x", "x": 0, "y": 14.25, "z": 1.6, "width": 8, "height": 3.2, "protrusion": 1.5 }
+  ],
+  "electrical": {
+    "voltage": [5, 3.3],
+    "currentTypical": 0.08,
+    "currentPeak": 0.5,
+    "note": "WiFi transmit bursts pull around 500 mA. A weak supply causes brownout reboots."
+  },
+  "tags": ["esp32", "wifi", "bluetooth", "microcontroller", "doit"]
+}

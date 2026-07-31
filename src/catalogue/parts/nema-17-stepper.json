@@ -1,0 +1,35 @@
+{
+  "id": "nema-17-stepper",
+  "name": "NEMA 17 stepper motor",
+  "category": "motor",
+  "summary": "42 mm stepper. Four M3 holes on a 31 mm square, 22 mm centring boss.",
+  "confidence": "datasheet",
+  "source": "NEMA 17 is a standardised frame: 42.3 mm square body, 31.0 mm bolt spacing, 22 mm diameter x 2 mm centring boss, 5 mm shaft. Body length varies by model (34, 40 and 48 mm are common) - this entry uses 40 mm.",
+  "geometry": {
+    "kind": "motor",
+    "frame": 42.3,
+    "bodyLength": 40,
+    "shaftDiameter": 5,
+    "shaftLength": 24,
+    "bossDiameter": 22,
+    "bossHeight": 2,
+    "boltSpacing": 31.0
+  },
+  "mountingHoles": [
+    { "id": "m1", "x": 5.65, "y": 5.65, "diameter": 3.2, "screw": "M3" },
+    { "id": "m2", "x": 36.65, "y": 5.65, "diameter": 3.2, "screw": "M3" },
+    { "id": "m3", "x": 5.65, "y": 36.65, "diameter": 3.2, "screw": "M3" },
+    { "id": "m4", "x": 36.65, "y": 36.65, "diameter": 3.2, "screw": "M3" }
+  ],
+  "keepouts": [
+    { "id": "k-shaft", "label": "Shaft and boss clearance", "x": 9.15, "y": 9.15, "w": 24, "h": 24, "z": 40, "height": 26 },
+    { "id": "k-wires", "label": "Wire exit", "x": 0, "y": 14, "w": 8, "h": 14, "z": 0, "height": 12 }
+  ],
+  "electrical": {
+    "voltage": [12, 24],
+    "currentTypical": 1.2,
+    "currentPeak": 2.0,
+    "note": "Current is set by the driver, not the supply. A 1.5 A/phase motor needs real cooling on the driver."
+  },
+  "tags": ["nema17", "stepper", "motor", "42mm", "3d printer", "cnc"]
+}

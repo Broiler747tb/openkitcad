@@ -1,0 +1,49 @@
+{
+  "id": "port-usb-a",
+  "name": "USB-A socket",
+  "category": "connector",
+  "summary": "The full-size rectangular USB port. Needs a 13 x 6 mm panel slot.",
+  "confidence": "approximate",
+  "source": "The USB Type-A plug shell is 12.0 x 4.5 mm, which is fixed by the USB specification. The 13.0 x 6.0 mm cutout here is the usual working opening: it clears the shell plus the moulded strain relief on a typical cable. Socket bodies vary a lot between manufacturers, so check yours before cutting a panel.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 13.5,
+    "bodyHeight": 6.5,
+    "bodyDepth": 14,
+    "protrusion": 0,
+    "cutout": { "shape": "rect", "w": 13.0, "h": 6.0 },
+    "panelThickness": 2
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "USB-A opening",
+      "side": "+y",
+      "shape": "rect",
+      "x": 6.75,
+      "y": 14,
+      "z": 0,
+      "width": 13.0,
+      "height": 6.0,
+      "protrusion": 0
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-cable",
+      "label": "Room for the plug and cable",
+      "x": -6,
+      "y": 14,
+      "w": 25,
+      "h": 45,
+      "z": -8,
+      "height": 22
+    }
+  ],
+  "electrical": {
+    "voltage": [5],
+    "currentPeak": 0.9,
+    "note": "USB 2.0 ports supply 500 mA, USB 3.0 ports 900 mA, unless the host negotiates more."
+  },
+  "tags": ["usb", "usb-a", "type-a", "port", "socket", "connector", "panel"]
+}

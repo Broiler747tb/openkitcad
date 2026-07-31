@@ -1,0 +1,49 @@
+{
+  "id": "port-micro-hdmi",
+  "name": "Micro HDMI socket (Type D)",
+  "category": "connector",
+  "summary": "The tiny HDMI port used on a Raspberry Pi 4 and 5. Needs a 7.5 x 4 mm panel slot.",
+  "confidence": "approximate",
+  "source": "The Micro HDMI (Type D) plug shell is 6.4 x 2.8 mm, which is fixed by the HDMI connector specification. The 7.5 x 4.0 mm cutout is the shell plus clearance and is a working figure, not a verified drawing; the socket body dimensions are typical of the surface-mount receptacles used on small boards and are not taken from a Raspberry Pi mechanical drawing. Two things to check before cutting. First, the shell is short, so a panel thicker than about 1.5 mm will stop the plug seating unless you relieve the back of the hole. Second, Micro HDMI cables have moulded plug bodies far wider than the socket, and on a Raspberry Pi 4 or 5 the two sockets sit only about 13.5 mm apart centre to centre, so two chunky plugs may not fit side by side. Confirm that spacing against the official Raspberry Pi mechanical drawing before you cut a two-port panel.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 8.6,
+    "bodyHeight": 5.0,
+    "bodyDepth": 7.5,
+    "protrusion": 0,
+    "cutout": { "shape": "rect", "w": 7.5, "h": 4.0, "cornerRadius": 0.5 },
+    "panelThickness": 1.5
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "Micro HDMI Type D opening",
+      "side": "+y",
+      "shape": "rect",
+      "x": 4.3,
+      "y": 7.5,
+      "z": 0.5,
+      "width": 7.5,
+      "height": 4.0,
+      "protrusion": 0
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-plug",
+      "label": "Room for the moulded plug body and cable",
+      "x": -3.7,
+      "y": 7.5,
+      "w": 16,
+      "h": 45,
+      "z": -2.5,
+      "height": 10
+    }
+  ],
+  "electrical": {
+    "voltage": [5],
+    "currentPeak": 0.055,
+    "note": "Signal only. One pin carries 5 V so the far end can read the display's ID; the source is only obliged to supply about 55 mA on it, so do not treat it as a power supply."
+  },
+  "tags": ["hdmi", "micro-hdmi", "type-d", "raspberry pi", "pi 4", "pi 5", "video", "display", "port", "socket", "panel"]
+}

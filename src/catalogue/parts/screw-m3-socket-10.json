@@ -1,0 +1,19 @@
+{
+  "id": "screw-m3-socket-10",
+  "name": "M3 x 10 socket head cap screw",
+  "category": "fastener",
+  "summary": "Standard hex-socket cap screw. Head 5.5 mm across, 3 mm tall.",
+  "confidence": "datasheet",
+  "source": "Head diameter and height are the ISO 4762 nominal values for M3 (5.5 mm head diameter, 3.0 mm head height). Length is the shank under the head.",
+  "geometry": {
+    "kind": "screw",
+    "thread": "M3",
+    "diameter": 3.0,
+    "length": 10,
+    "head": "socket",
+    "headDiameter": 5.5,
+    "headHeight": 3.0
+  },
+  "links": [{ "label": "ISO 4762", "url": "https://en.wikipedia.org/wiki/ISO_metric_screw_thread" }],
+  "tags": ["m3", "screw", "bolt", "cap", "iso4762", "fastener"]
+}
