@@ -11,6 +11,7 @@
  * reference to React, the store or the kernel, so it can be unit tested.
  */
 import { v2, type Vec2 } from '../core/math'
+import { findCorner, maxChamferDistance, maxFilletRadius } from './corner'
 import type { SketchTarget } from './inference'
 import type { NewConstraint, Sketch2D, SketchEntity } from './types'
 
@@ -20,6 +21,8 @@ export type ActionResult =
   | { kind: 'deletePoint'; pointId: string }
   | { kind: 'toggleConstruction'; entityId: string }
   | { kind: 'deleteConstraint'; constraintId: string }
+  | { kind: 'filletCorner'; pointId: string; radius: number }
+  | { kind: 'chamferCorner'; pointId: string; distance: number }
 
 export interface SketchAction {
   id: string
@@ -211,6 +214,38 @@ export function sketchActions(
   if (pointIds.length === 1 && entities.length === 0) {
     const id = pointIds[0]
     const p = pts.get(id)!
+
+    // Where two lines meet, offer to soften it. Suggest something proportional
+    // to the corner rather than a fixed 2 mm, which would be silly on a 500 mm
+    // frame and impossible on a 3 mm tab.
+    const corner = findCorner(sketch, id)
+    if (corner) {
+      const roomFillet = maxFilletRadius(corner)
+      const roomChamfer = maxChamferDistance(corner)
+      push({
+        id: 'fillet-corner',
+        label: 'Round this corner',
+        hint: 'Replaces the sharp corner with a curve',
+        prompt: {
+          label: 'Radius',
+          initial: Math.max(0.5, Math.round(Math.min(roomFillet * 0.35, 5) * 10) / 10),
+          unit: 'mm',
+        },
+        build: (radius) => ({ kind: 'filletCorner', pointId: id, radius }),
+      })
+      push({
+        id: 'chamfer-corner',
+        label: 'Cut this corner off',
+        hint: 'Replaces the sharp corner with a flat',
+        prompt: {
+          label: 'Size',
+          initial: Math.max(0.5, Math.round(Math.min(roomChamfer * 0.35, 5) * 10) / 10),
+          unit: 'mm',
+        },
+        build: (distance) => ({ kind: 'chamferCorner', pointId: id, distance }),
+      })
+    }
+
     if (id !== 'origin') {
       push({
         id: 'fix',

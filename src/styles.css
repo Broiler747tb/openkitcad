@@ -772,3 +772,16 @@ input[type='checkbox'] {
   font-family: var(--mono);
   font-size: 11.5px;
 }
+
+.sketch-menu-item.danger strong {
+  color: var(--err);
+}
+
+.sketch-menu-item.danger:hover {
+  background: rgba(228, 104, 94, 0.12);
+  border-left-color: var(--err);
+}
+
+.sketch-menu-item.danger:hover strong {
+  color: var(--err);
+}

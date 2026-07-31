@@ -27,6 +27,7 @@ import {
 import { applySolve, solveSketch, type SolveResult } from '../sketch/solver'
 import type { SketchTarget } from '../sketch/inference'
 import type { ActionResult } from '../sketch/actions'
+import { chamferCorner, filletCorner, type CornerResult } from '../sketch/corner'
 import { getPart } from '../catalogue'
 
 let counter = 0
@@ -468,6 +469,26 @@ export const useStore = create<AppState>((set, get) => ({
         })
         get().solveActiveSketch()
         break
+      case 'filletCorner':
+      case 'chamferCorner': {
+        let outcome: CornerResult = { ok: true }
+        get().editSketch((sketch) => {
+          outcome =
+            result.kind === 'filletCorner'
+              ? filletCorner(sketch, result.pointId, result.radius, newId)
+              : chamferCorner(sketch, result.pointId, result.distance, newId)
+        })
+        if (!outcome.ok) {
+          // The edit above cannot have changed anything on failure, so undoing
+          // it would eat the user's previous step. Just say why instead.
+          get().undo()
+          set({ statusMessage: outcome.message ?? null })
+        } else {
+          set({ statusMessage: null })
+          get().solveActiveSketch()
+        }
+        break
+      }
     }
     set({ sketchSelection: [] })
   },

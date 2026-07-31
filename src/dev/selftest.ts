@@ -15,6 +15,7 @@ import {
   type SketchPoint,
 } from '../sketch/types'
 import { applySolve, solveSketch } from '../sketch/solver'
+import { chamferCorner, filletCorner } from '../sketch/corner'
 
 export interface TestResult {
   name: string
@@ -267,6 +268,97 @@ export function runSelfTest(): TestResult[] {
       settled.points[p3].x,
       settled.points[p2].x,
       'after release, right edge is exactly vertical',
+    )
+  })
+
+  test('rounding a corner keeps the sketch just as defined as it was', () => {
+    const b = builder()
+    const a = b.point(0, 0)
+    const p2 = b.point(40, 0)
+    const p3 = b.point(40, 30)
+    const p4 = b.point(0, 30)
+    b.con({ kind: 'coincident', a, b: 'origin' })
+    b.con({ kind: 'horizontal', e: b.line(a, p2) })
+    b.con({ kind: 'horizontal', e: b.line(p3, p4) })
+    b.con({ kind: 'vertical', e: b.line(p2, p3) })
+    b.con({ kind: 'vertical', e: b.line(p4, a) })
+    b.con({ kind: 'distanceX', a, b: p2, value: 40 })
+    b.con({ kind: 'distanceY', a, b: p4, value: 30 })
+    applySolve(b.sketch, solveSketch(b.sketch))
+    check(solveSketch(b.sketch).dof === 0, 'rectangle starts fully defined')
+
+    const result = filletCorner(b.sketch, p3, 6, nid)
+    check(result.ok, `fillet applied (${result.message ?? 'no error'})`)
+
+    const solved = solveSketch(b.sketch)
+    applySolve(b.sketch, solved)
+    // A fillet adds three points and an arc but also three constraints and the
+    // arc's own implicit row, so it must come out exactly even.
+    check(solved.dof === 0, `still fully defined after rounding (dof ${solved.dof})`)
+    check(solved.ok, `solves cleanly (${solved.failing.join(',') || 'no conflicts'})`)
+
+    const arc = b.sketch.entities.find((e) => e.kind === 'arc') as any
+    check(!!arc, 'an arc was created')
+    const P = Object.fromEntries(b.sketch.points.map((p) => [p.id, p]))
+    const c = P[arc.c]
+    near(Math.hypot(P[arc.p1].x - c.x, P[arc.p1].y - c.y), 6, 'arc radius at one end', 1e-3)
+    near(Math.hypot(P[arc.p2].x - c.x, P[arc.p2].y - c.y), 6, 'arc radius at the other', 1e-3)
+    // Tangent to both edges means the centre sits exactly one radius in from each.
+    near(40 - c.x, 6, 'centre is one radius from the right edge', 1e-3)
+    near(30 - c.y, 6, 'centre is one radius from the top edge', 1e-3)
+  })
+
+  test('cutting a corner off keeps the sketch just as defined as it was', () => {
+    const b = builder()
+    const a = b.point(0, 0)
+    const p2 = b.point(40, 0)
+    const p3 = b.point(40, 30)
+    const p4 = b.point(0, 30)
+    b.con({ kind: 'coincident', a, b: 'origin' })
+    b.con({ kind: 'horizontal', e: b.line(a, p2) })
+    b.con({ kind: 'horizontal', e: b.line(p3, p4) })
+    b.con({ kind: 'vertical', e: b.line(p2, p3) })
+    b.con({ kind: 'vertical', e: b.line(p4, a) })
+    b.con({ kind: 'distanceX', a, b: p2, value: 40 })
+    b.con({ kind: 'distanceY', a, b: p4, value: 30 })
+    applySolve(b.sketch, solveSketch(b.sketch))
+
+    const before = b.sketch.entities.length
+    const result = chamferCorner(b.sketch, p3, 8, nid)
+    check(result.ok, `chamfer applied (${result.message ?? 'no error'})`)
+    check(b.sketch.entities.length === before + 1, 'a new edge was added')
+
+    const solved = solveSketch(b.sketch)
+    applySolve(b.sketch, solved)
+    check(solved.dof === 0, `still fully defined after chamfering (dof ${solved.dof})`)
+    const P = Object.fromEntries(b.sketch.points.map((p) => [p.id, p]))
+    // The cut runs from 8 mm short of the corner on each edge, so the new edge
+    // spans a right triangle with 8 mm legs.
+    const newEdge = b.sketch.entities[b.sketch.entities.length - 1] as any
+    const len = Math.hypot(
+      P[newEdge.p1].x - P[newEdge.p2].x,
+      P[newEdge.p1].y - P[newEdge.p2].y,
+    )
+    near(len, Math.SQRT2 * 8, 'chamfer edge length', 1e-3)
+  })
+
+  test('a corner radius that cannot fit is refused with a reason', () => {
+    const b = builder()
+    const a = b.point(0, 0)
+    const p2 = b.point(10, 0)
+    const p3 = b.point(10, 10)
+    b.line(a, p2)
+    b.line(p2, p3)
+    const result = filletCorner(b.sketch, p2, 500, nid)
+    check(!result.ok, 'refused')
+    check(
+      !!result.message && /too big/i.test(result.message),
+      `explains why: "${result.message}"`,
+    )
+    // And nothing was half-applied.
+    check(
+      b.sketch.entities.every((e) => e.kind === 'line'),
+      'the sketch was left alone',
     )
   })
 

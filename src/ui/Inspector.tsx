@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { newId, useStore } from '../doc/store'
+import { activeSketchFeature, newId, useStore } from '../doc/store'
+import { sketchActions } from '../sketch/actions'
 import { CONFIDENCE_LABEL, getPart } from '../catalogue'
 import { fmt } from '../core/math'
 import type { Feature, HoleFeature, StandoffFeature } from '../doc/types'
@@ -9,6 +10,16 @@ import type { Clash, PrintWarning } from '../kernel/types'
 export function Inspector() {
   const selection = useStore((s) => s.selection)
   const errors = useStore((s) => s.errors)
+  const activeSketch = useStore((s) => s.activeSketch)
+
+  // Inside a sketch the panel is about the sketch, not the feature tree.
+  if (activeSketch) {
+    return (
+      <div className="panel-right">
+        <SketchSelectionPanel />
+      </div>
+    )
+  }
 
   return (
     <div className="panel-right">
@@ -512,6 +523,152 @@ function FeatureInspector({ bodyId, featureId }: { bodyId: string; featureId: st
 }
 
 // ---------------------------------------------------------------------------
+
+/**
+ * What is selected inside the open sketch, with its measurements editable.
+ *
+ * The right-click menu can already do all of this, but a number you can see and
+ * type over is a much shorter path to "make that edge 100 mm" than remembering
+ * that a menu exists.
+ */
+function SketchSelectionPanel() {
+  const doc = useStore((s) => s.doc)
+  const selection = useStore((s) => s.sketchSelection)
+  const status = useStore((s) => s.sketchStatus)
+  const store = useStore.getState()
+  const sketch = activeSketchFeature(useStore.getState())?.sketch
+  void doc
+  if (!sketch) return null
+
+  const pts = new Map(sketch.points.map((p) => [p.id, p]))
+  const actions = sketchActions(sketch, selection)
+  const single = selection.length === 1 ? selection[0] : null
+  const entity =
+    single?.kind === 'entity'
+      ? sketch.entities.find((e) => e.id === single.id)
+      : undefined
+
+  return (
+    <>
+      <div className="section">
+        <h3>This sketch</h3>
+        {status && (
+          <p className="hint" style={{ marginTop: 0 }}>
+            {status.failing.length > 0
+              ? 'Some of the sizes you have set contradict each other.'
+              : status.dof === 0
+                ? 'Fully defined. Nothing can move by accident.'
+                : `${status.dof} thing${status.dof === 1 ? '' : 's'} can still move. Set more sizes to lock it down.`}
+          </p>
+        )}
+      </div>
+
+      {selection.length === 0 ? (
+        <div className="section">
+          <h3>Nothing picked</h3>
+          <p className="hint" style={{ marginTop: 0 }}>
+            Click a line, a circle or a corner. Shift-click to add a second one.
+            Then right-click for everything you can do to it.
+          </p>
+        </div>
+      ) : (
+        <div className="section">
+          <h3>
+            {entity
+              ? entity.kind === 'line'
+                ? 'Line'
+                : entity.kind === 'circle'
+                  ? 'Circle'
+                  : 'Arc'
+              : single?.kind === 'point'
+                ? 'Corner'
+                : `${selection.length} things picked`}
+          </h3>
+
+          {entity?.kind === 'line' &&
+            (() => {
+              const a = pts.get(entity.p1)!
+              const b = pts.get(entity.p2)!
+              const length = Math.hypot(b.x - a.x, b.y - a.y)
+              const angle = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI
+              return (
+                <>
+                  <Num
+                    label="Length"
+                    value={Math.round(length * 1000) / 1000}
+                    step={1}
+                    min={0.01}
+                    onChange={(value) =>
+                      store.addConstraint({
+                        kind: 'distance',
+                        a: entity.p1,
+                        b: entity.p2,
+                        value,
+                      })
+                    }
+                  />
+                  <p className="hint mono" style={{ marginTop: 0 }}>
+                    runs at {fmt(angle, 1)}° from horizontal
+                  </p>
+                </>
+              )
+            })()}
+
+          {entity?.kind === 'circle' && (
+            <Num
+              label="Diameter"
+              value={Math.round(entity.r * 2000) / 1000}
+              step={1}
+              min={0.02}
+              onChange={(value) =>
+                store.addConstraint({ kind: 'diameter', e: entity.id, value })
+              }
+            />
+          )}
+
+          {single?.kind === 'point' &&
+            (() => {
+              const p = pts.get(single.id)
+              return p ? (
+                <p className="hint mono" style={{ marginTop: 0 }}>
+                  at {fmt(p.x, 2)}, {fmt(p.y, 2)} mm
+                </p>
+              ) : null
+            })()}
+
+          {actions.length > 0 && (
+            <>
+              <h3 style={{ marginTop: 14 }}>What you can do</h3>
+              {actions.map((action) => (
+                <button
+                  key={action.id}
+                  className="btn"
+                  onClick={() => {
+                    if (action.prompt) {
+                      const raw = window.prompt(
+                        `${action.prompt.label} in ${action.prompt.unit}`,
+                        String(action.prompt.initial),
+                      )
+                      const value = Number(raw)
+                      if (raw !== null && Number.isFinite(value)) {
+                        store.applySketchAction(action.build(value))
+                      }
+                    } else {
+                      store.applySketchAction(action.build(0))
+                    }
+                  }}
+                >
+                  {action.label}
+                  {action.hint && <small>{action.hint}</small>}
+                </button>
+              ))}
+            </>
+          )}
+        </div>
+      )}
+    </>
+  )
+}
 
 function ToolsSection() {
   const section = useStore((s) => s.section)

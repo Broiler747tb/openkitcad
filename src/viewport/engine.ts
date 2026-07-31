@@ -534,11 +534,12 @@ export class ViewportEngine {
           new THREE.Vector3(bounds[3], bounds[4], bounds[5]),
         )
       : new THREE.Box3().setFromObject(this.solidGroup)
-    if (box.isEmpty()) {
-      this.controls.target.set(0, 0, 0)
-      this.camera.position.set(180, -220, 160)
-      return
-    }
+    // Nothing to frame: leave the view exactly as it is. Resetting to a default
+    // here meant that pressing "Make solid" - which asks for a fit before the
+    // kernel has finished rebuilding - threw the camera back to its start
+    // position instead of framing the part that was about to appear.
+    if (box.isEmpty()) return
+
     const centre = box.getCenter(new THREE.Vector3())
     const radius = Math.max(box.getSize(new THREE.Vector3()).length() / 2, 10)
     const direction = this.camera.position
@@ -550,6 +551,9 @@ export class ViewportEngine {
     this.camera.near = Math.max(radius / 500, 0.05)
     this.camera.far = radius * 200
     this.camera.updateProjectionMatrix()
+    // Orient now rather than waiting for the controls to catch up on the next
+    // frame, so a click straight after a fit hits what the user is looking at.
+    this.camera.lookAt(centre)
   }
 
   /** Look straight at a sketch plane, keeping the current distance. */

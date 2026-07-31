@@ -4,6 +4,7 @@ import { activeSketchFeature, newId, useStore } from '../doc/store'
 import { frameFromPlaneRefLocal } from '../doc/planes'
 import { findSnap, hitTestSketch, toggleSelection } from '../sketch/inference'
 import { SketchMenu } from '../ui/SketchMenu'
+import { ObjectMenu, objectActions } from '../ui/ObjectMenu'
 import { fmt, frameToWorld, v2, type Frame, type Vec2 } from '../core/math'
 import type { Constraint, NewConstraint, Sketch2D } from '../sketch/types'
 
@@ -49,6 +50,7 @@ export function Viewport() {
   const gizmoMode = useStore((s) => s.gizmoMode)
   const sketchSelection = useStore((s) => s.sketchSelection)
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
+  const [objectMenu, setObjectMenu] = useState<{ x: number; y: number } | null>(null)
 
   // Memoised so they keep a stable identity across the renders the animation
   // loop triggers. Recomputing them on every render made the sketch-redraw
@@ -125,13 +127,15 @@ export function Viewport() {
     }
   }, [selection, doc, gizmoMode, activeSketch])
 
-  // Frame the model the first time geometry appears, so a loaded document or a
-  // template is not left off screen.
-  const framedRef = useRef(false)
+  // Frame whenever geometry appears out of nothing: opening a document, or
+  // turning the first sketch into a solid. Waiting for the shapes rather than
+  // reacting to the button press is what makes this land on the real geometry,
+  // since the kernel rebuild is asynchronous.
+  const hadShapesRef = useRef(false)
   useEffect(() => {
-    if (framedRef.current || shapes.length === 0) return
-    framedRef.current = true
-    engineRef.current?.frameAll()
+    const has = shapes.length > 0
+    if (has && !hadShapesRef.current) engineRef.current?.frameAll()
+    hadShapesRef.current = has
   }, [shapes])
 
   useEffect(() => {
@@ -578,8 +582,17 @@ export function Viewport() {
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
         onContextMenu={(e) => {
-          if (!activeSketch) return
           e.preventDefault()
+          // Outside a sketch, right-click acts on the solid under the cursor.
+          if (!activeSketch) {
+            const engine = engineRef.current
+            if (!engine) return
+            const hit = engine.pick(e.clientX, e.clientY)
+            const store = useStore.getState()
+            store.select(hit ? { kind: hit.kind, id: hit.id } : { kind: 'none' })
+            if (hit) setObjectMenu({ x: e.clientX, y: e.clientY })
+            return
+          }
           // Mid-drawing, right-click means "stop this chain" - that has to keep
           // working, or the line tool becomes a trap.
           if (draftRef.current.anchors.length) {
@@ -644,6 +657,15 @@ export function Viewport() {
 
       {menu && activeSketch && (
         <SketchMenu x={menu.x} y={menu.y} onClose={() => setMenu(null)} />
+      )}
+
+      {objectMenu && !activeSketch && (
+        <ObjectMenu
+          x={objectMenu.x}
+          y={objectMenu.y}
+          actions={objectActions(selection)}
+          onClose={() => setObjectMenu(null)}
+        />
       )}
 
       <ViewCube />
