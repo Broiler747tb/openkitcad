@@ -16,7 +16,7 @@ import {
 } from '../sketch/types'
 import { applySolve, solveSketch } from '../sketch/solver'
 import { chamferCorner, filletCorner, findCorner } from '../sketch/corner'
-import { circularPattern, linearPattern, trimLine } from '../sketch/edit'
+import { circularPattern, linearPattern, trimLine, trimRound } from '../sketch/edit'
 
 export interface TestResult {
   name: string
@@ -540,6 +540,59 @@ export function runSelfTest(): TestResult[] {
       pieces.some((r) => Math.abs(r[0] - 70) < 1e-6 && Math.abs(r[1] - 100) < 1e-6),
       'the other runs 70 to 100',
     )
+  })
+
+  test('trimming a circle turns a crossing into a corner you can round', () => {
+    // A line running down through a circle, which is the case that has no
+    // corner at all: the two cross but share no endpoint, so there is nothing
+    // to round until the circle is cut back.
+    const b = builder()
+    const centre = b.point(0, 0)
+    const circ = b.circle(centre, 20)
+    // A chord well below the centre, so it cuts the circle in two places.
+    // One crossing cannot divide a circle into a piece to keep and a piece to
+    // drop, so trimming then removes the whole thing - which is right, and is
+    // why a line running out from the centre cannot be trimmed against.
+    const left = b.point(-30, -12)
+    const right = b.point(30, -12)
+    const line = b.line(left, right)
+
+    check(!findCorner(b.sketch, left), 'no corner where the line merely crosses')
+
+    // Trim the small cap below the chord, clicking inside it.
+    const trimmed = trimRound(b.sketch, circ, [0, -20], nid)
+    check(trimmed.ok, `circle trimmed (${trimmed.message ?? 'no error'})`)
+    const arc = b.sketch.entities.find((e) => e.kind === 'arc') as any
+    check(!!arc, 'the circle became an arc')
+    check(
+      !b.sketch.entities.some((e) => e.kind === 'circle'),
+      'and is no longer a full circle',
+    )
+
+    // Its ends now sit where the line crossed, at the left and right of the
+    // circle... so trim the line back to the arc and the two meet.
+    const P = Object.fromEntries(b.sketch.points.map((p) => [p.id, p]))
+    const ends = [P[arc.p1], P[arc.p2]].map((p) => `(${p.x.toFixed(1)}, ${p.y.toFixed(1)})`)
+    check(
+      [P[arc.p1], P[arc.p2]].every((p) => Math.abs(Math.hypot(p.x, p.y) - 20) < 1e-6),
+      `the arc ends sit on the circle at ${ends.join(' and ')}`,
+    )
+
+    // Trim the chord's overhang past the circle, and its end lands exactly on
+    // the arc end - which is a real corner the fillet can now work on.
+    const lineTrim = trimLine(b.sketch, line, [-28, -12], nid)
+    check(lineTrim.ok, 'the chord overhang trimmed away')
+    const pts2 = Object.fromEntries(b.sketch.points.map((p) => [p.id, p]))
+    const l = b.sketch.entities.find((e) => e.id === line) as any
+    const leftEnd = [pts2[l.p1], pts2[l.p2]].sort((p, q) => p.x - q.x)[0]
+    near(
+      Math.hypot(leftEnd.x, leftEnd.y),
+      20,
+      'the chord now stops on the circle',
+      1e-4,
+    )
+    const joined = findCorner(b.sketch, leftEnd.id)
+    check(!!joined, 'and the two now form a corner that can be rounded')
   })
 
   test('a row of holes stays fully defined and correctly spaced', () => {

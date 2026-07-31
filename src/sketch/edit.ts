@@ -153,6 +153,196 @@ export function trimLine(
 }
 
 // ---------------------------------------------------------------------------
+// Trimming round things
+// ---------------------------------------------------------------------------
+
+const TAU = Math.PI * 2
+const norm = (a: number) => ((a % TAU) + TAU) % TAU
+
+/** Angles round a circle where something else crosses it. */
+function crossingAngles(
+  sketch: Sketch2D,
+  target: Extract<SketchEntity, { kind: 'circle' | 'arc' }>,
+  pts: Map<string, Vec2>,
+): number[] {
+  const centre = pts.get(target.c)!
+  const R =
+    target.kind === 'circle' ? target.r : v2.dist(centre, pts.get(target.p1)!)
+  const out: number[] = []
+  const record = (p: Vec2) => out.push(norm(Math.atan2(p[1] - centre[1], p[0] - centre[0])))
+
+  for (const other of sketch.entities) {
+    if (other.id === target.id) continue
+
+    if (other.kind === 'line') {
+      const a = pts.get(other.p1)!
+      const b = pts.get(other.p2)!
+      const d = v2.sub(b, a)
+      const m = v2.sub(a, centre)
+      const qa = v2.dot(d, d)
+      const qb = 2 * v2.dot(m, d)
+      const qc = v2.dot(m, m) - R * R
+      const disc = qb * qb - 4 * qa * qc
+      if (disc <= 0 || qa < 1e-12) continue
+      const root = Math.sqrt(disc)
+      for (const t of [(-qb - root) / (2 * qa), (-qb + root) / (2 * qa)]) {
+        if (t > -1e-6 && t < 1 + 1e-6) record([a[0] + d[0] * t, a[1] + d[1] * t])
+      }
+      continue
+    }
+
+    // Circle against circle.
+    const c2 = pts.get(other.c)!
+    const R2 = other.kind === 'circle' ? other.r : v2.dist(c2, pts.get(other.p1)!)
+    const d = v2.dist(centre, c2)
+    if (d < 1e-9 || d > R + R2 || d < Math.abs(R - R2)) continue
+    const x = (d * d - R2 * R2 + R * R) / (2 * d)
+    const hSq = R * R - x * x
+    if (hSq < 0) continue
+    const h = Math.sqrt(hSq)
+    const u = v2.norm(v2.sub(c2, centre))
+    const mid = v2.add(centre, v2.scale(u, x))
+    const n: Vec2 = [-u[1], u[0]]
+    record(v2.add(mid, v2.scale(n, h)))
+    record(v2.sub(mid, v2.scale(n, h)))
+  }
+
+  return [...new Set(out.map((a) => Math.round(a * 1e9) / 1e9))].sort((p, q) => p - q)
+}
+
+/**
+ * Cut a piece out of a circle or an arc.
+ *
+ * This is what turns a crossing into a corner. A line running across a circle
+ * shares no endpoint with it, so there is nothing to round; trim the circle
+ * back to the crossing and the two now genuinely meet, at which point the
+ * existing corner rounding handles it.
+ */
+export function trimRound(
+  sketch: Sketch2D,
+  entityId: string,
+  at: Vec2,
+  nextId: (prefix: string) => string,
+): EditResult {
+  const entity = sketch.entities.find((e) => e.id === entityId)
+  if (!entity || entity.kind === 'line') {
+    return { ok: false, message: 'That is not a circle or an arc.' }
+  }
+
+  const pts = new Map<string, Vec2>()
+  for (const p of sketch.points) pts.set(p.id, [p.x, p.y])
+  const centre = pts.get(entity.c)!
+  const R = entity.kind === 'circle' ? entity.r : v2.dist(centre, pts.get(entity.p1)!)
+  const clickAngle = norm(Math.atan2(at[1] - centre[1], at[0] - centre[0]))
+  const cuts = crossingAngles(sketch, entity, pts)
+
+  const pointAt = (angle: number): string => {
+    const id = nextId('p')
+    sketch.points.push({
+      id,
+      x: centre[0] + R * Math.cos(angle),
+      y: centre[1] + R * Math.sin(angle),
+    })
+    return id
+  }
+  const drop = () => {
+    sketch.entities = sketch.entities.filter((e) => e.id !== entityId)
+    sketch.constraints = sketch.constraints.filter(
+      (c) => !Object.values(c).includes(entityId),
+    )
+  }
+
+  if (cuts.length === 0) {
+    drop()
+    return { ok: true }
+  }
+
+  if (entity.kind === 'circle') {
+    if (cuts.length === 1) {
+      drop()
+      return { ok: true }
+    }
+    // Find the gap between crossings that the click sits in, and keep the rest.
+    let from = cuts[cuts.length - 1]
+    let to = cuts[0]
+    for (let i = 0; i < cuts.length; i++) {
+      const a = cuts[i]
+      const bAngle = cuts[(i + 1) % cuts.length]
+      const span = norm(bAngle - a)
+      if (norm(clickAngle - a) <= span + 1e-9) {
+        from = a
+        to = bAngle
+        break
+      }
+    }
+    // What is left runs the other way round, from the far cut back to the near.
+    const startId = pointAt(to)
+    const endId = pointAt(from)
+    sketch.entities = sketch.entities.filter((e) => e.id !== entityId)
+    sketch.constraints = sketch.constraints.filter(
+      (c) => !Object.values(c).includes(entityId),
+    )
+    sketch.entities.push({
+      id: nextId('e'),
+      kind: 'arc',
+      c: entity.c,
+      p1: startId,
+      p2: endId,
+      ccw: true,
+      construction: entity.construction,
+    })
+    return { ok: true }
+  }
+
+  // An arc: work in its own sweep, then shorten or split.
+  const a1 = norm(Math.atan2(pts.get(entity.p1)![1] - centre[1], pts.get(entity.p1)![0] - centre[0]))
+  const a2 = norm(Math.atan2(pts.get(entity.p2)![1] - centre[1], pts.get(entity.p2)![0] - centre[0]))
+  const sweep = entity.ccw ? norm(a2 - a1) : norm(a1 - a2)
+  const along = (angle: number) => (entity.ccw ? norm(angle - a1) : norm(a1 - angle))
+
+  const inside = cuts.map(along).filter((t) => t > 1e-6 && t < sweep - 1e-6).sort((p, q) => p - q)
+  const clickT = along(clickAngle)
+  if (inside.length === 0 || clickT > sweep) {
+    drop()
+    return { ok: true }
+  }
+
+  const bounds = [0, ...inside, sweep]
+  let lo = 0
+  let hi = sweep
+  for (let i = 0; i + 1 < bounds.length; i++) {
+    if (clickT >= bounds[i] && clickT <= bounds[i + 1]) {
+      lo = bounds[i]
+      hi = bounds[i + 1]
+      break
+    }
+  }
+  const angleAt = (t: number) => (entity.ccw ? a1 + t : a1 - t)
+
+  if (lo === 0 && hi === sweep) {
+    drop()
+  } else if (lo === 0) {
+    entity.p1 = pointAt(angleAt(hi))
+  } else if (hi === sweep) {
+    entity.p2 = pointAt(angleAt(lo))
+  } else {
+    const tailStart = pointAt(angleAt(hi))
+    const originalEnd = entity.p2
+    entity.p2 = pointAt(angleAt(lo))
+    sketch.entities.push({
+      id: nextId('e'),
+      kind: 'arc',
+      c: entity.c,
+      p1: tailStart,
+      p2: originalEnd,
+      ccw: entity.ccw,
+      construction: entity.construction,
+    })
+  }
+  return { ok: true }
+}
+
+// ---------------------------------------------------------------------------
 // Patterns
 // ---------------------------------------------------------------------------
 

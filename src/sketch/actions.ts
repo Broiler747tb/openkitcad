@@ -209,6 +209,14 @@ export function sketchActions(
         build: () => ({ kind: 'toggleConstruction', entityId: circle.id }),
       })
     }
+    if (cursor) {
+      push({
+        id: 'trim',
+        label: 'Trim this piece away',
+        hint: 'Cuts back to where it crosses something else',
+        build: () => ({ kind: 'trim', entityId: circle.id, at: cursor }),
+      })
+    }
     push({
       id: 'delete',
       label: 'Delete this circle',

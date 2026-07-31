@@ -29,7 +29,7 @@ import type { SketchTarget } from '../sketch/inference'
 import type { SubPick } from '../viewport/engine'
 import type { ActionResult } from '../sketch/actions'
 import { chamferCorner, filletCorner, type CornerResult } from '../sketch/corner'
-import { circularPattern, linearPattern, trimLine } from '../sketch/edit'
+import { circularPattern, linearPattern, trimLine, trimRound } from '../sketch/edit'
 import { getPart } from '../catalogue'
 
 let counter = 0
@@ -551,9 +551,14 @@ export const useStore = create<AppState>((set, get) => ({
             case 'chamferCorner':
               outcome = chamferCorner(sketch, result.pointId, result.distance, newId)
               break
-            case 'trim':
-              outcome = trimLine(sketch, result.entityId, result.at, newId)
+            case 'trim': {
+              const target = sketch.entities.find((e) => e.id === result.entityId)
+              outcome =
+                target && target.kind !== 'line'
+                  ? trimRound(sketch, result.entityId, result.at, newId)
+                  : trimLine(sketch, result.entityId, result.at, newId)
               break
+            }
             case 'linearPattern':
               outcome = linearPattern(
                 sketch,
