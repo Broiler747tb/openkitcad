@@ -392,6 +392,27 @@ function buildRows(
         ])
         break
       }
+      case 'tangentArcs': {
+        const A = ent(c.a),
+          B = ent(c.b)
+        if (!A || A.kind === 'line' || !B || B.kind === 'line') break
+        const ra = radiusOf(A)
+        const rb = radiusOf(B)
+        const dx = b.px(A.c) - b.px(B.c)
+        const dy = b.py(A.c) - b.py(B.c)
+        const L = Math.hypot(dx, dy) || 1e-9
+        // Centres exactly one combined radius apart: outside each other when
+        // side is +1, nested when it is -1.
+        b.push(c.id, L - (ra.v + c.side * rb.v), [
+          [b.ix(A.c), dx / L],
+          [b.iy(A.c), dy / L],
+          [b.ix(B.c), -dx / L],
+          [b.iy(B.c), -dy / L],
+          ...ra.g.map(([i, g]) => [i, -g] as [number, number]),
+          ...rb.g.map(([i, g]) => [i, -c.side * g] as [number, number]),
+        ])
+        break
+      }
       case 'symmetric': {
         const e = ent(c.line)
         if (e?.kind !== 'line') break

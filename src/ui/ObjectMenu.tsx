@@ -84,6 +84,66 @@ export function objectActions(
         run: (value) => store.updateFeature(bodyId, extrude.id, { distance: value } as never),
       })
     }
+    if (picked && picked.bodyId === bodyId) {
+      out.push({
+        id: 'hollow',
+        label: 'Hollow it out, opening this face',
+        hint: 'Turns a solid block into a box with walls this thick',
+        prompt: { label: 'Wall', initial: 2, unit: 'mm' },
+        run: (thickness) =>
+          store.addFeature(bodyId, {
+            id: newId('shell'),
+            kind: 'shell',
+            name: 'Hollow out',
+            thickness,
+            openFaces: [
+              { bodyId, anchor: picked.point, normal: picked.normal },
+            ],
+          }),
+      })
+    }
+    // Anything picked with shift takes priority over the blanket versions,
+    // because "round these three edges" is nearly always what was meant when
+    // the user went to the trouble of selecting them.
+    const pickedEdges = store.subSelection.filter(
+      (s) => s.bodyId === bodyId && s.kind === 'edge',
+    )
+    if (pickedEdges.length > 0) {
+      const refs = pickedEdges.map((s) => ({
+        bodyId,
+        anchor: s.point,
+        length: s.length ?? 0,
+      }))
+      const many = pickedEdges.length > 1
+      out.push({
+        id: 'round-picked',
+        label: `Round ${many ? `these ${pickedEdges.length} edges` : 'this edge'}`,
+        hint: 'Only the ones you selected',
+        prompt: { label: 'Radius', initial: 2, unit: 'mm' },
+        run: (radius) =>
+          store.addFeature(bodyId, {
+            id: newId('fillet'),
+            kind: 'fillet',
+            name: many ? `Round ${pickedEdges.length} edges` : 'Round an edge',
+            radius,
+            edges: refs,
+          }),
+      })
+      out.push({
+        id: 'bevel-picked',
+        label: `Bevel ${many ? `these ${pickedEdges.length} edges` : 'this edge'}`,
+        prompt: { label: 'Size', initial: 1, unit: 'mm' },
+        run: (distance) =>
+          store.addFeature(bodyId, {
+            id: newId('chamfer'),
+            kind: 'chamfer',
+            name: many ? `Bevel ${pickedEdges.length} edges` : 'Bevel an edge',
+            distance,
+            edges: refs,
+          }),
+      })
+    }
+
     out.push({
       id: 'round',
       label: 'Round all the edges',

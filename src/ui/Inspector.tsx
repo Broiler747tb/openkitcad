@@ -35,6 +35,7 @@ export function Inspector() {
         </div>
       )}
 
+      <SubSelectionPanel />
       {selection.kind === 'placement' && <PlacementInspector id={selection.id!} />}
       {selection.kind === 'body' && <BodyInspector id={selection.id!} />}
       {selection.kind === 'feature' && (
@@ -523,6 +524,33 @@ function FeatureInspector({ bodyId, featureId }: { bodyId: string; featureId: st
 }
 
 // ---------------------------------------------------------------------------
+
+/** Faces, edges and corners picked on a solid. */
+function SubSelectionPanel() {
+  const picks = useStore((s) => s.subSelection)
+  if (picks.length === 0) return null
+  const count = (kind: string) => picks.filter((p) => p.kind === kind).length
+  const parts = [
+    [count('face'), 'face', 'faces'],
+    [count('edge'), 'edge', 'edges'],
+    [count('vertex'), 'corner', 'corners'],
+  ]
+    .filter(([n]) => (n as number) > 0)
+    .map(([n, one, many]) => `${n} ${n === 1 ? one : many}`)
+
+  return (
+    <div className="section">
+      <h3>Picked on the shape</h3>
+      <p className="hint" style={{ marginTop: 0 }}>
+        {parts.join(', ')} selected. Shift-click to add more, then right-click for
+        what you can do with them.
+      </p>
+      <button className="btn" onClick={() => useStore.getState().setSubSelection([])}>
+        Clear the selection
+      </button>
+    </div>
+  )
+}
 
 /**
  * What is selected inside the open sketch, with its measurements editable.

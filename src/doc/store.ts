@@ -26,6 +26,7 @@ import {
 } from '../sketch/types'
 import { applySolve, solveSketch, type SolveResult } from '../sketch/solver'
 import type { SketchTarget } from '../sketch/inference'
+import type { SubPick } from '../viewport/engine'
 import type { ActionResult } from '../sketch/actions'
 import { chamferCorner, filletCorner, type CornerResult } from '../sketch/corner'
 import { circularPattern, linearPattern, trimLine } from '../sketch/edit'
@@ -141,6 +142,13 @@ interface AppState {
   solveActiveSketch: (drag?: { point: string; x: number; y: number }) => SolveResult | null
   addConstraint: (constraint: NewConstraint) => void
 
+  /**
+   * Faces, edges and corners picked on a built solid. Shift-clicking adds to
+   * it, which is what makes per-edge operations possible.
+   */
+  subSelection: SubPick[]
+  setSubSelection: (picks: SubPick[]) => void
+
   /** What the user has picked inside the open sketch, for the right-click menu. */
   sketchSelection: SketchTarget[]
   setSketchSelection: (selection: SketchTarget[]) => void
@@ -178,7 +186,14 @@ export const useStore = create<AppState>((set, get) => ({
   setDoc(doc, resetHistory = true) {
     set(
       resetHistory
-        ? { doc, past: [], future: [], activeSketch: null, selection: { kind: 'none' } }
+        ? {
+            doc,
+            past: [],
+            future: [],
+            activeSketch: null,
+            selection: { kind: 'none' },
+            subSelection: [],
+          }
         : { doc },
     )
     get().rebuild()
@@ -469,6 +484,11 @@ export const useStore = create<AppState>((set, get) => ({
       sketch.constraints.push({ ...constraint, id: newId('c') } as Constraint)
     })
     get().solveActiveSketch()
+  },
+
+  subSelection: [],
+  setSubSelection(subSelection) {
+    set({ subSelection })
   },
 
   sketchSelection: [],

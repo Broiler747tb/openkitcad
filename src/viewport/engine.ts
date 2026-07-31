@@ -30,6 +30,27 @@ export interface PickResult {
   faceId: number
 }
 
+/** A face, edge or corner of a built solid. */
+export interface SubPick {
+  bodyId: string
+  kind: 'face' | 'edge' | 'vertex'
+  /** Stable within one rebuild: the kernel's own id, or a welded position. */
+  id: string
+  point: Vec3
+  normal?: Vec3
+  /** Edge length, so a fillet can record a fingerprint of what was picked. */
+  length?: number
+}
+
+/** Per-shape tessellation kept so a pick can be traced back to a B-rep face. */
+interface ShapeGroups {
+  vertices: Float32Array
+  triangles: Uint32Array
+  faceGroups: ShapeResult['mesh']['faceGroups']
+  lines: Float32Array
+  edgeGroups: ShapeResult['edges']['edgeGroups']
+}
+
 /**
  * Where the camera sits before anything else has moved it.
  *
@@ -61,6 +82,8 @@ export class ViewportEngine {
 
   private meshes = new Map<string, THREE.Mesh>()
   private outlines = new Map<string, THREE.LineSegments>()
+  private groups = new Map<string, ShapeGroups>()
+  private highlightGroup = new THREE.Group()
   private clipPlane = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0)
 
   private disposed = false
@@ -90,7 +113,13 @@ export class ViewportEngine {
       RIGHT: THREE.MOUSE.PAN,
     }
 
-    this.scene.add(this.solidGroup, this.sketchGroup, this.overlayGroup, this.gridGroup)
+    this.scene.add(
+      this.solidGroup,
+      this.sketchGroup,
+      this.overlayGroup,
+      this.gridGroup,
+      this.highlightGroup,
+    )
     this.buildLighting()
     this.buildGrid()
     this.resize()
@@ -182,6 +211,14 @@ export class ViewportEngine {
         new THREE.BufferAttribute(shape.edges.lines, 3),
       )
       outline.geometry.computeBoundingSphere()
+
+      this.groups.set(shape.id, {
+        vertices: shape.mesh.vertices,
+        triangles: shape.mesh.triangles,
+        faceGroups: shape.mesh.faceGroups,
+        lines: shape.edges.lines,
+        edgeGroups: shape.edges.edgeGroups,
+      })
     }
 
     for (const [id, mesh] of [...this.meshes]) {
@@ -540,6 +577,228 @@ export class ViewportEngine {
       d.dot(new THREE.Vector3(...frame.xDir)),
       d.dot(new THREE.Vector3(...frame.yDir)),
     ]
+  }
+
+  /**
+   * Pick the face, edge or corner under the cursor.
+   *
+   * Smallest target wins: a corner beats an edge, an edge beats the face it
+   * sits on. Anything else and edges become unclickable, because the face
+   * behind them is always the bigger target.
+   */
+  pickSub(clientX: number, clientY: number): SubPick | null {
+    const ndc = this.pointerToNdc(clientX, clientY)
+    this.raycaster.setFromCamera(ndc, this.camera)
+
+    const rect = this.renderer.domElement.getBoundingClientRect()
+    const cx = clientX - rect.left
+    const cy = clientY - rect.top
+    const toScreen = (v: THREE.Vector3) => {
+      const p = v.clone().project(this.camera)
+      return [((p.x + 1) / 2) * rect.width, ((1 - p.y) / 2) * rect.height]
+    }
+
+    // --- corners ------------------------------------------------------------
+    // Done in screen space and *before* any surface test, for two reasons: the
+    // target is then the same size however far you are zoomed out, and corners
+    // on the silhouette still work. Requiring a surface hit first meant the ray
+    // grazed the mesh at exactly the corners people aim for, and five of a
+    // box's eight were unpickable.
+    const VERTEX_PX = 9
+    let bestVertex: { bodyId: string; pos: Vec3; d: number } | null = null
+    for (const [id, groups] of this.groups) {
+      const seen = new Set<string>()
+      for (let i = 0; i < groups.lines.length; i += 3) {
+        const v = new THREE.Vector3(
+          groups.lines[i],
+          groups.lines[i + 1],
+          groups.lines[i + 2],
+        )
+        const key = `${v.x.toFixed(4)},${v.y.toFixed(4)},${v.z.toFixed(4)}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        const [sx, sy] = toScreen(v)
+        const d = Math.hypot(sx - cx, sy - cy)
+        if (d < VERTEX_PX && (!bestVertex || d < bestVertex.d)) {
+          bestVertex = { bodyId: id, pos: [v.x, v.y, v.z], d }
+        }
+      }
+    }
+    if (bestVertex) {
+      const p = bestVertex.pos
+      return {
+        bodyId: bestVertex.bodyId,
+        kind: 'vertex',
+        id: `v:${p[0].toFixed(3)},${p[1].toFixed(3)},${p[2].toFixed(3)}`,
+        point: p,
+      }
+    }
+
+    // Edges and faces still need a surface under the cursor, so that geometry
+    // hidden behind the solid is not picked through it.
+    const hit = this.raycaster.intersectObjects([...this.meshes.values()], false)[0]
+    if (!hit) return null
+
+    const bodyId = hit.object.userData.id as string
+    const data = this.groups.get(bodyId)
+    const point: Vec3 = [hit.point.x, hit.point.y, hit.point.z]
+    if (!data) return null
+
+    // --- edges --------------------------------------------------------------
+    const outline = this.outlines.get(bodyId)
+    if (outline) {
+      const previous = this.raycaster.params.Line?.threshold
+      this.raycaster.params.Line = { threshold: this.pixelSize(point) * 6 }
+      const lineHit = this.raycaster.intersectObject(outline, false)[0]
+      this.raycaster.params.Line = { threshold: previous ?? 1 }
+      // Only accept an edge at least as near as the surface, so edges on the
+      // far side are not picked straight through the solid.
+      if (lineHit && lineHit.distance <= hit.distance + this.pixelSize(point) * 6) {
+        const vertexIndex = lineHit.index ?? 0
+        const group = data.edgeGroups.find(
+          (g) => vertexIndex >= g.start && vertexIndex < g.start + g.count,
+        )
+        if (group) {
+          return {
+            bodyId,
+            kind: 'edge',
+            id: `e:${group.edgeId}`,
+            point: this.edgeMidpoint(data, group),
+            length: this.edgeLength(data, group),
+          }
+        }
+      }
+    }
+
+    // --- faces --------------------------------------------------------------
+    const triangle = (hit.faceIndex ?? 0) * 3
+    const group = data.faceGroups.find(
+      (g) => triangle >= g.start && triangle < g.start + g.count,
+    )
+    const normal = hit.face
+      ? hit.face.normal
+          .clone()
+          .applyMatrix3(new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld))
+          .normalize()
+      : new THREE.Vector3(0, 0, 1)
+    return {
+      bodyId,
+      kind: 'face',
+      id: `f:${group?.faceId ?? 'unknown'}`,
+      point,
+      normal: [normal.x, normal.y, normal.z],
+    }
+  }
+
+  private edgeMidpoint(data: ShapeGroups, group: { start: number; count: number }): Vec3 {
+    let x = 0
+    let y = 0
+    let z = 0
+    for (let i = group.start; i < group.start + group.count; i++) {
+      x += data.lines[i * 3]
+      y += data.lines[i * 3 + 1]
+      z += data.lines[i * 3 + 2]
+    }
+    return [x / group.count, y / group.count, z / group.count]
+  }
+
+  private edgeLength(data: ShapeGroups, group: { start: number; count: number }): number {
+    let total = 0
+    for (let i = group.start; i + 1 < group.start + group.count; i += 2) {
+      total += Math.hypot(
+        data.lines[(i + 1) * 3] - data.lines[i * 3],
+        data.lines[(i + 1) * 3 + 1] - data.lines[i * 3 + 1],
+        data.lines[(i + 1) * 3 + 2] - data.lines[i * 3 + 2],
+      )
+    }
+    return total
+  }
+
+  /** Draw whatever is selected on top of the solid. */
+  setSubHighlight(picks: SubPick[]) {
+    for (const child of [...this.highlightGroup.children]) {
+      this.highlightGroup.remove(child)
+      ;(child as any).geometry?.dispose?.()
+    }
+
+    const faceTriangles: number[] = []
+    const edgeVertices: number[] = []
+    const cornerVertices: number[] = []
+
+    for (const pick of picks) {
+      const data = this.groups.get(pick.bodyId)
+      if (!data) continue
+
+      if (pick.kind === 'vertex') {
+        cornerVertices.push(...pick.point)
+      } else if (pick.kind === 'edge') {
+        const group = data.edgeGroups.find((g) => `e:${g.edgeId}` === pick.id)
+        if (!group) continue
+        for (let i = group.start; i < group.start + group.count; i++) {
+          edgeVertices.push(
+            data.lines[i * 3],
+            data.lines[i * 3 + 1],
+            data.lines[i * 3 + 2],
+          )
+        }
+      } else {
+        const group = data.faceGroups.find((g) => `f:${g.faceId}` === pick.id)
+        if (!group) continue
+        for (let i = group.start; i < group.start + group.count; i++) {
+          const v = data.triangles[i] * 3
+          faceTriangles.push(data.vertices[v], data.vertices[v + 1], data.vertices[v + 2])
+        }
+      }
+    }
+
+    if (faceTriangles.length) {
+      const geometry = new THREE.BufferGeometry()
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(faceTriangles, 3))
+      geometry.computeVertexNormals()
+      const mesh = new THREE.Mesh(
+        geometry,
+        new THREE.MeshBasicMaterial({
+          color: ACCENT,
+          transparent: true,
+          opacity: 0.45,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          // Lift it off the surface it covers, or the two z-fight.
+          polygonOffset: true,
+          polygonOffsetFactor: -2,
+          polygonOffsetUnits: -2,
+        }),
+      )
+      mesh.renderOrder = 5
+      this.highlightGroup.add(mesh)
+    }
+
+    if (edgeVertices.length) {
+      const geometry = new THREE.BufferGeometry()
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(edgeVertices, 3))
+      const lines = new THREE.LineSegments(
+        geometry,
+        new THREE.LineBasicMaterial({ color: ACCENT, depthTest: false }),
+      )
+      lines.renderOrder = 12
+      this.highlightGroup.add(lines)
+    }
+
+    if (cornerVertices.length) {
+      const geometry = new THREE.BufferGeometry()
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(cornerVertices, 3))
+      const points = new THREE.Points(
+        geometry,
+        new THREE.PointsMaterial({
+          color: ACCENT,
+          size: 9,
+          sizeAttenuation: false,
+          depthTest: false,
+        }),
+      )
+      points.renderOrder = 13
+      this.highlightGroup.add(points)
+    }
   }
 
   /** Millimetres per screen pixel at a point, for size-independent snapping. */

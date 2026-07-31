@@ -629,24 +629,35 @@ export function evaluateBody(
         }
 
         case 'shell': {
-          if (!shape) break
-          const openFaces = feature.openFaces
-          shape = shape.shell(
-            {
-              // Negative thickness hollows inward, leaving the outside size alone.
-              thickness: -Math.abs(feature.thickness),
-              filter: undefined as never,
-            } as never,
-            (f: any) => {
-              let finder = f
-              for (const ref of openFaces) {
-                const resolved = resolveFace(shape, ref)
-                const normal = resolved?.normal ?? ref.normal
-                const centre = resolved?.centre ?? ref.anchor
-                finder = finder.inPlane(new Plane(centre, null, normal))
-              }
-              return finder
-            },
+          if (!shape) {
+            errors.push({
+              featureId: feature.id,
+              message: 'There is nothing to hollow out yet.',
+              hint: 'Make a solid shape first.',
+            })
+            break
+          }
+          const open = feature.openFaces[0]
+          if (!open) {
+            errors.push({
+              featureId: feature.id,
+              message: 'No face was chosen to leave open.',
+              hint: 'Right-click the face you want the opening on and hollow it out from there.',
+            })
+            break
+          }
+          // The finder chain ANDs its filters, so more than one opening would
+          // ask for a face lying in two planes at once. One is the common case
+          // - the underside of an enclosure - and is what this supports.
+          const solid = shape
+          const resolved = resolveFace(solid, open)
+          const normal = resolved?.normal ?? open.normal
+          const centre = resolved?.centre ?? open.anchor
+          // Positive thickness hollows inward, leaving the outside size alone.
+          // The opposite sign grows the part outward instead, which turns a
+          // 60 mm box into a 65 mm one and is never what "hollow it out" means.
+          shape = solid.shell(Math.abs(feature.thickness), (f: any) =>
+            f.inPlane(new Plane(centre, null, normal)),
           )
           break
         }

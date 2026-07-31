@@ -15,7 +15,7 @@ import {
   type SketchPoint,
 } from '../sketch/types'
 import { applySolve, solveSketch } from '../sketch/solver'
-import { chamferCorner, filletCorner } from '../sketch/corner'
+import { chamferCorner, filletCorner, findCorner } from '../sketch/corner'
 import { circularPattern, linearPattern, trimLine } from '../sketch/edit'
 
 export interface TestResult {
@@ -374,6 +374,101 @@ export function runSelfTest(): TestResult[] {
       P[newEdge.p1].y - P[newEdge.p2].y,
     )
     near(len, Math.SQRT2 * 8, 'chamfer edge length', 1e-3)
+  })
+
+  test('a corner counts even when its two ends were never fused', () => {
+    // Two lines drawn to the same spot without the snap joining them. The
+    // profile builder already welds these by position when it extrudes, so
+    // refusing to round them was inconsistent as well as annoying.
+    const b = builder()
+    const a = b.point(0, 0)
+    const meet1 = b.point(40, 0)
+    const meet2 = b.point(40, 0)
+    const up = b.point(40, 30)
+    b.line(a, meet1)
+    b.line(meet2, up)
+
+    const corner = findCorner(b.sketch, meet1)
+    check(!!corner, 'recognised as a corner despite the duplicate points')
+    const result = filletCorner(b.sketch, meet1, 5, nid)
+    check(result.ok, `rounded (${result.message ?? 'no error'})`)
+    const arc = b.sketch.entities.find((e) => e.kind === 'arc') as any
+    check(!!arc, 'an arc was created')
+    const P = Object.fromEntries(b.sketch.points.map((p) => [p.id, p]))
+    near(
+      Math.hypot(P[arc.p1].x - P[arc.c].x, P[arc.p1].y - P[arc.c].y),
+      5,
+      'arc radius',
+      1e-3,
+    )
+  })
+
+  test('a corner where a line meets an arc can be rounded too', () => {
+    // This is what the neighbours of an already-rounded corner look like.
+    // A line running in along y = 0, meeting a quarter arc that curves away
+    // upward. The tangents leave the shared point 90 degrees apart, so there is
+    // a genuine corner. (An arc whose tangent continued the line smoothly would
+    // correctly have nothing to round, and is refused.)
+    const b = builder()
+    const la = b.point(0, 0)
+    const lb = b.point(40, 0)
+    const ac = b.point(52, 0)
+    const ae = b.point(52, 12)
+    b.line(la, lb)
+    b.sketch.entities.push({
+      id: nid('e'),
+      kind: 'arc',
+      c: ac,
+      p1: lb,
+      p2: ae,
+      ccw: false,
+      construction: false,
+    })
+
+    const corner = findCorner(b.sketch, lb)
+    check(!!corner, 'a line meeting an arc is recognised as a corner')
+    const before = b.sketch.entities.length
+    const result = filletCorner(b.sketch, lb, 3, nid)
+    check(result.ok, `rounded (${result.message ?? 'no error'})`)
+    check(b.sketch.entities.length === before + 1, 'a fillet arc was added')
+
+    const solved = solveSketch(b.sketch)
+    applySolve(b.sketch, solved)
+    const arcs = b.sketch.entities.filter((e) => e.kind === 'arc')
+    const P = Object.fromEntries(b.sketch.points.map((p) => [p.id, p]))
+    const fillet = arcs[arcs.length - 1] as any
+    near(
+      Math.hypot(P[fillet.p1].x - P[fillet.c].x, P[fillet.p1].y - P[fillet.c].y),
+      3,
+      'fillet radius holds after solving',
+      1e-3,
+    )
+    // Tangency to both edges means the fillet centre sits exactly 3 mm off the
+    // straight edge, which lies along y = 0.
+    near(P[fillet.c].y, 3, 'fillet centre is one radius off the straight edge', 1e-3)
+  })
+
+  test('refusing a corner explains which problem it is', () => {
+    const b = builder()
+    const hub = b.point(0, 0)
+    b.line(hub, b.point(10, 0))
+    b.line(hub, b.point(0, 10))
+    b.line(hub, b.point(-10, 0))
+    const three = filletCorner(b.sketch, hub, 1, nid)
+    check(!three.ok, 'three edges at a point is refused')
+    check(
+      !!three.message && /not clear which corner/i.test(three.message),
+      `and says why: "${three.message}"`,
+    )
+
+    const c = builder()
+    const lone = c.point(0, 0)
+    c.line(lone, c.point(10, 0))
+    const single = filletCorner(c.sketch, lone, 1, nid)
+    check(
+      !single.ok && /one edge/i.test(single.message ?? ''),
+      `a lone edge end is refused with a reason: "${single.message}"`,
+    )
   })
 
   test('a corner radius that cannot fit is refused with a reason', () => {

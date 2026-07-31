@@ -65,6 +65,12 @@ export type Constraint =
   | { id: ConstraintId; kind: 'pointOnCircle'; p: PointId; e: EntityId }
   | { id: ConstraintId; kind: 'midpoint'; p: PointId; e: EntityId }
   | { id: ConstraintId; kind: 'tangent'; line: EntityId; circle: EntityId; side: 1 | -1 }
+  /**
+   * Two arcs or circles touching. `side` is +1 when they sit outside each other
+   * and -1 when the second is nested inside the first. Needed so that rounding
+   * a corner where one side is already curved stays as defined as it was.
+   */
+  | { id: ConstraintId; kind: 'tangentArcs'; a: EntityId; b: EntityId; side: 1 | -1 }
   | { id: ConstraintId; kind: 'symmetric'; a: PointId; b: PointId; line: EntityId }
   | { id: ConstraintId; kind: 'distance'; a: PointId; b: PointId; value: number }
   | { id: ConstraintId; kind: 'distanceX'; a: PointId; b: PointId; value: number }
@@ -133,6 +139,7 @@ export const CONSTRAINT_LABELS: Record<ConstraintKind, string> = {
   pointOnCircle: 'On the circle',
   midpoint: 'At the middle',
   tangent: 'Smooth join',
+  tangentArcs: 'Smooth join',
   symmetric: 'Mirrored',
   distance: 'Length',
   distanceX: 'Across',

@@ -50,6 +50,7 @@ export function Viewport() {
   const gizmoMode = useStore((s) => s.gizmoMode)
   const sketchSelection = useStore((s) => s.sketchSelection)
   const sketchStatus = useStore((s) => s.sketchStatus)
+  const subSelection = useStore((s) => s.subSelection)
   const [menu, setMenu] = useState<{ x: number; y: number; cursor: Vec2 } | null>(null)
   const [objectMenu, setObjectMenu] = useState<{
     x: number
@@ -150,6 +151,10 @@ export function Viewport() {
   useEffect(() => {
     engineRef.current?.setHighlight(hovered, selection.id ?? null)
   }, [hovered, selection])
+
+  useEffect(() => {
+    engineRef.current?.setSubHighlight(activeSketch ? [] : subSelection)
+  }, [subSelection, activeSketch, shapes])
 
   useEffect(() => {
     engineRef.current?.setSection(
@@ -521,7 +526,37 @@ export function Viewport() {
       return
     }
 
-    store.select(hit ? { kind: hit.kind, id: hit.id } : { kind: 'none' })
+    if (!hit) {
+      if (!e.shiftKey) {
+        store.select({ kind: 'none' })
+        store.setSubSelection([])
+      }
+      return
+    }
+
+    store.select({ kind: hit.kind, id: hit.id })
+
+    // Catalogue parts are moved as a whole, so picking their individual faces
+    // would only get in the way of the gizmo.
+    if (hit.kind !== 'body') {
+      store.setSubSelection([])
+      return
+    }
+
+    const sub = engine.pickSub(e.clientX, e.clientY)
+    if (!sub) {
+      store.setSubSelection([])
+      return
+    }
+    const current = store.subSelection
+    const at = current.findIndex((s) => s.bodyId === sub.bodyId && s.id === sub.id)
+    store.setSubSelection(
+      e.shiftKey
+        ? at >= 0
+          ? current.filter((_, i) => i !== at)
+          : [...current, sub]
+        : [sub],
+    )
   }
 
   /** Dimension tool: click an entity, type a number. */
