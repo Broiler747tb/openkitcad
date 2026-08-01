@@ -3,6 +3,7 @@ import { activeSketchFeature, newId, useStore, type ToolId } from '../doc/store'
 import { emptyDocument } from '../doc/types'
 import {
   makeShareLink,
+  lastAdoptedParts,
   openDocument,
   saveDocument,
 } from '../doc/persist'
@@ -141,6 +142,20 @@ export function Toolbar({ onExport, onTutorial }: { onExport: () => void; onTuto
         className="tb"
         onClick={async () => {
           const opened = await openDocument()
+          const brought = lastAdoptedParts()
+          if (brought.added.length) {
+            useStore
+              .getState()
+              .setStatus(
+                `Added ${brought.added.length === 1 ? 'a part' : `${brought.added.length} parts`} this design uses: ${brought.added.join(', ')}.`,
+              )
+          } else if (brought.skipped.length) {
+            useStore
+              .getState()
+              .setStatus(
+                `This design uses ${brought.skipped.join(', ')}, which you already have. Yours was kept.`,
+              )
+          }
           if (opened) useStore.getState().setDoc(opened)
         }}
       >

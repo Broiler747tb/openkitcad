@@ -8,6 +8,9 @@
  */
 import { deflateSync, inflateSync, strFromU8, strToU8 } from 'fflate'
 import { emptyDocument, type OkcDocument } from './types'
+import type { CataloguePart } from '../catalogue/types'
+import { getPart, refreshUserParts, upsertUserPart } from '../catalogue'
+import { loadUserParts } from '../catalogue/userParts'
 
 const AUTOSAVE_KEY = 'openkitcad.autosave.v1'
 const FILE_EXTENSION = '.okc'
@@ -62,14 +65,75 @@ function migrate(doc: OkcDocument): OkcDocument {
   return { ...emptyDocument(doc.name), ...doc, version: 1 }
 }
 
+/**
+ * Custom parts travel with the file that uses them.
+ *
+ * Without this, a design sent to somebody else opens with a hole where their
+ * board should be - the placement names a part that only exists in the sender's
+ * browser. Only the parts actually placed are attached: the rest of somebody's
+ * private catalogue is not theirs to hand over with a bracket.
+ */
+function partsUsedBy(doc: OkcDocument): CataloguePart[] {
+  const wanted = new Set(doc.placements.map((p) => p.partId))
+  // Read storage directly rather than the catalogue's cached copy. Saving is
+  // rare enough that the cache buys nothing, and going straight to the source
+  // means a save cannot be caught out by a cache filled at some other moment.
+  return loadUserParts().filter((p) => wanted.has(p.id))
+}
+
 export function serialise(doc: OkcDocument): string {
-  return JSON.stringify(doc, null, 2)
+  const used = partsUsedBy(doc)
+  const out: OkcDocument = { ...doc }
+  if (used.length) out.customParts = used
+  else delete out.customParts
+  return JSON.stringify(out, null, 2)
+}
+
+/**
+ * Take on the custom parts an opened file brought with it.
+ *
+ * Only ones whose id is not already known are kept. A file must not be able to
+ * redefine a Raspberry Pi: someone else's measurements silently replacing the
+ * catalogue's would be a quiet way to ruin a panel, and the person opening the
+ * file would have no reason to suspect it.
+ *
+ * Returns what happened, so the app can say so rather than changing somebody's
+ * catalogue behind their back.
+ */
+let lastAdoption: { added: string[]; skipped: string[] } = { added: [], skipped: [] }
+
+/** What the last opened file or link brought with it, for the app to report. */
+export function lastAdoptedParts(): { added: string[]; skipped: string[] } {
+  return lastAdoption
+}
+
+export function adoptCustomParts(doc: OkcDocument): { added: string[]; skipped: string[] } {
+  const added: string[] = []
+  const skipped: string[] = []
+  // Read fresh either side of every write. The catalogue caches user parts -
+  // they are looked up inside the rebuild loop - and deciding whether a part is
+  // already known from a cache filled before the last write is how you get a
+  // part reported as already present and then not be there.
+  refreshUserParts()
+  for (const part of doc.customParts ?? []) {
+    if (getPart(part.id)) {
+      skipped.push(part.name)
+      continue
+    }
+    upsertUserPart(part)
+    refreshUserParts()
+    added.push(part.name)
+  }
+  lastAdoption = { added, skipped }
+  return lastAdoption
 }
 
 export function deserialise(text: string): OkcDocument {
   const parsed = JSON.parse(text)
   if (!parsed?.version) throw new Error('That does not look like an OpenKitCAD file.')
-  return migrate(parsed)
+  const doc = migrate(parsed)
+  adoptCustomParts(doc)
+  return doc
 }
 
 function sanitiseFilename(name: string): string {
@@ -189,7 +253,11 @@ function fromBase64Url(text: string): Uint8Array {
  * app - so a share link is private to whoever holds it.
  */
 export function makeShareLink(doc: OkcDocument): string {
-  const packed = deflateSync(strToU8(JSON.stringify(doc)), { level: 9 })
+  // A share link is the whole design or it is nothing: a link that opens with
+  // somebody's board missing is worse than no link.
+  const used = partsUsedBy(doc)
+  const full: OkcDocument = used.length ? { ...doc, customParts: used } : doc
+  const packed = deflateSync(strToU8(JSON.stringify(full)), { level: 9 })
   const base = `${location.origin}${location.pathname}`
   return `${base}#d=${toBase64Url(packed)}`
 }
@@ -198,7 +266,9 @@ export function readShareLink(hash: string = location.hash): OkcDocument | null 
   const match = /[#&]d=([A-Za-z0-9\-_]+)/.exec(hash)
   if (!match) return null
   try {
-    return migrate(JSON.parse(strFromU8(inflateSync(fromBase64Url(match[1])))))
+    const doc = migrate(JSON.parse(strFromU8(inflateSync(fromBase64Url(match[1])))))
+    adoptCustomParts(doc)
+    return doc
   } catch {
     return null
   }
