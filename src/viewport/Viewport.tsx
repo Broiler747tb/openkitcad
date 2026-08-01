@@ -4,8 +4,8 @@ import { activeSketchFeature, newId, useStore } from '../doc/store'
 import { frameFromPlaneRefLocal } from '../doc/planes'
 import { findSnap, hitTestSketch, toggleSelection } from '../sketch/inference'
 import { SketchMenu } from '../ui/SketchMenu'
-import { ObjectMenu, objectActions, type PickedFace } from '../ui/ObjectMenu'
-import { fmt, frameToWorld, v2, type Frame, type Vec2 } from '../core/math'
+import { ObjectMenu, objectActions, trailingMove, type PickedFace } from '../ui/ObjectMenu'
+import { fmt, frameToWorld, v2, type Frame, type Vec2, type Vec3 } from '../core/math'
 import type { Constraint, NewConstraint, Sketch2D } from '../sketch/types'
 
 /** Snap radius in screen pixels. */
@@ -48,6 +48,8 @@ export function Viewport() {
   const activeSketch = useStore((s) => s.activeSketch)
   const doc = useStore((s) => s.doc)
   const gizmoMode = useStore((s) => s.gizmoMode)
+  /** Where the gizmo was picked up, and the part's offset at that moment. */
+  const gizmoBase = useRef<{ anchor: Vec3; offset: Vec3 } | null>(null)
   const sketchSelection = useStore((s) => s.sketchSelection)
   const sketchStatus = useStore((s) => s.sketchStatus)
   const subSelection = useStore((s) => s.subSelection)
@@ -78,8 +80,34 @@ export function Viewport() {
     engine.onLabels = setLabels
     if (import.meta.env.DEV) (window as any).__okcEngine = engine
 
-    engine.onGizmoChange = (position, rotationDeg) => {
+    engine.onGizmoChange = (position, rotationDeg, rotationXyz) => {
       const store = useStore.getState()
+      const tidy = (a: number) => Math.round(a * 10) / 10
+
+      if (store.selection.kind === 'body' && store.selection.id) {
+        const move = trailingMove(store.doc, store.selection.id)
+        const base = gizmoBase.current
+        if (!move || !base) return
+        // The gizmo sits at the middle of the part but the move step counts
+        // from where the part was built, so what gets stored is how far the
+        // handle has come since it was picked up, not where it now is.
+        store.beginTransient()
+        store.updateFeature(
+          store.selection.id,
+          move.id,
+          {
+            offset: [
+              round(base.offset[0] + position[0] - base.anchor[0]),
+              round(base.offset[1] + position[1] - base.anchor[1]),
+              round(base.offset[2] + position[2] - base.anchor[2]),
+            ],
+            rotation: [tidy(rotationXyz[0]), tidy(rotationXyz[1]), tidy(rotationXyz[2])],
+          } as never,
+          { transient: true },
+        )
+        return
+      }
+
       if (store.selection.kind !== 'placement' || !store.selection.id) return
       store.beginTransient()
       store.updatePlacement(
@@ -115,15 +143,42 @@ export function Viewport() {
     }
   }, [])
 
-  // Show the move / turn gizmo on the selected catalogue part.
+  // Show the move / turn gizmo on whatever is selected.
+  //
+  // A body gets one once it has a move step, which "Move it" in the right-click
+  // menu creates. That keeps the gizmo off parts nobody has asked to move,
+  // without needing a mode to be in: delete the move step and it goes away.
   useEffect(() => {
     const engine = engineRef.current
     if (!engine) return
+    if (activeSketch) {
+      engine.setGizmo(null, gizmoMode)
+      return
+    }
+    if (selection.kind === 'body' && selection.id) {
+      const move = trailingMove(doc, selection.id)
+      const built = shapes.find((s) => s.id === selection.id)
+      if (move && built) {
+        // The gizmo sits at the middle of the part, which is where the turn
+        // rings are centred, so what you grab is where it pivots.
+        const b = built.bounds
+        const centre: Vec3 = [(b[0] + b[3]) / 2, (b[1] + b[4]) / 2, (b[2] + b[5]) / 2]
+        // Where the handle started and what the part's offset was at that
+        // moment. Not while a drag is running, or the reference would follow
+        // the part and the drag would never get anywhere.
+        if (!engine.isGizmoDragging()) {
+          gizmoBase.current = { anchor: centre, offset: move.offset }
+        }
+        engine.setGizmo({ position: centre, rotationXyz: move.rotation }, gizmoMode)
+        return
+      }
+    }
+    gizmoBase.current = null
     const placement =
       selection.kind === 'placement'
         ? doc.placements.find((p) => p.id === selection.id)
         : undefined
-    if (!placement || activeSketch) {
+    if (!placement) {
       engine.setGizmo(null, gizmoMode)
     } else {
       engine.setGizmo(
@@ -131,7 +186,7 @@ export function Viewport() {
         gizmoMode,
       )
     }
-  }, [selection, doc, gizmoMode, activeSketch])
+  }, [selection, doc, shapes, gizmoMode, activeSketch])
 
   // Frame whenever geometry appears out of nothing: opening a document, or
   // turning the first sketch into a solid. Waiting for the shapes rather than

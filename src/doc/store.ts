@@ -131,7 +131,12 @@ interface AppState {
   /** Move one body above another, so it is built first. */
   moveBodyBefore: (bodyId: string, beforeId: string) => void
   addFeature: (bodyId: string, feature: Feature) => void
-  updateFeature: (bodyId: string, featureId: string, patch: Partial<Feature>) => void
+  updateFeature: (
+    bodyId: string,
+    featureId: string,
+    patch: Partial<Feature>,
+    opts?: { transient?: boolean },
+  ) => void
   removeFeature: (bodyId: string, featureId: string) => void
   moveFeature: (bodyId: string, featureId: string, delta: number) => void
 
@@ -377,7 +382,7 @@ export const useStore = create<AppState>((set, get) => ({
     })
   },
 
-  updateFeature(bodyId, featureId, patch) {
+  updateFeature(bodyId, featureId, patch, opts) {
     get().commit(
       (d) => {
         const body = d.bodies.find((b) => b.id === bodyId)
@@ -386,7 +391,13 @@ export const useStore = create<AppState>((set, get) => ({
           body.features[index] = { ...body.features[index], ...patch } as Feature
         }
       },
-      { mergeKey: `feature:${featureId}:${Object.keys(patch).join(',')}` },
+      {
+        // A gizmo drag is one undo step, not one per frame. Merging alone is
+        // not enough: a slow drag outlasts the merge window and would leave a
+        // trail of half-moves behind it.
+        transient: opts?.transient,
+        mergeKey: `feature:${featureId}:${Object.keys(patch).join(',')}`,
+      },
     )
   },
 

@@ -666,6 +666,35 @@ export function evaluateBody(
           break
         }
 
+        case 'move': {
+          if (!shape) {
+            errors.push({
+              featureId: feature.id,
+              message: 'There is nothing here to move yet.',
+              hint: 'Make a shape first, then move it.',
+            })
+            break
+          }
+          // Turn about the body's own centre, not the world origin, because
+          // that is what the ring under your cursor looks like it will do.
+          // Measured before any of the turns so the three axes stay
+          // independent - otherwise turning about X would shift the centre
+          // that the following turn about Y uses.
+          const [bmin, bmax] = shape.boundingBox.bounds
+          const centre: Vec3 = [
+            (bmin[0] + bmax[0]) / 2,
+            (bmin[1] + bmax[1]) / 2,
+            (bmin[2] + bmax[2]) / 2,
+          ]
+          const [rx, ry, rz] = feature.rotation
+          if (rx) shape = shape.rotate(rx, centre, [1, 0, 0])
+          if (ry) shape = shape.rotate(ry, centre, [0, 1, 0])
+          if (rz) shape = shape.rotate(rz, centre, [0, 0, 1])
+          const [dx, dy, dz] = feature.offset
+          if (dx || dy || dz) shape = shape.translate([dx, dy, dz])
+          break
+        }
+
         case 'box': {
           const frame = frameFromPlaneRef(feature.plane, ctx.shapes)
           const base = feature.cornerRadius

@@ -467,7 +467,9 @@ export class ViewportEngine {
    * is replaced mid-drag; a proxy survives that.
    */
   private gizmoProxy = new THREE.Object3D()
-  onGizmoChange: ((position: Vec3, rotationDeg: number) => void) | null = null
+  onGizmoChange:
+    | ((position: Vec3, rotationDeg: number, rotationXyz: Vec3) => void)
+    | null = null
   onGizmoRelease: (() => void) | null = null
 
   private ensureTransform(): TransformControls {
@@ -486,8 +488,9 @@ export class ViewportEngine {
     })
     tc.addEventListener('objectChange', () => {
       const p = this.gizmoProxy.position
-      const deg = THREE.MathUtils.radToDeg(this.gizmoProxy.rotation.z)
-      this.onGizmoChange?.([p.x, p.y, p.z], deg)
+      const r = this.gizmoProxy.rotation
+      const deg = (a: number) => THREE.MathUtils.radToDeg(a)
+      this.onGizmoChange?.([p.x, p.y, p.z], deg(r.z), [deg(r.x), deg(r.y), deg(r.z)])
     })
 
     // three moved the visible gizmo behind getHelper() in recent versions.
@@ -502,7 +505,13 @@ export class ViewportEngine {
 
   /** Show the gizmo on something, or pass null to hide it. */
   setGizmo(
-    target: { position: Vec3; rotation: number } | null,
+    target: {
+      position: Vec3
+      /** Turn about the vertical axis only, for placed catalogue parts. */
+      rotation?: number
+      /** Turn about all three, for a body you modelled yourself. */
+      rotationXyz?: Vec3
+    } | null,
     mode: 'translate' | 'rotate',
   ) {
     if (!target) {
@@ -511,17 +520,23 @@ export class ViewportEngine {
     }
     const tc = this.ensureTransform()
     if (!this.gizmoProxy.parent) this.scene.add(this.gizmoProxy)
+    const rad = THREE.MathUtils.degToRad
+    const xyz = target.rotationXyz
     // Never move the proxy out from under a drag in progress.
     if (!tc.dragging) {
       this.gizmoProxy.position.set(...target.position)
-      this.gizmoProxy.rotation.set(0, 0, THREE.MathUtils.degToRad(target.rotation))
+      if (xyz) this.gizmoProxy.rotation.set(rad(xyz[0]), rad(xyz[1]), rad(xyz[2]))
+      else this.gizmoProxy.rotation.set(0, 0, rad(target.rotation ?? 0))
     }
     tc.attach(this.gizmoProxy)
     tc.setMode(mode)
-    // Placed parts only turn about the vertical axis, so the turn gizmo shows
-    // one ring rather than three the user can get wrong.
-    tc.showX = mode === 'translate'
-    tc.showY = mode === 'translate'
+    // A placed part sits on a plate and only ever turns about the vertical, so
+    // it gets one ring rather than three the user can get wrong. A body you
+    // modelled yourself has no such assumption - tilting a bracket onto its
+    // side is a normal thing to want - so it gets all three.
+    const freeTurn = mode === 'translate' || !!xyz
+    tc.showX = freeTurn
+    tc.showY = freeTurn
     tc.showZ = true
   }
 

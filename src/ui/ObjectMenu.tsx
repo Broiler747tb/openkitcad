@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { newId, useStore, type Selection } from '../doc/store'
-import type { ExtrudeFeature, OkcDocument } from '../doc/types'
+import type { ExtrudeFeature, MoveFeature, OkcDocument } from '../doc/types'
 import { getPart } from '../catalogue'
 import { FlyoutMenu } from './FlyoutMenu'
 
@@ -62,6 +62,32 @@ export function objectGroupOf(id: string): string {
     if (ids.includes(id)) return group
   }
   return 'Other'
+}
+
+/**
+ * The move step at the end of a body's history, if it has one.
+ *
+ * Only the trailing step counts. A move part way up the history was put there
+ * deliberately - there is geometry built on top of it - so nudging the part
+ * about must not reach back and disturb it.
+ */
+export function trailingMove(doc: OkcDocument, bodyId: string): MoveFeature | undefined {
+  const body = doc.bodies.find((b) => b.id === bodyId)
+  const last = body?.features[body.features.length - 1]
+  return last?.kind === 'move' ? last : undefined
+}
+
+/** Find that step, or start one, so the gizmo has something to drive. */
+function ensureMove(bodyId: string): void {
+  const store = useStore.getState()
+  if (trailingMove(store.doc, bodyId)) return
+  store.addFeature(bodyId, {
+    id: newId('move'),
+    kind: 'move',
+    name: 'Move',
+    offset: [0, 0, 0],
+    rotation: [0, 0, 0],
+  })
 }
 
 /** The extrude that actually made this body, if there is one. */
@@ -351,6 +377,25 @@ function buildObjectActions(
         run: withOrdering('intersect'),
       })
     }
+
+    out.push({
+      id: 'move',
+      label: 'Move it',
+      hint: 'Drag the arrows. Snaps to 1 mm',
+      run: () => {
+        ensureMove(bodyId)
+        store.setGizmoMode('translate')
+      },
+    })
+    out.push({
+      id: 'turn',
+      label: 'Turn it',
+      hint: 'Drag a ring. Snaps to 15 degrees',
+      run: () => {
+        ensureMove(bodyId)
+        store.setGizmoMode('rotate')
+      },
+    })
 
     // Simple shapes used as cutters. Quicker than sketching for the common
     // "knock a round hollow out of that" jobs.

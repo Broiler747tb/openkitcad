@@ -338,6 +338,112 @@ export async function runKernelTest(): Promise<TestResult[]> {
       )
     }
 
+    // --- moving and turning a body ------------------------------------------
+    {
+      const box = (extra: unknown[]): OkcDocument => ({
+        version: 1,
+        name: 'move',
+        units: 'mm',
+        parameters: [],
+        placements: [],
+        bodies: [
+          {
+            id: 'b',
+            name: 'Slab',
+            visible: true,
+            colour: '#ccc',
+            features: [
+              {
+                id: 'bx',
+                name: 'Slab',
+                kind: 'box',
+                plane: { kind: 'named', name: 'XY', offset: 0 },
+                origin: [0, 0],
+                width: 40,
+                depth: 20,
+                height: 10,
+                operation: 'new',
+              },
+              ...extra,
+            ] as Body['features'],
+          },
+        ],
+      })
+
+      // A move step that has not been dragged yet must leave the part exactly
+      // where it was. The gizmo creates one the moment you ask to move
+      // something, so if this were not true, asking would move it.
+      const still = (
+        await kernel.evaluate(
+          box([
+            { id: 'mv', name: 'Move', kind: 'move', offset: [0, 0, 0], rotation: [0, 0, 0] },
+          ]),
+        )
+      ).shapes[0]
+      add(
+        'a move step with nothing set leaves the part alone',
+        !!still && still.bounds.every((v, i) => Math.abs(v - [0, 0, 0, 40, 20, 10][i]) < 1e-6),
+        `bounds ${still?.bounds.map((v) => v.toFixed(2)).join(', ')}`,
+      )
+
+      const shifted = (
+        await kernel.evaluate(
+          box([
+            { id: 'mv', name: 'Move', kind: 'move', offset: [100, 5, -3], rotation: [0, 0, 0] },
+          ]),
+        )
+      ).shapes[0]
+      add(
+        'moving a body shifts it by exactly that much',
+        !!shifted &&
+          shifted.bounds.every((v, i) => Math.abs(v - [100, 5, -3, 140, 25, 7][i]) < 1e-6),
+        `bounds ${shifted?.bounds.map((v) => v.toFixed(2)).join(', ')}`,
+      )
+
+      // Turned about its own centre, not the world origin. A 40 x 20 footprint
+      // centred at (20, 10) becomes 20 x 40 about the same point; if this
+      // rotated about the origin instead, the part would swing off to one side.
+      const turned = (
+        await kernel.evaluate(
+          box([
+            { id: 'mv', name: 'Move', kind: 'move', offset: [0, 0, 0], rotation: [0, 0, 90] },
+          ]),
+        )
+      ).shapes[0]
+      add(
+        'turning a body pivots about its own centre',
+        !!turned &&
+          turned.bounds.every((v, i) => Math.abs(v - [10, -10, 0, 30, 30, 10][i]) < 1e-6),
+        `bounds ${turned?.bounds.map((v) => v.toFixed(2)).join(', ')}`,
+      )
+
+      // Volume is the real check that a rotation is a rotation: scaling or
+      // shearing would still move the bounding box about convincingly.
+      add(
+        'and does not distort it',
+        !!turned && Math.abs(turned.volume - 40 * 20 * 10) < 1e-3,
+        `${turned?.volume.toFixed(2)} mm3, expected 8000`,
+      )
+
+      // Off-axis, where an error in the pivot shows up plainly: at 45 degrees a
+      // 40 x 20 rectangle spans (40 + 20) * cos45 = 42.43 mm each way.
+      const diagonal = (
+        await kernel.evaluate(
+          box([
+            { id: 'mv', name: 'Move', kind: 'move', offset: [0, 0, 0], rotation: [0, 0, 45] },
+          ]),
+        )
+      ).shapes[0]
+      const span = 60 * Math.cos(Math.PI / 4)
+      add(
+        'a 45 degree turn spans the diagonal, still centred',
+        !!diagonal &&
+          Math.abs(diagonal.bounds[3] - diagonal.bounds[0] - span) < 1e-3 &&
+          Math.abs((diagonal.bounds[0] + diagonal.bounds[3]) / 2 - 20) < 1e-6,
+        `spans ${(diagonal ? diagonal.bounds[3] - diagonal.bounds[0] : 0).toFixed(3)} mm, expected ${span.toFixed(3)}`,
+      )
+    }
+
     // --- ready-made shapes, positive and negative ---------------------------
     {
       const sphereV = (4 / 3) * Math.PI * 15 ** 3

@@ -244,7 +244,26 @@ export interface LidFeature extends FeatureBase {
   thickness: number
 }
 
+/**
+ * Move and turn a body.
+ *
+ * A step in the history rather than a field on the body, which matters because
+ * a sketch drawn on a face records where that face was at the time. Put the
+ * move in the history and anything drawn before it stays put relative to the
+ * shape, while anything drawn afterwards sees the shape where it now is. A
+ * body-level transform would silently strand every face-anchored sketch the
+ * moment the part was nudged.
+ */
+export interface MoveFeature extends FeatureBase {
+  kind: 'move'
+  /** How far to shift it, in mm. */
+  offset: Vec3
+  /** Turn about the body's own centre, degrees per axis, X then Y then Z. */
+  rotation: Vec3
+}
+
 export type Feature =
+  | MoveFeature
   | SketchFeature
   | CombineFeature
   | SphereFeature
@@ -321,6 +340,7 @@ export const FEATURE_LABEL: Record<FeatureKind, string> = {
   standoff: 'Standoffs',
   portCutout: 'Port openings',
   combine: 'Combine',
+  move: 'Move and turn',
   sphere: 'Ball',
   vent: 'Vent holes',
   lid: 'Lid',
@@ -339,6 +359,7 @@ export const FEATURE_ICON: Record<FeatureKind, string> = {
   standoff: '║',
   portCutout: '⬚',
   combine: '◍',
+  move: '✚',
   sphere: '●',
   vent: '⁙',
   lid: '▭',
