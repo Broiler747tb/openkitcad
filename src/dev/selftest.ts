@@ -21,7 +21,16 @@ import {
   filletCorner,
   findCorner,
 } from '../sketch/corner'
-import { circularPattern, linearPattern, trimLine, trimRound } from '../sketch/edit'
+import {
+  addPolygon,
+  addSlot,
+  circularPattern,
+  linearPattern,
+  mirrorEntities,
+  offsetEntities,
+  trimLine,
+  trimRound,
+} from '../sketch/edit'
 
 export interface TestResult {
   name: string
@@ -684,6 +693,121 @@ export function runSelfTest(): TestResult[] {
     check(
       !!result.message && /trim it back/i.test(result.message),
       `and says what to do: "${result.message}"`,
+    )
+  })
+
+  test('a hexagon comes out regular and fully defined', () => {
+    const b = builder()
+    const result = addPolygon(b.sketch, [0, 0], 6, 10, nid)
+    check(result.ok, `polygon added (${result.message ?? 'no error'})`)
+    check(b.sketch.entities.length === 6, `six sides (${b.sketch.entities.length})`)
+
+    const solved = solveSketch(b.sketch)
+    applySolve(b.sketch, solved)
+    // Exactly two: the shape itself is rigid, and the only freedom left is
+    // sliding the whole thing around, which is what you want from something you
+    // just dropped in. A floppy polygon would report more.
+    check(solved.dof === 2, `rigid, free only to move (dof ${solved.dof})`)
+
+    const P = Object.fromEntries(b.sketch.points.map((p) => [p.id, p]))
+    const lengths = b.sketch.entities.map((e: any) =>
+      Math.hypot(P[e.p1].x - P[e.p2].x, P[e.p1].y - P[e.p2].y),
+    )
+    // Every side of a regular hexagon equals the radius of its circle.
+    check(
+      lengths.every((l) => Math.abs(l - 10) < 1e-6),
+      `all six sides are 10 mm (${lengths.map((l) => l.toFixed(3)).join(', ')})`,
+    )
+  })
+
+  test('a slot is the right length over its rounded ends', () => {
+    const b = builder()
+    const result = addSlot(b.sketch, [0, 0], 30, 8, nid)
+    check(result.ok, `slot added (${result.message ?? 'no error'})`)
+
+    const solved = solveSketch(b.sketch)
+    applySolve(b.sketch, solved)
+    check(solved.dof === 2, `rigid, free only to move (dof ${solved.dof})`)
+
+    const P = b.sketch.points
+    const xs = P.map((p) => p.x)
+    const ys = P.map((p) => p.y)
+    // The extremes of the points are the arc centres, so the overall length is
+    // the centre span plus a radius at each end.
+    near(Math.max(...xs) - Math.min(...xs) + 8, 30, 'length over the round ends')
+    near(Math.max(...ys) - Math.min(...ys), 8, 'width across')
+
+    const tooWide = addSlot(builder().sketch, [0, 0], 10, 20, nid)
+    check(
+      !tooWide.ok && /larger of the two/i.test(tooWide.message ?? ''),
+      `a slot wider than it is long is refused with a reason: "${tooWide.message}"`,
+    )
+  })
+
+  test('mirroring reflects across the axis and stays defined', () => {
+    const b = builder()
+    const c = b.point(20, 10)
+    const circ = b.circle(c, 4)
+    b.con({ kind: 'distanceX', a: 'origin', b: c, value: 20 })
+    b.con({ kind: 'distanceY', a: 'origin', b: c, value: 10 })
+    b.con({ kind: 'radius', e: circ, value: 4 })
+    check(solveSketch(b.sketch).dof === 0, 'the original is fully defined')
+
+    const result = mirrorEntities(b.sketch, [circ], 'vertical', nid)
+    check(result.ok, `mirrored (${result.message ?? 'no error'})`)
+    const solved = solveSketch(b.sketch)
+    applySolve(b.sketch, solved)
+    check(solved.dof === 0, `still fully defined (dof ${solved.dof})`)
+
+    const centres = b.sketch.entities
+      .filter((e) => e.kind === 'circle')
+      .map((e: any) => b.sketch.points.find((p) => p.id === e.c)!)
+    check(centres.length === 2, 'two circles now')
+    const mirrored = centres.find((p) => p.x < 0)!
+    near(mirrored.x, -20, 'reflected across the upright axis')
+    near(mirrored.y, 10, 'and kept its height')
+    const radii = b.sketch.entities
+      .filter((e) => e.kind === 'circle')
+      .map((e: any) => e.r)
+    check(
+      radii.every((r) => Math.abs(r - 4) < 1e-6),
+      `both are still 4 mm (${radii.map((r) => r.toFixed(3)).join(', ')})`,
+    )
+  })
+
+  test('offsetting makes a true parallel copy', () => {
+    const b = builder()
+    const a = b.point(0, 0)
+    const p2 = b.point(50, 0)
+    const line = b.line(a, p2)
+    b.con({ kind: 'coincident', a, b: 'origin' })
+    b.con({ kind: 'horizontal', e: line })
+    b.con({ kind: 'distanceX', a, b: p2, value: 50 })
+
+    const centre = b.point(0, 40)
+    const circ = b.circle(centre, 12)
+    b.con({ kind: 'distanceX', a: 'origin', b: centre, value: 0 })
+    b.con({ kind: 'distanceY', a: 'origin', b: centre, value: 40 })
+    b.con({ kind: 'radius', e: circ, value: 12 })
+
+    const result = offsetEntities(b.sketch, [line, circ], 5, nid)
+    check(result.ok, `offset (${result.message ?? 'no error'})`)
+    const solved = solveSketch(b.sketch)
+    applySolve(b.sketch, solved)
+    check(solved.dof === 0, `still fully defined (dof ${solved.dof})`)
+
+    const P = Object.fromEntries(b.sketch.points.map((p) => [p.id, p]))
+    const copy = b.sketch.entities.filter((e) => e.kind === 'line').find((e) => e.id !== line) as any
+    near(Math.abs(P[copy.p1].y), 5, 'the parallel line sits 5 mm off')
+    near(
+      Math.hypot(P[copy.p1].x - P[copy.p2].x, P[copy.p1].y - P[copy.p2].y),
+      50,
+      'and is the same length',
+    )
+    const rings = b.sketch.entities.filter((e) => e.kind === 'circle').map((e: any) => e.r).sort()
+    check(
+      Math.abs(rings[0] - 12) < 1e-6 && Math.abs(rings[1] - 17) < 1e-6,
+      `the circle gained a concentric ring at 17 mm (${rings.map((r) => r.toFixed(2)).join(', ')})`,
     )
   })
 

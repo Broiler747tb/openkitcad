@@ -39,6 +39,14 @@ export type ActionResult =
       dy: number
     }
   | {
+      kind: 'mirror'
+      entityIds: string[]
+      axis: 'vertical' | 'horizontal'
+    }
+  | { kind: 'offset'; entityIds: string[]; distance: number }
+  | { kind: 'addPolygon'; centre: Vec2; sides: number; radius: number }
+  | { kind: 'addSlot'; centre: Vec2; length: number; width: number }
+  | {
       kind: 'circularPattern'
       entityIds: string[]
       count: number
@@ -420,6 +428,25 @@ export function sketchActions(
       }),
     })
     push({
+      id: 'offset',
+      label: 'Make a parallel copy',
+      hint: 'A second outline a fixed distance away',
+      prompt: { label: 'Distance', initial: 3, unit: 'mm' },
+      build: (distance) => ({ kind: 'offset', entityIds: ids, distance }),
+    })
+    push({
+      id: 'mirror-vertical',
+      label: 'Mirror left to right',
+      hint: 'Reflects across the upright axis through the origin',
+      build: () => ({ kind: 'mirror', entityIds: ids, axis: 'vertical' }),
+    })
+    push({
+      id: 'mirror-horizontal',
+      label: 'Mirror top to bottom',
+      hint: 'Reflects across the flat axis through the origin',
+      build: () => ({ kind: 'mirror', entityIds: ids, axis: 'horizontal' }),
+    })
+    push({
       id: 'circular-pattern',
       label: 'Repeat in a ring',
       hint: 'Copies swung around the sketch origin, for a bolt circle',
@@ -431,6 +458,36 @@ export function sketchActions(
         count: Math.round(count),
         centre: pts.get('origin') ?? [0, 0],
         totalAngle: angle ?? 360,
+      }),
+    })
+  }
+
+  // ---- nothing picked: drop in a ready-made shape -------------------------
+  if (selection.length === 0 && cursor) {
+    push({
+      id: 'add-polygon',
+      label: 'Add a polygon here',
+      hint: 'Hexagons, octagons and the rest, sized by the circle they fit in',
+      prompt: { label: 'Sides', initial: 6, unit: '' },
+      prompt2: { label: 'Across corners', initial: 20, unit: 'mm' },
+      build: (sides, across) => ({
+        kind: 'addPolygon',
+        centre: cursor,
+        sides,
+        radius: (across ?? 20) / 2,
+      }),
+    })
+    push({
+      id: 'add-slot',
+      label: 'Add a slot here',
+      hint: 'A rounded slot, for something that needs to be adjustable',
+      prompt: { label: 'Length', initial: 30, unit: 'mm' },
+      prompt2: { label: 'Width', initial: 8, unit: 'mm' },
+      build: (length, width) => ({
+        kind: 'addSlot',
+        centre: cursor,
+        length,
+        width: width ?? 8,
       }),
     })
   }

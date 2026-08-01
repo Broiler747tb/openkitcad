@@ -343,6 +343,136 @@ export function trimRound(
 }
 
 // ---------------------------------------------------------------------------
+// Ready-made shapes
+// ---------------------------------------------------------------------------
+
+/**
+ * A regular polygon, sized by the circle it fits inside.
+ *
+ * Dimensioned from that circle rather than by edge length, because that is how
+ * hex stock and bolt heads are specified, and because it keeps the shape fully
+ * defined with one number.
+ */
+export function addPolygon(
+  sketch: Sketch2D,
+  centre: Vec2,
+  sides: number,
+  radius: number,
+  nextId: (prefix: string) => string,
+): EditResult {
+  const n = Math.round(sides)
+  if (n < 3 || n > 64) return { ok: false, message: 'Pick between 3 and 64 sides.' }
+  if (!(radius > 0)) return { ok: false, message: 'The size has to be more than zero.' }
+
+  const centreId = nextId('p')
+  sketch.points.push({ id: centreId, x: centre[0], y: centre[1] })
+  const add = (c: NewConstraint) =>
+    sketch.constraints.push({ ...c, id: nextId('c') } as never)
+
+  const corners: string[] = []
+  for (let i = 0; i < n; i++) {
+    // First corner straight up, so a hexagon reads flat-to-flat left and right.
+    const angle = Math.PI / 2 + (i / n) * Math.PI * 2
+    const id = nextId('p')
+    sketch.points.push({
+      id,
+      x: centre[0] + radius * Math.cos(angle),
+      y: centre[1] + radius * Math.sin(angle),
+    })
+    corners.push(id)
+    // Tie every corner to the centre, which is what holds it regular.
+    add({ kind: 'distanceX', a: centreId, b: id, value: radius * Math.cos(angle) })
+    add({ kind: 'distanceY', a: centreId, b: id, value: radius * Math.sin(angle) })
+  }
+  for (let i = 0; i < n; i++) {
+    sketch.entities.push({
+      id: nextId('e'),
+      kind: 'line',
+      p1: corners[i],
+      p2: corners[(i + 1) % n],
+      construction: false,
+    })
+  }
+  return { ok: true }
+}
+
+/**
+ * A slot: two parallel sides capped with semicircles. The everyday shape for
+ * anything that needs to be adjustable after it is bolted down.
+ */
+export function addSlot(
+  sketch: Sketch2D,
+  centre: Vec2,
+  length: number,
+  width: number,
+  nextId: (prefix: string) => string,
+): EditResult {
+  if (!(width > 0)) return { ok: false, message: 'The width has to be more than zero.' }
+  const radius = width / 2
+  const straight = length - width
+  if (straight <= 0) {
+    return {
+      ok: false,
+      message: `A ${length} mm slot cannot be ${width} mm wide - the length is measured over the round ends, so it has to be the larger of the two.`,
+    }
+  }
+
+  const half = straight / 2
+  const point = (x: number, y: number): string => {
+    const id = nextId('p')
+    sketch.points.push({ id, x: centre[0] + x, y: centre[1] + y })
+    return id
+  }
+  const leftCentre = point(-half, 0)
+  const rightCentre = point(half, 0)
+  const topLeft = point(-half, radius)
+  const topRight = point(half, radius)
+  const bottomRight = point(half, -radius)
+  const bottomLeft = point(-half, -radius)
+
+  const add = (c: NewConstraint) =>
+    sketch.constraints.push({ ...c, id: nextId('c') } as never)
+  const top = nextId('e')
+  const bottom = nextId('e')
+  sketch.entities.push(
+    { id: top, kind: 'line', p1: topLeft, p2: topRight, construction: false },
+    { id: bottom, kind: 'line', p1: bottomRight, p2: bottomLeft, construction: false },
+    {
+      id: nextId('e'),
+      kind: 'arc',
+      c: rightCentre,
+      p1: topRight,
+      p2: bottomRight,
+      ccw: false,
+      construction: false,
+    },
+    {
+      id: nextId('e'),
+      kind: 'arc',
+      c: leftCentre,
+      p1: bottomLeft,
+      p2: topLeft,
+      ccw: false,
+      construction: false,
+    },
+  )
+
+  add({ kind: 'horizontal', e: top })
+  add({ kind: 'horizontal', e: bottom })
+  add({ kind: 'distanceX', a: leftCentre, b: rightCentre, value: straight })
+  add({ kind: 'distanceY', a: leftCentre, b: rightCentre, value: 0 })
+  add({ kind: 'distanceX', a: leftCentre, b: topLeft, value: 0 })
+  add({ kind: 'distanceY', a: leftCentre, b: topLeft, value: radius })
+  add({ kind: 'distanceX', a: leftCentre, b: bottomLeft, value: 0 })
+  add({ kind: 'distanceY', a: leftCentre, b: bottomLeft, value: -radius })
+  add({ kind: 'distanceX', a: rightCentre, b: topRight, value: 0 })
+  add({ kind: 'distanceY', a: rightCentre, b: topRight, value: radius })
+  add({ kind: 'distanceX', a: rightCentre, b: bottomRight, value: 0 })
+  add({ kind: 'distanceY', a: rightCentre, b: bottomRight, value: -radius })
+  return { ok: true }
+}
+
+// ---------------------------------------------------------------------------
 // Patterns
 // ---------------------------------------------------------------------------
 
@@ -468,6 +598,158 @@ export function linearPattern(
     }
     tieRadii(sketch, plan, add)
   }
+  return { ok: true }
+}
+
+/**
+ * Reflect geometry across one of the sketch's own axes.
+ *
+ * Mirroring about a picked line would be more general, but symmetric parts are
+ * nearly always symmetric about the origin, and asking someone to first draw a
+ * construction line to mirror about is a step they should not need.
+ */
+export function mirrorEntities(
+  sketch: Sketch2D,
+  entityIds: string[],
+  axis: 'vertical' | 'horizontal',
+  nextId: (prefix: string) => string,
+): EditResult {
+  if (!entityIds.length) return { ok: false, message: 'Pick something to mirror first.' }
+
+  const reflect = (p: Vec2): Vec2 =>
+    axis === 'vertical' ? [-p[0], p[1]] : [p[0], -p[1]]
+
+  const add = (c: NewConstraint) =>
+    sketch.constraints.push({ ...c, id: nextId('c') } as never)
+
+  const before = new Map<string, Vec2>()
+  for (const p of sketch.points) before.set(p.id, [p.x, p.y])
+
+  const plan = copyGeometry(sketch, entityIds, reflect, nextId)
+  for (const [original, copy] of plan.points) {
+    const from = before.get(original)!
+    const to = reflect(from)
+    add({ kind: 'distanceX', a: original, b: copy, value: to[0] - from[0] })
+    add({ kind: 'distanceY', a: original, b: copy, value: to[1] - from[1] })
+  }
+  tieRadii(sketch, plan, add)
+  return { ok: true }
+}
+
+/**
+ * A parallel copy at a fixed distance: the outline of a wall from the outline
+ * of a room, or a cut line inside a panel edge.
+ *
+ * Each entity is offset on its own rather than the chain being offset as a
+ * unit, so corners between offset pieces do not automatically meet. That is
+ * honest about what it does - trim or round them afterwards - and it means a
+ * single line or circle, which is the common case, always behaves.
+ */
+export function offsetEntities(
+  sketch: Sketch2D,
+  entityIds: string[],
+  distance: number,
+  nextId: (prefix: string) => string,
+): EditResult {
+  if (!entityIds.length) return { ok: false, message: 'Pick something to offset first.' }
+  if (Math.abs(distance) < 1e-9) {
+    return { ok: false, message: 'An offset of zero would land on top of the original.' }
+  }
+
+  const pts = new Map<string, Vec2>()
+  for (const p of sketch.points) pts.set(p.id, [p.x, p.y])
+  const add = (c: NewConstraint) =>
+    sketch.constraints.push({ ...c, id: nextId('c') } as never)
+
+  let made = 0
+  for (const id of entityIds) {
+    const entity = sketch.entities.find((e) => e.id === id)
+    if (!entity) continue
+
+    if (entity.kind === 'circle') {
+      // Concentric: shares the original centre, so it costs no new freedom.
+      const radius = entity.r + distance
+      if (radius <= 0) continue
+      const copyId = nextId('e')
+      sketch.entities.push({
+        id: copyId,
+        kind: 'circle',
+        c: entity.c,
+        r: radius,
+        construction: entity.construction,
+      })
+      add({ kind: 'radius', e: copyId, value: radius })
+      made++
+      continue
+    }
+
+    if (entity.kind === 'line') {
+      const a = pts.get(entity.p1)!
+      const b = pts.get(entity.p2)!
+      const dir = v2.norm(v2.sub(b, a))
+      if (v2.len(dir) < 1e-9) continue
+      const n: Vec2 = [-dir[1], dir[0]]
+      const shift = v2.scale(n, distance)
+      const p1 = nextId('p')
+      const p2 = nextId('p')
+      sketch.points.push({ id: p1, x: a[0] + shift[0], y: a[1] + shift[1] })
+      sketch.points.push({ id: p2, x: b[0] + shift[0], y: b[1] + shift[1] })
+      sketch.entities.push({
+        id: nextId('e'),
+        kind: 'line',
+        p1,
+        p2,
+        construction: entity.construction,
+      })
+      for (const [from, to] of [
+        [entity.p1, p1],
+        [entity.p2, p2],
+      ]) {
+        add({ kind: 'distanceX', a: from, b: to, value: shift[0] })
+        add({ kind: 'distanceY', a: from, b: to, value: shift[1] })
+      }
+      made++
+      continue
+    }
+
+    // Arc: same centre, endpoints pushed out or pulled in along their radials.
+    const centre = pts.get(entity.c)!
+    const radius = v2.dist(centre, pts.get(entity.p1)!) + distance
+    if (radius <= 0) continue
+    const moved = (id: string): string => {
+      const dir = v2.norm(v2.sub(pts.get(id)!, centre))
+      const newId = nextId('p')
+      sketch.points.push({
+        id: newId,
+        x: centre[0] + dir[0] * radius,
+        y: centre[1] + dir[1] * radius,
+      })
+      return newId
+    }
+    const p1 = moved(entity.p1)
+    const p2 = moved(entity.p2)
+    sketch.entities.push({
+      id: nextId('e'),
+      kind: 'arc',
+      c: entity.c,
+      p1,
+      p2,
+      ccw: entity.ccw,
+      construction: entity.construction,
+    })
+    for (const [from, to] of [
+      [entity.p1, p1],
+      [entity.p2, p2],
+    ]) {
+      const a = pts.get(from)!
+      const b = sketch.points.find((p) => p.id === to)!
+      add({ kind: 'distanceX', a: from, b: to, value: b.x - a[0] })
+      add({ kind: 'distanceY', a: from, b: to, value: b.y - a[1] })
+    }
+    made++
+  }
+
+  if (made === 0) return { ok: false, message: 'Nothing there could be offset.' }
   return { ok: true }
 }
 

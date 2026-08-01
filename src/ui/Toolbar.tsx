@@ -80,6 +80,38 @@ export function Toolbar({ onExport, onTutorial }: { onExport: () => void; onTuto
         >
           Make solid
         </button>
+        <button
+          className="tb"
+          disabled={!canExtrude}
+          title={
+            canExtrude
+              ? 'Spin the outline around to make something round, like a knob or a spacer'
+              : 'Draw a closed shape first - the outline has to join up'
+          }
+          onClick={() => {
+            const store = useStore.getState()
+            const active = store.activeSketch
+            if (!active) return
+            store.addFeature(active.bodyId, {
+              id: newId('revolve'),
+              kind: 'revolve',
+              name: 'Spin round',
+              sketchId: active.featureId,
+              angle: 360,
+              // Spinning about the sketch's own x axis is what turns a profile
+              // drawn beside the origin into a solid of revolution.
+              axis: 'x',
+              operation: store.doc.bodies
+                .find((b) => b.id === active.bodyId)
+                ?.features.some((f) => f.kind !== 'sketch')
+                ? 'add'
+                : 'new',
+            })
+            store.closeSketch()
+          }}
+        >
+          Spin round
+        </button>
         <button className="tb" onClick={() => useStore.getState().closeSketch()}>
           Done
         </button>

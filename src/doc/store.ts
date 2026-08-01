@@ -34,7 +34,16 @@ import {
   filletCorner,
   type CornerResult,
 } from '../sketch/corner'
-import { circularPattern, linearPattern, trimLine, trimRound } from '../sketch/edit'
+import {
+  addPolygon,
+  addSlot,
+  circularPattern,
+  linearPattern,
+  mirrorEntities,
+  offsetEntities,
+  trimLine,
+  trimRound,
+} from '../sketch/edit'
 import { getPart } from '../catalogue'
 
 let counter = 0
@@ -97,7 +106,10 @@ interface AppState {
 
   // --- actions
   setDoc: (doc: OkcDocument, resetHistory?: boolean) => void
-  commit: (fn: (draft: OkcDocument) => void, opts?: { transient?: boolean }) => void
+  commit: (
+    fn: (draft: OkcDocument) => void,
+    opts?: { transient?: boolean; mergeKey?: string },
+  ) => void
   undo: () => void
   redo: () => void
   rebuild: () => void
@@ -162,6 +174,10 @@ interface AppState {
 
 const HISTORY_LIMIT = 80
 let statusTimer: number | undefined
+/** How long edits to the same field keep folding into one undo step. */
+const MERGE_WINDOW_MS = 900
+let lastMerge: { key: string; at: number } | null = null
+let buildTicket = 0
 
 function clone<T>(v: T): T {
   return structuredClone(v)
@@ -208,7 +224,19 @@ export const useStore = create<AppState>((set, get) => ({
     const state = get()
     const next = clone(state.doc)
     fn(next)
-    if (opts?.transient) {
+
+    // Typing "12.5" into a box fires an edit per keystroke. Without merging,
+    // undo walks back through "12.", "12", "1" one press at a time, which is
+    // what makes Ctrl+Z feel like it is not working.
+    const now = performance.now()
+    const merges =
+      !!opts?.mergeKey &&
+      lastMerge !== null &&
+      lastMerge.key === opts.mergeKey &&
+      now - lastMerge.at < MERGE_WINDOW_MS
+    lastMerge = opts?.mergeKey ? { key: opts.mergeKey, at: now } : null
+
+    if (opts?.transient || merges) {
       set({ doc: next })
     } else {
       set({
@@ -221,6 +249,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   undo() {
+    lastMerge = null
     const { past, doc, future } = get()
     if (past.length === 0) return
     const previous = past[past.length - 1]
@@ -229,6 +258,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   redo() {
+    lastMerge = null
     const { future, doc, past } = get()
     if (future.length === 0) return
     set({ doc: future[0], future: future.slice(1), past: [...past, doc].slice(-HISTORY_LIMIT) })
@@ -237,10 +267,13 @@ export const useStore = create<AppState>((set, get) => ({
 
   rebuild() {
     const doc = get().doc
+    const ticket = ++buildTicket
     set({ building: true })
     requestBuild(doc).then((result: EvaluateResult) => {
-      // A newer build may have finished first; only accept the latest.
-      if (get().doc !== doc && get().building) return
+      // Results can arrive out of order. Comparing a sequence number is exact,
+      // where the old identity check could drop a result that was actually the
+      // newest and leave stale geometry on screen.
+      if (ticket !== buildTicket) return
       set({
         shapes: result.shapes,
         errors: result.errors,
@@ -333,13 +366,16 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   updateFeature(bodyId, featureId, patch) {
-    get().commit((d) => {
-      const body = d.bodies.find((b) => b.id === bodyId)
-      const index = body?.features.findIndex((f) => f.id === featureId) ?? -1
-      if (body && index >= 0) {
-        body.features[index] = { ...body.features[index], ...patch } as Feature
-      }
-    })
+    get().commit(
+      (d) => {
+        const body = d.bodies.find((b) => b.id === bodyId)
+        const index = body?.features.findIndex((f) => f.id === featureId) ?? -1
+        if (body && index >= 0) {
+          body.features[index] = { ...body.features[index], ...patch } as Feature
+        }
+      },
+      { mergeKey: `feature:${featureId}:${Object.keys(patch).join(',')}` },
+    )
   },
 
   removeFeature(bodyId, featureId) {
@@ -380,10 +416,13 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   updatePlacement(id, patch, opts) {
-    get().commit((d) => {
-      const i = d.placements.findIndex((p) => p.id === id)
-      if (i >= 0) d.placements[i] = { ...d.placements[i], ...patch }
-    }, opts)
+    get().commit(
+      (d) => {
+        const i = d.placements.findIndex((p) => p.id === id)
+        if (i >= 0) d.placements[i] = { ...d.placements[i], ...patch }
+      },
+      { ...opts, mergeKey: `placement:${id}:${Object.keys(patch).join(',')}` },
+    )
   },
 
   gizmoMode: 'translate',
@@ -471,7 +510,10 @@ export const useStore = create<AppState>((set, get) => ({
     if (feature?.kind !== 'sketch') return null
 
     const result = solveSketch(feature.sketch, drag ? { drag } : undefined)
-    get().editSketch((sketch) => applySolve(sketch, result), { transient: !!drag })
+    // Always transient. Solving is what happens *because* of an edit, not an
+    // edit in its own right; pushing history here meant every constraint,
+    // fillet and trim cost two presses of Ctrl+Z to undo.
+    get().editSketch((sketch) => applySolve(sketch, result), { transient: true })
     set({
       sketchStatus: {
         dof: result.dof,
@@ -547,7 +589,11 @@ export const useStore = create<AppState>((set, get) => ({
       case 'filletBetween':
       case 'trim':
       case 'linearPattern':
-      case 'circularPattern': {
+      case 'circularPattern':
+      case 'mirror':
+      case 'offset':
+      case 'addPolygon':
+      case 'addSlot': {
         let outcome: CornerResult = { ok: true }
         get().editSketch((sketch) => {
           switch (result.kind) {
@@ -582,6 +628,24 @@ export const useStore = create<AppState>((set, get) => ({
                 { count: result.count, dx: result.dx, dy: result.dy },
                 newId,
               )
+              break
+            case 'mirror':
+              outcome = mirrorEntities(sketch, result.entityIds, result.axis, newId)
+              break
+            case 'offset':
+              outcome = offsetEntities(sketch, result.entityIds, result.distance, newId)
+              break
+            case 'addPolygon':
+              outcome = addPolygon(
+                sketch,
+                result.centre,
+                result.sides,
+                result.radius,
+                newId,
+              )
+              break
+            case 'addSlot':
+              outcome = addSlot(sketch, result.centre, result.length, result.width, newId)
               break
             case 'circularPattern':
               outcome = circularPattern(

@@ -427,6 +427,33 @@ function FeatureInspector({ bodyId, featureId }: { bodyId: string; featureId: st
         </>
       )}
 
+      {feature.kind === 'revolve' && (
+        <>
+          <Num
+            label="How far round"
+            value={feature.angle}
+            step={15}
+            min={1}
+            suffix="°"
+            onChange={(v) => patch({ angle: Math.min(360, v) } as Partial<Feature>)}
+          />
+          <div className="row">
+            <label>Spin about</label>
+            <select
+              value={feature.axis}
+              onChange={(e) => patch({ axis: e.target.value } as Partial<Feature>)}
+            >
+              <option value="x">The sideways axis</option>
+              <option value="y">The upright axis</option>
+            </select>
+          </div>
+          <p className="hint">
+            Draw the outline to one side of the axis, not across it, or it will try to
+            pass through itself.
+          </p>
+        </>
+      )}
+
       {feature.kind === 'hole' && (
         <>
           <div className="row">
