@@ -33,7 +33,7 @@ import {
   trimRound,
 } from '../sketch/edit'
 import { SKETCH_GROUP_ORDER, sketchActions } from '../sketch/actions'
-import { INSERTS, SCREWS, THREAD_SIZES, planHole } from '../fasteners'
+import { INSERTS, SCREWS, THREAD_SIZES, planHole, planPillar } from '../fasteners'
 import { groupActions, showHeadings } from '../ui/menuGroups'
 
 export interface TestResult {
@@ -814,6 +814,35 @@ export function runSelfTest(): TestResult[] {
     )
   })
 
+  test('pillars are sized round what goes in them', () => {
+    for (const t of THREAD_SIZES) {
+      const tapped = planPillar('tapped', t, 8)
+      check(
+        tapped.outerDiameter - tapped.boreDiameter >= 3,
+        `${t} tapped pillar leaves ${((tapped.outerDiameter - tapped.boreDiameter) / 2).toFixed(2)} mm of wall a side`,
+      )
+      // An insert pillar has to be measured round the insert, not round its
+      // hole - the insert is the wide part and the part that pushes outwards.
+      const ins = planPillar('insert', t, 20)
+      check(
+        ins.outerDiameter - INSERTS[t].outerDiameter >= 3,
+        `${t} insert pillar leaves ${((ins.outerDiameter - INSERTS[t].outerDiameter) / 2).toFixed(2)} mm round the insert`,
+      )
+      near(ins.boreDepth, INSERTS[t].length + 0.5, `${t} bore takes the whole insert`)
+    }
+
+    // A pillar too short for its insert is reported rather than bored short,
+    // which would leave the insert standing proud and holding the board off.
+    const short = planPillar('insert', 'M5', 4)
+    check(!!short.warning, short.warning ? `warns: ${short.warning.slice(0, 52)}...` : 'no warning on a 4 mm pillar for a 9.5 mm insert')
+    near(short.boreDepth, INSERTS.M5.length + 0.5, 'and still bores the full insert depth')
+    check(!planPillar('insert', 'M5', 20).warning, 'a tall enough pillar says nothing')
+
+    // The screw must not bottom out before its head lands, or it splits the
+    // pillar down a layer line.
+    check(planPillar('tapped', 'M3', 8).boreDepth < 8, 'a tapped bore stops short of the top')
+  })
+
   test('the fastener menu offers holes wherever it can work out a position', () => {
     const b = builder()
     const corner = b.point(10, 10)
@@ -821,10 +850,10 @@ export function runSelfTest(): TestResult[] {
     const circle = b.circle(centre, 5)
 
     const ids = (sel: Parameters<typeof sketchActions>[1], cursor?: [number, number]) =>
-      sketchActions(b.sketch, sel, cursor).filter((a) => a.group === 'Screws and inserts')
+      sketchActions(b.sketch, sel, cursor).filter((a) => a.group === 'Screws and pillars')
 
     const onPoint = ids([{ kind: 'point', id: corner }])
-    check(onPoint.length === 5, `a picked corner offers ${onPoint.length} fastener holes`)
+    check(onPoint.length === 7, `a picked corner offers ${onPoint.length} screw and pillar options`)
     check(
       onPoint.every((a) => !!a.choice && a.choice.options.length === THREAD_SIZES.length),
       'each one asks which size',
@@ -832,9 +861,9 @@ export function runSelfTest(): TestResult[] {
 
     // A circle is what someone draws when they mean "hole here", so its centre
     // counts as a position too.
-    check(ids([{ kind: 'entity', id: circle }]).length === 5, 'a picked circle offers them at its centre')
+    check(ids([{ kind: 'entity', id: circle }]).length === 7, 'a picked circle offers them at its centre')
     // And with nothing picked, where the right-click landed.
-    check(ids([], [5, 5]).length === 5, 'nothing picked falls back to the cursor')
+    check(ids([], [5, 5]).length === 7, 'nothing picked falls back to the cursor')
     check(ids([]).length === 0, 'with neither, nothing is offered rather than a hole at the origin')
   })
 

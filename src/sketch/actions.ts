@@ -55,6 +55,14 @@ export type ActionResult =
   | { kind: 'addPolygon'; centre: Vec2; sides: number; radius: number }
   | { kind: 'addSlot'; centre: Vec2; length: number; width: number }
   | {
+      kind: 'standoff'
+      positions: Vec2[]
+      /** Whether the pillar is screwed into directly or takes an insert. */
+      kindOf: 'tapped' | 'insert'
+      size: ThreadSize
+      height: number
+    }
+  | {
       kind: 'fastener'
       /** Where the holes go, in sketch coordinates. */
       positions: Vec2[]
@@ -134,8 +142,16 @@ const SKETCH_GROUPS: Array<[string, string[]]> = [
   ['Repeat or copy', ['linear-pattern', 'circular-pattern', 'mirror-vertical', 'mirror-horizontal', 'offset']],
   ['Add a shape', ['add-polygon', 'add-slot']],
   [
-    'Screws and inserts',
-    ['screw-clearance', 'screw-counterbore', 'screw-countersink', 'screw-tapped', 'screw-insert'],
+    'Screws and pillars',
+    [
+      'screw-clearance',
+      'screw-counterbore',
+      'screw-countersink',
+      'screw-tapped',
+      'screw-insert',
+      'pillar-tapped',
+      'pillar-insert',
+    ],
   ],
 ]
 
@@ -290,6 +306,38 @@ export function sketchActions(
       'Hole for a threaded insert',
       'For a brass heat-set insert. Insert sizes vary by supplier - test-fit one before printing the lot',
       'How deep',
+    )
+
+    // Pillars are the same idea pointing the other way: instead of going into
+    // the part, they stand up off it so a board can sit clear of whatever is
+    // underneath.
+    const pillar = (id: string, kindOf: 'tapped' | 'insert', label: string, hint: string) => {
+      push({
+        id,
+        label: label + where,
+        hint,
+        choice: sizeChoice,
+        prompt: { label: 'How tall', initial: 6, unit: 'mm' },
+        build: (height, _b, _c, choice) => ({
+          kind: 'standoff',
+          positions: fastenerAt,
+          kindOf,
+          size: (choice as ThreadSize) ?? 'M3',
+          height: Math.max(height, 0.5),
+        }),
+      })
+    }
+    pillar(
+      'pillar-tapped',
+      'tapped',
+      'Pillar to screw into',
+      'Stands up off the surface, bored so the screw cuts its own thread',
+    )
+    pillar(
+      'pillar-insert',
+      'insert',
+      'Pillar for a threaded insert',
+      'Same, sized round a brass insert so it has enough material not to split',
     )
   }
 

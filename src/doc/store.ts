@@ -45,7 +45,7 @@ import {
   trimRound,
 } from '../sketch/edit'
 import { getPart } from '../catalogue'
-import { planHole } from '../fasteners'
+import { planHole, planPillar } from '../fasteners'
 import { v3 } from '../core/math'
 import { frameFromPlaneRefLocal } from './planes'
 
@@ -711,40 +711,36 @@ export const useStore = create<AppState>((set, get) => ({
         break
       }
 
+      case 'standoff': {
+        const seat = surfacePlane(get())
+        if (!seat) break
+        const plan = planPillar(result.kindOf, result.size, result.height)
+        if (plan.warning) get().setStatus(plan.warning)
+        get().addFeature(seat.bodyId, {
+          id: newId('standoff'),
+          kind: 'standoff',
+          name: plan.name,
+          // Pillars grow along the plane normal, so the same lifted plane that
+          // puts a hole at the top surface stands a pillar on it.
+          plane: seat.plane,
+          source: { kind: 'explicit', positions: result.positions },
+          height: result.height,
+          outerDiameter: plan.outerDiameter,
+          boreDiameter: plan.boreDiameter,
+          boreDepth: plan.boreDepth,
+        })
+        break
+      }
+
       case 'fastener': {
-        const active = get().activeSketch
-        if (!active) break
-        const sketchFeature = activeSketchFeature(get())
-        if (!sketchFeature) break
+        const seat = surfacePlane(get())
+        if (!seat) break
         const plan = planHole(result.kindOf, result.size)
-
-        // Holes are cut inward from their plane, so the plane has to sit on the
-        // far side of the material or the cutter starts past it and comes out
-        // the other end without touching anything. The sketch may be on the
-        // base plane under the part, on a face, or on something tilted, so the
-        // offset is measured rather than assumed: project the built solid's
-        // corners onto the plane normal and take the furthest.
-        const frame = frameFromPlaneRefLocal(sketchFeature.plane)
-        const built = get().shapes.find((sh) => sh.id === active.bodyId)
-        let lift = 0
-        if (built) {
-          const [x0, y0, z0, x1, y1, z1] = built.bounds
-          for (const x of [x0, x1]) {
-            for (const y of [y0, y1]) {
-              for (const z of [z0, z1]) {
-                const d = v3.dot(v3.sub([x, y, z], frame.origin), frame.normal)
-                if (d > lift) lift = d
-              }
-            }
-          }
-        }
-        const plane: PlaneRef = { ...sketchFeature.plane, offset: sketchFeature.plane.offset + lift }
-
-        get().addFeature(active.bodyId, {
+        get().addFeature(seat.bodyId, {
           id: newId('hole'),
           kind: 'hole',
           name: plan.name,
-          plane,
+          plane: seat.plane,
           source: { kind: 'explicit', positions: result.positions },
           style: plan.style,
           diameter: plan.diameter,
@@ -762,6 +758,41 @@ export const useStore = create<AppState>((set, get) => ({
     set({ sketchSelection: [] })
   },
 }))
+
+/**
+ * The plane to hang a hole or a pillar off, given the sketch that is open.
+ *
+ * Both cut or grow along the sketch plane's normal, so the plane has to sit on
+ * the far surface of the material: a hole started under the part comes out the
+ * other side without touching it, and a pillar started there is buried inside
+ * it. The offset is measured rather than assumed, because the sketch may be on
+ * a base plane, on a face, or on something tilted - the built solid's corners
+ * are projected onto the plane normal and the furthest one wins.
+ */
+function surfacePlane(state: AppState): { bodyId: string; plane: PlaneRef } | null {
+  const active = state.activeSketch
+  if (!active) return null
+  const sketchFeature = activeSketchFeature(state)
+  if (!sketchFeature) return null
+  const frame = frameFromPlaneRefLocal(sketchFeature.plane)
+  const built = state.shapes.find((sh) => sh.id === active.bodyId)
+  let lift = 0
+  if (built) {
+    const [x0, y0, z0, x1, y1, z1] = built.bounds
+    for (const x of [x0, x1]) {
+      for (const y of [y0, y1]) {
+        for (const z of [z0, z1]) {
+          const d = v3.dot(v3.sub([x, y, z], frame.origin), frame.normal)
+          if (d > lift) lift = d
+        }
+      }
+    }
+  }
+  return {
+    bodyId: active.bodyId,
+    plane: { ...sketchFeature.plane, offset: sketchFeature.plane.offset + lift },
+  }
+}
 
 /** The sketch currently open for editing, if any. */
 export function activeSketchFeature(state: AppState = useStore.getState()): SketchFeature | null {

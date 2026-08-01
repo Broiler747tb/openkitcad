@@ -161,3 +161,58 @@ export function planHole(kind: FastenerKind, size: ThreadSize): HolePlan {
     }
   }
 }
+
+/** What a standoff feature needs, for a pillar you screw into. */
+export interface PillarPlan {
+  outerDiameter: number
+  boreDiameter: number
+  boreDepth: number
+  name: string
+  /** Set when the pillar is too short for what is going in it. */
+  warning?: string
+}
+
+/**
+ * A printed pillar sized round the thing going into it.
+ *
+ * The wall matters more here than anywhere else in this file. A pillar bored
+ * too close to its outside splits down a layer line the first time a screw goes
+ * in, and a heat-set insert will do it on the way in rather than waiting. Three
+ * millimetres of material round the hole - a millimetre and a half a side - is
+ * the usual minimum that survives, and that is what these leave.
+ */
+export function planPillar(
+  kind: 'tapped' | 'insert',
+  size: ThreadSize,
+  height: number,
+): PillarPlan {
+  if (kind === 'insert') {
+    const insert = INSERTS[size]
+    return {
+      // Measured round the insert, not round the hole: the insert is the wide
+      // part, and it is the part that pushes outwards as it melts in.
+      outerDiameter: insert.outerDiameter + 3,
+      boreDiameter: insert.pilot,
+      // The full length of the insert, never trimmed to fit the pillar. An
+      // insert in a hole shorter than itself stands proud and holds the board
+      // off, so a pillar too short to take one is a mistake to report rather
+      // than to quietly bore around. On a short pillar this runs on into
+      // whatever it is standing on, which is normally the plate.
+      boreDepth: insert.length + 0.5,
+      name: `${size} insert pillars`,
+      warning:
+        height < insert.length + 1
+          ? `A ${height} mm pillar is shorter than a ${size} insert (${insert.length} mm), so the hole runs on into whatever is underneath. Make it at least ${Math.ceil(insert.length + 1)} mm to keep the hole inside the pillar.`
+          : undefined,
+    }
+  }
+  const screw = SCREWS[size]
+  return {
+    outerDiameter: screw.major + 3,
+    boreDiameter: screw.tapping,
+    // A screw that bottoms out before its head lands splits the pillar, so the
+    // bore always stops short of the full height.
+    boreDepth: Math.max(height - 1, 1),
+    name: `${size} pillars`,
+  }
+}
