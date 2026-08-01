@@ -14,6 +14,14 @@ import { v2, type Vec2 } from '../core/math'
 import { findCorner, maxChamferDistance, maxFilletRadius } from './corner'
 import type { SketchTarget } from './inference'
 import type { NewConstraint, Sketch2D, SketchEntity } from './types'
+import {
+  INSERTS,
+  SCREWS,
+  THREAD_SIZES,
+  planHole,
+  type FastenerKind,
+  type ThreadSize,
+} from '../fasteners'
 
 export type ActionResult =
   | { kind: 'constraint'; constraint: NewConstraint }
@@ -47,6 +55,15 @@ export type ActionResult =
   | { kind: 'addPolygon'; centre: Vec2; sides: number; radius: number }
   | { kind: 'addSlot'; centre: Vec2; length: number; width: number }
   | {
+      kind: 'fastener'
+      /** Where the holes go, in sketch coordinates. */
+      positions: Vec2[]
+      kindOf: FastenerKind
+      size: ThreadSize
+      /** 0 means straight through. */
+      depth: number
+    }
+  | {
       kind: 'circularPattern'
       entityIds: string[]
       count: number
@@ -73,7 +90,13 @@ export interface SketchAction {
   prompt2?: PromptField
   /** And a third. Unused in sketches so far, but the menu renders it. */
   prompt3?: PromptField
-  build: (value: number, value2?: number) => ActionResult
+  /** A pick-one field, for the choices that are not a number. */
+  choice?: {
+    label: string
+    initial: string
+    options: Array<{ value: string; label: string; hint?: string }>
+  }
+  build: (value: number, value2?: number, value3?: number, choice?: string) => ActionResult
 }
 
 
@@ -110,6 +133,10 @@ const SKETCH_GROUPS: Array<[string, string[]]> = [
   ],
   ['Repeat or copy', ['linear-pattern', 'circular-pattern', 'mirror-vertical', 'mirror-horizontal', 'offset']],
   ['Add a shape', ['add-polygon', 'add-slot']],
+  [
+    'Screws and inserts',
+    ['screw-clearance', 'screw-counterbore', 'screw-countersink', 'screw-tapped', 'screw-insert'],
+  ],
 ]
 
 /** Section names in the order the menu lists them. */
@@ -168,6 +195,103 @@ export function sketchActions(
 
   const straight = lines(entities)
   const curved = rounds(entities)
+
+  // ---- screws and inserts -------------------------------------------------
+  // Where the holes go: the corners you picked, the middle of any circles you
+  // picked, or failing both, wherever you right-clicked. All three are things
+  // someone might reasonably mean, and guessing wrong costs one undo.
+  const fastenerAt: Vec2[] = pointIds.length
+    ? pointIds.map((id) => pts.get(id)).filter((p): p is Vec2 => !!p)
+    : curved.length
+      ? curved
+          .map((e) => pts.get(e.kind === 'circle' ? e.c : e.c))
+          .filter((p): p is Vec2 => !!p)
+      : cursor
+        ? [cursor]
+        : []
+
+  if (fastenerAt.length > 0) {
+    const sizeChoice = {
+      label: 'Screw size',
+      initial: 'M3',
+      options: THREAD_SIZES.map((t) => ({
+        value: t,
+        label: t,
+        hint: `${SCREWS[t].clearance} mm clearance, ${SCREWS[t].tapping} mm to tap, ${INSERTS[t].pilot} mm for an insert`,
+      })),
+    }
+    const many = fastenerAt.length > 1
+    const where = many ? ` at ${fastenerAt.length} places` : ''
+
+    const fastener = (
+      id: string,
+      kindOf: FastenerKind,
+      label: string,
+      hint: string,
+      depthLabel: string,
+    ) => {
+      // The suggested depth follows the size, and the size is not known until
+      // the dropdown is read - so the field starts on the M3 figure and the
+      // build call recomputes it if that number was left alone.
+      const fallback = planHole(kindOf, 'M3').suggestedDepth
+      push({
+        id,
+        label: label + where,
+        hint,
+        choice: sizeChoice,
+        prompt: { label: depthLabel, initial: fallback, unit: 'mm' },
+        build: (depth, _b, _c, choice) => {
+          const size = (choice as ThreadSize) ?? 'M3'
+          // Left at the default for M3, so it means "whatever suits this size"
+          // rather than that exact number.
+          const wanted = depth === fallback ? planHole(kindOf, size).suggestedDepth : depth
+          return {
+            kind: 'fastener',
+            positions: fastenerAt,
+            kindOf,
+            size,
+            depth: Math.max(0, wanted),
+          }
+        },
+      })
+    }
+
+    fastener(
+      'screw-clearance',
+      'clearance',
+      'Hole for a screw to pass through',
+      'A plain hole the screw slides through, to bolt into something behind',
+      'Depth, 0 for right through',
+    )
+    fastener(
+      'screw-counterbore',
+      'counterbore',
+      'Hole with the screw head sunk in',
+      'Passes through, with a pocket so a cap head sits below the surface',
+      'Depth, 0 for right through',
+    )
+    fastener(
+      'screw-countersink',
+      'countersink',
+      'Hole with the screw head flush',
+      'Passes through, with a cone so a countersunk head finishes level',
+      'Depth, 0 for right through',
+    )
+    fastener(
+      'screw-tapped',
+      'tapped',
+      'Hole to screw straight into',
+      'Undersized, so the screw cuts its own thread in the plastic',
+      'How deep',
+    )
+    fastener(
+      'screw-insert',
+      'insert',
+      'Hole for a threaded insert',
+      'For a brass heat-set insert. Insert sizes vary by supplier - test-fit one before printing the lot',
+      'How deep',
+    )
+  }
 
   // ---- one line ----------------------------------------------------------
   if (straight.length === 1 && entities.length === 1 && pointIds.length === 0) {

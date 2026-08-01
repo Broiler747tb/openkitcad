@@ -33,6 +33,7 @@ import {
   trimRound,
 } from '../sketch/edit'
 import { SKETCH_GROUP_ORDER, sketchActions } from '../sketch/actions'
+import { INSERTS, SCREWS, THREAD_SIZES, planHole } from '../fasteners'
 import { groupActions, showHeadings } from '../ui/menuGroups'
 
 export interface TestResult {
@@ -757,6 +758,84 @@ export function runSelfTest(): TestResult[] {
     d.con({ kind: 'distance', a: d1, b: d2, value: 50 })
     check(!resizeSketch(d.sketch, 2, 1).ok, 'a diagonal length blocks an uneven stretch')
     check(resizeSketch(d.sketch, 2, 2).ok, 'but not an even one')
+  })
+
+  test('screw and insert holes come out the right size', () => {
+    // Spot checks against the standards, so a transcription slip shows up as a
+    // wrong number rather than as a hole that nearly fits.
+    near(SCREWS.M3.clearance, 3.4, 'M3 clearance hole, ISO 273 medium')
+    near(SCREWS.M3.tapping, 2.5, 'M3 tapping drill, ISO 2306')
+    near(SCREWS.M3.headDiameter, 5.5, 'M3 cap head across, ISO 4762')
+    near(SCREWS.M5.clearance, 5.5, 'M5 clearance hole')
+    near(INSERTS.M3.pilot, 4, 'M3 heat-set pilot')
+
+    // Structural, and worth more than the spot checks: every row has to obey
+    // tapping < major < clearance. A transposed pair anywhere in the table
+    // fails here even if nobody thought to spot-check that size.
+    const wrong = THREAD_SIZES.filter((t) => {
+      const s = SCREWS[t]
+      return !(s.tapping < s.major && s.major < s.clearance && s.headDiameter > s.major)
+    })
+    check(wrong.length === 0, wrong.length ? `out of order: ${wrong.join(', ')}` : 'every size tapping < major < clearance')
+
+    // An insert has to melt into a hole smaller than itself, or it just drops
+    // through and takes the print with it.
+    const loose = THREAD_SIZES.filter((t) => INSERTS[t].pilot >= INSERTS[t].outerDiameter)
+    check(loose.length === 0, loose.length ? `pilot too big: ${loose.join(', ')}` : 'every insert pilot is under its outside diameter')
+
+    // A counterbore has to clear the head it is hiding, and a screw has to pass
+    // through the shaft of its own counterbore.
+    for (const t of THREAD_SIZES) {
+      const bore = planHole('counterbore', t)
+      check(
+        (bore.counterboreDiameter ?? 0) > SCREWS[t].headDiameter &&
+          bore.diameter > SCREWS[t].major &&
+          (bore.counterboreDepth ?? 0) > SCREWS[t].headHeight,
+        `${t} counterbore clears its head (${bore.counterboreDiameter} over ${SCREWS[t].headDiameter})`,
+      )
+    }
+
+    // Through-type holes suggest going right through; blind ones suggest a real
+    // depth. Getting these the wrong way round makes every hole a through hole.
+    check(
+      planHole('clearance', 'M3').suggestedDepth === 0 &&
+        planHole('counterbore', 'M3').suggestedDepth === 0 &&
+        planHole('countersink', 'M3').suggestedDepth === 0,
+      'holes a screw passes through default to going right through',
+    )
+    check(
+      planHole('tapped', 'M3').suggestedDepth > 0 && planHole('insert', 'M3').suggestedDepth > 0,
+      `blind holes get a depth (tapped ${planHole('tapped', 'M3').suggestedDepth}, insert ${planHole('insert', 'M3').suggestedDepth})`,
+    )
+    // Deep enough for the insert to sit flush rather than bottoming out first.
+    check(
+      planHole('insert', 'M4').suggestedDepth > INSERTS.M4.length,
+      `M4 insert hole ${planHole('insert', 'M4').suggestedDepth} mm for a ${INSERTS.M4.length} mm insert`,
+    )
+  })
+
+  test('the fastener menu offers holes wherever it can work out a position', () => {
+    const b = builder()
+    const corner = b.point(10, 10)
+    const centre = b.point(40, 40)
+    const circle = b.circle(centre, 5)
+
+    const ids = (sel: Parameters<typeof sketchActions>[1], cursor?: [number, number]) =>
+      sketchActions(b.sketch, sel, cursor).filter((a) => a.group === 'Screws and inserts')
+
+    const onPoint = ids([{ kind: 'point', id: corner }])
+    check(onPoint.length === 5, `a picked corner offers ${onPoint.length} fastener holes`)
+    check(
+      onPoint.every((a) => !!a.choice && a.choice.options.length === THREAD_SIZES.length),
+      'each one asks which size',
+    )
+
+    // A circle is what someone draws when they mean "hole here", so its centre
+    // counts as a position too.
+    check(ids([{ kind: 'entity', id: circle }]).length === 5, 'a picked circle offers them at its centre')
+    // And with nothing picked, where the right-click landed.
+    check(ids([], [5, 5]).length === 5, 'nothing picked falls back to the cursor')
+    check(ids([]).length === 0, 'with neither, nothing is offered rather than a hole at the origin')
   })
 
   test('every menu action lands in a named section', () => {

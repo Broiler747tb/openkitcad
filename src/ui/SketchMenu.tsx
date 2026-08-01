@@ -31,9 +31,11 @@ export function SketchMenu({
   const selection = useStore((s) => s.sketchSelection)
   const doc = useStore((s) => s.doc)
   const [pending, setPending] = useState<SketchAction | null>(null)
+  const [choiceHint, setChoiceHint] = useState('')
   const ref = useRef<HTMLDivElement>(null)
   const secondRef = useRef<HTMLInputElement>(null)
   const thirdRef = useRef<HTMLInputElement>(null)
+  const choiceRef = useRef<HTMLSelectElement>(null)
 
   const sketch = activeSketchFeature(useStore.getState())?.sketch
   const actions = sketch ? sketchActions(sketch, selection, cursor) : []
@@ -59,8 +61,14 @@ export function SketchMenu({
     }
   }, [onClose])
 
-  const run = (action: SketchAction, value: number, value2?: number) => {
-    useStore.getState().applySketchAction(action.build(value, value2))
+  const run = (
+    action: SketchAction,
+    value: number,
+    value2?: number,
+    value3?: number,
+    choice?: string,
+  ) => {
+    useStore.getState().applySketchAction(action.build(value, value2, value3, choice))
     onClose()
   }
 
@@ -70,8 +78,10 @@ export function SketchMenu({
     const a = Number(first.value)
     const b = pending.prompt2 ? Number(secondRef.current?.value) : undefined
     if (!Number.isFinite(a)) return
+    const c = pending.prompt3 ? Number(thirdRef.current?.value) : undefined
     if (pending.prompt2 && !Number.isFinite(b as number)) return
-    run(pending, a, b)
+    if (pending.prompt3 && !Number.isFinite(c as number)) return
+    run(pending, a, b, c, choiceRef.current?.value)
   }
 
   // Keep the menu on screen when right-clicking near an edge.
@@ -84,6 +94,28 @@ export function SketchMenu({
     <div className="sketch-menu" style={style} ref={ref}>
       {pending ? (
         <>
+          {pending.choice && (
+            <div className="sketch-menu-choice">
+              <label>{pending.choice.label}</label>
+              <select
+                ref={choiceRef}
+                defaultValue={pending.choice.initial}
+                onChange={() => setChoiceHint(choiceRef.current?.value ?? '')}
+              >
+                {pending.choice.options.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+              {(() => {
+                const picked = pending.choice.options.find(
+                  (o) => o.value === (choiceHint || pending.choice!.initial),
+                )
+                return picked?.hint ? <p>{picked.hint}</p> : null
+              })()}
+            </div>
+          )}
           <div className="sketch-menu-prompt">
             <label>{pending.prompt!.label}</label>
             <input
