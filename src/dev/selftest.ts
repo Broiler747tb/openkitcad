@@ -911,6 +911,55 @@ export function runSelfTest(): TestResult[] {
       shapes as never,
     )
     check(untagged.length === 0, 'an untagged hole gets no ghost')
+
+    // Holes generated from a placed board carry no tag, but the board names the
+    // screw its own mounting holes take, so those are known rather than guessed.
+    const withBoard = {
+      version: 1,
+      name: 'g',
+      units: 'mm' as const,
+      parameters: [],
+      placements: [
+        {
+          id: 'pi',
+          partId: 'raspberry-pi-4b',
+          name: 'Pi',
+          position: [10, 10, 9],
+          rotation: 0,
+          flipped: false,
+          visible: true,
+        },
+      ],
+      bodies: [
+        {
+          id: 'p',
+          name: 'Plate',
+          visible: true,
+          colour: '#ccc',
+          features: [
+            {
+              id: 'h',
+              name: 'h',
+              kind: 'hole',
+              plane: { kind: 'named', name: 'XY', offset: 3 },
+              source: { kind: 'placement', placementId: 'pi' },
+              style: 'counterbore',
+              diameter: 2.9,
+              depth: 'through',
+              counterboreDepth: 2,
+            },
+          ],
+        },
+      ],
+    }
+    const fromBoard = fastenerGhosts(withBoard as never, [
+      { id: 'p', bounds: [0, 0, 0, 120, 100, 3] },
+    ] as never)
+    check(fromBoard.length === 4, `a Pi's four mounting holes give ${fromBoard.length} ghosts`)
+    near(fromBoard[0].shaftDiameter, SCREWS['M2.5'].major, "sized M2.5 from the Pi's own hole data")
+    near(fromBoard[0].headDiameter, SCREWS['M2.5'].headDiameter, 'with the M2.5 head')
+    // Placed at 10,10 with the first hole 3.5,3.5 in from the board corner.
+    near(fromBoard[0].at[0], 13.5, 'and follows the board rather than the plate')
   })
 
   test('pillars are sized round what goes in them', () => {
