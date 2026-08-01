@@ -95,9 +95,25 @@ function PlacementInspector({ id }: { id: string }) {
   const placement = doc.placements.find((p) => p.id === id)
   const store = useStore.getState()
   const [targetBody, setTargetBody] = useState('')
+  /**
+   * Null means the field has not been touched, so it keeps following the gap
+   * between the board and the plate. Once a number is typed it stays put -
+   * otherwise moving the board would silently overwrite what was asked for.
+   */
+  const [standoffHeight, setStandoffHeight] = useState<number | null>(null)
   if (!placement) return null
   const part = getPart(placement.partId)
   const body = targetBody || doc.bodies[0]?.id || ''
+
+  // The same top-of-the-plate figure generate() drills from, needed out here so
+  // the height field can show what the pillars would come out at.
+  const targetTopZ =
+    store.shapes.find((s) => s.id === body)?.bounds[5] ?? placement.position[2]
+  const suggestedStandoff = Math.max(
+    Math.round((placement.position[2] - targetTopZ) * 10) / 10,
+    5,
+  )
+  const pillarHeight = standoffHeight ?? suggestedStandoff
 
   const generate = (make: (planeZ: number) => Feature) => {
     if (!body) {
@@ -207,6 +223,14 @@ function PlacementInspector({ id }: { id: string }) {
           </small>
         </button>
 
+        {!!part?.mountingHoles?.length && (
+          <Num
+            label="Pillar height"
+            value={pillarHeight}
+            min={0.5}
+            onChange={setStandoffHeight}
+          />
+        )}
         <button
           className="btn"
           disabled={!part?.mountingHoles?.length}
@@ -217,15 +241,21 @@ function PlacementInspector({ id }: { id: string }) {
               name: `Standoffs for ${placement.name}`,
               plane: { kind: 'named', name: 'XY', offset: z },
               source: { kind: 'placement', placementId: id },
-              height: Math.max(placement.position[2] - z, 5),
+              height: pillarHeight,
               outerDiameter: (part?.mountingHoles?.[0]?.diameter ?? 3) + 3,
               boreDiameter: Math.max((part?.mountingHoles?.[0]?.diameter ?? 3) - 0.6, 1.2),
-              boreDepth: 4,
+              // A screw that bottoms out before the head lands splits the
+              // pillar, so the bore stops short of the full height.
+              boreDepth: Math.max(pillarHeight - 1, 2),
             } as StandoffFeature))
           }
         >
           Standoffs
-          <small>Printed pillars under each hole, bored for a self-tapping screw</small>
+          <small>
+            {standoffHeight === null
+              ? `Printed pillars ${pillarHeight} mm tall under each hole, which is where the board is sitting`
+              : `Printed pillars ${pillarHeight} mm tall under each hole, bored for a self-tapping screw`}
+          </small>
         </button>
 
         <button
