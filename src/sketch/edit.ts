@@ -803,3 +803,145 @@ export function circularPattern(
   }
   return { ok: true }
 }
+
+/**
+ * Resize a sketch by stretching it along the two axes.
+ *
+ * This is how "change its size" reaches a shape that was drawn rather than
+ * typed in. Stretching unevenly is not something you can do to a constrained
+ * sketch in general - a 45 degree line stops being 45 degrees, two circles that
+ * were told to match stop matching - so anything that would be contradicted is
+ * refused by name rather than quietly bent. Stretching evenly is always safe
+ * and is allowed through whatever the sketch contains.
+ */
+export function resizeSketch(
+  sketch: Sketch2D,
+  sx: number,
+  sy: number,
+): { ok: true; sketch: Sketch2D } | { ok: false; reason: string } {
+  if (!(sx > 0) || !(sy > 0)) {
+    return { ok: false, reason: 'A size has to be more than zero.' }
+  }
+  const even = Math.abs(sx - sy) < 1e-9
+  const point = (id: string) => sketch.points.find((p) => p.id === id)
+
+  /** Which way a line runs, or null if it is at an angle. */
+  const runsAlong = (entityId: string): 'x' | 'y' | null => {
+    const e = sketch.entities.find((x) => x.id === entityId)
+    if (!e || e.kind !== 'line') return null
+    const a = point(e.p1)
+    const b = point(e.p2)
+    if (!a || !b) return null
+    if (Math.abs(a.y - b.y) < 1e-7) return 'x'
+    if (Math.abs(a.x - b.x) < 1e-7) return 'y'
+    return null
+  }
+
+  if (!even) {
+    for (const c of sketch.constraints) {
+      switch (c.kind) {
+        case 'radius':
+        case 'diameter':
+        case 'pointOnCircle':
+        case 'tangent':
+        case 'tangentArcs':
+          return {
+            ok: false,
+            reason:
+              'This shape has round parts, and stretching it more one way than the other would turn the circles into ovals. Make the width and the length change by the same amount, or edit the outline instead.',
+          }
+        case 'angle':
+          return {
+            ok: false,
+            reason:
+              'This shape has an angle set on it, and stretching it unevenly would change that angle. Make the width and the length change by the same amount, or edit the outline instead.',
+          }
+        case 'perpendicular': {
+          // Two lines square to each other stay square only if they are square
+          // to the axes as well - otherwise the stretch tilts one of them.
+          if (!runsAlong(c.a) || !runsAlong(c.b)) {
+            return {
+              ok: false,
+              reason:
+                'Two lines here are set square to each other at an angle to the outline, and stretching unevenly would pull them out of square. Make the width and the length change by the same amount.',
+            }
+          }
+          break
+        }
+        case 'equal': {
+          const a = runsAlong(c.a)
+          const b = runsAlong(c.b)
+          if (!a || a !== b) {
+            return {
+              ok: false,
+              reason:
+                'Two lines here are set to the same length but run in different directions, so stretching unevenly would make them different. Make the width and the length change by the same amount.',
+            }
+          }
+          break
+        }
+        case 'distance': {
+          const a = point(c.a)
+          const b = point(c.b)
+          const axis =
+            a && b && Math.abs(a.y - b.y) < 1e-7
+              ? 'x'
+              : a && b && Math.abs(a.x - b.x) < 1e-7
+                ? 'y'
+                : null
+          if (!axis) {
+            return {
+              ok: false,
+              reason:
+                'A length is set across the shape at an angle, and stretching unevenly would change it by an amount that depends on the angle. Make the width and the length change by the same amount.',
+            }
+          }
+          break
+        }
+        default:
+          break
+      }
+    }
+  }
+
+  const next: Sketch2D = structuredClone(sketch)
+  for (const p of next.points) {
+    p.x *= sx
+    p.y *= sy
+  }
+  for (const e of next.entities) {
+    // Radii only survive an even stretch, which the check above has guaranteed
+    // by this point. An arc carries no radius of its own - it is defined by its
+    // centre and its two ends - so moving the points is all it needs.
+    if (e.kind === 'circle') e.r *= sx
+  }
+  for (const c of next.constraints) {
+    switch (c.kind) {
+      case 'fix':
+        c.x *= sx
+        c.y *= sy
+        break
+      case 'distanceX':
+        c.value *= sx
+        break
+      case 'distanceY':
+        c.value *= sy
+        break
+      case 'radius':
+      case 'diameter':
+        c.value *= sx
+        break
+      case 'distance': {
+        const a = point(c.a)
+        const b = point(c.b)
+        // Horizontal spans follow the width, vertical ones the length. At an
+        // angle the stretch has to be even, so either factor is the right one.
+        c.value *= a && b && Math.abs(a.x - b.x) < 1e-7 ? sy : sx
+        break
+      }
+      default:
+        break
+    }
+  }
+  return { ok: true, sketch: next }
+}

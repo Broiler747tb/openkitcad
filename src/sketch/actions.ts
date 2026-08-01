@@ -71,6 +71,8 @@ export interface SketchAction {
   prompt?: PromptField
   /** A second number, for the handful of things that genuinely need two. */
   prompt2?: PromptField
+  /** And a third. Unused in sketches so far, but the menu renders it. */
+  prompt3?: PromptField
   build: (value: number, value2?: number) => ActionResult
 }
 

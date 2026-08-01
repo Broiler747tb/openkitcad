@@ -678,15 +678,25 @@ export async function runKernelTest(): Promise<TestResult[]> {
         ],
       })
       const lid = withLid.shapes.find((x) => x.id === 'lid')
+      // The lid fills the opening rather than capping it from outside, so it is
+      // the size of the hole - the outer profile less a wall on each side.
+      const lidVolume = (W - 2 * WALL) * (D - 2 * WALL) * WALL
       add(
-        'the lid takes the outer profile, not the ring of wall',
-        !!lid && Math.abs(lid.volume - W * D * WALL) < 1,
-        `${lid?.volume.toFixed(0) ?? 'nothing'} mm3, expected ${W * D * WALL} for a solid ${W}x${D}x${WALL} cap`,
+        'the lid is the size of the opening it fills',
+        !!lid && Math.abs(lid.volume - lidVolume) < 1,
+        `${lid?.volume.toFixed(0) ?? 'nothing'} mm3, expected ${lidVolume} for a ${W - 2 * WALL}x${D - 2 * WALL}x${WALL} plug`,
       )
       add(
-        'and sits on top of the opening',
-        !!lid && Math.abs(lid.bounds[2] - H) < 0.05 && Math.abs(lid.bounds[5] - (H + WALL)) < 0.05,
-        `z ${lid?.bounds[2].toFixed(1)}..${lid?.bounds[5].toFixed(1)}, expected ${H}..${H + WALL}`,
+        'and sits down in it, flush with the outside',
+        !!lid && Math.abs(lid.bounds[2] - (H - WALL)) < 0.05 && Math.abs(lid.bounds[5] - H) < 0.05,
+        `z ${lid?.bounds[2].toFixed(1)}..${lid?.bounds[5].toFixed(1)}, expected ${H - WALL}..${H}`,
+      )
+      // It must not foul the walls it drops between, or it would not go in.
+      const walls = withLid.shapes.find((x) => x.id === 'box')
+      add(
+        'and clears the walls rather than overlapping them',
+        !!lid && !!walls && lid.bounds[0] >= walls.bounds[0] + WALL - 0.01,
+        `lid starts at x ${lid?.bounds[0].toFixed(2)}, inner wall face at ${((walls?.bounds[0] ?? 0) + WALL).toFixed(2)}`,
       )
     }
 

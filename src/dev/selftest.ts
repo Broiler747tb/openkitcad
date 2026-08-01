@@ -28,6 +28,7 @@ import {
   linearPattern,
   mirrorEntities,
   offsetEntities,
+  resizeSketch,
   trimLine,
   trimRound,
 } from '../sketch/edit'
@@ -696,6 +697,66 @@ export function runSelfTest(): TestResult[] {
       !!result.message && /trim it back/i.test(result.message),
       `and says what to do: "${result.message}"`,
     )
+  })
+
+  test('stretching a drawn shape keeps it consistent', () => {
+    // A 40 x 30 rectangle, dimensioned the way the sketcher dimensions one.
+    const b = builder()
+    const a = b.point(0, 0)
+    const p2 = b.point(40, 0)
+    const p3 = b.point(40, 30)
+    const p4 = b.point(0, 30)
+    b.line(a, p2)
+    b.line(p2, p3)
+    b.line(p3, p4)
+    b.line(p4, a)
+    b.con({ kind: 'distanceX', a, b: p2, value: 40 })
+    b.con({ kind: 'distanceY', a, b: p4, value: 30 })
+
+    const r = resizeSketch(b.sketch, 60 / 40, 45 / 30)
+    check(r.ok, r.ok ? 'a plain rectangle stretches' : `refused: ${r.reason}`)
+    if (r.ok) {
+      const xs = r.sketch.points.map((p) => p.x)
+      const ys = r.sketch.points.map((p) => p.y)
+      near(Math.max(...xs) - Math.min(...xs), 60, 'new width')
+      near(Math.max(...ys) - Math.min(...ys), 45, 'new length')
+      // The dimensions have to move with the geometry, or the next solve drags
+      // the shape straight back to its old size.
+      const dx = r.sketch.constraints.find((c) => c.kind === 'distanceX')
+      const dy = r.sketch.constraints.find((c) => c.kind === 'distanceY')
+      near((dx as { value: number }).value, 60, 'width dimension follows')
+      near((dy as { value: number }).value, 45, 'length dimension follows')
+      const solved = solveSketch(r.sketch)
+      check(solved.ok, `and still solves (residual ${solved.residual.toExponential(2)})`)
+    }
+
+    // A circle cannot be stretched unevenly without becoming an oval, which
+    // the sketch has no way to represent - so it is refused rather than fudged.
+    const c = builder()
+    const centre = c.point(0, 0)
+    const circle = c.circle(centre, 10)
+    c.con({ kind: 'radius', e: circle, value: 10 })
+    const bad = resizeSketch(c.sketch, 2, 1)
+    check(!bad.ok, bad.ok ? 'a circle was stretched into an oval' : `refused: ${bad.reason.slice(0, 46)}...`)
+
+    // Evenly is fine, and the radius has to come with it.
+    const good = resizeSketch(c.sketch, 2, 2)
+    check(good.ok, 'but an even stretch is allowed')
+    if (good.ok) {
+      const e = good.sketch.entities.find((x) => x.kind === 'circle') as { r: number }
+      const con = good.sketch.constraints.find((x) => x.kind === 'radius') as { value: number }
+      near(e.r, 20, 'radius doubles')
+      near(con.value, 20, 'and so does the dimension holding it')
+    }
+
+    // A diagonal length would change by an amount that depends on its angle.
+    const d = builder()
+    const d1 = d.point(0, 0)
+    const d2 = d.point(30, 40)
+    d.line(d1, d2)
+    d.con({ kind: 'distance', a: d1, b: d2, value: 50 })
+    check(!resizeSketch(d.sketch, 2, 1).ok, 'a diagonal length blocks an uneven stretch')
+    check(resizeSketch(d.sketch, 2, 2).ok, 'but not an even one')
   })
 
   test('every menu action lands in a named section', () => {

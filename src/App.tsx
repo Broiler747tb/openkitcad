@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Viewport } from './viewport/Viewport'
+import { BuildProgress } from './ui/BuildProgress'
 import { Toolbar } from './ui/Toolbar'
 import { LeftPanel } from './ui/LeftPanel'
 import { Inspector } from './ui/Inspector'
@@ -55,6 +56,7 @@ export function App() {
       <LeftPanel />
       <div className="viewport-wrap" style={{ display: 'contents' }}>
         <Viewport />
+        <BuildProgress />
       </div>
       <Inspector />
       <StatusBar />

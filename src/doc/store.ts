@@ -84,6 +84,13 @@ interface AppState {
   errors: KernelError[]
   buildMs: number
   building: boolean
+  /**
+   * What the app is busy doing, for the progress bar. Separate from `building`
+   * because exporting a STEP file is the slowest thing here and is not a
+   * rebuild.
+   */
+  busy: string | null
+  setBusy: (busy: string | null) => void
   kernelReady: boolean
 
   selection: Selection
@@ -199,6 +206,7 @@ export const useStore = create<AppState>((set, get) => ({
   errors: [],
   buildMs: 0,
   building: false,
+  busy: null,
   kernelReady: false,
 
   selection: { kind: 'none' },
@@ -288,6 +296,10 @@ export const useStore = create<AppState>((set, get) => ({
         building: false,
       })
     })
+  },
+
+  setBusy(busy) {
+    set({ busy })
   },
 
   setKernelReady(kernelReady) {

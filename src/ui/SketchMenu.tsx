@@ -33,6 +33,7 @@ export function SketchMenu({
   const [pending, setPending] = useState<SketchAction | null>(null)
   const ref = useRef<HTMLDivElement>(null)
   const secondRef = useRef<HTMLInputElement>(null)
+  const thirdRef = useRef<HTMLInputElement>(null)
 
   const sketch = activeSketchFeature(useStore.getState())?.sketch
   const actions = sketch ? sketchActions(sketch, selection, cursor) : []
@@ -115,6 +116,26 @@ export function SketchMenu({
                 }}
               />
               <span>{pending.prompt2.unit}</span>
+            </div>
+          )}
+          {pending.prompt3 && (
+            <div className="sketch-menu-prompt">
+              <label>{pending.prompt3.label}</label>
+              <input
+                ref={thirdRef}
+                type="number"
+                step="0.1"
+                defaultValue={pending.prompt3.initial}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    // Either field can commit, so tabbing is optional.
+                    const first = ref.current?.querySelector('input')
+                    if (first) commit(first as HTMLInputElement)
+                  }
+                  if (e.key === 'Escape') setPending(null)
+                }}
+              />
+              <span>{pending.prompt3.unit}</span>
             </div>
           )}
         </>

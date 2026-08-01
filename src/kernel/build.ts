@@ -858,20 +858,25 @@ export function evaluateBody(
             })
             break
           }
-          // Take a slice of the *un-hollowed* solid just inside the opening, so
-          // the lid gets the full outer profile rather than a ring of wall,
-          // then lift it out to sit on top of the opening.
+          // Take a slice of the *un-hollowed* solid at the opening: the material
+          // that hollowing just removed, with the full outer profile rather
+          // than a ring of wall.
           const slab = sketchOn(
             drawRectangle(LID_REACH, LID_REACH),
             source.frame,
             -feature.thickness,
           ).extrude(feature.thickness)
-          const cap = source.shape.clone().intersect(slab)
-          shape = combine(
-            shape,
-            cap.translate(v3.scale(source.frame.normal, feature.thickness)),
-            'add',
-          )
+          let cap = source.shape.clone().intersect(slab)
+
+          // Then take the rim back off. What is left is the hole itself, so the
+          // lid drops into the opening flush with the outside rather than
+          // sitting on top of it like a shoebox lid. Cutting the built shell
+          // rather than insetting the profile means this follows whatever the
+          // wall actually is - rounded corners, ribs, anything.
+          const walls = ctx.shapes.get(feature.sourceBodyId)
+          if (walls) cap = cap.cut(walls.clone())
+
+          shape = combine(shape, cap, 'add')
           break
         }
 

@@ -4,6 +4,7 @@
 import { kernel } from '../kernel/api'
 import type { ExportFormat } from '../kernel/types'
 import { downloadBlob } from '../doc/persist'
+import { useStore } from '../doc/store'
 import {
   meshTo3MF,
   meshToBinarySTL,
@@ -36,12 +37,31 @@ function filename(name: string, extension: string): string {
   return `${safe}.${extension}`
 }
 
+const LABEL: Record<ExportFormat, string> = {
+  step: 'STEP',
+  stl: 'STL',
+  'stl-ascii': 'STL',
+  '3mf': '3MF',
+  dxf: 'DXF',
+  svg: 'SVG',
+  pdf: 'PDF',
+}
+
 export async function exportShape(
   format: ExportFormat,
   target: ExportTarget,
 ): Promise<void> {
   const api = kernel()
+  // STEP in particular can take several seconds on a big model, and a browser
+  // that has stopped repainting looks broken rather than busy.
+  useStore.getState().setBusy(`Writing the ${LABEL[format]} file`)
+  try {
+    return await run()
+  } finally {
+    useStore.getState().setBusy(null)
+  }
 
+  async function run(): Promise<void> {
   switch (format) {
     case 'step': {
       const buffer = await api.exportStep([target.id], target.name)
@@ -91,5 +111,6 @@ export async function exportShape(
       )
       return
     }
+  }
   }
 }

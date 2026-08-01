@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { newId, useStore, type Selection } from '../doc/store'
-import type { ExtrudeFeature, MoveFeature, OkcDocument } from '../doc/types'
+import type {
+  ExtrudeFeature,
+  MoveFeature,
+  OkcDocument,
+  SketchFeature,
+} from '../doc/types'
+import { resizeSketch } from '../sketch/edit'
 import { getPart } from '../catalogue'
 import { FlyoutMenu } from './FlyoutMenu'
 
@@ -27,8 +33,10 @@ export interface ObjectAction {
   prompt?: PromptField
   /** A second number, for the few things that genuinely need two. */
   prompt2?: PromptField
+  /** And a third, for setting all of a box's sides at once. */
+  prompt3?: PromptField
   danger?: boolean
-  run: (value: number, value2?: number) => void
+  run: (value: number, value2?: number, value3?: number) => void
 }
 
 
@@ -45,7 +53,7 @@ const OBJECT_GROUPS: Array<[string, string[]]> = [
   ['Draw on it', ['sketch-on-face', 'sketch-on-top', 'edit-sketch']],
   [
     'Change its shape',
-    ['thickness', 'hollow', 'hollow-lid', 'round-picked', 'bevel-picked', 'round', 'bevel'],
+    ['size', 'hollow', 'hollow-lid', 'round-picked', 'bevel-picked', 'round', 'bevel'],
   ],
   ['Cut into it', ['vent-hex', 'vent-round', 'vent-square', 'cut-ball', 'cut-box']],
   ['Move it', ['move', 'turn', 'flip']],
@@ -88,6 +96,20 @@ function ensureMove(bodyId: string): void {
     offset: [0, 0, 0],
     rotation: [0, 0, 0],
   })
+}
+
+const round1 = (n: number) => Math.round(n * 10) / 10
+
+/** How far a drawn outline reaches, which is what its width and length mean. */
+function sketchExtent(sketch: SketchFeature['sketch']): { width: number; height: number } | null {
+  if (sketch.points.length === 0) return null
+  const xs = sketch.points.map((p) => p.x)
+  const ys = sketch.points.map((p) => p.y)
+  const width = Math.max(...xs) - Math.min(...xs)
+  const height = Math.max(...ys) - Math.min(...ys)
+  // A sketch with no extent one way cannot be scaled by a ratio.
+  if (width < 1e-6 || height < 1e-6) return null
+  return { width, height }
 }
 
 /** The extrude that actually made this body, if there is one. */
@@ -174,12 +196,70 @@ function buildObjectActions(
         run: () => store.openSketch(bodyId, sketchId),
       })
     }
-    if (extrude) {
+    // "Change its size" covers whichever way the part was made: typed-in
+    // shapes carry their sides directly, drawn ones have to have the outline
+    // stretched underneath them.
+    const solid = body.features.find(
+      (f) => f.kind === 'box' || f.kind === 'cylinder',
+    )
+    if (solid?.kind === 'box') {
       out.push({
-        id: 'thickness',
-        label: 'Change the thickness',
-        prompt: { label: 'Thickness', initial: extrude.distance, unit: 'mm' },
-        run: (value) => store.updateFeature(bodyId, extrude.id, { distance: value } as never),
+        id: 'size',
+        label: 'Change its size',
+        hint: 'Width, depth and height',
+        prompt: { label: 'Width', initial: solid.width, unit: 'mm' },
+        prompt2: { label: 'Depth', initial: solid.depth, unit: 'mm' },
+        prompt3: { label: 'Height', initial: solid.height, unit: 'mm' },
+        run: (width, depth, height) =>
+          store.updateFeature(bodyId, solid.id, {
+            width,
+            depth: depth ?? solid.depth,
+            height: height ?? solid.height,
+          } as never),
+      })
+    } else if (solid?.kind === 'cylinder') {
+      out.push({
+        id: 'size',
+        label: 'Change its size',
+        hint: 'Across and tall',
+        prompt: { label: 'Diameter', initial: solid.radius * 2, unit: 'mm' },
+        prompt2: { label: 'Height', initial: solid.height, unit: 'mm' },
+        run: (diameter, height) =>
+          store.updateFeature(bodyId, solid.id, {
+            radius: diameter / 2,
+            height: height ?? solid.height,
+          } as never),
+      })
+    } else if (extrude) {
+      const drawn = body.features.find(
+        (f): f is SketchFeature => f.kind === 'sketch' && f.id === extrude.sketchId,
+      )
+      const box = drawn ? sketchExtent(drawn.sketch) : null
+      out.push({
+        id: 'size',
+        label: 'Change its size',
+        hint: box ? 'Across, front to back, and thick' : 'How thick it is',
+        prompt: box
+          ? { label: 'Width', initial: round1(box.width), unit: 'mm' }
+          : { label: 'Thickness', initial: extrude.distance, unit: 'mm' },
+        prompt2: box ? { label: 'Length', initial: round1(box.height), unit: 'mm' } : undefined,
+        prompt3: box ? { label: 'Thickness', initial: extrude.distance, unit: 'mm' } : undefined,
+        run: (a, b, c) => {
+          if (!box || !drawn) {
+            store.updateFeature(bodyId, extrude.id, { distance: a } as never)
+            return
+          }
+          const thickness = c ?? extrude.distance
+          const resized = resizeSketch(drawn.sketch, a / box.width, (b ?? box.height) / box.height)
+          if (!resized.ok) {
+            // Say why rather than silently applying half of it.
+            store.setStatus(resized.reason)
+            store.updateFeature(bodyId, extrude.id, { distance: thickness } as never)
+            return
+          }
+          store.updateFeature(bodyId, drawn.id, { sketch: resized.sketch } as never)
+          store.updateFeature(bodyId, extrude.id, { distance: thickness } as never)
+        },
       })
     }
     if (picked && picked.bodyId === bodyId) {
@@ -216,7 +296,7 @@ function buildObjectActions(
       out.push({
         id: 'hollow-lid',
         label: 'Hollow it out and make this side a lid',
-        hint: 'Same, plus a separate cap you can print and fit afterwards',
+        hint: 'Same, plus a cap that drops into the opening. Exact fit, so allow for your printer',
         prompt: { label: 'Wall', initial: 2, unit: 'mm' },
         run: (thickness) => hollowOut(thickness, true),
       })
@@ -682,6 +762,7 @@ export function ObjectMenu({
   const [pending, setPending] = useState<ObjectAction | null>(null)
   const ref = useRef<HTMLDivElement>(null)
   const secondRef = useRef<HTMLInputElement>(null)
+  const thirdRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const away = (e: MouseEvent) => {
@@ -701,8 +782,8 @@ export function ObjectMenu({
     }
   }, [onClose])
 
-  const fire = (action: ObjectAction, value: number, value2?: number) => {
-    action.run(value, value2)
+  const fire = (action: ObjectAction, value: number, value2?: number, value3?: number) => {
+    action.run(value, value2, value3)
     onClose()
   }
 
@@ -711,9 +792,11 @@ export function ObjectMenu({
     if (!pending) return
     const a = Number(first.value)
     const b = pending.prompt2 ? Number(secondRef.current?.value) : undefined
+    const c = pending.prompt3 ? Number(thirdRef.current?.value) : undefined
     if (!Number.isFinite(a)) return
     if (pending.prompt2 && !Number.isFinite(b as number)) return
-    fire(pending, a, b)
+    if (pending.prompt3 && !Number.isFinite(c as number)) return
+    fire(pending, a, b, c)
   }
 
   return (
@@ -758,6 +841,25 @@ export function ObjectMenu({
                 }}
               />
               <span>{pending.prompt2.unit}</span>
+            </div>
+          )}
+          {pending.prompt3 && (
+            <div className="sketch-menu-prompt">
+              <label>{pending.prompt3.label}</label>
+              <input
+                ref={thirdRef}
+                type="number"
+                step="0.5"
+                defaultValue={pending.prompt3.initial}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const first = ref.current?.querySelector('input')
+                    if (first) commit(first as HTMLInputElement)
+                  }
+                  if (e.key === 'Escape') setPending(null)
+                }}
+              />
+              <span>{pending.prompt3.unit}</span>
             </div>
           )}
         </>
