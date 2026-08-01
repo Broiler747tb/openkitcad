@@ -6,6 +6,7 @@ import { findSnap, hitTestSketch, toggleSelection } from '../sketch/inference'
 import { SketchMenu } from '../ui/SketchMenu'
 import { ObjectMenu, objectActions, trailingMove, type PickedFace } from '../ui/ObjectMenu'
 import { fastenerGhosts } from './ghosts'
+import { saveDocument } from '../doc/persist'
 import { fmt, frameToWorld, v2, type Frame, type Vec2, type Vec3 } from '../core/math'
 import type { Constraint, NewConstraint, Sketch2D } from '../sketch/types'
 
@@ -27,6 +28,127 @@ interface DimensionPrompt {
   y: number
   value: string
   apply: (value: number) => void
+}
+
+
+/**
+ * What Ctrl+C put aside, kept in memory rather than the system clipboard.
+ *
+ * A body is a feature history, not text, and there is nothing sensible to hand
+ * the operating system that another application could use. Keeping it here also
+ * means a copy survives clicking into a text box and back, which pasting from
+ * the real clipboard would not.
+ */
+let clipboard: { kind: 'body' | 'placement'; data: unknown } | null = null
+
+/** Pasted copies land beside the original, not on top of it. */
+const PASTE_OFFSET = 10
+
+function copySelection(cut: boolean): boolean {
+  const store = useStore.getState()
+  const { selection, doc } = store
+  if (selection.kind === 'body' && selection.id) {
+    const body = doc.bodies.find((b) => b.id === selection.id)
+    if (!body) return false
+    clipboard = { kind: 'body', data: structuredClone(body) }
+    if (cut) {
+      store.removeBody(body.id)
+      store.select({ kind: 'none' })
+    }
+    store.setStatus(`${cut ? 'Cut' : 'Copied'} "${body.name}".`)
+    return true
+  }
+  if (selection.kind === 'placement' && selection.id) {
+    const placement = doc.placements.find((p) => p.id === selection.id)
+    if (!placement) return false
+    clipboard = { kind: 'placement', data: structuredClone(placement) }
+    if (cut) {
+      store.removePlacement(placement.id)
+      store.select({ kind: 'none' })
+    }
+    store.setStatus(`${cut ? 'Cut' : 'Copied'} "${placement.name}".`)
+    return true
+  }
+  return false
+}
+
+/**
+ * Delete whatever is picked inside a sketch.
+ *
+ * Entities first, then loose points, because deleting an entity takes its
+ * constraints with it and a point that was only holding that entity up would
+ * otherwise be deleted out from under it.
+ */
+function deleteSketchSelection(): void {
+  const store = useStore.getState()
+  const picked = store.sketchSelection
+  for (const target of picked) {
+    if (target.kind === 'entity') {
+      store.applySketchAction({ kind: 'deleteEntity', entityId: target.id })
+    }
+  }
+  for (const target of picked) {
+    if (target.kind === 'point') {
+      store.applySketchAction({ kind: 'deletePoint', pointId: target.id })
+    }
+  }
+}
+
+function pasteClipboard(): boolean {
+  if (!clipboard) return false
+  const store = useStore.getState()
+
+  if (clipboard.kind === 'placement') {
+    const source = clipboard.data as { partId: string; position: Vec3; [k: string]: unknown }
+    const id = store.addPlacement(source.partId, [
+      source.position[0] + PASTE_OFFSET,
+      source.position[1] + PASTE_OFFSET,
+      source.position[2],
+    ])
+    // Carry across everything that was set on the original except where it is,
+    // which has just been moved, and its identity.
+    const rest = { ...source } as Record<string, unknown>
+    delete rest.position
+    delete rest.id
+    store.updatePlacement(id, rest as never)
+    store.select({ kind: 'placement', id })
+    return true
+  }
+
+  // Every feature needs a fresh id, and every reference between features has to
+  // follow it. Copying the ids as they stand would give two bodies whose
+  // features point at each other's sketches, and editing one would change both.
+  const source = clipboard.data as {
+    name: string
+    colour: string
+    features: Array<Record<string, unknown>>
+  }
+  const remap = new Map<string, string>()
+  for (const f of source.features) remap.set(f.id as string, newId('f'))
+  const rename = (value: unknown): unknown => {
+    if (typeof value === 'string') return remap.get(value) ?? value
+    if (Array.isArray(value)) return value.map(rename)
+    if (value && typeof value === 'object') {
+      return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, rename(v)]))
+    }
+    return value
+  }
+
+  const bodyId = store.addBody(`${source.name} copy`)
+  for (const feature of source.features) {
+    store.addFeature(bodyId, rename(structuredClone(feature)) as never)
+  }
+  // Nudged clear of the original so it is obvious a copy was made.
+  store.addFeature(bodyId, {
+    id: newId('move'),
+    kind: 'move',
+    name: 'Move',
+    offset: [PASTE_OFFSET, PASTE_OFFSET, 0],
+    rotation: [0, 0, 0],
+  } as never)
+  store.select({ kind: 'body', id: bodyId })
+  store.setStatus(`Pasted a copy of "${source.name}".`)
+  return true
 }
 
 export function Viewport() {
@@ -685,7 +807,17 @@ export function Viewport() {
   // --- keyboard ------------------------------------------------------------
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement) return
+      // Never take a key off a field somebody is typing in. Ctrl+C in a text
+      // box has to copy text, and Delete has to delete a character.
+      const target = e.target
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        (target instanceof HTMLElement && target.isContentEditable)
+      ) {
+        return
+      }
       const store = useStore.getState()
       if (e.key === 'Escape') {
         if (draftRef.current.anchors.length) {
@@ -697,10 +829,70 @@ export function Viewport() {
           store.closeSketch()
         }
       }
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+      const mod = e.ctrlKey || e.metaKey
+      const key = e.key.toLowerCase()
+
+      if (mod && key === 'z') {
         e.preventDefault()
         e.shiftKey ? store.redo() : store.undo()
+        return
       }
+      if (mod && key === 'y') {
+        e.preventDefault()
+        store.redo()
+        return
+      }
+
+      // Delete. In a sketch it takes the picked geometry; outside it takes the
+      // selected part. Backspace as well as Delete, because a laptop without a
+      // Delete key is a laptop somebody is using.
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (store.activeSketch) {
+          if (store.sketchSelection.length) {
+            e.preventDefault()
+            deleteSketchSelection()
+          }
+          return
+        }
+        if (store.selection.kind === 'body' && store.selection.id) {
+          e.preventDefault()
+          store.removeBody(store.selection.id)
+          store.select({ kind: 'none' })
+        } else if (store.selection.kind === 'placement' && store.selection.id) {
+          e.preventDefault()
+          store.removePlacement(store.selection.id)
+          store.select({ kind: 'none' })
+        }
+        return
+      }
+
+      if (mod && (key === 'c' || key === 'x') && !store.activeSketch) {
+        if (copySelection(key === 'x')) e.preventDefault()
+        return
+      }
+      if (mod && key === 'v' && !store.activeSketch) {
+        if (pasteClipboard()) e.preventDefault()
+        return
+      }
+      // Duplicate is copy and paste in one press, which is what people reach
+      // for when the thing they want another of is already selected.
+      if (mod && key === 'd' && !store.activeSketch) {
+        e.preventDefault()
+        if (copySelection(false)) pasteClipboard()
+        return
+      }
+
+      if (mod && key === 's') {
+        e.preventDefault()
+        void saveDocument(store.doc)
+        return
+      }
+
+      if (!mod && (key === 'f' || e.key === 'Home')) {
+        window.dispatchEvent(new CustomEvent('okc:fit'))
+        return
+      }
+
       if (!store.activeSketch) return
       const map: Record<string, string> = { l: 'line', r: 'rectangle', c: 'circle', a: 'arc', d: 'dimension', s: 'select' }
       const next = map[e.key.toLowerCase()]
