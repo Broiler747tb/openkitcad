@@ -199,7 +199,149 @@ export async function runKernelTest(): Promise<TestResult[]> {
       `removed ${removed.toFixed(2)} mm3, expected ${expectedRemoved.toFixed(2)} mm3 for four 2.8 mm holes`,
     )
 
+    // --- combining bodies ---------------------------------------------------
+    {
+      const V = 40 * 40 * 20
+      const OVERLAP = 20 * 40 * 20
+      const combineDoc = (op: 'add' | 'cut' | 'intersect' | null): OkcDocument => ({
+        version: 1,
+        name: 'combine',
+        units: 'mm',
+        parameters: [],
+        placements: [],
+        bodies: [
+          {
+            id: 'tool',
+            name: 'Tool',
+            visible: true,
+            colour: '#888',
+            features: [
+              {
+                id: 't',
+                name: 'Tool',
+                kind: 'box',
+                plane: { kind: 'named', name: 'XY', offset: 0 },
+                origin: [20, 0],
+                width: 40,
+                depth: 40,
+                height: 20,
+                operation: 'new',
+              },
+            ],
+          },
+          {
+            id: 'main',
+            name: 'Main',
+            visible: true,
+            colour: '#ccc',
+            features: [
+              {
+                id: 'm',
+                name: 'Main',
+                kind: 'box',
+                plane: { kind: 'named', name: 'XY', offset: 0 },
+                origin: [0, 0],
+                width: 40,
+                depth: 40,
+                height: 20,
+                operation: 'new',
+              },
+              ...(op
+                ? [
+                    {
+                      id: 'c',
+                      name: 'Combine',
+                      kind: 'combine' as const,
+                      otherBodyId: 'tool',
+                      operation: op,
+                      keepOther: false,
+                    },
+                  ]
+                : []),
+            ],
+          },
+        ],
+      })
+
+      for (const [op, expected] of [
+        ['add', 2 * V - OVERLAP],
+        ['cut', V - OVERLAP],
+        ['intersect', OVERLAP],
+      ] as const) {
+        const r = await kernel.evaluate(combineDoc(op))
+        const main = r.shapes.find((s) => s.id === 'main')
+        add(
+          `combining two bodies with "${op}"`,
+          !!main && Math.abs(main.volume - expected) < 1 && r.errors.length === 0,
+          `${main?.volume.toFixed(0) ?? 'nothing'} mm3, expected ${expected}` +
+            (r.errors.length ? ` (${r.errors[0].message})` : ''),
+        )
+        // The tool body is merged in, so it stops being a thing of its own.
+        add(
+          `the body merged in by "${op}" is no longer drawn separately`,
+          r.shapes.length === 1,
+          `${r.shapes.length} shape(s) left`,
+        )
+      }
+    }
+
+    // --- a sketch plane tipped over -----------------------------------------
+    {
+      const r = await kernel.evaluate({
+        version: 1,
+        name: 'tilt',
+        units: 'mm',
+        parameters: [],
+        placements: [],
+        bodies: [
+          {
+            id: 'b',
+            name: 'Tilted',
+            visible: true,
+            colour: '#ccc',
+            features: [
+              {
+                id: 'bx',
+                name: 'Slab',
+                kind: 'box',
+                plane: {
+                  kind: 'angled',
+                  name: 'XY',
+                  tiltAxis: 'x',
+                  angle: 30,
+                  offset: 0,
+                },
+                origin: [0, 0],
+                width: 40,
+                depth: 20,
+                height: 5,
+                operation: 'new',
+              },
+            ],
+          },
+        ],
+      })
+      const slab = r.shapes[0]
+      add(
+        'a solid built on a tilted plane has the right volume',
+        !!slab && Math.abs(slab.volume - 40 * 20 * 5) < 1,
+        `${slab?.volume.toFixed(0) ?? 'nothing'} mm3, expected 4000`,
+      )
+      // Tipped 30 degrees, the 20 mm depth projects to 20*cos30 and the 5 mm
+      // thickness adds 5*sin30 on top of it. Forgetting the second term is an
+      // easy way to write a test that fails against correct geometry.
+      const expectedSpan = 20 * Math.cos(Math.PI / 6) + 5 * Math.sin(Math.PI / 6)
+      add(
+        'and is genuinely tilted, not flat',
+        !!slab && Math.abs(slab.bounds[4] - slab.bounds[1] - expectedSpan) < 0.1,
+        `spans ${(slab ? slab.bounds[4] - slab.bounds[1] : 0).toFixed(2)} mm front to back, expected ${expectedSpan.toFixed(2)}`,
+      )
+    }
+
     // --- export path --------------------------------------------------------
+    // Rebuild the plate: the checks above replaced what the kernel is holding,
+    // and exporting works from the last thing built.
+    await kernel.evaluate(makeDoc([8, 7, PLATE_T], true))
     try {
       const step = await kernel.exportStep(['plate'], 'plate')
       const head = new TextDecoder().decode(new Uint8Array(step.slice(0, 13)))

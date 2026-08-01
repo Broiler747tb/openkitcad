@@ -659,18 +659,18 @@ export function Viewport() {
             const hit = engine.pick(e.clientX, e.clientY)
             const store = useStore.getState()
             store.select(hit ? { kind: hit.kind, id: hit.id } : { kind: 'none' })
-            if (hit) {
-              setObjectMenu({
-                x: e.clientX,
-                y: e.clientY,
-                // Remember the exact face, so "draw on this face" lands where
-                // the user pointed rather than on some default plane.
-                picked:
-                  hit.kind === 'body'
-                    ? { bodyId: hit.id, point: hit.point, normal: hit.normal }
-                    : null,
-              })
-            }
+            // Empty space gets a menu too - it is where "start a sketch on a
+            // tilted plane" belongs, since there is no object to hang it off.
+            setObjectMenu({
+              x: e.clientX,
+              y: e.clientY,
+              // Remember the exact face, so "draw on this face" lands where
+              // the user pointed rather than on some default plane.
+              picked:
+                hit && hit.kind === 'body'
+                  ? { bodyId: hit.id, point: hit.point, normal: hit.normal }
+                  : null,
+            })
             return
           }
           // Mid-drawing, right-click means "stop this chain" - that has to keep

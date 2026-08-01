@@ -183,6 +183,53 @@ export function objectActions(
         )
       },
     })
+    // One entry per other body rather than a picker: with the handful of bodies
+    // a project this size has, naming them outright is faster to read and
+    // impossible to get wrong.
+    const others = doc.bodies.filter((other) => other.id !== bodyId)
+    const positionOf = (id: string) => doc.bodies.findIndex((x) => x.id === id)
+    for (const other of others) {
+      const later = positionOf(other.id) > positionOf(bodyId)
+      const note = later
+        ? ` (will move "${other.name}" above this one first)`
+        : ''
+      const withOrdering = (op: 'add' | 'cut' | 'intersect') => () => {
+        // Bodies build top to bottom, so the tool has to come first.
+        if (later) store.moveBodyBefore(other.id, bodyId)
+        store.addFeature(bodyId, {
+          id: newId('combine'),
+          kind: 'combine',
+          name:
+            op === 'add'
+              ? `Join with ${other.name}`
+              : op === 'cut'
+                ? `Cut away ${other.name}`
+                : `Overlap with ${other.name}`,
+          otherBodyId: other.id,
+          operation: op,
+          keepOther: false,
+        })
+      }
+      out.push({
+        id: `join-${other.id}`,
+        label: `Join with ${other.name}`,
+        hint: `Fuses the two into one part${note}`,
+        run: withOrdering('add'),
+      })
+      out.push({
+        id: `cut-${other.id}`,
+        label: `Cut ${other.name} away from this`,
+        hint: `Uses it as a cookie cutter${note}`,
+        run: withOrdering('cut'),
+      })
+      out.push({
+        id: `overlap-${other.id}`,
+        label: `Keep only where they overlap`,
+        hint: `The part they share with ${other.name}${note}`,
+        run: withOrdering('intersect'),
+      })
+    }
+
     out.push({
       id: 'hide',
       label: 'Hide it',
@@ -197,6 +244,43 @@ export function objectActions(
       label: 'Delete this part',
       danger: true,
       run: () => store.removeBody(bodyId),
+    })
+    return out
+  }
+
+  if (selection.kind === 'none') {
+    const planes: Array<['XY' | 'XZ' | 'YZ', string]> = [
+      ['XY', 'the top plane'],
+      ['XZ', 'the front plane'],
+      ['YZ', 'the right plane'],
+    ]
+    for (const [name, label] of planes) {
+      out.push({
+        id: `sketch-${name}`,
+        label: `Start a sketch on ${label}`,
+        run: () => store.startSketch({ kind: 'named', name, offset: 0 }),
+      })
+    }
+    out.push({
+      id: 'sketch-offset',
+      label: 'Start a sketch above the top plane',
+      hint: 'A parallel plane floating at a set height',
+      prompt: { label: 'Height', initial: 20, unit: 'mm' },
+      run: (offset) => store.startSketch({ kind: 'named', name: 'XY', offset }),
+    })
+    out.push({
+      id: 'sketch-tilted',
+      label: 'Start a sketch on a tilted plane',
+      hint: 'The top plane tipped over, for sloped faces and brackets',
+      prompt: { label: 'Tilt', initial: 30, unit: 'deg' },
+      run: (angle) =>
+        store.startSketch({
+          kind: 'angled',
+          name: 'XY',
+          tiltAxis: 'x',
+          angle,
+          offset: 0,
+        }),
     })
     return out
   }

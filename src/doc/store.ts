@@ -128,6 +128,8 @@ interface AppState {
 
   addBody: (name?: string) => string
   removeBody: (bodyId: string) => void
+  /** Move one body above another, so it is built first. */
+  moveBodyBefore: (bodyId: string, beforeId: string) => void
   addFeature: (bodyId: string, feature: Feature) => void
   updateFeature: (bodyId: string, featureId: string, patch: Partial<Feature>) => void
   removeFeature: (bodyId: string, featureId: string) => void
@@ -357,6 +359,16 @@ export const useStore = create<AppState>((set, get) => ({
       d.bodies = d.bodies.filter((b) => b.id !== bodyId)
     })
     if (get().selection.id === bodyId) set({ selection: { kind: 'none' } })
+  },
+
+  moveBodyBefore(bodyId, beforeId) {
+    get().commit((d) => {
+      const from = d.bodies.findIndex((b) => b.id === bodyId)
+      const to = d.bodies.findIndex((b) => b.id === beforeId)
+      if (from < 0 || to < 0 || from < to) return
+      const [moved] = d.bodies.splice(from, 1)
+      d.bodies.splice(to, 0, moved)
+    })
   },
 
   addFeature(bodyId, feature) {

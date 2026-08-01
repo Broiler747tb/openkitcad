@@ -39,6 +39,7 @@ import type {
   StandoffFeature,
 } from '../doc/types'
 import { placementToWorld } from '../doc/placement'
+import { frameFromPlaneRefLocal } from '../doc/planes'
 import { getPart, type CataloguePart } from '../catalogue'
 import { sketchToProfile } from './profile'
 
@@ -61,13 +62,11 @@ export function frameFromPlaneRef(
   ref: PlaneRef,
   shapes: Map<string, any>,
 ): Frame {
-  if (ref.kind === 'named') {
-    const base = NAMED_FRAMES[ref.name]
-    return {
-      ...base,
-      origin: v3.add(base.origin, v3.scale(base.normal, ref.offset)),
-    }
-  }
+  // Named and tilted planes need no geometry, so they come from the shared
+  // helper the viewport uses. Keeping one implementation is what stops a sketch
+  // landing in a different place on screen than it does in the kernel.
+  if (ref.kind !== 'face') return frameFromPlaneRefLocal(ref)
+
   const resolved = resolveFace(shapes.get(ref.face.bodyId), ref.face)
   const normal = resolved?.normal ?? ref.face.normal
   const anchor = resolved?.centre ?? ref.face.anchor
@@ -686,6 +685,30 @@ export function evaluateBody(
           const { solid, bores } = buildStandoffs(feature, frame, positions)
           if (solid) shape = shape ? shape.fuse(solid) : solid
           if (bores && shape) shape = shape.cut(bores)
+          break
+        }
+
+        case 'combine': {
+          if (!shape) {
+            errors.push({
+              featureId: feature.id,
+              message: 'There is nothing here yet to combine with.',
+              hint: 'Add a shape to this part first.',
+            })
+            break
+          }
+          const other = ctx.shapes.get(feature.otherBodyId)
+          if (!other) {
+            errors.push({
+              featureId: feature.id,
+              message: 'That other part has not been built yet.',
+              hint: 'Parts are built top to bottom, so the one you are combining with has to sit above this one in the list.',
+            })
+            break
+          }
+          // Clone: the tool body may still be drawn, and may be combined into
+          // more than one thing.
+          shape = combine(shape, other.clone(), feature.operation)
           break
         }
 

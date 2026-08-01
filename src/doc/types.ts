@@ -52,6 +52,18 @@ export interface EdgeRef {
 export type PlaneRef =
   | { kind: 'named'; name: 'XY' | 'XZ' | 'YZ'; offset: number }
   | { kind: 'face'; face: FaceRef; offset: number }
+  /**
+   * A base plane tipped over about one of its own axes. Enough for the things
+   * people actually need an angled plane for - a sloped face, a bracket at 30
+   * degrees - without a general plane-definition dialog.
+   */
+  | {
+      kind: 'angled'
+      name: 'XY' | 'XZ' | 'YZ'
+      tiltAxis: 'x' | 'y'
+      angle: number
+      offset: number
+    }
 
 /** How a solid feature combines with what came before it in the body. */
 export type BooleanOp = 'new' | 'add' | 'cut' | 'intersect'
@@ -176,8 +188,24 @@ export interface PortCutoutFeature extends FeatureBase {
   tolerance: number
 }
 
+/**
+ * Merge another body into this one.
+ *
+ * References a body rather than copying it, so editing the tool body updates
+ * the result. The referenced body has to appear earlier in the list, because
+ * bodies are evaluated in order and a later one has not been built yet.
+ */
+export interface CombineFeature extends FeatureBase {
+  kind: 'combine'
+  otherBodyId: string
+  operation: 'add' | 'cut' | 'intersect'
+  /** Leave the other body on screen as well, rather than consuming it. */
+  keepOther: boolean
+}
+
 export type Feature =
   | SketchFeature
+  | CombineFeature
   | ExtrudeFeature
   | RevolveFeature
   | BoxFeature
@@ -248,6 +276,7 @@ export const FEATURE_LABEL: Record<FeatureKind, string> = {
   hole: 'Holes',
   standoff: 'Standoffs',
   portCutout: 'Port openings',
+  combine: 'Combine',
 }
 
 export const FEATURE_ICON: Record<FeatureKind, string> = {
@@ -262,4 +291,5 @@ export const FEATURE_ICON: Record<FeatureKind, string> = {
   hole: '⊙',
   standoff: '║',
   portCutout: '⬚',
+  combine: '◍',
 }

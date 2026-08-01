@@ -157,13 +157,23 @@ const api = {
     }
 
     const built = new Map<string, any>()
+    // A body merged into another is no longer a thing of its own, unless the
+    // user asked to keep it.
+    const consumed = new Set<string>()
+    for (const body of doc.bodies) {
+      for (const f of body.features) {
+        if (f.kind === 'combine' && !f.keepOther && !f.suppressed) {
+          consumed.add(f.otherBodyId)
+        }
+      }
+    }
     for (const body of doc.bodies) {
       const { shape, errors: bodyErrors } = evaluateBody(body, { doc, shapes: built })
       for (const e of bodyErrors) errors.push({ ...e, bodyId: body.id })
       if (!shape) continue
       built.set(body.id, shape)
       liveShapes.set(body.id, shape)
-      if (!body.visible) continue
+      if (!body.visible || consumed.has(body.id)) continue
       try {
         shapes.push(tessellate(shape, body.id, 'body', body.name, body.colour))
       } catch (e) {
