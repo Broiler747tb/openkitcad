@@ -4,6 +4,8 @@ Parametric CAD for people who build things on a bench. It runs in a browser, it'
 
 **[Try it here.](https://broiler747tb.github.io/openkitcad/)** Nothing to install.
 
+It costs nothing and always will. If it earns its keep, [there's a hat](#support).
+
 There's no server involved. Your design stays on your machine, and the first load pulls an 11 MB WebAssembly build of the geometry kernel, so give it a few seconds on a slow connection. After that it's cached and works offline.
 
 ## Why
@@ -33,6 +35,30 @@ From a placed part you can generate mounting holes with counterbores, printed st
 Export is STL and 3MF for printing, STEP if you want to keep working in FreeCAD or Fusion, DXF and SVG for a laser cutter, and a drill template you can print at full size and tape to a project box. That last one is for anyone working with a hand drill and no machines, which is most people starting out.
 
 There's a clash checker that uses real boolean intersections rather than bounding boxes, a section view for looking inside an enclosure, and some print checks for overhangs, bed size and thin walls.
+
+## Support
+
+OpenKitCAD is free and there is nothing to upgrade to. No trial, no seats, and
+no licence server to phone home on the morning you actually need it.
+
+If it saved you an afternoon, the going rate is a metre of filament.
+
+| Network | Address |
+| --- | --- |
+| TON | `UQBZwupG-6KNVW9gpBUWfD-yTcBj2x9TnlP_xBbje_qblyaO` |
+| Ethereum | `0x813EB4EaC25e28d60C21af26E432b98E13D79980` |
+| Solana | `3LbwCtvxRQqQEmQk44byY3wpYsnZUf832jwoCZRrg3dh` |
+
+TON and Solana are the sensible ones for small amounts, where a transfer costs a
+fraction of a cent. An Ethereum mainnet transfer can cost more than you meant to
+send, which would be a shame for both of us.
+
+Check the address against this page before sending, and send a small amount
+first if it's an amount you'd miss. None of it is reversible and nobody can undo
+it for you.
+
+Nothing in the app is behind this and nothing is planned to be. The catalogue
+stays CC0 either way: it becomes a standard by being copied, not by being sold.
 
 ## Running it
 
@@ -102,29 +128,6 @@ No assembly mates. Parts get positioned, not constrained to each other. That was
 If you generate standoffs somewhere the plate doesn't reach, you get floating pillars and no warning. Worth fixing.
 
 The wall thickness warning is an estimate from volume against surface area, not a real medial-axis measurement. The app says so where it reports it.
-
-## Support
-
-OpenKitCAD is free, and there is no company behind it that needs it to stop
-being free. If it saved you an afternoon and you feel like putting something in
-the hat:
-
-| Network | Address |
-| --- | --- |
-| TON | `UQBZwupG-6KNVW9gpBUWfD-yTcBj2x9TnlP_xBbje_qblyaO` |
-| Ethereum | `0x813EB4EaC25e28d60C21af26E432b98E13D79980` |
-| Solana | `3LbwCtvxRQqQEmQk44byY3wpYsnZUf832jwoCZRrg3dh` |
-
-TON and Solana are the sensible ones for small amounts, where a transfer costs a
-fraction of a cent. An Ethereum mainnet transfer can easily cost more than you
-were intending to send.
-
-Check the address against this page before sending, and send a small amount
-first if you are sending anything you would miss. None of it is reversible and
-nobody can undo it for you.
-
-Nothing in the app is gated behind this, nothing is planned to be, and no part
-of the catalogue depends on it.
 
 ## Licence
 
