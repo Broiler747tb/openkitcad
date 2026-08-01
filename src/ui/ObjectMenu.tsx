@@ -5,6 +5,7 @@ import type {
   MoveFeature,
   OkcDocument,
   SketchFeature,
+  VentShape,
 } from '../doc/types'
 import { resizeSketch } from '../sketch/edit'
 import { getPart } from '../catalogue'
@@ -35,6 +36,8 @@ export interface ObjectAction {
   prompt2?: PromptField
   /** And a third, for setting all of a box's sides at once. */
   prompt3?: PromptField
+  /** Sub-section within the group, for menus deep enough to need one. */
+  sub?: string
   danger?: boolean
   run: (value: number, value2?: number, value3?: number) => void
 }
@@ -55,7 +58,21 @@ const OBJECT_GROUPS: Array<[string, string[]]> = [
     'Change its shape',
     ['size', 'hollow', 'hollow-lid', 'round-picked', 'bevel-picked', 'round', 'bevel'],
   ],
-  ['Cut into it', ['vent-hex', 'vent-round', 'vent-square', 'cut-ball', 'cut-box']],
+  [
+    'Cut into it',
+    [
+      'vent-hex',
+      'vent-round',
+      'vent-square',
+      'vent-triangle',
+      'vent-diamond',
+      'vent-slot',
+      'vent-cross',
+      'vent-gyroid',
+      'cut-ball',
+      'cut-box',
+    ],
+  ],
   ['Move it', ['move', 'turn', 'flip']],
   ['Build around it', ['holes', 'standoffs', 'ports']],
   ['This part', ['negative', 'hide', 'delete']],
@@ -344,11 +361,18 @@ function buildObjectActions(
     }
 
     if (picked && picked.bodyId === bodyId) {
-      const ventOn = (shape: 'hex' | 'round' | 'square', label: string) => ({
+      const ventOn = (shape: VentShape, label: string, hint: string, initial: number) => ({
         id: `vent-${shape}`,
         label,
-        hint: 'A grid of holes across this face, with a solid border left round the edge',
-        prompt: { label: 'Hole size', initial: shape === 'hex' ? 6 : 4, unit: 'mm' },
+        // Every vent leaves a solid border round the edge of the face. Without
+        // it the pattern runs off the side and prints as loose threads.
+        hint,
+        sub: 'Vent it',
+        prompt: {
+          label: shape === 'gyroid' ? 'Pattern size' : 'Hole size',
+          initial,
+          unit: 'mm',
+        },
         prompt2: { label: 'Gap between', initial: 2, unit: 'mm' },
         run: (size: number, spacing?: number) =>
           store.addFeature(bodyId, {
@@ -367,9 +391,21 @@ function buildObjectActions(
             depth: 'through',
           }),
       })
-      out.push(ventOn('hex', 'Vent this face with hexagons'))
-      out.push(ventOn('round', 'Vent this face with round holes'))
-      out.push(ventOn('square', 'Vent this face with square holes'))
+      out.push(ventOn('hex', 'Hexagons', 'The classic honeycomb. Webs the same width in every direction', 6))
+      out.push(ventOn('round', 'Round holes', 'Plain and quiet. Prints cleanly at any size', 4))
+      out.push(ventOn('square', 'Square holes', 'A grille. Reads as deliberate on a flat panel', 4))
+      out.push(ventOn('triangle', 'Triangles', 'Alternating rows, so the webs stay even', 6))
+      out.push(ventOn('diamond', 'Diamonds', 'Squares on their corner. No flat overhang to sag', 6))
+      out.push(ventOn('slot', 'Slots', 'Louvre bars with rounded ends, which is where a printed panel splits first', 12))
+      out.push(ventOn('cross', 'Crosses', 'Decorative. Arms a third of the span, so the webs stay even', 7))
+      out.push(
+        ventOn(
+          'gyroid',
+          'Gyroid weave',
+          'One winding channel rather than separate holes. Slower to work out',
+          14,
+        ),
+      )
     }
 
     out.push({

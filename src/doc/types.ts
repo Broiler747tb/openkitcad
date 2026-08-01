@@ -221,11 +221,33 @@ export interface SphereFeature extends FeatureBase {
  * care about, since a vent grille that runs off the edge of a panel leaves
  * paper-thin slivers that break off.
  */
+/**
+ * Hole shapes for a vent.
+ *
+ * All of them tile without leaving slivers, which is the thing that actually
+ * matters: a pattern whose webs pinch to nothing somewhere prints as a row of
+ * loose threads.
+ */
+export type VentShape =
+  | 'hex'
+  | 'round'
+  | 'square'
+  | 'triangle'
+  | 'diamond'
+  | 'slot'
+  | 'cross'
+  | 'gyroid'
+
 export interface VentFeature extends FeatureBase {
   kind: 'vent'
   plane: PlaneRef
-  shape: 'hex' | 'round' | 'square'
-  /** Across the flats for a hexagon, diameter for a circle, side for a square. */
+  shape: VentShape
+  /**
+   * Across the flats for a hexagon, diameter for a circle, side for a square
+   * or diamond, arm span for a cross, length for a slot. For the gyroid it is
+   * the size of one repeat of the pattern, since that shape has no single hole
+   * to measure.
+   */
   size: number
   /** Material left between neighbouring holes. */
   spacing: number

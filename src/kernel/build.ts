@@ -591,20 +591,268 @@ function buildVentCutter(
   for (let v = midV - rowStep; v >= v0 - 1e-9; v -= rowStep) addRow(v, row++ % 2 === 1)
   if (centres.length === 0) return null
 
-  const outline = (): Drawing => {
-    if (feature.shape === 'round') return drawCircle(size / 2)
-    if (feature.shape === 'square') return drawRectangle(size, size)
-    // Measured across the flats, so the circumradius is size / sqrt(3).
-    return drawPolysides(size / Math.sqrt(3), 6)
+  const outline = (row: number): Drawing => {
+    switch (feature.shape) {
+      case 'round':
+        return drawCircle(size / 2)
+      case 'square':
+        return drawRectangle(size, size)
+      case 'diamond':
+        // A square stood on its corner. Measured point to point, so that the
+        // number the user types is the span they can see.
+        return drawPolysides(size / 2, 4).rotate(45)
+      case 'triangle':
+        // Alternate rows point the other way, which is what closes the gaps
+        // that a grid of same-way triangles leaves between them.
+        return drawPolysides(size / Math.sqrt(3), 3).rotate(row % 2 === 0 ? 0 : 180)
+      case 'cross': {
+        // Two overlapping bars. The arm is a third of the span, which keeps the
+        // web between neighbouring crosses no thinner than the spacing asked
+        // for even at the diagonal, where they come closest.
+        const arm = size / 3
+        return drawRectangle(size, arm).fuse(drawRectangle(arm, size))
+      }
+      case 'slot':
+        // A louvre. Rounded ends because a square-ended slot concentrates
+        // stress in exactly the corner a printed part splits at.
+        return drawRoundedRectangle(size, Math.min(size, pitch) / 2, Math.min(size, pitch) / 4)
+      default:
+        // Measured across the flats, so the circumradius is size / sqrt(3).
+        return drawPolysides(size / Math.sqrt(3), 6)
+    }
   }
 
   let merged: Drawing | null = null
-  for (const [u, v] of centres) {
-    const piece = outline().translate(u, v)
-    merged = merged ? merged.fuse(piece) : piece
+  if (feature.shape === 'gyroid') {
+    merged = gyroidHoles(u0, u1, v0, v1, size, Math.max(feature.spacing, 0.2))
+  } else {
+    // Rows are numbered from the middle outwards so that alternating shapes
+    // stay in step across the centre line.
+    for (const [u, v] of centres) {
+      const row = Math.round((v - midV) / rowStep)
+      const piece = outline(((row % 2) + 2) % 2).translate(u, v)
+      merged = merged ? merged.fuse(piece) : piece
+    }
   }
   if (!merged) return null
   return sketchOn(merged, frame, CUT_MARGIN).extrude(-(depth + CUT_MARGIN))
+}
+
+/**
+ * The gyroid, sliced.
+ *
+ * A gyroid is a three-dimensional surface, so what a flat panel can carry is a
+ * slice through one: taking z = pi/4 leaves
+ *
+ *     f(u, v) = sin u cos v + (sin v + cos u) / sqrt 2
+ *
+ * and cutting away everything where f is above a threshold gives the woven
+ * pattern people recognise. It is drawn by marching squares over that field
+ * rather than by tiling a shape, because there is no repeating hole to tile -
+ * the pattern is one continuous channel that wanders across the whole panel.
+ *
+ * The web comes out close to the spacing asked for rather than exactly at it:
+ * the threshold that produces a given web width depends on how steeply the
+ * field is changing, which varies over the pattern. The mean slope along the
+ * contour is used, so it is right on average and a little uneven in places.
+ */
+function gyroidHoles(
+  u0: number,
+  u1: number,
+  v0: number,
+  v1: number,
+  cell: number,
+  web: number,
+): Drawing | null {
+  const k = (2 * Math.PI) / Math.max(cell, 1)
+  const s = Math.SQRT1_2
+  const f = (u: number, v: number) =>
+    Math.sin(k * u) * Math.cos(k * v) + s * (Math.sin(k * v) + Math.cos(k * u))
+
+  // The mean gradient of f along its zero contour, used to turn a web width in
+  // millimetres into a threshold on f. Sampled rather than derived because the
+  // closed form is not worth the trouble for a number this approximate.
+  let gradSum = 0
+  let gradN = 0
+  for (let i = 0; i < 24; i++) {
+    for (let j = 0; j < 24; j++) {
+      const u = u0 + ((u1 - u0) * i) / 23
+      const v = v0 + ((v1 - v0) * j) / 23
+      if (Math.abs(f(u, v)) > 0.15) continue
+      const h = 1e-4
+      gradSum += Math.hypot(
+        (f(u + h, v) - f(u - h, v)) / (2 * h),
+        (f(u, v + h) - f(u, v - h)) / (2 * h),
+      )
+      gradN++
+    }
+  }
+  const grad = gradN > 0 ? gradSum / gradN : k
+  const threshold = (web / 2) * grad
+
+  // Fine enough that the curve reads as a curve. Capped so a big panel with a
+  // small cell does not take a minute to contour.
+  const step = Math.max(Math.min(cell / 10, 1.2), 0.25)
+  const nu = Math.min(Math.ceil((u1 - u0) / step) + 1, 400)
+  const nv = Math.min(Math.ceil((v1 - v0) / step) + 1, 400)
+  const du = (u1 - u0) / (nu - 1)
+  const dv = (v1 - v0) / (nv - 1)
+
+  // Sampled with the border forced negative, so every contour closes inside the
+  // panel instead of running off the edge as an open curve.
+  const grid: number[][] = []
+  for (let i = 0; i < nu; i++) {
+    grid[i] = []
+    for (let j = 0; j < nv; j++) {
+      const edge = i === 0 || j === 0 || i === nu - 1 || j === nv - 1
+      grid[i][j] = edge ? -1 : f(u0 + i * du, v0 + j * dv) - threshold
+    }
+  }
+
+  const loops = marchingSquares(grid, u0, v0, du, dv)
+  let merged: Drawing | null = null
+  for (const loop of loops) {
+    if (loop.length < 4) continue
+    let pen = draw(loop[0])
+    for (let i = 1; i < loop.length; i++) pen = pen.lineTo(loop[i])
+    let piece: Drawing
+    try {
+      piece = pen.close()
+    } catch {
+      // A degenerate loop - a contour that grazes a grid corner - is skipped
+      // rather than aborting the whole pattern.
+      continue
+    }
+    merged = merged ? merged.fuse(piece) : piece
+  }
+  return merged
+}
+
+/**
+ * Trace the zero contours of a scalar grid as closed loops.
+ *
+ * Standard marching squares, with the four-way ambiguous cases resolved by the
+ * value at the cell centre. Segments are then chained end to end by matching
+ * their endpoints, which works here because every contour closes: the grid
+ * border is forced negative by the caller.
+ */
+function marchingSquares(
+  grid: number[][],
+  u0: number,
+  v0: number,
+  du: number,
+  dv: number,
+): Vec2[][] {
+  const nu = grid.length
+  const nv = grid[0].length
+  const segments: Array<[Vec2, Vec2]> = []
+  /** Where along an edge the field crosses zero. */
+  const lerp = (a: number, b: number): number => {
+    const d = a - b
+    return Math.abs(d) < 1e-12 ? 0.5 : a / d
+  }
+
+  for (let i = 0; i < nu - 1; i++) {
+    for (let j = 0; j < nv - 1; j++) {
+      const a = grid[i][j]
+      const b = grid[i + 1][j]
+      const c = grid[i + 1][j + 1]
+      const d = grid[i][j + 1]
+      const code = (a > 0 ? 1 : 0) | (b > 0 ? 2 : 0) | (c > 0 ? 4 : 0) | (d > 0 ? 8 : 0)
+      if (code === 0 || code === 15) continue
+      const x = u0 + i * du
+      const y = v0 + j * dv
+      const bottom: Vec2 = [x + du * lerp(a, b), y]
+      const right: Vec2 = [x + du, y + dv * lerp(b, c)]
+      const top: Vec2 = [x + du * lerp(d, c), y + dv]
+      const left: Vec2 = [x, y + dv * lerp(a, d)]
+      const push = (p: Vec2, q: Vec2) => segments.push([p, q])
+      switch (code) {
+        case 1:
+        case 14:
+          push(left, bottom)
+          break
+        case 2:
+        case 13:
+          push(bottom, right)
+          break
+        case 3:
+        case 12:
+          push(left, right)
+          break
+        case 4:
+        case 11:
+          push(right, top)
+          break
+        case 6:
+        case 9:
+          push(bottom, top)
+          break
+        case 7:
+        case 8:
+          push(left, top)
+          break
+        // The two saddles, where the corners alternate in sign and the contour
+        // could join either pair. The centre value says which.
+        case 5: {
+          if ((a + b + c + d) / 4 > 0) {
+            push(left, top)
+            push(bottom, right)
+          } else {
+            push(left, bottom)
+            push(right, top)
+          }
+          break
+        }
+        case 10: {
+          if ((a + b + c + d) / 4 > 0) {
+            push(left, bottom)
+            push(right, top)
+          } else {
+            push(left, top)
+            push(bottom, right)
+          }
+          break
+        }
+      }
+    }
+  }
+  if (segments.length === 0) return []
+
+  // Chain the segments into loops. Endpoints are matched on a grid rounded far
+  // finer than the sampling, so two segments that meet at a shared crossing
+  // agree exactly.
+  const key = (p: Vec2) => `${Math.round(p[0] * 1e6)},${Math.round(p[1] * 1e6)}`
+  const bins = new Map<string, Array<[Vec2, Vec2]>>()
+  for (const seg of segments) {
+    for (const end of [key(seg[0]), key(seg[1])]) {
+      const list = bins.get(end)
+      if (list) list.push(seg)
+      else bins.set(end, [seg])
+    }
+  }
+
+  const used = new Set<Array<Vec2>>()
+  const loops: Vec2[][] = []
+  for (const start of segments) {
+    if (used.has(start as unknown as Array<Vec2>)) continue
+    used.add(start as unknown as Array<Vec2>)
+    const loop: Vec2[] = [start[0], start[1]]
+    let head = start[1]
+    // Bounded so a malformed chain cannot spin forever.
+    for (let guard = 0; guard < segments.length + 4; guard++) {
+      const options = bins.get(key(head)) ?? []
+      const next = options.find((seg) => !used.has(seg as unknown as Array<Vec2>))
+      if (!next) break
+      used.add(next as unknown as Array<Vec2>)
+      const onward = key(next[0]) === key(head) ? next[1] : next[0]
+      if (key(onward) === key(loop[0])) break
+      loop.push(onward)
+      head = onward
+    }
+    if (loop.length >= 4) loops.push(loop)
+  }
+  return loops
 }
 
 /** Evaluate one body's feature history into a single solid. */

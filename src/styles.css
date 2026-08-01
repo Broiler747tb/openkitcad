@@ -951,3 +951,43 @@ input[type='checkbox'] {
     opacity: 0.55;
   }
 }
+
+/* Third level: a sub-section that opens in place inside a panel. */
+.flyout-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 9px;
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--line-soft);
+  text-align: left;
+  color: var(--text);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.flyout-sub:first-child {
+  border-top: 0;
+}
+
+.flyout-sub strong {
+  flex: 1;
+  font-weight: 550;
+}
+
+.flyout-sub:hover,
+.flyout-sub.open {
+  color: var(--accent);
+}
+
+.flyout-sub.open .flyout-arrow,
+.flyout-sub.open .flyout-count {
+  color: var(--accent);
+}
+
+.sketch-menu-item.indent {
+  padding-left: 20px;
+}
