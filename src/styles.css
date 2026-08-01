@@ -809,3 +809,17 @@ input[type='checkbox'] {
   background: var(--accent);
   color: #201400;
 }
+
+.menu-group {
+  padding: 7px 9px 3px;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.sketch-menu > div + div .menu-group {
+  border-top: 1px solid var(--line-soft);
+  margin-top: 3px;
+}

@@ -63,6 +63,8 @@ export interface PromptField {
 export interface SketchAction {
   id: string
   label: string
+  /** Heading this sits under in the menu. Derived from the id, see groupOf. */
+  group?: string
   /** One line under the label, in plain English. */
   hint?: string
   /** When set, the menu asks for a number before applying. */
@@ -70,6 +72,49 @@ export interface SketchAction {
   /** A second number, for the handful of things that genuinely need two. */
   prompt2?: PromptField
   build: (value: number, value2?: number) => ActionResult
+}
+
+
+/**
+ * Which heading each action belongs under.
+ *
+ * Derived from the action id rather than set at every call site: the list is
+ * then in one place where the grouping can be read at a glance, and adding an
+ * action cannot silently land it in the wrong section.
+ */
+const SKETCH_GROUPS: Array<[string, string[]]> = [
+  [
+    'Hold it in place',
+    [
+      'horizontal',
+      'vertical',
+      'parallel',
+      'perpendicular',
+      'equal',
+      'equal-radius',
+      'tangent',
+      'coincident',
+      'fix',
+      'point-on-line',
+      'point-on-circle',
+      'midpoint',
+      'symmetric',
+    ],
+  ],
+  ['Set a size', ['length', 'diameter', 'radius', 'angle', 'distance', 'distanceX', 'distanceY']],
+  [
+    'Change the shape',
+    ['fillet-corner', 'chamfer-corner', 'fillet-between', 'trim', 'construction', 'delete'],
+  ],
+  ['Repeat or copy', ['linear-pattern', 'circular-pattern', 'mirror-vertical', 'mirror-horizontal', 'offset']],
+  ['Add a shape', ['add-polygon', 'add-slot']],
+]
+
+export function groupOf(id: string): string {
+  for (const [group, ids] of SKETCH_GROUPS) {
+    if (ids.includes(id)) return group
+  }
+  return 'Other'
 }
 
 const lines = (entities: SketchEntity[]) => entities.filter((e) => e.kind === 'line')
@@ -113,7 +158,7 @@ export function sketchActions(
     .filter((e): e is SketchEntity => !!e)
 
   const out: SketchAction[] = []
-  const push = (a: SketchAction) => out.push(a)
+  const push = (a: SketchAction) => out.push({ ...a, group: groupOf(a.id) })
   const constraint = (c: NewConstraint): ActionResult => ({ kind: 'constraint', constraint: c })
 
   const straight = lines(entities)

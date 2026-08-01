@@ -31,6 +31,8 @@ import {
   trimLine,
   trimRound,
 } from '../sketch/edit'
+import { sketchActions } from '../sketch/actions'
+import { groupActions, showHeadings } from '../ui/menuGroups'
 
 export interface TestResult {
   name: string
@@ -693,6 +695,58 @@ export function runSelfTest(): TestResult[] {
     check(
       !!result.message && /trim it back/i.test(result.message),
       `and says what to do: "${result.message}"`,
+    )
+  })
+
+  test('every menu action lands in a named section', () => {
+    const b = builder()
+    const a = b.point(0, 0)
+    const p2 = b.point(40, 0)
+    const p3 = b.point(40, 30)
+    const l1 = b.line(a, p2)
+    const l2 = b.line(p2, p3)
+    b.circle(b.point(80, 15), 6)
+
+    // Every selection the menu can be opened with, so a new action cannot
+    // quietly fall through into "Other".
+    const selections: Array<[string, Parameters<typeof sketchActions>[1]]> = [
+      ['one line', [{ kind: 'entity', id: l1 }]],
+      ['two lines', [{ kind: 'entity', id: l1 }, { kind: 'entity', id: l2 }]],
+      ['a corner', [{ kind: 'point', id: p2 }]],
+      ['two corners', [{ kind: 'point', id: a }, { kind: 'point', id: p3 }]],
+      ['nothing', []],
+    ]
+
+    let total = 0
+    const stray: string[] = []
+    for (const [, selection] of selections) {
+      const actions = sketchActions(b.sketch, selection, [20, 10])
+      total += actions.length
+      for (const action of actions) {
+        if (!action.group || action.group === 'Other') stray.push(action.id)
+      }
+    }
+    check(total > 15, `${total} actions across every selection`)
+    check(
+      stray.length === 0,
+      stray.length ? `ungrouped: ${stray.join(', ')}` : 'all of them grouped',
+    )
+
+    // And the sections actually split things up rather than being one bucket.
+    const twoLines = sketchActions(
+      b.sketch,
+      [{ kind: 'entity', id: l1 }, { kind: 'entity', id: l2 }],
+      [20, 10],
+    )
+    const groups = groupActions(twoLines)
+    check(
+      groups.length > 1 && showHeadings(twoLines),
+      `two lines gives ${groups.length} sections: ${groups.map(([g]) => g).join(' / ')}`,
+    )
+    // A single-section menu should not waste a line on a heading.
+    check(
+      !showHeadings([{ group: 'Set a size' }, { group: 'Set a size' }]),
+      'a menu with one section shows no heading',
     )
   })
 

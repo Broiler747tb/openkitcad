@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { newId, useStore, type Selection } from '../doc/store'
 import type { ExtrudeFeature, OkcDocument } from '../doc/types'
 import { getPart } from '../catalogue'
+import { groupActions, showHeadings } from './menuGroups'
 
 /**
  * Right-click menu for finished solids and placed parts.
@@ -20,12 +21,47 @@ interface PromptField {
 export interface ObjectAction {
   id: string
   label: string
+  /** Heading this sits under. Derived from the id, see objectGroupOf. */
+  group?: string
   hint?: string
   prompt?: PromptField
   /** A second number, for the few things that genuinely need two. */
   prompt2?: PromptField
   danger?: boolean
   run: (value: number, value2?: number) => void
+}
+
+
+/**
+ * Menu headings, keyed off the action id.
+ *
+ * Combining is matched by prefix because there is one entry per other body in
+ * the document, and with a few bodies that section alone is longer than the
+ * rest of the menu put together.
+ */
+const OBJECT_GROUPS: Array<[string, string[]]> = [
+  ['Start a sketch', ['sketch-XY', 'sketch-XZ', 'sketch-YZ', 'sketch-offset', 'sketch-tilted']],
+  ['Add a shape', ['add-box', 'add-cylinder', 'add-sphere', 'add-dome']],
+  ['Draw on it', ['sketch-on-face', 'sketch-on-top', 'edit-sketch']],
+  [
+    'Change its shape',
+    ['thickness', 'hollow', 'hollow-lid', 'round-picked', 'bevel-picked', 'round', 'bevel'],
+  ],
+  ['Cut into it', ['vent-hex', 'vent-round', 'vent-square', 'cut-ball', 'cut-box']],
+  ['Move it', ['move', 'turn', 'flip']],
+  ['Build around it', ['holes', 'standoffs', 'ports']],
+  ['This part', ['hide', 'delete']],
+]
+
+export function objectGroupOf(id: string): string {
+  if (id.startsWith('join-') || id.startsWith('cut-') || id.startsWith('overlap-')) {
+    // Careful: "cut-ball" and "cut-box" are shapes, not other bodies.
+    if (id !== 'cut-ball' && id !== 'cut-box') return 'Combine with another part'
+  }
+  for (const [group, ids] of OBJECT_GROUPS) {
+    if (ids.includes(id)) return group
+  }
+  return 'Other'
 }
 
 /** The extrude that actually made this body, if there is one. */
@@ -47,12 +83,13 @@ export function objectActions(
 ): ObjectAction[] {
   const store = useStore.getState()
   const doc = store.doc
-  const out: ObjectAction[] = []
+  const raw: ObjectAction[] = []
+  const out = raw
 
   if (selection.kind === 'body' && selection.id) {
     const bodyId = selection.id
     const body = doc.bodies.find((b) => b.id === bodyId)
-    if (!body) return out
+    if (!body) return raw.map((a) => ({ ...a, group: objectGroupOf(a.id) }))
     const extrude = mainExtrude(doc, bodyId)
     const sketchId = extrude?.sketchId ?? body.features.find((f) => f.kind === 'sketch')?.id
 
@@ -461,13 +498,13 @@ export function objectActions(
           offset: 0,
         }),
     })
-    return out
+    return raw.map((a) => ({ ...a, group: objectGroupOf(a.id) }))
   }
 
   if (selection.kind === 'placement' && selection.id) {
     const id = selection.id
     const placement = doc.placements.find((p) => p.id === id)
-    if (!placement) return out
+    if (!placement) return raw.map((a) => ({ ...a, group: objectGroupOf(a.id) }))
     const part = getPart(placement.partId)
     const targetBody = doc.bodies[0]?.id
 
@@ -556,7 +593,7 @@ export function objectActions(
     })
   }
 
-  return out
+  return raw.map((a) => ({ ...a, group: objectGroupOf(a.id) }))
 }
 
 export function ObjectMenu({
@@ -655,15 +692,20 @@ export function ObjectMenu({
       ) : actions.length === 0 ? (
         <div className="sketch-menu-empty">Right-click a part to change it.</div>
       ) : (
-        actions.map((action) => (
-          <button
-            key={action.id}
-            className={`sketch-menu-item ${action.danger ? 'danger' : ''}`}
-            onClick={() => (action.prompt ? setPending(action) : fire(action, 0))}
-          >
-            <strong>{action.label}</strong>
-            {action.hint && <span>{action.hint}</span>}
-          </button>
+        groupActions(actions).map(([group, items]) => (
+          <div key={group}>
+            {showHeadings(actions) && <div className="menu-group">{group}</div>}
+            {items.map((action) => (
+              <button
+                key={action.id}
+                className={`sketch-menu-item ${action.danger ? 'danger' : ''}`}
+                onClick={() => (action.prompt ? setPending(action) : fire(action, 0))}
+              >
+                <strong>{action.label}</strong>
+                {action.hint && <span>{action.hint}</span>}
+              </button>
+            ))}
+          </div>
         ))
       )}
     </div>
