@@ -1,0 +1,25 @@
+{
+  "id": "power-mini360-buck",
+  "name": "Mini360 buck converter",
+  "category": "power",
+  "summary": "Very small step-down. Cheaper and hotter than an MP1584.",
+  "confidence": "approximate",
+  "source": "Dimensions follow the commonly sold part. These are made by many suppliers to no common standard, so measure yours before cutting a panel. No mounting holes; it gets soldered or taped down. Runs warm at any real current.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 17,
+      "h": 11
+    },
+    "thickness": 1.0
+  },
+  "tags": [
+    "mini360",
+    "buck",
+    "step-down",
+    "regulator",
+    "power",
+    "mini"
+  ]
+}

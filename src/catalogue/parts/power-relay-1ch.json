@@ -1,0 +1,54 @@
+{
+  "id": "power-relay-1ch",
+  "name": "Relay module, one channel",
+  "category": "power",
+  "summary": "Switches mains or a motor from a logic pin. Keep the two sides apart.",
+  "confidence": "approximate",
+  "source": "Dimensions follow the commonly sold part. These are made by many suppliers to no common standard, so measure yours before cutting a panel. The relay can stands about 16 mm proud. If you are switching mains, the clearance round the high-voltage side matters more than any dimension here.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 50,
+      "h": 26
+    },
+    "thickness": 1.6
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2.5,
+      "y": 2.5,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h2",
+      "x": 47.5,
+      "y": 2.5,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h3",
+      "x": 2.5,
+      "y": 23.5,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h4",
+      "x": 47.5,
+      "y": 23.5,
+      "diameter": 3,
+      "screw": "M3"
+    }
+  ],
+  "tags": [
+    "relay",
+    "module",
+    "switch",
+    "5v",
+    "power"
+  ]
+}

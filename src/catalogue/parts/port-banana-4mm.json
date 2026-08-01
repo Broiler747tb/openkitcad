@@ -1,0 +1,62 @@
+{
+  "id": "port-banana-4mm",
+  "name": "4 mm banana socket",
+  "category": "connector",
+  "summary": "Panel binding post. Needs a 6 mm round hole.",
+  "confidence": "approximate",
+  "source": "Dimensions follow the commonly sold part. These are made by many suppliers to no common standard, so measure yours before cutting a panel. The threaded barrel on the common panel socket is 6 mm, held by a nut behind. Insulated shrouds vary from 10 to 14 mm across the front.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 12,
+    "bodyHeight": 12,
+    "bodyDepth": 20,
+    "protrusion": 4,
+    "cutout": {
+      "shape": "circle",
+      "d": 6.0
+    },
+    "panelThickness": 3
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "Banana socket hole",
+      "side": "+y",
+      "shape": "circle",
+      "x": 6.0,
+      "y": 20,
+      "z": 6.0,
+      "width": 6.0,
+      "height": 6.0,
+      "protrusion": 4,
+      "diameter": 6.0
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-cable",
+      "label": "Room for the plug and cable",
+      "x": -3,
+      "y": 20,
+      "w": 18,
+      "h": 45,
+      "z": -3,
+      "height": 18
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      30
+    ],
+    "currentPeak": 15
+  },
+  "tags": [
+    "banana",
+    "4mm",
+    "binding-post",
+    "test",
+    "power",
+    "connector",
+    "panel"
+  ]
+}

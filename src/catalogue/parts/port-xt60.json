@@ -1,0 +1,63 @@
+{
+  "id": "port-xt60",
+  "name": "XT60 connector",
+  "category": "connector",
+  "summary": "High-current battery connector. Needs a 16 x 8 mm slot.",
+  "confidence": "approximate",
+  "source": "The XT60 shell is 16.2 x 8.1 mm across the flats. The 16.4 x 8.3 mm opening here leaves the quarter millimetre a printed panel needs. Rated 60 A by name, though the wire and the solder joint decide the real figure.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 16.2,
+    "bodyHeight": 8.1,
+    "bodyDepth": 15.6,
+    "protrusion": 1,
+    "cutout": {
+      "shape": "rect",
+      "w": 16.4,
+      "h": 8.3
+    },
+    "panelThickness": 3
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "XT60 opening",
+      "side": "+y",
+      "shape": "rect",
+      "x": 8.1,
+      "y": 15.6,
+      "z": 0,
+      "width": 16.4,
+      "height": 8.3,
+      "protrusion": 1
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-cable",
+      "label": "Room for the plug and cable",
+      "x": -4,
+      "y": 15.6,
+      "w": 25,
+      "h": 50,
+      "z": -4,
+      "height": 17
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      6,
+      60
+    ],
+    "currentPeak": 60,
+    "note": "Named for 60 A. Treat that as a peak, not a continuous rating."
+  },
+  "tags": [
+    "xt60",
+    "battery",
+    "lipo",
+    "power",
+    "connector",
+    "high-current"
+  ]
+}

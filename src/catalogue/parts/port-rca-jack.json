@@ -1,0 +1,56 @@
+{
+  "id": "port-rca-jack",
+  "name": "RCA socket",
+  "category": "connector",
+  "summary": "Phono socket for audio or composite video. Needs an 8 mm hole.",
+  "confidence": "approximate",
+  "source": "Dimensions follow the commonly sold part. These are made by many suppliers to no common standard, so measure yours before cutting a panel. The threaded barrel on the common panel socket is 8 mm.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 11,
+    "bodyHeight": 11,
+    "bodyDepth": 17,
+    "protrusion": 3,
+    "cutout": {
+      "shape": "circle",
+      "d": 8.0
+    },
+    "panelThickness": 3
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "RCA panel hole",
+      "side": "+y",
+      "shape": "circle",
+      "x": 5.5,
+      "y": 17,
+      "z": 5.5,
+      "width": 8.0,
+      "height": 8.0,
+      "protrusion": 3,
+      "diameter": 8.0
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-cable",
+      "label": "Room for the plug and cable",
+      "x": -3,
+      "y": 17,
+      "w": 18,
+      "h": 45,
+      "z": -3,
+      "height": 18
+    }
+  ],
+  "tags": [
+    "rca",
+    "phono",
+    "audio",
+    "composite",
+    "video",
+    "connector",
+    "panel"
+  ]
+}

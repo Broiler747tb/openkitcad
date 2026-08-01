@@ -1,0 +1,62 @@
+{
+  "id": "port-xt30",
+  "name": "XT30 connector",
+  "category": "connector",
+  "summary": "Smaller XT for lighter loads. Needs a 12 x 6 mm slot.",
+  "confidence": "approximate",
+  "source": "The XT30 shell is 11.9 x 6.3 mm. Rated 30 A by name; as with the XT60 the wire is usually the limit.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 11.9,
+    "bodyHeight": 6.3,
+    "bodyDepth": 12.5,
+    "protrusion": 1,
+    "cutout": {
+      "shape": "rect",
+      "w": 12.1,
+      "h": 6.5
+    },
+    "panelThickness": 3
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "XT30 opening",
+      "side": "+y",
+      "shape": "rect",
+      "x": 5.95,
+      "y": 12.5,
+      "z": 0,
+      "width": 12.1,
+      "height": 6.5,
+      "protrusion": 1
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-cable",
+      "label": "Room for the plug and cable",
+      "x": -3,
+      "y": 12.5,
+      "w": 18,
+      "h": 40,
+      "z": -3,
+      "height": 13
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      6,
+      60
+    ],
+    "currentPeak": 30,
+    "note": "Named for 30 A, which is a peak rather than a continuous figure."
+  },
+  "tags": [
+    "xt30",
+    "battery",
+    "lipo",
+    "power",
+    "connector"
+  ]
+}

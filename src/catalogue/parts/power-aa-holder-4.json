@@ -1,0 +1,40 @@
+{
+  "id": "power-aa-holder-4",
+  "name": "AA battery holder, four cells",
+  "category": "power",
+  "summary": "Four AA cells in a row, six volts nominal.",
+  "confidence": "approximate",
+  "source": "Dimensions follow the commonly sold part. These are made by many suppliers to no common standard, so measure yours before cutting a panel. The square 2x2 version is a different shape again. AA cells themselves are a fixed 50.5 x 14.5 mm.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 58.5,
+      "h": 29.5
+    },
+    "thickness": 16.5
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 3,
+      "y": 14.75,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h2",
+      "x": 55.5,
+      "y": 14.75,
+      "diameter": 3,
+      "screw": "M3"
+    }
+  ],
+  "tags": [
+    "aa",
+    "battery",
+    "holder",
+    "4x",
+    "power"
+  ]
+}

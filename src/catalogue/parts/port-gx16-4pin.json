@@ -1,0 +1,61 @@
+{
+  "id": "port-gx16-4pin",
+  "name": "GX16 aviation connector, 4 pin",
+  "category": "connector",
+  "summary": "Screw-lock round connector. Needs a 16 mm hole.",
+  "confidence": "approximate",
+  "source": "The GX16 panel thread is 16 mm, which is the number that matters. The flange is around 20 mm across and needs three small screws or a nut depending on the variant. Pin counts from 2 to 10 share the same shell.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 20,
+    "bodyHeight": 20,
+    "bodyDepth": 25,
+    "protrusion": 6,
+    "cutout": {
+      "shape": "circle",
+      "d": 16.0
+    },
+    "panelThickness": 3
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "GX16 panel hole",
+      "side": "+y",
+      "shape": "circle",
+      "x": 10.0,
+      "y": 25,
+      "z": 10.0,
+      "width": 16.0,
+      "height": 16.0,
+      "protrusion": 6,
+      "diameter": 16.0
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-cable",
+      "label": "Room for the plug and cable",
+      "x": -5,
+      "y": 25,
+      "w": 30,
+      "h": 60,
+      "z": -5,
+      "height": 30
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      125
+    ],
+    "currentPeak": 5
+  },
+  "tags": [
+    "gx16",
+    "aviation",
+    "circular",
+    "screw-lock",
+    "connector",
+    "panel"
+  ]
+}

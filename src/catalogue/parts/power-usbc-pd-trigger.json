@@ -1,0 +1,25 @@
+{
+  "id": "power-usbc-pd-trigger",
+  "name": "USB-C PD trigger board",
+  "category": "power",
+  "summary": "Asks a USB-C charger for 9, 12 or 20 volts instead of 5.",
+  "confidence": "approximate",
+  "source": "Dimensions follow the commonly sold part. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Fixed-voltage and selectable versions share the same outline. No mounting holes.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 22,
+      "h": 12
+    },
+    "thickness": 1.0
+  },
+  "tags": [
+    "usb-c",
+    "pd",
+    "trigger",
+    "decoy",
+    "power",
+    "supply"
+  ]
+}

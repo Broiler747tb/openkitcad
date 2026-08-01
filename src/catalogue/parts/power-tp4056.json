@@ -1,0 +1,25 @@
+{
+  "id": "power-tp4056",
+  "name": "TP4056 lithium charger",
+  "category": "power",
+  "summary": "Charges one lithium cell from USB. The version with protection is worth the extra.",
+  "confidence": "approximate",
+  "source": "Dimensions follow the commonly sold part. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Sold with micro USB, USB-C or both, and with or without a protection chip, all on the same board outline. Most have no mounting holes.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 26,
+      "h": 17
+    },
+    "thickness": 1.0
+  },
+  "tags": [
+    "tp4056",
+    "charger",
+    "lithium",
+    "18650",
+    "usb",
+    "power"
+  ]
+}

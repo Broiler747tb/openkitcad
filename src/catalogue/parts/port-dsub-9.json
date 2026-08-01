@@ -1,0 +1,56 @@
+{
+  "id": "port-dsub-9",
+  "name": "D-sub 9 socket",
+  "category": "connector",
+  "summary": "The old serial port. Needs a 30.8 x 12.5 mm hole.",
+  "confidence": "approximate",
+  "source": "Shell size follows the D-sub standard: 30.8 x 12.5 mm, with fixing screws 24.99 mm apart. The opening here is a plain rectangle rather than the true D shape, which is close enough for a printed panel and much easier to cut.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 30.8,
+    "bodyHeight": 12.5,
+    "bodyDepth": 16,
+    "protrusion": 2,
+    "cutout": {
+      "shape": "rect",
+      "w": 31,
+      "h": 12.7
+    },
+    "panelThickness": 3
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "D-sub 9 opening",
+      "side": "+y",
+      "shape": "rect",
+      "x": 15.4,
+      "y": 16,
+      "z": 0,
+      "width": 31,
+      "height": 12.7,
+      "protrusion": 2
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-cable",
+      "label": "Room for the plug and cable",
+      "x": -6,
+      "y": 16,
+      "w": 42,
+      "h": 50,
+      "z": -6,
+      "height": 25
+    }
+  ],
+  "tags": [
+    "dsub",
+    "db9",
+    "de9",
+    "serial",
+    "rs232",
+    "connector",
+    "panel"
+  ]
+}
