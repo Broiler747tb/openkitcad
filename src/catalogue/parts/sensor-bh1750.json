@@ -1,0 +1,33 @@
+{
+  "id": "sensor-bh1750",
+  "name": "BH1750 light sensor",
+  "category": "sensor",
+  "summary": "Reads brightness in lux over I2C.",
+  "confidence": "approximate",
+  "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Hole positions in particular differ between makers - check yours against these.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 19,
+      "h": 13
+    },
+    "thickness": 1.2
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2.5,
+      "y": 6.5,
+      "diameter": 2,
+      "screw": "M2"
+    }
+  ],
+  "tags": [
+    "bh1750",
+    "light",
+    "lux",
+    "ambient",
+    "sensor"
+  ]
+}

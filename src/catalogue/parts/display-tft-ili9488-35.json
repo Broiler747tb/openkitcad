@@ -1,0 +1,54 @@
+{
+  "id": "display-tft-ili9488-35",
+  "name": "3.5 inch TFT (ILI9488)",
+  "category": "display",
+  "summary": "480 x 320, often sold as a Pi-shaped touch screen.",
+  "confidence": "approximate",
+  "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Hole positions in particular differ between makers - check yours against these.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 85,
+      "h": 56
+    },
+    "thickness": 1.6
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 3.5,
+      "y": 3.5,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h2",
+      "x": 81.5,
+      "y": 3.5,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h3",
+      "x": 3.5,
+      "y": 52.5,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h4",
+      "x": 81.5,
+      "y": 52.5,
+      "diameter": 3,
+      "screw": "M3"
+    }
+  ],
+  "tags": [
+    "tft",
+    "ili9488",
+    "touch",
+    "display",
+    "3.5"
+  ]
+}

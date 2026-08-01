@@ -1,0 +1,54 @@
+{
+  "id": "sensor-ina219",
+  "name": "INA219 current sensor",
+  "category": "sensor",
+  "summary": "Measures volts and amps on a rail without breaking the ground.",
+  "confidence": "approximate",
+  "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Hole positions in particular differ between makers - check yours against these.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 26,
+      "h": 20
+    },
+    "thickness": 1.6
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2.5,
+      "y": 2.5,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h2",
+      "x": 23.5,
+      "y": 2.5,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h3",
+      "x": 2.5,
+      "y": 17.5,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h4",
+      "x": 23.5,
+      "y": 17.5,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    }
+  ],
+  "tags": [
+    "ina219",
+    "current",
+    "power",
+    "monitor",
+    "sensor"
+  ]
+}

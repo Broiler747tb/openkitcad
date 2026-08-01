@@ -1,0 +1,54 @@
+{
+  "id": "display-lcd-2004",
+  "name": "20x4 character LCD (HD44780)",
+  "category": "display",
+  "summary": "Four lines of twenty characters. The big brother of the 1602.",
+  "confidence": "approximate",
+  "source": "Outline and the 93 x 55 mm hole pattern follow the long-standing 2004 module layout, which is consistent between suppliers. With bezel and headers it stands closer to 13 mm.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 98,
+      "h": 60
+    },
+    "thickness": 1.6
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2.5,
+      "y": 2.5,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h2",
+      "x": 95.5,
+      "y": 2.5,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h3",
+      "x": 2.5,
+      "y": 57.5,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h4",
+      "x": 95.5,
+      "y": 57.5,
+      "diameter": 3,
+      "screw": "M3"
+    }
+  ],
+  "tags": [
+    "lcd",
+    "2004",
+    "hd44780",
+    "character",
+    "display"
+  ]
+}

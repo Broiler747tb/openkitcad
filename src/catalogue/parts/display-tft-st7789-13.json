@@ -1,0 +1,41 @@
+{
+  "id": "display-tft-st7789-13",
+  "name": "1.3 inch IPS TFT (ST7789)",
+  "category": "display",
+  "summary": "240 x 240 colour, no touch. Bright and cheap.",
+  "confidence": "approximate",
+  "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Hole positions in particular differ between makers - check yours against these.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 27,
+      "h": 34
+    },
+    "thickness": 1.6
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2.5,
+      "y": 2.5,
+      "diameter": 2,
+      "screw": "M2"
+    },
+    {
+      "id": "h2",
+      "x": 24.5,
+      "y": 2.5,
+      "diameter": 2,
+      "screw": "M2"
+    }
+  ],
+  "tags": [
+    "tft",
+    "st7789",
+    "ips",
+    "display",
+    "1.3",
+    "spi"
+  ]
+}

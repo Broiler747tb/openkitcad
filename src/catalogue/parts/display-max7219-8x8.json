@@ -1,0 +1,54 @@
+{
+  "id": "display-max7219-8x8",
+  "name": "MAX7219 8x8 LED matrix",
+  "category": "display",
+  "summary": "Single red matrix module. They chain end to end.",
+  "confidence": "approximate",
+  "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Modules are made to chain, so the 32 mm pitch is the number that matters if you are cutting a window for several.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 32,
+      "h": 32
+    },
+    "thickness": 1.6
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2.5,
+      "y": 2.5,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h2",
+      "x": 29.5,
+      "y": 2.5,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h3",
+      "x": 2.5,
+      "y": 29.5,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h4",
+      "x": 29.5,
+      "y": 29.5,
+      "diameter": 3,
+      "screw": "M3"
+    }
+  ],
+  "tags": [
+    "max7219",
+    "matrix",
+    "led",
+    "display",
+    "8x8"
+  ]
+}

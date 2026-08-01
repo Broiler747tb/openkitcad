@@ -1,0 +1,41 @@
+{
+  "id": "sensor-vl53l0x",
+  "name": "VL53L0X time-of-flight range",
+  "category": "sensor",
+  "summary": "Measures distance with laser rather than sound. Good to about 2 m.",
+  "confidence": "approximate",
+  "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. It needs a clear window in front of it, not just a hole - the sensor is fussy about anything in the beam.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 25,
+      "h": 11
+    },
+    "thickness": 1.2
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2.5,
+      "y": 5.5,
+      "diameter": 2,
+      "screw": "M2"
+    },
+    {
+      "id": "h2",
+      "x": 22.5,
+      "y": 5.5,
+      "diameter": 2,
+      "screw": "M2"
+    }
+  ],
+  "tags": [
+    "vl53l0x",
+    "tof",
+    "laser",
+    "distance",
+    "range",
+    "sensor"
+  ]
+}

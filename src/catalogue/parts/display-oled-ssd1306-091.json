@@ -1,0 +1,24 @@
+{
+  "id": "display-oled-ssd1306-091",
+  "name": "0.91 inch OLED (SSD1306)",
+  "category": "display",
+  "summary": "Narrow 128 x 32 strip. Fits where the 0.96 will not.",
+  "confidence": "approximate",
+  "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. This one usually has no mounting holes at all, so it gets glued behind a cutout or held by its header. The glass stands about 2 mm proud of the board.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 38,
+      "h": 12
+    },
+    "thickness": 1.2
+  },
+  "tags": [
+    "oled",
+    "ssd1306",
+    "i2c",
+    "display",
+    "0.91"
+  ]
+}

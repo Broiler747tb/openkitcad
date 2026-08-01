@@ -1,0 +1,40 @@
+{
+  "id": "display-epaper-213",
+  "name": "2.13 inch e-paper",
+  "category": "display",
+  "summary": "Holds its picture with the power off. Slow to redraw.",
+  "confidence": "approximate",
+  "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. The panel itself is thin and fragile; the driver board behind it is what these figures describe.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 59,
+      "h": 29.2
+    },
+    "thickness": 1.2
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 3,
+      "y": 3,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h2",
+      "x": 3,
+      "y": 26.2,
+      "diameter": 3,
+      "screw": "M3"
+    }
+  ],
+  "tags": [
+    "epaper",
+    "e-ink",
+    "eink",
+    "display",
+    "2.13"
+  ]
+}

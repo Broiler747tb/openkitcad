@@ -1,0 +1,24 @@
+{
+  "id": "sensor-dht22",
+  "name": "DHT22 temperature and humidity",
+  "category": "sensor",
+  "summary": "The white one. Slower than a BME280 but reads humidity well.",
+  "confidence": "approximate",
+  "source": "Body dimensions are the AM2302 package, which is consistent between suppliers. The two mounting ears on the bare sensor are not included; the module version on a small PCB is a different size again.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 15.1,
+      "h": 7.7
+    },
+    "thickness": 25.1
+  },
+  "tags": [
+    "dht22",
+    "am2302",
+    "temperature",
+    "humidity",
+    "sensor"
+  ]
+}

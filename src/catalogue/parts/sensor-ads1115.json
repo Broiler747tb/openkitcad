@@ -1,0 +1,33 @@
+{
+  "id": "sensor-ads1115",
+  "name": "ADS1115 16-bit ADC",
+  "category": "sensor",
+  "summary": "Four analogue inputs with far better resolution than a Pi has.",
+  "confidence": "approximate",
+  "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Hole positions in particular differ between makers - check yours against these.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 26,
+      "h": 17
+    },
+    "thickness": 1.6
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2.5,
+      "y": 8.5,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    }
+  ],
+  "tags": [
+    "ads1115",
+    "adc",
+    "analogue",
+    "i2c",
+    "sensor"
+  ]
+}

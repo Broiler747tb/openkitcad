@@ -1,0 +1,39 @@
+{
+  "id": "sensor-pir-hc-sr501",
+  "name": "HC-SR501 motion sensor",
+  "category": "sensor",
+  "summary": "Passive infrared movement detector under a white dome.",
+  "confidence": "approximate",
+  "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. The dome is 23 mm across and stands about 8 mm proud, which is the number you need for the hole in the lid.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 32,
+      "h": 24
+    },
+    "thickness": 1.6
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2,
+      "y": 12,
+      "diameter": 2,
+      "screw": "M2"
+    },
+    {
+      "id": "h2",
+      "x": 30,
+      "y": 12,
+      "diameter": 2,
+      "screw": "M2"
+    }
+  ],
+  "tags": [
+    "pir",
+    "hc-sr501",
+    "motion",
+    "sensor"
+  ]
+}
