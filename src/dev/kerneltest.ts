@@ -698,6 +698,75 @@ export async function runKernelTest(): Promise<TestResult[]> {
         !!lid && !!walls && lid.bounds[0] >= walls.bounds[0] + WALL - 0.01,
         `lid starts at x ${lid?.bounds[0].toFixed(2)}, inner wall face at ${((walls?.bounds[0] ?? 0) + WALL).toFixed(2)}`,
       )
+
+      // With a gap asked for, the lid has to come in by that much on every
+      // side - and by exactly that much, since the whole point is a number the
+      // user can dial in against their own printer.
+      const GAP = 0.3
+      const gapped = await kernel.evaluate({
+        version: 1,
+        name: 'lid-gap',
+        units: 'mm',
+        parameters: [],
+        placements: [],
+        bodies: [
+          {
+            id: 'box',
+            name: 'Box',
+            visible: true,
+            colour: '#ccc',
+            features: [
+              {
+                id: 'bx',
+                name: 'Box',
+                kind: 'box',
+                plane: { kind: 'named', name: 'XY', offset: 0 },
+                origin: [0, 0],
+                width: W,
+                depth: D,
+                height: H,
+                operation: 'new',
+              },
+              {
+                id: 'sh',
+                name: 'Hollow',
+                kind: 'shell',
+                thickness: WALL,
+                openFaces: [{ bodyId: 'box', anchor: [W / 2, D / 2, H], normal: [0, 0, 1] }],
+              },
+            ],
+          },
+          {
+            id: 'lid',
+            name: 'Lid',
+            visible: true,
+            colour: '#bbb',
+            features: [
+              {
+                id: 'ld',
+                name: 'Lid',
+                kind: 'lid',
+                sourceBodyId: 'box',
+                shellFeatureId: 'sh',
+                thickness: WALL,
+                clearance: GAP,
+              },
+            ],
+          },
+        ],
+      })
+      const loose = gapped.shapes.find((x) => x.id === 'lid')
+      const expectedSpan = W - 2 * WALL - 2 * GAP
+      add(
+        'a gap makes the lid smaller by exactly that much all round',
+        !!loose && Math.abs(loose.bounds[3] - loose.bounds[0] - expectedSpan) < 1e-3,
+        `${(loose ? loose.bounds[3] - loose.bounds[0] : 0).toFixed(3)} mm across, expected ${expectedSpan.toFixed(3)}`,
+      )
+      add(
+        'and leaves it flush with the outside, not sunk into the box',
+        !!loose && Math.abs(loose.bounds[5] - H) < 1e-6,
+        `top at z ${loose?.bounds[5].toFixed(3)}, expected ${H}`,
+      )
     }
 
     // --- export path --------------------------------------------------------

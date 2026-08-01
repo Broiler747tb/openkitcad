@@ -264,6 +264,15 @@ export interface LidFeature extends FeatureBase {
   /** The shell feature whose opening is being capped. */
   shellFeatureId: string
   thickness: number
+  /**
+   * Gap left all round between the lid and the walls it drops between, so that
+   * a printed one goes in. Zero gives a lid that is exactly the size of the
+   * hole, which is right on screen and wrong on a print bed.
+   *
+   * Optional because documents saved before this existed had no gap; they keep
+   * behaving as they did rather than silently changing size on load.
+   */
+  clearance?: number
 }
 
 /**

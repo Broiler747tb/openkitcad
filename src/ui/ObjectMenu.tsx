@@ -280,7 +280,7 @@ function buildObjectActions(
       })
     }
     if (picked && picked.bodyId === bodyId) {
-      const hollowOut = (thickness: number, withLid: boolean) => {
+      const hollowOut = (thickness: number, withLid: boolean, clearance = 0) => {
         const shellId = newId('shell')
         store.addFeature(bodyId, {
           id: shellId,
@@ -300,6 +300,7 @@ function buildObjectActions(
           sourceBodyId: bodyId,
           shellFeatureId: shellId,
           thickness,
+          clearance,
         })
       }
 
@@ -313,9 +314,13 @@ function buildObjectActions(
       out.push({
         id: 'hollow-lid',
         label: 'Hollow it out and make this side a lid',
-        hint: 'Same, plus a cap that drops into the opening. Exact fit, so allow for your printer',
+        hint: 'Same, plus a cap that drops into the opening',
         prompt: { label: 'Wall', initial: 2, unit: 'mm' },
-        run: (thickness) => hollowOut(thickness, true),
+        // A fifth of a millimetre is the usual starting point for a printed
+        // part that has to go into another printed part. It is a prompt rather
+        // than a fixed number because the right gap depends on the printer.
+        prompt2: { label: 'Gap round the lid', initial: 0.2, unit: 'mm' },
+        run: (thickness, clearance) => hollowOut(thickness, true, clearance ?? 0.2),
       })
     }
     // Anything picked with shift takes priority over the blanket versions,

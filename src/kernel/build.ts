@@ -1124,6 +1124,30 @@ export function evaluateBody(
           const walls = ctx.shapes.get(feature.sourceBodyId)
           if (walls) cap = cap.cut(walls.clone())
 
+          // And then the gap. There is no offset for a solid in replicad, so
+          // the inset is got by hollowing the original again with walls that
+          // much thicker and cutting *that* rim away as well: a wall of
+          // thickness + clearance leaves an opening exactly clearance smaller
+          // all round. It costs a second hollowing, which is why it is skipped
+          // when no gap was asked for.
+          const clearance = feature.clearance ?? 0
+          if (clearance > 0) {
+            try {
+              const fat = source.shape
+                .clone()
+                .shell(Math.abs(feature.thickness) + clearance, (f: any) =>
+                  f.inPlane(new Plane(source.frame.origin, null, source.frame.normal)),
+                )
+              cap = cap.cut(fat)
+            } catch (e) {
+              errors.push({
+                featureId: feature.id,
+                message: `Could not leave a gap round the lid: ${(e as Error).message}`,
+                hint: 'Try a smaller gap, or set it to zero for a lid that is exactly the size of the opening.',
+              })
+            }
+          }
+
           shape = combine(shape, cap, 'add')
           break
         }
