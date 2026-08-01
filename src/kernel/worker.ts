@@ -22,7 +22,7 @@ import {
   type ProjectionPlane,
 } from 'replicad'
 import type { OkcDocument } from '../doc/types'
-import { CATEGORY_COLOUR, getPart } from '../catalogue'
+import { CATEGORY_COLOUR, getPart, setCustomParts } from '../catalogue'
 import { buildPlacement, evaluateBody } from './build'
 import { flattenSvgPaths } from '../export/svgpath'
 import type {
@@ -127,6 +127,7 @@ const api = {
    */
   async evaluate(doc: OkcDocument): Promise<EvaluateResult> {
     await ensureOC()
+    setCustomParts(doc.customParts ?? [])
     const t0 = performance.now()
     const shapes: ShapeResult[] = []
     const errors: KernelError[] = []

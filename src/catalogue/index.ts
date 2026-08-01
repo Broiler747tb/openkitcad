@@ -7,6 +7,7 @@
  */
 import type { CataloguePart, PartCategory } from './types'
 import { CATEGORY_LABEL } from './types'
+import { loadUserParts } from './userParts'
 
 const modules = import.meta.glob<{ default: CataloguePart }>('./parts/*.json', {
   eager: true,
@@ -16,18 +17,69 @@ export const CATALOGUE: CataloguePart[] = Object.values(modules)
   .map((m) => m.default)
   .sort((a, b) => a.name.localeCompare(b.name))
 
+/**
+ * Parts the user measured themselves, cached because these are looked up inside
+ * loops that run on every rebuild. Cleared whenever one is added or removed.
+ */
+let userCache: CataloguePart[] | null = null
+
+/**
+ * Parts handed in rather than read from storage.
+ *
+ * The kernel runs in a worker, and a worker has no localStorage - so a part the
+ * user measured is invisible to it unless it is sent across with the document.
+ * The worker sets these at the start of every evaluation; the main thread
+ * leaves them null and reads storage as normal.
+ */
+let injected: CataloguePart[] | null = null
+
+export function setCustomParts(parts: CataloguePart[]): void {
+  injected = parts
+  userCache = null
+}
+
+export function userParts(): CataloguePart[] {
+  if (injected) return injected
+  if (!userCache) userCache = loadUserParts()
+  return userCache
+}
+
+/** Call after adding or removing one, so the next lookup sees it. */
+export function refreshUserParts(): void {
+  userCache = null
+}
+
+/** Whether a part came from the user rather than the repo, for labelling. */
+export function isUserPart(id: string): boolean {
+  return userParts().some((p) => p.id === id)
+}
+
+/**
+ * Everything available to place: the shipped catalogue plus anything the user
+ * has built. Theirs come first, since a part someone measured this afternoon is
+ * the one they are looking for.
+ */
+export function allParts(): CataloguePart[] {
+  const mine = userParts()
+  if (!mine.length) return CATALOGUE
+  // A user part with the same id as a shipped one wins: that is how someone
+  // fixes a measurement they think is wrong without waiting for a release.
+  const overridden = new Set(mine.map((p) => p.id))
+  return [...mine, ...CATALOGUE.filter((p) => !overridden.has(p.id))]
+}
+
 const byId = new Map(CATALOGUE.map((p) => [p.id, p]))
 
 export function getPart(id: string): CataloguePart | undefined {
-  return byId.get(id)
+  return userParts().find((p) => p.id === id) ?? byId.get(id)
 }
 
 /** Simple substring search over name, summary and tags. */
 export function searchParts(query: string): CataloguePart[] {
   const q = query.trim().toLowerCase()
-  if (!q) return CATALOGUE
+  if (!q) return allParts()
   const terms = q.split(/\s+/)
-  return CATALOGUE.filter((p) => {
+  return allParts().filter((p) => {
     const hay = [p.name, p.summary, p.manufacturer ?? '', ...(p.tags ?? [])]
       .join(' ')
       .toLowerCase()
@@ -36,7 +88,7 @@ export function searchParts(query: string): CataloguePart[] {
 }
 
 export function groupedCatalogue(
-  parts: CataloguePart[] = CATALOGUE,
+  parts: CataloguePart[] = allParts(),
 ): Array<{ category: PartCategory; label: string; parts: CataloguePart[] }> {
   const groups = new Map<PartCategory, CataloguePart[]>()
   for (const p of parts) {
@@ -64,3 +116,4 @@ export function groupedCatalogue(
 }
 
 export * from './types'
+export * from './userParts'

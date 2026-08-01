@@ -24,6 +24,7 @@
 import type { Vec2, Vec3 } from '../core/math'
 import type { Sketch2D } from '../sketch/types'
 import type { FastenerKind, ThreadSize } from '../fasteners'
+import type { CataloguePart } from '../catalogue/types'
 
 export interface Parameter {
   id: string
@@ -407,6 +408,14 @@ export interface OkcDocument {
   parameters: Parameter[]
   bodies: Body[]
   placements: Placement[]
+  /**
+   * Parts the user measured themselves, sent along for the kernel's benefit.
+   *
+   * Filled in on the way to the worker rather than stored: the worker has no
+   * localStorage of its own, so a custom board would otherwise build as nothing
+   * and its holes would never appear.
+   */
+  customParts?: CataloguePart[]
 }
 
 export function emptyDocument(name = 'Untitled'): OkcDocument {

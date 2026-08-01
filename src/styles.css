@@ -1011,3 +1011,85 @@ input[type='checkbox'] {
   line-height: 1.4;
   color: var(--text-faint);
 }
+
+/* ------------------------------------------------------- part contribution */
+
+.cat-add {
+  margin: 8px 10px 4px;
+  width: calc(100% - 20px);
+}
+
+.modal.wide {
+  width: 560px;
+  max-height: 86vh;
+  overflow-y: auto;
+}
+
+.modal.wide h2 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+/* across, up, hole size, screw - four fields on one line. */
+.hole-row {
+  gap: 5px;
+}
+
+.hole-row input {
+  min-width: 0;
+}
+
+.hole-row .tb {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+}
+
+.hole-legend {
+  margin-top: 2px;
+  font-size: 10.5px;
+  letter-spacing: 0.3px;
+}
+
+.problems {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.problem,
+.warn-line {
+  margin: 0 0 5px;
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.problem {
+  color: var(--err);
+}
+
+.warn-line {
+  color: var(--warn);
+}
+
+.json-preview {
+  margin: 8px 0 0;
+  padding: 10px;
+  max-height: 240px;
+  overflow: auto;
+  background: var(--bg);
+  border: 1px solid var(--line-soft);
+  border-radius: 5px;
+  font: 11px/1.5 var(--mono);
+  color: var(--text-dim);
+}
+
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.modal-actions a.btn {
+  text-decoration: none;
+  color: var(--text);
+}

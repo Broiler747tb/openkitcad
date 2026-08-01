@@ -44,7 +44,7 @@ import {
   trimLine,
   trimRound,
 } from '../sketch/edit'
-import { getPart } from '../catalogue'
+import { getPart, userParts } from '../catalogue'
 import { planHole, planPillar } from '../fasteners'
 import { v3 } from '../core/math'
 import { frameFromPlaneRefLocal } from './planes'
@@ -288,7 +288,9 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   rebuild() {
-    const doc = get().doc
+    // Custom parts ride along with the document: the worker cannot read them
+    // from storage itself.
+    const doc = { ...get().doc, customParts: userParts() }
     const ticket = ++buildTicket
     set({ building: true })
     requestBuild(doc).then((result: EvaluateResult) => {

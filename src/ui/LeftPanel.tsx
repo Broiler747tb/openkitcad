@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../doc/store'
 import { FEATURE_ICON, FEATURE_LABEL, type Body, type Feature } from '../doc/types'
+import { PartMaker } from './PartMaker'
 import {
   groupedCatalogue,
   searchParts,
@@ -224,10 +225,21 @@ function FeatureRow({
 
 function Catalogue() {
   const [query, setQuery] = useState('')
-  const groups = useMemo(() => groupedCatalogue(searchParts(query)), [query])
+  const [making, setMaking] = useState(false)
+  // Bumped when a part is added, so the list picks it up.
+  const [version, setVersion] = useState(0)
+  const groups = useMemo(() => groupedCatalogue(searchParts(query)), [query, version])
 
   return (
     <>
+      {making && (
+        <PartMaker
+          onClose={() => {
+            setMaking(false)
+            setVersion((v) => v + 1)
+          }}
+        />
+      )}
       <div className="cat-search">
         <input
           placeholder="Search parts, e.g. pi, m3, nema"
@@ -236,13 +248,22 @@ function Catalogue() {
         />
       </div>
       <div className="scroll" style={{ flex: 1 }}>
+        <button className="btn cat-add" onClick={() => setMaking(true)}>
+          Add a part that isn't here
+          <small>Measure it once, use it straight away, send it in if you like</small>
+        </button>
         {groups.length === 0 && (
           <div className="empty">
             Nothing matches that.
             <br />
             <br />
-            The catalogue is open source - if a part you use is missing, it takes one JSON
-            file to add it.
+            The catalogue is open source, and if a part you use is missing you can measure
+            it yourself in a couple of minutes.
+            <br />
+            <br />
+            <button className="btn" onClick={() => setMaking(true)}>
+              Add a part that isn't here
+            </button>
           </div>
         )}
         {groups.map((group) => (
