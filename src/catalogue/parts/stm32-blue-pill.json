@@ -1,0 +1,54 @@
+{
+  "id": "stm32-blue-pill",
+  "name": "STM32 Blue Pill (F103C8)",
+  "category": "mcu",
+  "summary": "Cheap 32-bit board. Needs a programmer, not just USB.",
+  "confidence": "approximate",
+  "source": "Dimensions follow the commonly sold board. These are made by many suppliers to no common standard, so measure yours before cutting a panel.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 53,
+      "h": 22.7
+    },
+    "thickness": 1.6
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2,
+      "y": 2,
+      "diameter": 2,
+      "screw": "M2"
+    },
+    {
+      "id": "h2",
+      "x": 51,
+      "y": 2,
+      "diameter": 2,
+      "screw": "M2"
+    },
+    {
+      "id": "h3",
+      "x": 2,
+      "y": 20.7,
+      "diameter": 2,
+      "screw": "M2"
+    },
+    {
+      "id": "h4",
+      "x": 51,
+      "y": 20.7,
+      "diameter": 2,
+      "screw": "M2"
+    }
+  ],
+  "tags": [
+    "stm32",
+    "blue-pill",
+    "f103",
+    "arm",
+    "mcu"
+  ]
+}

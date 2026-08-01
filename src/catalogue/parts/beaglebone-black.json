@@ -1,0 +1,55 @@
+{
+  "id": "beaglebone-black",
+  "name": "BeagleBone Black",
+  "category": "sbc",
+  "manufacturer": "BeagleBoard.org",
+  "summary": "Older ARM board with a lot of GPIO and two real-time cores.",
+  "confidence": "approximate",
+  "source": "Outline is the published 86.4 x 53.3 mm board size. Hole positions are from the common mounting pattern and are worth checking against your own board before cutting.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 86.4,
+      "h": 53.3
+    },
+    "thickness": 1.6
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 4.6,
+      "y": 6.9,
+      "diameter": 3.2,
+      "screw": "M3"
+    },
+    {
+      "id": "h2",
+      "x": 81.8,
+      "y": 6.9,
+      "diameter": 3.2,
+      "screw": "M3"
+    },
+    {
+      "id": "h3",
+      "x": 4.6,
+      "y": 46.4,
+      "diameter": 3.2,
+      "screw": "M3"
+    },
+    {
+      "id": "h4",
+      "x": 81.8,
+      "y": 46.4,
+      "diameter": 3.2,
+      "screw": "M3"
+    }
+  ],
+  "tags": [
+    "beaglebone",
+    "black",
+    "sbc",
+    "am335x",
+    "linux"
+  ]
+}

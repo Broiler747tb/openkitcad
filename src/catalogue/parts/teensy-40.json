@@ -1,0 +1,25 @@
+{
+  "id": "teensy-40",
+  "name": "Teensy 4.0",
+  "category": "mcu",
+  "manufacturer": "PJRC",
+  "summary": "Very fast for its size. Popular for audio and USB work.",
+  "confidence": "approximate",
+  "source": "Outline is the published 1.4 x 0.7 inch board size. It has no mounting holes - it is designed to be soldered down or socketed.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 35.6,
+      "h": 17.8
+    },
+    "thickness": 1.6
+  },
+  "tags": [
+    "teensy",
+    "4.0",
+    "imxrt",
+    "pjrc",
+    "mcu"
+  ]
+}

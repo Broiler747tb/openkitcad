@@ -1,0 +1,55 @@
+{
+  "id": "raspberry-pi-3a-plus",
+  "name": "Raspberry Pi 3 Model A+",
+  "category": "sbc",
+  "manufacturer": "Raspberry Pi",
+  "summary": "Short full-size Pi. Same 40-pin header, two thirds the length.",
+  "confidence": "datasheet",
+  "source": "Outline and hole pattern are the published Raspberry Pi mechanical specification: holes 3.5 mm in from the edges, 58 mm apart along the board and 49 mm across, for M2.5 screws. Height above the board depends on which connectors are fitted and is not included.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 65,
+      "h": 56
+    },
+    "thickness": 1.4
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 3.5,
+      "y": 3.5,
+      "diameter": 2.7,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h2",
+      "x": 61.5,
+      "y": 3.5,
+      "diameter": 2.7,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h3",
+      "x": 3.5,
+      "y": 52.5,
+      "diameter": 2.7,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h4",
+      "x": 61.5,
+      "y": 52.5,
+      "diameter": 2.7,
+      "screw": "M2.5"
+    }
+  ],
+  "tags": [
+    "pi",
+    "raspberry",
+    "sbc",
+    "3a+",
+    "linux"
+  ]
+}

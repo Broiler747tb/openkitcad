@@ -1,0 +1,54 @@
+{
+  "id": "nodemcu-esp8266",
+  "name": "NodeMCU ESP8266 (v3)",
+  "category": "mcu",
+  "summary": "Wide breadboard board. Covers most of a small breadboard.",
+  "confidence": "approximate",
+  "source": "Dimensions follow the commonly sold board. These are made by many suppliers to no common standard, so measure yours before cutting a panel. v2 and v3 differ in width by a few millimetres, which is enough to matter in a slot.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 58,
+      "h": 31
+    },
+    "thickness": 1.0
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2,
+      "y": 2,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h2",
+      "x": 56,
+      "y": 2,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h3",
+      "x": 2,
+      "y": 29,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h4",
+      "x": 56,
+      "y": 29,
+      "diameter": 3,
+      "screw": "M3"
+    }
+  ],
+  "tags": [
+    "nodemcu",
+    "esp8266",
+    "wifi",
+    "lua",
+    "mcu"
+  ]
+}

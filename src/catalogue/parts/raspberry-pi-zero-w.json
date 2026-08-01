@@ -1,0 +1,56 @@
+{
+  "id": "raspberry-pi-zero-w",
+  "name": "Raspberry Pi Zero W",
+  "category": "sbc",
+  "manufacturer": "Raspberry Pi",
+  "summary": "The small one. Same footprint as a Zero 2 W but a lot slower.",
+  "confidence": "datasheet",
+  "source": "Outline and the 58 x 23 mm hole pattern are the published Raspberry Pi Zero mechanical specification, 3.5 mm in from each edge for M2.5 screws.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 65,
+      "h": 30
+    },
+    "thickness": 1.4
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 3.5,
+      "y": 3.5,
+      "diameter": 2.7,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h2",
+      "x": 61.5,
+      "y": 3.5,
+      "diameter": 2.7,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h3",
+      "x": 3.5,
+      "y": 26.5,
+      "diameter": 2.7,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h4",
+      "x": 61.5,
+      "y": 26.5,
+      "diameter": 2.7,
+      "screw": "M2.5"
+    }
+  ],
+  "tags": [
+    "pi",
+    "raspberry",
+    "zero",
+    "sbc",
+    "small",
+    "linux"
+  ]
+}
