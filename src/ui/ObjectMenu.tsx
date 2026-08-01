@@ -166,6 +166,23 @@ export const OBJECT_GROUP_ORDER = [
  * returns inside. Doing it per-return meant a path could be missed - and one
  * was, so right-clicking a solid came back with no sections at all.
  */
+/**
+ * The four things done often enough to deserve the top of the menu.
+ *
+ * Everything else is a phrase you read; these are a shape you aim at. They are
+ * lifted out of the sections below rather than repeated in both, because an
+ * action in two places is an action somebody has to decide between.
+ *
+ * Glyphs rather than words: at four items a row of icons is quicker to hit than
+ * four lines of text, and these four are distinct enough not to need reading.
+ */
+const QUICK: Array<{ id: string; glyph: string; short: string }> = [
+  { id: 'move', glyph: '✥', short: 'Move' },
+  { id: 'turn', glyph: '↻', short: 'Turn' },
+  { id: 'negative', glyph: '⊘', short: 'Hole' },
+  { id: 'delete', glyph: '✕', short: 'Delete' },
+]
+
 export function objectActions(
   selection: Selection,
   picked?: PickedFace | null,
@@ -1005,11 +1022,40 @@ export function ObjectMenu({
       ) : actions.length === 0 ? (
         <div className="sketch-menu-empty">Right-click a part to change it.</div>
       ) : (
-        <FlyoutMenu
-          actions={actions}
-          order={OBJECT_GROUP_ORDER}
-          onPick={(action) => (action.prompt ? setPending(action) : fire(action, 0))}
-        />
+        <>
+          {(() => {
+            const quick = QUICK.map((q) => ({
+              ...q,
+              action: actions.find((a) => a.id === q.id),
+            })).filter((q) => q.action)
+            if (!quick.length) return null
+            return (
+              <div className="quick-row">
+                {quick.map((q) => (
+                  <button
+                    key={q.id}
+                    className="quick"
+                    // The label is the action's own, so "Turn it into a hole"
+                    // reads "Make it solid again" once it already is one.
+                    title={q.action!.label}
+                    aria-label={q.action!.label}
+                    onClick={() =>
+                      q.action!.prompt ? setPending(q.action!) : fire(q.action!, 0)
+                    }
+                  >
+                    <span className="quick-glyph">{q.glyph}</span>
+                    <span className="quick-name">{q.short}</span>
+                  </button>
+                ))}
+              </div>
+            )
+          })()}
+          <FlyoutMenu
+            actions={actions.filter((a) => !QUICK.some((q) => q.id === a.id))}
+            order={OBJECT_GROUP_ORDER}
+            onPick={(action) => (action.prompt ? setPending(action) : fire(action, 0))}
+          />
+        </>
       )}
     </div>
   )
