@@ -103,6 +103,29 @@ If you generate standoffs somewhere the plate doesn't reach, you get floating pi
 
 The wall thickness warning is an estimate from volume against surface area, not a real medial-axis measurement. The app says so where it reports it.
 
+## Support
+
+OpenKitCAD is free, and there is no company behind it that needs it to stop
+being free. If it saved you an afternoon and you feel like putting something in
+the hat:
+
+| Network | Address |
+| --- | --- |
+| TON | `UQBZwupG-6KNVW9gpBUWfD-yTcBj2x9TnlP_xBbje_qblyaO` |
+| Ethereum | `0x813EB4EaC25e28d60C21af26E432b98E13D79980` |
+| Solana | `3LbwCtvxRQqQEmQk44byY3wpYsnZUf832jwoCZRrg3dh` |
+
+TON and Solana are the sensible ones for small amounts, where a transfer costs a
+fraction of a cent. An Ethereum mainnet transfer can easily cost more than you
+were intending to send.
+
+Check the address against this page before sending, and send a small amount
+first if you are sending anything you would miss. None of it is reversible and
+nobody can undo it for you.
+
+Nothing in the app is gated behind this, nothing is planned to be, and no part
+of the catalogue depends on it.
+
 ## Licence
 
 The app is AGPL-3.0-or-later. It's a web app, and AGPL is the one copyleft licence that actually applies to one: GPL triggers on distribution, and someone hosting a modified copy never distributes anything. Under AGPL they have to publish their changes.
