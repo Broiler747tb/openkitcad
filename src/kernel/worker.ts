@@ -110,6 +110,9 @@ function tessellate(
   }
 }
 
+/** Cool and dim, so a hole does not look like another part sitting there. */
+const NEGATIVE_COLOUR = '#4a5560'
+
 const api = {
   /** Resolves once the kernel can accept work. The UI shows a splash until then. */
   async ready(): Promise<boolean> {
@@ -143,7 +146,11 @@ const api = {
             placement.id,
             'placement',
             placement.name,
-            part ? CATEGORY_COLOUR[part.category] : '#7f878f',
+            placement.negative
+              ? NEGATIVE_COLOUR
+              : part
+                ? CATEGORY_COLOUR[part.category]
+                : '#7f878f',
           ),
         )
       } catch (e) {
@@ -178,9 +185,55 @@ const api = {
       if (!shape) continue
       built.set(body.id, shape)
       liveShapes.set(body.id, shape)
+    }
+
+    // Anything marked as a hole is collected first and taken out of everything
+    // else afterwards. Two passes rather than one, because a hole is not
+    // required to sit above the parts it cuts in the list - "this block is a
+    // hole" is a statement about the block, and having to reorder the tree to
+    // make it work would be a rule with no reason a beginner could see.
+    const cutters: any[] = []
+    for (const body of doc.bodies) {
+      if (body.negative && built.has(body.id)) cutters.push(built.get(body.id))
+    }
+    for (const placement of doc.placements) {
+      if (placement.negative && placement.visible && liveShapes.has(placement.id)) {
+        cutters.push(liveShapes.get(placement.id))
+      }
+    }
+
+    for (const body of doc.bodies) {
+      let shape = built.get(body.id)
+      if (!shape) continue
+      if (!body.negative && cutters.length > 0) {
+        for (const cutter of cutters) {
+          try {
+            shape = shape.cut(cutter.clone())
+          } catch (e) {
+            errors.push({
+              featureId: body.id,
+              bodyId: body.id,
+              message: `Could not cut a hole out of "${body.name}": ${(e as Error).message}`,
+              hint: 'The hole may not overlap this part, or may cut it clean in two.',
+            })
+          }
+        }
+        // Export works from what is on screen, so it has to be the cut version.
+        liveShapes.set(body.id, shape)
+      }
       if (!body.visible || consumed.has(body.id)) continue
       try {
-        shapes.push(tessellate(shape, body.id, 'body', body.name, body.colour))
+        shapes.push(
+          tessellate(
+            shape,
+            body.id,
+            'body',
+            body.name,
+            // Holes are drawn cool and dim so they read as absence of material
+            // rather than as another part sitting there.
+            body.negative ? NEGATIVE_COLOUR : body.colour,
+          ),
+        )
       } catch (e) {
         errors.push({
           featureId: body.features.at(-1)?.id ?? body.id,

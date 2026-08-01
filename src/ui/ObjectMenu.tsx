@@ -58,7 +58,7 @@ const OBJECT_GROUPS: Array<[string, string[]]> = [
   ['Cut into it', ['vent-hex', 'vent-round', 'vent-square', 'cut-ball', 'cut-box']],
   ['Move it', ['move', 'turn', 'flip']],
   ['Build around it', ['holes', 'standoffs', 'ports']],
-  ['This part', ['hide', 'delete']],
+  ['This part', ['negative', 'hide', 'delete']],
 ]
 
 export function objectGroupOf(id: string): string {
@@ -522,6 +522,18 @@ function buildObjectActions(
     })
 
     out.push({
+      id: 'negative',
+      label: body.negative ? 'Make it solid again' : 'Turn it into a hole',
+      hint: body.negative
+        ? 'Back to being a part in its own right'
+        : 'Cuts its shape out of every other part instead of being one',
+      run: () =>
+        store.commit((d) => {
+          const target = d.bodies.find((x) => x.id === bodyId)
+          if (target) target.negative = !target.negative
+        }),
+    })
+    out.push({
       id: 'hide',
       label: 'Hide it',
       run: () =>
@@ -732,6 +744,14 @@ function buildObjectActions(
       })
     }
 
+    out.push({
+      id: 'negative',
+      label: placement.negative ? 'Make it solid again' : 'Turn it into a hole',
+      hint: placement.negative
+        ? 'Back to being a part sitting there'
+        : 'Cuts a recess of exactly this shape into everything around it',
+      run: () => store.updatePlacement(id, { negative: !placement.negative }),
+    })
     out.push({
       id: 'flip',
       label: placement.flipped ? 'Turn it right way up' : 'Flip it upside down',

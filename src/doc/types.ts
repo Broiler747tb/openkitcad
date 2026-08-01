@@ -288,6 +288,15 @@ export interface Body {
   visible: boolean
   colour: string
   features: Feature[]
+  /**
+   * Treat this as a hole rather than material: it is cut out of every other
+   * part instead of being one.
+   *
+   * A flag rather than a combine step on each part it should cut, because the
+   * thing a beginner wants to say is "this block is a hole" - once, about the
+   * block - not "subtract this from that" once per part it passes through.
+   */
+  negative?: boolean
 }
 
 /** An instance of a catalogue part positioned in the document. */
@@ -304,6 +313,13 @@ export interface Placement {
   visible: boolean
   /** Overrides for parametric parts, e.g. extrusion length. */
   overrides?: Record<string, number>
+  /**
+   * Cut this part's own shape out of everything around it.
+   *
+   * The point is the pocket, not the board: dropping a Pi in, saying "make it a
+   * hole" and getting a Pi-shaped recess is how you build a case around one.
+   */
+  negative?: boolean
 }
 
 export interface OkcDocument {
