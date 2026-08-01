@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useStore } from '../doc/store'
 import { FEATURE_ICON, FEATURE_LABEL, type Body, type Feature } from '../doc/types'
 import { PartMaker } from './PartMaker'
+import type { PartCategory } from '../catalogue'
 import {
   groupedCatalogue,
   searchParts,
@@ -226,6 +227,15 @@ function FeatureRow({
 function Catalogue() {
   const [query, setQuery] = useState('')
   const [making, setMaking] = useState(false)
+  /**
+   * Which type is open, or null for the list of types.
+   *
+   * The catalogue is past the size where one scrolling list is useful. Picking
+   * a type first is the same move the right-click menus make: what you read on
+   * the first look is ten short phrases rather than fifty part names, and you
+   * already know which one you want before you have read any of them.
+   */
+  const [openType, setOpenType] = useState<PartCategory | null>(null)
   // Bumped when a part is added, so the list picks it up.
   const [version, setVersion] = useState(0)
   const groups = useMemo(() => groupedCatalogue(searchParts(query)), [query, version])
@@ -248,10 +258,33 @@ function Catalogue() {
         />
       </div>
       <div className="scroll" style={{ flex: 1 }}>
-        <button className="btn cat-add" onClick={() => setMaking(true)}>
-          Add a part that isn't here
-          <small>Measure it once, use it straight away, send it in if you like</small>
-        </button>
+        {/* Searching cuts across every type, so the type list gets out of the
+            way: somebody typing "pi" wants the Pi, not to be asked which shelf
+            it is on. */}
+        {!query && openType && (
+          <button className="cat-back" onClick={() => setOpenType(null)}>
+            <span className="cat-back-arrow">‹</span> All types
+          </button>
+        )}
+        {!query && !openType && (
+          <>
+            {groups.map((group) => (
+              <button
+                key={group.category}
+                className="cat-type"
+                onClick={() => setOpenType(group.category)}
+              >
+                <strong>{group.label}</strong>
+                <span className="cat-count">{group.parts.length}</span>
+                <span className="cat-arrow">›</span>
+              </button>
+            ))}
+            <button className="btn cat-add" onClick={() => setMaking(true)}>
+              Add a part that isn't here
+              <small>Measure it once, use it straight away, send it in if you like</small>
+            </button>
+          </>
+        )}
         {groups.length === 0 && (
           <div className="empty">
             Nothing matches that.
@@ -266,7 +299,7 @@ function Catalogue() {
             </button>
           </div>
         )}
-        {groups.map((group) => (
+        {(query ? groups : groups.filter((g) => g.category === openType)).map((group) => (
           <div key={group.category}>
             <div className="cat-group">{group.label}</div>
             <div className="cat-blurb">{CATEGORY_BLURB[group.category]}</div>

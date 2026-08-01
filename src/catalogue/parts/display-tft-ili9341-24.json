@@ -1,0 +1,54 @@
+{
+  "id": "display-tft-ili9341-24",
+  "name": "2.4 inch TFT (ILI9341)",
+  "category": "display",
+  "summary": "320 x 240 colour screen, usually with an SD slot on the back.",
+  "confidence": "approximate",
+  "source": "Dimensions taken from the commonly sold module. These boards are made by many suppliers to no common standard, so measure yours before cutting a panel.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 71,
+      "h": 52
+    },
+    "thickness": 1.6
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2.5,
+      "y": 2.5,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h2",
+      "x": 68.5,
+      "y": 2.5,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h3",
+      "x": 2.5,
+      "y": 49.5,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h4",
+      "x": 68.5,
+      "y": 49.5,
+      "diameter": 3,
+      "screw": "M3"
+    }
+  ],
+  "tags": [
+    "tft",
+    "ili9341",
+    "display",
+    "spi",
+    "2.4"
+  ]
+}

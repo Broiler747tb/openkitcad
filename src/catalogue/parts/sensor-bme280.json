@@ -1,0 +1,33 @@
+{
+  "id": "sensor-bme280",
+  "name": "BME280 module",
+  "category": "sensor",
+  "summary": "Temperature, humidity and pressure on one small I2C board.",
+  "confidence": "approximate",
+  "source": "Dimensions taken from the commonly sold module. These boards are made by many suppliers to no common standard, so measure yours before cutting a panel. Hole count varies: some carry one, some none at all.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 15,
+      "h": 11.5
+    },
+    "thickness": 1.2
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2,
+      "y": 5.75,
+      "diameter": 2,
+      "screw": "M2"
+    }
+  ],
+  "tags": [
+    "bme280",
+    "temperature",
+    "humidity",
+    "pressure",
+    "sensor"
+  ]
+}

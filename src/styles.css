@@ -1093,3 +1093,66 @@ input[type='checkbox'] {
   text-decoration: none;
   color: var(--text);
 }
+
+/* Type-first catalogue: the list of types, and the way back from one. */
+
+.cat-type {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  text-align: left;
+  color: var(--text);
+  border-left: 2px solid transparent;
+}
+
+.cat-type strong {
+  flex: 1;
+  font-weight: 550;
+  font-size: 12.5px;
+}
+
+.cat-type:hover {
+  background: var(--panel-2);
+  border-left-color: var(--accent);
+  color: var(--accent);
+}
+
+.cat-count {
+  font-size: 10.5px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.cat-arrow {
+  font-size: 14px;
+  line-height: 1;
+  color: var(--text-faint);
+}
+
+.cat-type:hover .cat-arrow,
+.cat-type:hover .cat-count {
+  color: var(--accent);
+}
+
+.cat-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 12px;
+  text-align: left;
+  color: var(--text-dim);
+  font-size: 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.cat-back:hover {
+  color: var(--accent);
+}
+
+.cat-back-arrow {
+  font-size: 15px;
+  line-height: 1;
+}

@@ -1,0 +1,54 @@
+{
+  "id": "display-oled-ssd1306-096",
+  "name": "0.96 inch OLED (SSD1306)",
+  "category": "display",
+  "summary": "Small blue-and-white I2C display. The one on every starter kit.",
+  "confidence": "approximate",
+  "source": "Dimensions taken from the commonly sold module. These boards are made by many suppliers to no common standard, so measure yours before cutting a panel. The display glass sits about 2 mm proud of the board and is not included in the thickness.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 27.3,
+      "h": 27.8
+    },
+    "thickness": 1.2
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2.2,
+      "y": 2.2,
+      "diameter": 2,
+      "screw": "M2"
+    },
+    {
+      "id": "h2",
+      "x": 25.1,
+      "y": 2.2,
+      "diameter": 2,
+      "screw": "M2"
+    },
+    {
+      "id": "h3",
+      "x": 2.2,
+      "y": 25.6,
+      "diameter": 2,
+      "screw": "M2"
+    },
+    {
+      "id": "h4",
+      "x": 25.1,
+      "y": 25.6,
+      "diameter": 2,
+      "screw": "M2"
+    }
+  ],
+  "tags": [
+    "oled",
+    "ssd1306",
+    "i2c",
+    "display",
+    "0.96"
+  ]
+}

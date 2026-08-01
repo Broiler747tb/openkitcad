@@ -1,0 +1,23 @@
+{
+  "id": "insert-m25-heatset",
+  "name": "M2.5 heat-set insert",
+  "category": "fastener",
+  "summary": "Brass insert melted into a printed part. Needs a 3.6 mm pilot hole.",
+  "confidence": "approximate",
+  "source": "Matches the commonly sold knurled insert in this size. Insert dimensions vary noticeably between suppliers - check yours, and always test-fit one before printing a whole enclosure. These are the same figures the app uses when it sizes an insert hole for you.",
+  "geometry": {
+    "kind": "insert",
+    "thread": "M2.5",
+    "outerDiameter": 4.0,
+    "length": 4.6,
+    "pilotDiameter": 3.6
+  },
+  "tags": [
+    "m25",
+    "insert",
+    "heatset",
+    "threaded",
+    "brass",
+    "fastener"
+  ]
+}

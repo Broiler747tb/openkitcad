@@ -1,0 +1,25 @@
+{
+  "id": "power-mp1584-buck",
+  "name": "MP1584 mini buck converter",
+  "category": "power",
+  "summary": "Thumbnail-sized step-down. No mounting holes, so it gets glued or taped in.",
+  "confidence": "approximate",
+  "source": "Dimensions taken from the commonly sold module. These boards are made by many suppliers to no common standard, so measure yours before cutting a panel. Components stand about 4 mm proud.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 22,
+      "h": 17
+    },
+    "thickness": 1.0
+  },
+  "tags": [
+    "mp1584",
+    "buck",
+    "step-down",
+    "regulator",
+    "power",
+    "mini"
+  ]
+}

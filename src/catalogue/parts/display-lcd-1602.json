@@ -1,0 +1,54 @@
+{
+  "id": "display-lcd-1602",
+  "name": "16x2 character LCD (HD44780)",
+  "category": "display",
+  "summary": "Two lines of sixteen characters. Needs a 16-pin header or an I2C backpack.",
+  "confidence": "approximate",
+  "source": "Board outline and the 75 x 31 mm hole pattern follow the long-standing 1602 module layout, which is consistent between suppliers. Overall depth with a bezel and headers is closer to 13 mm.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 80,
+      "h": 36
+    },
+    "thickness": 1.6
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2.5,
+      "y": 2.5,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h2",
+      "x": 77.5,
+      "y": 2.5,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h3",
+      "x": 2.5,
+      "y": 33.5,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h4",
+      "x": 77.5,
+      "y": 33.5,
+      "diameter": 3,
+      "screw": "M3"
+    }
+  ],
+  "tags": [
+    "lcd",
+    "1602",
+    "hd44780",
+    "character",
+    "display"
+  ]
+}

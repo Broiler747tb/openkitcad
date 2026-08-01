@@ -1,0 +1,40 @@
+{
+  "id": "power-18650-holder",
+  "name": "18650 cell holder, single",
+  "category": "power",
+  "summary": "Plastic holder for one 18650 cell, with solder tabs.",
+  "confidence": "approximate",
+  "source": "Dimensions taken from the commonly sold module. These boards are made by many suppliers to no common standard, so measure yours before cutting a panel. Holder sizes differ noticeably between makers; the cell itself is the standard 65 x 18 mm.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 76,
+      "h": 21
+    },
+    "thickness": 19
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 4,
+      "y": 10.5,
+      "diameter": 3,
+      "screw": "M3"
+    },
+    {
+      "id": "h2",
+      "x": 72,
+      "y": 10.5,
+      "diameter": 3,
+      "screw": "M3"
+    }
+  ],
+  "tags": [
+    "18650",
+    "battery",
+    "cell",
+    "holder",
+    "power"
+  ]
+}
