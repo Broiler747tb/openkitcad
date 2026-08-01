@@ -29,6 +29,7 @@ import {
 } from '../core/math'
 import type {
   Body,
+  LidFeature,
   BooleanOp,
   EdgeRef,
   FaceRef,
@@ -855,6 +856,82 @@ function marchingSquares(
   return loops
 }
 
+
+/**
+ * A slab spanning [from, to] measured along a frame's normal, wide enough to
+ * swallow anything this app builds. Used to take a horizontal slice out of a
+ * solid at a given depth below a face.
+ */
+function frameSlab(frame: Frame, from: number, to: number): any {
+  return sketchOn(drawRectangle(LID_REACH, LID_REACH), frame, from).extrude(to - from)
+}
+
+/**
+ * The solid shrunk inward by `d` on every side except the open face.
+ *
+ * replicad has no offset for a solid, so this hollows the solid with walls `d`
+ * thick and keeps the void instead of the walls. The void of a shell is exactly
+ * the original inset by the wall thickness, which is the offset wanted - and
+ * being a real offset rather than a scale, it stays right on rounded corners
+ * and awkward outlines where scaling toward a centre would not.
+ *
+ * Every part of a lid and its seat is some difference of two of these.
+ */
+function insetSolid(solid: any, d: number, frame: Frame): any {
+  if (d <= 1e-9) return solid.clone()
+  const walls = solid
+    .clone()
+    .shell(d, (f: any) => f.inPlane(new Plane(frame.origin, null, frame.normal)))
+  return solid.clone().cut(walls)
+}
+
+/**
+ * Proportions for the parts of a lid that the user is not asked about.
+ *
+ * Three numbers in a dialog is already at the limit for someone printing their
+ * first enclosure, so the skirt and bead are derived from the wall and lid
+ * thickness rather than typed in. The skirt is deliberately thinner than the
+ * wall: it is the part that has to bend for the lid to click in, and a skirt as
+ * thick as the wall it presses against simply will not.
+ */
+function lidProportions(wall: number, thickness: number) {
+  const skirt = Math.max(Math.min(wall * 0.6, wall - 0.4), 0.8)
+  const depth = Math.max(3, thickness * 2)
+  const bead = 0.4
+  const bandHeight = Math.min(1, depth * 0.3)
+  const bandCentre = thickness + depth * 0.6
+  return {
+    /** Ledge width: half the wall, so equal material either side of the join. */
+    ledge: wall / 2,
+    skirt,
+    depth,
+    bead,
+    /** Band the bead occupies, as depths below the face. */
+    bandLo: bandCentre + bandHeight / 2,
+    bandHi: bandCentre - bandHeight / 2,
+  }
+}
+
+/** The wall thickness of the hollowing a lid belongs to. */
+function wallOfShell(doc: OkcDocument, shellFeatureId: string): number | null {
+  for (const body of doc.bodies) {
+    for (const f of body.features) {
+      if (f.id === shellFeatureId && f.kind === 'shell') return Math.abs(f.thickness)
+    }
+  }
+  return null
+}
+
+/** The lid feature a seat belongs to. */
+function findLidFeature(doc: OkcDocument, id: string): LidFeature | null {
+  for (const body of doc.bodies) {
+    for (const f of body.features) {
+      if (f.id === id && f.kind === 'lid') return f
+    }
+  }
+  return null
+}
+
 /** Evaluate one body's feature history into a single solid. */
 export function evaluateBody(
   body: Body,
@@ -1106,49 +1183,110 @@ export function evaluateBody(
             })
             break
           }
-          // Take a slice of the *un-hollowed* solid at the opening: the material
-          // that hollowing just removed, with the full outer profile rather
-          // than a ring of wall.
-          const slab = sketchOn(
-            drawRectangle(LID_REACH, LID_REACH),
-            source.frame,
-            -feature.thickness,
-          ).extrude(feature.thickness)
-          let cap = source.shape.clone().intersect(slab)
+          const t = Math.abs(feature.thickness)
+          const c = feature.clearance ?? 0
+          // Falls back to the lid's own thickness for documents saved before
+          // the two were told apart; the menu has always set them equal.
+          const wall = wallOfShell(ctx.doc, feature.shellFeatureId) ?? t
+          const fit = feature.fit ?? 'friction'
+          const prop = lidProportions(wall, t)
 
-          // Then take the rim back off. What is left is the hole itself, so the
-          // lid drops into the opening flush with the outside rather than
-          // sitting on top of it like a shoebox lid. Cutting the built shell
-          // rather than insetting the profile means this follows whatever the
-          // wall actually is - rounded corners, ribs, anything.
-          const walls = ctx.shapes.get(feature.sourceBodyId)
-          if (walls) cap = cap.cut(walls.clone())
+          try {
+            // The plug: the part that fills the opening, flush with the outside.
+            // A ledge lid is wider, because it laps over the step cut into the
+            // wall rather than passing between the walls.
+            const plugInset = fit === 'ledge' ? wall - prop.ledge + c : wall + c
+            let cap = insetSolid(source.shape, plugInset, source.frame).intersect(
+              frameSlab(source.frame, -t, 0),
+            )
 
-          // And then the gap. There is no offset for a solid in replicad, so
-          // the inset is got by hollowing the original again with walls that
-          // much thicker and cutting *that* rim away as well: a wall of
-          // thickness + clearance leaves an opening exactly clearance smaller
-          // all round. It costs a second hollowing, which is why it is skipped
-          // when no gap was asked for.
-          const clearance = feature.clearance ?? 0
-          if (clearance > 0) {
-            try {
-              const fat = source.shape
+            if (fit === 'snap') {
+              // A thin wall hanging down inside the box. This is the part that
+              // flexes, so it is cut from between two insets rather than being
+              // the full thickness of the opening.
+              const outer = insetSolid(source.shape, wall + c, source.frame)
+              const inner = insetSolid(source.shape, wall + c + prop.skirt, source.frame)
+              const skirt = outer
                 .clone()
-                .shell(Math.abs(feature.thickness) + clearance, (f: any) =>
-                  f.inPlane(new Plane(source.frame.origin, null, source.frame.normal)),
-                )
-              cap = cap.cut(fat)
-            } catch (e) {
-              errors.push({
-                featureId: feature.id,
-                message: `Could not leave a gap round the lid: ${(e as Error).message}`,
-                hint: 'Try a smaller gap, or set it to zero for a lid that is exactly the size of the opening.',
-              })
-            }
-          }
+                .cut(inner.clone())
+                .intersect(frameSlab(source.frame, -(t + prop.depth), -t))
+              cap = cap.fuse(skirt)
 
-          shape = combine(shape, cap, 'add')
+              // And the bead: a ridge running round the outside of the skirt,
+              // standing proud of it by a little, which is what actually clicks
+              // into the groove and holds the lid down.
+              const proud = insetSolid(source.shape, wall + c - prop.bead, source.frame)
+              const ring = proud
+                .cut(inner)
+                .intersect(frameSlab(source.frame, -prop.bandLo, -prop.bandHi))
+              cap = cap.fuse(ring)
+            }
+
+            // Finally trim against the box as actually built, which is belt and
+            // braces: whatever else has been done to it, the lid cannot end up
+            // occupying the same space.
+            const walls = ctx.shapes.get(feature.sourceBodyId)
+            if (walls) cap = cap.cut(walls.clone())
+
+            shape = combine(shape, cap, 'add')
+          } catch (e) {
+            errors.push({
+              featureId: feature.id,
+              message: `Could not build the lid: ${(e as Error).message}`,
+              hint: 'A thinner wall, a smaller gap, or a plain drop-in fit will usually go through.',
+            })
+          }
+          break
+        }
+
+        case 'lidSocket': {
+          if (!shape) break
+          const lid = findLidFeature(ctx.doc, feature.lidFeatureId)
+          if (!lid) {
+            errors.push({
+              featureId: feature.id,
+              message: 'The lid this seat was cut for is gone.',
+              hint: 'Delete this step, or make the lid again.',
+            })
+            break
+          }
+          const source = ctx.preShell.get(lid.shellFeatureId)
+          if (!source) break
+          const fit = lid.fit ?? 'friction'
+          // A plain drop-in lid needs nothing cut for it.
+          if (fit === 'friction') break
+
+          const t = Math.abs(lid.thickness)
+          const c = lid.clearance ?? 0
+          const wall = wallOfShell(ctx.doc, lid.shellFeatureId) ?? t
+          const prop = lidProportions(wall, t)
+
+          try {
+            if (fit === 'ledge') {
+              // Take the inner part of the wall away down to the lid's depth.
+              // What is left below is the step the lid comes to rest on.
+              shape = shape.cut(
+                insetSolid(source.shape, wall - prop.ledge, source.frame).intersect(
+                  frameSlab(source.frame, -t, 0),
+                ),
+              )
+            } else {
+              // A groove round the inside of the wall for the bead to sit in,
+              // with the gap added top and bottom as well as sideways - a bead
+              // that has to be squeezed in vertically will not click.
+              shape = shape.cut(
+                insetSolid(source.shape, wall - prop.bead, source.frame).intersect(
+                  frameSlab(source.frame, -(prop.bandLo + c), -(prop.bandHi - c)),
+                ),
+              )
+            }
+          } catch (e) {
+            errors.push({
+              featureId: feature.id,
+              message: `Could not cut the seat for the lid: ${(e as Error).message}`,
+              hint: 'The wall may be too thin for this kind of fit. Try a thicker wall or a plain drop-in lid.',
+            })
+          }
           break
         }
 

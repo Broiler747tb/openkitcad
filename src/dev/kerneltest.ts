@@ -693,6 +693,9 @@ export async function runKernelTest(): Promise<TestResult[]> {
       )
       // It must not foul the walls it drops between, or it would not go in.
       const walls = withLid.shapes.find((x) => x.id === 'box')
+      // The hollowed box with nothing cut for the lid, which the fits below are
+      // measured against.
+      const hollowVolume = walls?.volume
       add(
         'and clears the walls rather than overlapping them',
         !!lid && !!walls && lid.bounds[0] >= walls.bounds[0] + WALL - 0.01,
@@ -755,6 +758,151 @@ export async function runKernelTest(): Promise<TestResult[]> {
           },
         ],
       })
+      // --- the three ways a lid can be held on -----------------------------
+      // Each is checked against numbers worked out by hand, because the parts
+      // are built from differences of insets and an error in one of them makes
+      // a lid that looks plausible on screen and does not go on.
+      const fitted = async (fit: 'friction' | 'ledge' | 'snap') => {
+        const seat =
+          fit === 'friction'
+            ? []
+            : [
+                {
+                  id: 'seat',
+                  name: 'Seat',
+                  kind: 'lidSocket',
+                  lidBodyId: 'lid',
+                  lidFeatureId: 'ld',
+                },
+              ]
+        const r = await kernel.evaluate({
+          version: 1,
+          name: `lid-${fit}`,
+          units: 'mm',
+          parameters: [],
+          placements: [],
+          bodies: [
+            {
+              id: 'box',
+              name: 'Box',
+              visible: true,
+              colour: '#ccc',
+              features: [
+                {
+                  id: 'bx',
+                  name: 'Box',
+                  kind: 'box',
+                  plane: { kind: 'named', name: 'XY', offset: 0 },
+                  origin: [0, 0],
+                  width: W,
+                  depth: D,
+                  height: H,
+                  operation: 'new',
+                },
+                {
+                  id: 'sh',
+                  name: 'Hollow',
+                  kind: 'shell',
+                  thickness: WALL,
+                  openFaces: [{ bodyId: 'box', anchor: [W / 2, D / 2, H], normal: [0, 0, 1] }],
+                },
+                ...seat,
+              ],
+            },
+            {
+              id: 'lid',
+              name: 'Lid',
+              visible: true,
+              colour: '#bbb',
+              features: [
+                {
+                  id: 'ld',
+                  name: 'Lid',
+                  kind: 'lid',
+                  sourceBodyId: 'box',
+                  shellFeatureId: 'sh',
+                  thickness: WALL,
+                  clearance: GAP,
+                  fit,
+                },
+              ],
+            },
+          ],
+        } as never)
+        return {
+          box: r.shapes.find((x) => x.id === 'box'),
+          lid: r.shapes.find((x) => x.id === 'lid'),
+          errors: r.errors.length,
+        }
+      }
+
+      {
+        // A ledge lid laps over a step half the wall wide, so it is wider than
+        // the opening rather than narrower - the whole point being that it
+        // cannot drop through.
+        const { box: ledgeBox, lid: ledgeLid, errors: ledgeErrors } = await fitted('ledge')
+        const ledge = WALL / 2
+        const span = W - 2 * (WALL - ledge + GAP)
+        add(
+          'a ledge lid laps over the step, wider than the hole',
+          !!ledgeLid && Math.abs(ledgeLid.bounds[3] - ledgeLid.bounds[0] - span) < 1e-3,
+          `${(ledgeLid ? ledgeLid.bounds[3] - ledgeLid.bounds[0] : 0).toFixed(3)} mm across, expected ${span.toFixed(3)}`,
+        )
+        // The step costs the box the inner part of its wall over the lid depth.
+        const removed =
+          (W - 2 * (WALL - ledge)) * (D - 2 * (WALL - ledge)) * WALL -
+          (W - 2 * WALL) * (D - 2 * WALL) * WALL
+        add(
+          'and the box loses exactly the step that was cut for it',
+          !!ledgeBox && Math.abs((hollowVolume ?? 0) - ledgeBox.volume - removed) < 1e-3,
+          `${((hollowVolume ?? 0) - (ledgeBox?.volume ?? 0)).toFixed(2)} mm3 removed, expected ${removed.toFixed(2)}`,
+        )
+        add('and builds without complaint', ledgeErrors === 0, `${ledgeErrors} error(s)`)
+      }
+
+      {
+        const { box: snapBox, lid: snapLid, errors: snapErrors } = await fitted('snap')
+        const skirt = Math.max(Math.min(WALL * 0.6, WALL - 0.4), 0.8)
+        const depth = Math.max(3, WALL * 2)
+        const BEAD = 0.4
+        // The skirt hangs below the plug, so the lid is deeper than it is thick.
+        add(
+          'a snap lid hangs a skirt below the plug',
+          !!snapLid && Math.abs(snapLid.bounds[5] - snapLid.bounds[2] - (WALL + depth)) < 1e-3,
+          `${(snapLid ? snapLid.bounds[5] - snapLid.bounds[2] : 0).toFixed(3)} mm deep, expected ${(WALL + depth).toFixed(3)}`,
+        )
+        // The bead is the widest part of it, standing proud of the skirt.
+        const beadSpan = W - 2 * (WALL + GAP - BEAD)
+        add(
+          'with a bead round it as the widest part',
+          !!snapLid && Math.abs(snapLid.bounds[3] - snapLid.bounds[0] - beadSpan) < 1e-3,
+          `${(snapLid ? snapLid.bounds[3] - snapLid.bounds[0] : 0).toFixed(3)} mm across, expected ${beadSpan.toFixed(3)}`,
+        )
+        // And it must actually interfere with the wall, or nothing snaps: the
+        // bead has to reach past the inner face of the wall.
+        add(
+          'that reaches into the wall, so it has something to click past',
+          WALL + GAP - BEAD < WALL,
+          `bead face at ${(WALL + GAP - BEAD).toFixed(2)} mm in, wall face at ${WALL.toFixed(2)}`,
+        )
+        add(
+          'and the box gains a groove for it',
+          !!snapBox && snapBox.volume < (hollowVolume ?? 0) - 1e-6,
+          `${((hollowVolume ?? 0) - (snapBox?.volume ?? 0)).toFixed(2)} mm3 grooved out`,
+        )
+        add('and builds without complaint', snapErrors === 0, `${snapErrors} error(s)`)
+      }
+
+      {
+        // A plain drop-in lid must leave the box exactly as hollowing left it.
+        const { box: plainBox } = await fitted('friction')
+        add(
+          'a drop-in lid cuts nothing into the box',
+          !!plainBox && Math.abs(plainBox.volume - (hollowVolume ?? 0)) < 1e-6,
+          `box is ${plainBox?.volume.toFixed(2)} mm3, unhollowed-with-lid was ${hollowVolume?.toFixed(2)}`,
+        )
+      }
+
       const loose = gapped.shapes.find((x) => x.id === 'lid')
       const expectedSpan = W - 2 * WALL - 2 * GAP
       add(

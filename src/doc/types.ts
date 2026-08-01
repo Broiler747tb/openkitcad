@@ -256,6 +256,21 @@ export interface VentFeature extends FeatureBase {
   depth: 'through' | number
 }
 
+/**
+ * How a lid is held on.
+ *
+ * All three drop straight down into the opening - none needs the lid turned,
+ * slid or threaded, because a beginner printing their first enclosure should
+ * not have to get a bayonet to line up.
+ */
+export type LidFit =
+  /** Held by friction alone. Simplest, and comes off with a fingernail. */
+  | 'friction'
+  /** Rests on a step cut into the wall, so it cannot drop through. */
+  | 'ledge'
+  /** A skirt with a bead round it that clicks into a groove in the wall. */
+  | 'snap'
+
 /** A cap for the opening left by hollowing something out. */
 export interface LidFeature extends FeatureBase {
   kind: 'lid'
@@ -273,6 +288,24 @@ export interface LidFeature extends FeatureBase {
    * behaving as they did rather than silently changing size on load.
    */
   clearance?: number
+  /** Optional for the same reason: anything saved before this is a plain fit. */
+  fit?: LidFit
+}
+
+/**
+ * The other half of a lid: whatever has to be cut into the box for the lid to
+ * fit it - a step for the lid to rest on, a groove for its bead to click into.
+ *
+ * It lives in the box's own history rather than the lid's, because that is the
+ * part it removes material from, and the two have to be built in that order.
+ * It holds no numbers of its own: it reads them off the lid feature it names,
+ * so the two halves cannot drift apart when one of them is edited.
+ */
+export interface LidSocketFeature extends FeatureBase {
+  kind: 'lidSocket'
+  /** The body holding the lid feature. */
+  lidBodyId: string
+  lidFeatureId: string
 }
 
 /**
@@ -295,6 +328,7 @@ export interface MoveFeature extends FeatureBase {
 
 export type Feature =
   | MoveFeature
+  | LidSocketFeature
   | SketchFeature
   | CombineFeature
   | SphereFeature
@@ -391,6 +425,7 @@ export const FEATURE_LABEL: Record<FeatureKind, string> = {
   sphere: 'Ball',
   vent: 'Vent holes',
   lid: 'Lid',
+  lidSocket: 'Lid seat',
 }
 
 export const FEATURE_ICON: Record<FeatureKind, string> = {
@@ -410,4 +445,5 @@ export const FEATURE_ICON: Record<FeatureKind, string> = {
   sphere: '●',
   vent: '⁙',
   lid: '▭',
+  lidSocket: '⊓',
 }

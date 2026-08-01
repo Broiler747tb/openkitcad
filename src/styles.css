@@ -991,3 +991,23 @@ input[type='checkbox'] {
 .sketch-menu-item.indent {
   padding-left: 20px;
 }
+
+/* Pick-one field in a menu prompt, for choices that are not a number. */
+.sketch-menu-choice {
+  padding: 8px 9px 9px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.sketch-menu-choice label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-bottom: 5px;
+}
+
+.sketch-menu-choice p {
+  margin: 6px 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-faint);
+}

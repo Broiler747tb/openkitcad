@@ -4,6 +4,7 @@ import type {
   ExtrudeFeature,
   MoveFeature,
   OkcDocument,
+  LidFit,
   SketchFeature,
   VentShape,
 } from '../doc/types'
@@ -38,8 +39,14 @@ export interface ObjectAction {
   prompt3?: PromptField
   /** Sub-section within the group, for menus deep enough to need one. */
   sub?: string
+  /** A pick-one field, for the few choices that are not a number. */
+  choice?: {
+    label: string
+    initial: string
+    options: Array<{ value: string; label: string; hint?: string }>
+  }
   danger?: boolean
-  run: (value: number, value2?: number, value3?: number) => void
+  run: (value: number, value2?: number, value3?: number, choice?: string) => void
 }
 
 
@@ -280,7 +287,12 @@ function buildObjectActions(
       })
     }
     if (picked && picked.bodyId === bodyId) {
-      const hollowOut = (thickness: number, withLid: boolean, clearance = 0) => {
+      const hollowOut = (
+        thickness: number,
+        withLid: boolean,
+        clearance = 0,
+        fit: LidFit = 'friction',
+      ) => {
         const shellId = newId('shell')
         store.addFeature(bodyId, {
           id: shellId,
@@ -293,15 +305,29 @@ function buildObjectActions(
         // The lid is its own body: you print it separately, and you want to be
         // able to hide it to see inside.
         const lidBody = store.addBody(`${body.name} lid`)
+        const lidId = newId('lid')
         store.addFeature(lidBody, {
-          id: newId('lid'),
+          id: lidId,
           kind: 'lid',
           name: 'Lid',
           sourceBodyId: bodyId,
           shellFeatureId: shellId,
           thickness,
           clearance,
+          fit,
         })
+        // The matching half - the step or the groove - is cut into the box, so
+        // it belongs in the box's history rather than the lid's. Nothing is
+        // needed for a plain drop-in lid.
+        if (fit !== 'friction') {
+          store.addFeature(bodyId, {
+            id: newId('seat'),
+            kind: 'lidSocket',
+            name: fit === 'ledge' ? 'Ledge for the lid' : 'Groove for the lid',
+            lidBodyId: lidBody,
+            lidFeatureId: lidId,
+          })
+        }
       }
 
       out.push({
@@ -315,12 +341,34 @@ function buildObjectActions(
         id: 'hollow-lid',
         label: 'Hollow it out and make this side a lid',
         hint: 'Same, plus a cap that drops into the opening',
+        choice: {
+          label: 'How it holds on',
+          initial: 'ledge',
+          options: [
+            {
+              value: 'ledge',
+              label: 'Rests on a ledge',
+              hint: 'A step is cut into the wall so the lid sits on it and cannot fall through. Good default.',
+            },
+            {
+              value: 'snap',
+              label: 'Snaps in',
+              hint: 'The lid gets a thin skirt with a ridge round it that clicks into a groove in the wall. Needs a wall of about 2 mm or more.',
+            },
+            {
+              value: 'friction',
+              label: 'Just drops in',
+              hint: 'Nothing holds it but the fit. Simplest to print, and it lifts straight out.',
+            },
+          ],
+        },
         prompt: { label: 'Wall', initial: 2, unit: 'mm' },
         // A fifth of a millimetre is the usual starting point for a printed
         // part that has to go into another printed part. It is a prompt rather
         // than a fixed number because the right gap depends on the printer.
         prompt2: { label: 'Gap round the lid', initial: 0.2, unit: 'mm' },
-        run: (thickness, clearance) => hollowOut(thickness, true, clearance ?? 0.2),
+        run: (thickness, clearance, _third, fit) =>
+          hollowOut(thickness, true, clearance ?? 0.2, (fit as LidFit) ?? 'ledge'),
       })
     }
     // Anything picked with shift takes priority over the blanket versions,
@@ -821,9 +869,11 @@ export function ObjectMenu({
   onClose: () => void
 }) {
   const [pending, setPending] = useState<ObjectAction | null>(null)
+  const [choiceHint, setChoiceHint] = useState('')
   const ref = useRef<HTMLDivElement>(null)
   const secondRef = useRef<HTMLInputElement>(null)
   const thirdRef = useRef<HTMLInputElement>(null)
+  const choiceRef = useRef<HTMLSelectElement>(null)
 
   useEffect(() => {
     const away = (e: MouseEvent) => {
@@ -843,8 +893,14 @@ export function ObjectMenu({
     }
   }, [onClose])
 
-  const fire = (action: ObjectAction, value: number, value2?: number, value3?: number) => {
-    action.run(value, value2, value3)
+  const fire = (
+    action: ObjectAction,
+    value: number,
+    value2?: number,
+    value3?: number,
+    choice?: string,
+  ) => {
+    action.run(value, value2, value3, choice)
     onClose()
   }
 
@@ -857,7 +913,7 @@ export function ObjectMenu({
     if (!Number.isFinite(a)) return
     if (pending.prompt2 && !Number.isFinite(b as number)) return
     if (pending.prompt3 && !Number.isFinite(c as number)) return
-    fire(pending, a, b, c)
+    fire(pending, a, b, c, choiceRef.current?.value)
   }
 
   return (
@@ -871,6 +927,28 @@ export function ObjectMenu({
     >
       {pending ? (
         <>
+          {pending.choice && (
+            <div className="sketch-menu-choice">
+              <label>{pending.choice.label}</label>
+              <select
+                ref={choiceRef}
+                defaultValue={pending.choice.initial}
+                onChange={() => setChoiceHint(choiceRef.current?.value ?? '')}
+              >
+                {pending.choice.options.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+              {(() => {
+                const picked = pending.choice.options.find(
+                  (o) => o.value === (choiceHint || pending.choice!.initial),
+                )
+                return picked?.hint ? <p>{picked.hint}</p> : null
+              })()}
+            </div>
+          )}
           <div className="sketch-menu-prompt">
             <label>{pending.prompt!.label}</label>
             <input
