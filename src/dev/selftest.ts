@@ -34,6 +34,7 @@ import {
 } from '../sketch/edit'
 import { SKETCH_GROUP_ORDER, sketchActions } from '../sketch/actions'
 import { INSERTS, SCREWS, THREAD_SIZES, planHole, planPillar } from '../fasteners'
+import { fastenerGhosts } from '../viewport/ghosts'
 import { groupActions, showHeadings } from '../ui/menuGroups'
 
 export interface TestResult {
@@ -812,6 +813,104 @@ export function runSelfTest(): TestResult[] {
       planHole('insert', 'M4').suggestedDepth > INSERTS.M4.length,
       `M4 insert hole ${planHole('insert', 'M4').suggestedDepth} mm for a ${INSERTS.M4.length} mm insert`,
     )
+  })
+
+  test('the fastener ghost sits where the fastener would', () => {
+    const plate = (feature: unknown) => ({
+      version: 1,
+      name: 'g',
+      units: 'mm' as const,
+      parameters: [],
+      placements: [],
+      bodies: [
+        {
+          id: 'p',
+          name: 'Plate',
+          visible: true,
+          colour: '#ccc',
+          features: [feature],
+        },
+      ],
+    })
+    const shapes = [{ id: 'p', bounds: [-30, -30, 0, 30, 30, 5] }]
+
+    // A counterbored M3 through a 5 mm plate: head sunk by its counterbore, and
+    // the shaft long enough to show the tip coming out the far side.
+    const bored = fastenerGhosts(
+      plate({
+        id: 'h',
+        name: 'h',
+        kind: 'hole',
+        plane: { kind: 'named', name: 'XY', offset: 5 },
+        source: { kind: 'explicit', positions: [[10, 0]] },
+        style: 'counterbore',
+        diameter: 3.4,
+        depth: 'through',
+        counterboreDepth: 3.2,
+        fastener: { kind: 'counterbore', size: 'M3' },
+      }) as never,
+      shapes as never,
+    )
+    check(bored.length === 1, `${bored.length} ghost for one hole`)
+    near(bored[0].at[2], 5, 'head sits at the surface')
+    near(bored[0].shaftDiameter, 3, 'shaft is the thread size, not the clearance hole')
+    near(bored[0].headSink, 3.2, 'head is sunk by the counterbore')
+    check(bored[0].shaftLength > 5, `shaft ${bored[0].shaftLength} mm reaches through 5 mm of plate`)
+    check(bored[0].metal === 'steel', 'a screw is drawn as steel')
+
+    // An insert is the insert, not the hole it melts into.
+    const inserted = fastenerGhosts(
+      plate({
+        id: 'h',
+        name: 'h',
+        kind: 'hole',
+        plane: { kind: 'named', name: 'XY', offset: 5 },
+        source: { kind: 'explicit', positions: [[0, 0]] },
+        style: 'simple',
+        diameter: INSERTS.M3.pilot,
+        depth: 6.2,
+        fastener: { kind: 'insert', size: 'M3' },
+      }) as never,
+      shapes as never,
+    )
+    near(inserted[0].shaftDiameter, INSERTS.M3.outerDiameter, 'insert ghost is the insert, not its hole')
+    check(inserted[0].metal === 'brass', 'an insert is drawn as brass')
+
+    // A pillar puts the screw in at the top of the pillar, not on the plate.
+    const pillared = fastenerGhosts(
+      plate({
+        id: 's',
+        name: 's',
+        kind: 'standoff',
+        plane: { kind: 'named', name: 'XY', offset: 5 },
+        source: { kind: 'explicit', positions: [[0, 0]] },
+        height: 8,
+        outerDiameter: 6,
+        boreDiameter: SCREWS.M3.tapping,
+        boreDepth: 7,
+        fastener: { kind: 'tapped', size: 'M3' },
+      }) as never,
+      shapes as never,
+    )
+    near(pillared[0].at[2], 13, 'screw starts at the top of an 8 mm pillar on a 5 mm plate')
+    near(pillared[0].shaftLength, 7, 'and goes in as far as the bore')
+
+    // A hole nobody said what goes in gets no ghost: guessing from the diameter
+    // would put an M3 screw in a 3 mm cable gland.
+    const untagged = fastenerGhosts(
+      plate({
+        id: 'h',
+        name: 'h',
+        kind: 'hole',
+        plane: { kind: 'named', name: 'XY', offset: 5 },
+        source: { kind: 'explicit', positions: [[0, 0]] },
+        style: 'simple',
+        diameter: 3,
+        depth: 'through',
+      }) as never,
+      shapes as never,
+    )
+    check(untagged.length === 0, 'an untagged hole gets no ghost')
   })
 
   test('pillars are sized round what goes in them', () => {

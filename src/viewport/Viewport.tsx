@@ -5,6 +5,7 @@ import { frameFromPlaneRefLocal } from '../doc/planes'
 import { findSnap, hitTestSketch, toggleSelection } from '../sketch/inference'
 import { SketchMenu } from '../ui/SketchMenu'
 import { ObjectMenu, objectActions, trailingMove, type PickedFace } from '../ui/ObjectMenu'
+import { fastenerGhosts } from './ghosts'
 import { fmt, frameToWorld, v2, type Frame, type Vec2, type Vec3 } from '../core/math'
 import type { Constraint, NewConstraint, Sketch2D } from '../sketch/types'
 
@@ -48,6 +49,7 @@ export function Viewport() {
   const activeSketch = useStore((s) => s.activeSketch)
   const doc = useStore((s) => s.doc)
   const gizmoMode = useStore((s) => s.gizmoMode)
+  const showFasteners = useStore((s) => s.showFasteners)
   /** Where the gizmo was picked up, and the part's offset at that moment. */
   const gizmoBase = useRef<{ anchor: Vec3; offset: Vec3 } | null>(null)
   const sketchSelection = useStore((s) => s.sketchSelection)
@@ -142,6 +144,17 @@ export function Viewport() {
       engineRef.current = null
     }
   }, [])
+
+  // Ghosts of the screws and inserts the holes were drilled for.
+  useEffect(() => {
+    const engine = engineRef.current
+    if (!engine) return
+    // Hidden while sketching: the whole point of being in a sketch is to see
+    // the outline, and a row of screws standing on it is in the way.
+    engine.setFastenerGhosts(
+      showFasteners && !activeSketch ? fastenerGhosts(doc, shapes) : [],
+    )
+  }, [doc, shapes, showFasteners, activeSketch])
 
   // Show the move / turn gizmo on whatever is selected.
   //

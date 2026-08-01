@@ -115,6 +115,7 @@ function StatusBar() {
   const errors = useStore((s) => s.errors)
   const status = useStore((s) => s.statusMessage)
   const showPlacements = useStore((s) => s.showPlacements)
+  const showFasteners = useStore((s) => s.showFasteners)
 
   const triangles = shapes.reduce((n, s) => n + s.mesh.triangles.length / 3, 0)
 
@@ -139,6 +140,14 @@ function StatusBar() {
           onChange={(e) => useStore.getState().setShowPlacements(e.target.checked)}
         />
         Show catalogue parts
+      </label>
+      <label className="status-toggle">
+        <input
+          type="checkbox"
+          checked={showFasteners}
+          onChange={(e) => useStore.getState().setShowFasteners(e.target.checked)}
+        />
+        Show screws
       </label>
       <span>millimetres</span>
     </div>

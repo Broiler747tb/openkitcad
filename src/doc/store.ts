@@ -112,6 +112,9 @@ interface AppState {
 
   section: SectionState
   showPlacements: boolean
+  /** Draw ghosts of the screws and inserts the holes were made for. */
+  showFasteners: boolean
+  setShowFasteners: (show: boolean) => void
   statusMessage: string | null
 
   // --- actions
@@ -220,6 +223,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   section: { enabled: false, axis: 'z', position: 0, flipped: false },
   showPlacements: true,
+  showFasteners: true,
   statusMessage: null,
 
   setDoc(doc, resetHistory = true) {
@@ -355,6 +359,9 @@ export const useStore = create<AppState>((set, get) => ({
   },
   setSection(patch) {
     set({ section: { ...get().section, ...patch } })
+  },
+  setShowFasteners(showFasteners) {
+    set({ showFasteners })
   },
   setShowPlacements(showPlacements) {
     set({ showPlacements })
@@ -728,6 +735,7 @@ export const useStore = create<AppState>((set, get) => ({
           outerDiameter: plan.outerDiameter,
           boreDiameter: plan.boreDiameter,
           boreDepth: plan.boreDepth,
+          fastener: { kind: result.kindOf, size: result.size },
         })
         break
       }
@@ -751,6 +759,7 @@ export const useStore = create<AppState>((set, get) => ({
           counterboreDiameter: plan.counterboreDiameter,
           counterboreDepth: plan.counterboreDepth,
           countersinkAngle: plan.countersinkAngle,
+          fastener: { kind: result.kindOf, size: result.size },
         })
         break
       }

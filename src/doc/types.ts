@@ -23,6 +23,7 @@
  */
 import type { Vec2, Vec3 } from '../core/math'
 import type { Sketch2D } from '../sketch/types'
+import type { FastenerKind, ThreadSize } from '../fasteners'
 
 export interface Parameter {
   id: string
@@ -164,6 +165,12 @@ export interface HoleFeature extends FeatureBase {
   counterboreDepth?: number
   /** Included angle for countersinks, degrees. */
   countersinkAngle?: number
+  /**
+   * Which fastener this was made for, when it came from the screws and pillars
+   * menu. Carried only so the viewport can draw a ghost of the thing that is
+   * going in; nothing geometric reads it.
+   */
+  fastener?: { kind: FastenerKind; size: ThreadSize }
 }
 
 export interface StandoffFeature extends FeatureBase {
@@ -177,6 +184,12 @@ export interface StandoffFeature extends FeatureBase {
   /** Bore for a self-tapping screw or a heat-set insert. */
   boreDiameter: number
   boreDepth: number
+  /**
+   * Which fastener this was made for, when it came from the screws and pillars
+   * menu. Carried only so the viewport can draw a ghost of the thing that is
+   * going in; nothing geometric reads it.
+   */
+  fastener?: { kind: FastenerKind; size: ThreadSize }
 }
 
 export interface PortCutoutFeature extends FeatureBase {

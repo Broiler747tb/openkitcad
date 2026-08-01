@@ -8,6 +8,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
+import type { FastenerGhost } from './ghosts'
 import type { ShapeResult } from '../kernel/types'
 import type { Frame, Vec2, Vec3 } from '../core/math'
 import { frameToWorld } from '../core/math'
@@ -538,6 +539,91 @@ export class ViewportEngine {
     tc.showX = freeTurn
     tc.showY = freeTurn
     tc.showZ = true
+  }
+
+
+  // ---------------------------------------------------------------------------
+  // Fastener ghosts
+  // ---------------------------------------------------------------------------
+
+  private ghostGroup = new THREE.Group()
+  private ghostMaterials: Record<'brass' | 'steel', THREE.Material> | null = null
+
+  private ghostMaterial(metal: 'brass' | 'steel'): THREE.Material {
+    if (!this.ghostMaterials) {
+      const make = (colour: number) =>
+        new THREE.MeshStandardMaterial({
+          color: colour,
+          metalness: 0.85,
+          roughness: 0.35,
+          transparent: true,
+          opacity: 0.55,
+          // Drawn over the solid rather than fighting it: the shaft is inside
+          // the part, and z-fighting against the hole wall would make it
+          // flicker as the camera moves.
+          depthWrite: false,
+        })
+      this.ghostMaterials = { brass: make(0xc08a3e), steel: make(0xa8b0b8) }
+    }
+    return this.ghostMaterials[metal]
+  }
+
+  /** Draw ghosts of the screws and inserts, or pass an empty list to clear. */
+  setFastenerGhosts(ghosts: FastenerGhost[]) {
+    if (!this.ghostGroup.parent) this.overlayGroup.add(this.ghostGroup)
+    for (const child of [...this.ghostGroup.children]) {
+      this.ghostGroup.remove(child)
+      ;(child as THREE.Mesh).geometry?.dispose()
+    }
+
+    const up = new THREE.Vector3()
+    for (const g of ghosts) {
+      up.set(g.up[0], g.up[1], g.up[2]).normalize()
+      // Cylinders are built along +Y, so everything is made upright and then
+      // turned once onto the fastener's own axis.
+      const turn = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), up)
+      const material = this.ghostMaterial(g.metal)
+
+      const place = (mesh: THREE.Mesh, along: number) => {
+        mesh.quaternion.copy(turn)
+        mesh.position.set(
+          g.at[0] + up.x * along,
+          g.at[1] + up.y * along,
+          g.at[2] + up.z * along,
+        )
+        mesh.renderOrder = 3
+        this.ghostGroup.add(mesh)
+      }
+
+      // The shaft hangs below the surface, so its centre is half its length in.
+      const shaft = new THREE.Mesh(
+        new THREE.CylinderGeometry(g.shaftDiameter / 2, g.shaftDiameter / 2, g.shaftLength, 20),
+        material,
+      )
+      place(shaft, -g.shaftLength / 2 - g.headSink)
+
+      if (g.headDiameter > 0) {
+        if (g.countersunk) {
+          // Wide at the surface, tapering down to the shaft.
+          const cone = new THREE.Mesh(
+            new THREE.CylinderGeometry(
+              g.headDiameter / 2,
+              g.shaftDiameter / 2,
+              (g.headDiameter - g.shaftDiameter) / 2,
+              20,
+            ),
+            material,
+          )
+          place(cone, -(g.headDiameter - g.shaftDiameter) / 4)
+        } else {
+          const head = new THREE.Mesh(
+            new THREE.CylinderGeometry(g.headDiameter / 2, g.headDiameter / 2, g.headHeight, 20),
+            material,
+          )
+          place(head, g.headHeight / 2 - g.headSink)
+        }
+      }
+    }
   }
 
   isGizmoDragging(): boolean {
