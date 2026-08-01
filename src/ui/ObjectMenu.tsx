@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { newId, useStore, type Selection } from '../doc/store'
 import type { ExtrudeFeature, OkcDocument } from '../doc/types'
 import { getPart } from '../catalogue'
-import { groupActions, showHeadings } from './menuGroups'
+import { FlyoutMenu } from './FlyoutMenu'
 
 /**
  * Right-click menu for finished solids and placed parts.
@@ -77,7 +77,34 @@ export interface PickedFace {
   normal: [number, number, number]
 }
 
+/**
+ * Sort the sections the way OBJECT_GROUPS lists them.
+ *
+ * The flyout keeps the section list in a fixed left-hand column, so the order
+ * has to be the same every time for it to become muscle memory. Ordering by
+ * whichever section happened to be built first would shuffle it about.
+ */
+export const OBJECT_GROUP_ORDER = [
+  ...OBJECT_GROUPS.map(([name]) => name),
+  'Combine with another part',
+]
+
+/**
+ * Tagging happens here, at the one exit, rather than at each of the five
+ * returns inside. Doing it per-return meant a path could be missed - and one
+ * was, so right-clicking a solid came back with no sections at all.
+ */
 export function objectActions(
+  selection: Selection,
+  picked?: PickedFace | null,
+): ObjectAction[] {
+  return buildObjectActions(selection, picked).map((a) => ({
+    ...a,
+    group: objectGroupOf(a.id),
+  }))
+}
+
+function buildObjectActions(
   selection: Selection,
   picked?: PickedFace | null,
 ): ObjectAction[] {
@@ -89,7 +116,7 @@ export function objectActions(
   if (selection.kind === 'body' && selection.id) {
     const bodyId = selection.id
     const body = doc.bodies.find((b) => b.id === bodyId)
-    if (!body) return raw.map((a) => ({ ...a, group: objectGroupOf(a.id) }))
+    if (!body) return raw
     const extrude = mainExtrude(doc, bodyId)
     const sketchId = extrude?.sketchId ?? body.features.find((f) => f.kind === 'sketch')?.id
 
@@ -498,13 +525,13 @@ export function objectActions(
           offset: 0,
         }),
     })
-    return raw.map((a) => ({ ...a, group: objectGroupOf(a.id) }))
+    return raw
   }
 
   if (selection.kind === 'placement' && selection.id) {
     const id = selection.id
     const placement = doc.placements.find((p) => p.id === id)
-    if (!placement) return raw.map((a) => ({ ...a, group: objectGroupOf(a.id) }))
+    if (!placement) return raw
     const part = getPart(placement.partId)
     const targetBody = doc.bodies[0]?.id
 
@@ -593,7 +620,7 @@ export function objectActions(
     })
   }
 
-  return raw.map((a) => ({ ...a, group: objectGroupOf(a.id) }))
+  return raw
 }
 
 export function ObjectMenu({
@@ -692,21 +719,11 @@ export function ObjectMenu({
       ) : actions.length === 0 ? (
         <div className="sketch-menu-empty">Right-click a part to change it.</div>
       ) : (
-        groupActions(actions).map(([group, items]) => (
-          <div key={group}>
-            {showHeadings(actions) && <div className="menu-group">{group}</div>}
-            {items.map((action) => (
-              <button
-                key={action.id}
-                className={`sketch-menu-item ${action.danger ? 'danger' : ''}`}
-                onClick={() => (action.prompt ? setPending(action) : fire(action, 0))}
-              >
-                <strong>{action.label}</strong>
-                {action.hint && <span>{action.hint}</span>}
-              </button>
-            ))}
-          </div>
-        ))
+        <FlyoutMenu
+          actions={actions}
+          order={OBJECT_GROUP_ORDER}
+          onPick={(action) => (action.prompt ? setPending(action) : fire(action, 0))}
+        />
       )}
     </div>
   )

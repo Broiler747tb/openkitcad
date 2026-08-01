@@ -31,7 +31,7 @@ import {
   trimLine,
   trimRound,
 } from '../sketch/edit'
-import { sketchActions } from '../sketch/actions'
+import { SKETCH_GROUP_ORDER, sketchActions } from '../sketch/actions'
 import { groupActions, showHeadings } from '../ui/menuGroups'
 
 export interface TestResult {
@@ -743,10 +743,33 @@ export function runSelfTest(): TestResult[] {
       groups.length > 1 && showHeadings(twoLines),
       `two lines gives ${groups.length} sections: ${groups.map(([g]) => g).join(' / ')}`,
     )
-    // A single-section menu should not waste a line on a heading.
+    // A single-section menu should not waste a click on choosing the section.
     check(
       !showHeadings([{ group: 'Set a size' }, { group: 'Set a size' }]),
-      'a menu with one section shows no heading',
+      'a menu with one section is shown outright',
+    )
+
+    // The section column has to be in the same order every time it opens,
+    // whichever way round the actions happened to be built.
+    const shuffled = [
+      { group: 'Repeat or copy' },
+      { group: 'Hold it in place' },
+      { group: 'Change the shape' },
+      { group: 'Set a size' },
+    ]
+    const order = groupActions(shuffled, SKETCH_GROUP_ORDER).map(([g]) => g)
+    check(
+      order.join(' > ') === 'Hold it in place > Set a size > Change the shape > Repeat or copy',
+      `sections sort to the table order: ${order.join(' > ')}`,
+    )
+    // Sections the table does not name go to the back rather than vanishing.
+    const withStray = groupActions(
+      [{ group: 'Nonsense' }, { group: 'Set a size' }],
+      SKETCH_GROUP_ORDER,
+    ).map(([g]) => g)
+    check(
+      withStray.join(' > ') === 'Set a size > Nonsense',
+      `an unlisted section still shows, last: ${withStray.join(' > ')}`,
     )
   })
 

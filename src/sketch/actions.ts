@@ -110,6 +110,9 @@ const SKETCH_GROUPS: Array<[string, string[]]> = [
   ['Add a shape', ['add-polygon', 'add-slot']],
 ]
 
+/** Section names in the order the menu lists them. */
+export const SKETCH_GROUP_ORDER = SKETCH_GROUPS.map(([name]) => name)
+
 export function groupOf(id: string): string {
   for (const [group, ids] of SKETCH_GROUPS) {
     if (ids.includes(id)) return group

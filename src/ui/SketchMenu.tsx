@@ -1,8 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { activeSketchFeature, useStore } from '../doc/store'
-import { emptySelectionHint, sketchActions, type SketchAction } from '../sketch/actions'
+import {
+  SKETCH_GROUP_ORDER,
+  emptySelectionHint,
+  sketchActions,
+  type SketchAction,
+} from '../sketch/actions'
 import type { Vec2 } from '../core/math'
-import { groupActions, showHeadings } from './menuGroups'
+import { FlyoutMenu } from './FlyoutMenu'
 
 /**
  * The right-click menu inside a sketch.
@@ -116,21 +121,11 @@ export function SketchMenu({
       ) : actions.length === 0 ? (
         <div className="sketch-menu-empty">{emptySelectionHint(selection)}</div>
       ) : (
-        groupActions(actions).map(([group, items]) => (
-          <div key={group}>
-            {showHeadings(actions) && <div className="menu-group">{group}</div>}
-            {items.map((action) => (
-              <button
-                key={action.id}
-                className="sketch-menu-item"
-                onClick={() => (action.prompt ? setPending(action) : run(action, 0))}
-              >
-                <strong>{action.label}</strong>
-                {action.hint && <span>{action.hint}</span>}
-              </button>
-            ))}
-          </div>
-        ))
+        <FlyoutMenu
+          actions={actions}
+          order={SKETCH_GROUP_ORDER}
+          onPick={(action) => (action.prompt ? setPending(action) : run(action, 0))}
+        />
       )}
     </div>
   )

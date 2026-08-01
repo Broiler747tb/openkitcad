@@ -1,10 +1,9 @@
 /**
- * Splitting a right-click menu into labelled sections.
+ * Splitting a right-click menu into sections.
  *
  * Both menus grew past the point where a flat list is readable - the object
- * menu alone gains three entries for every other body in the document - and a
- * long undifferentiated list is slower to read than a grouped one even when it
- * is shorter overall.
+ * menu alone gains three entries for every other body in the document - so the
+ * menu shows section names first and the actions in a panel beside them.
  */
 
 interface Groupable {
@@ -12,12 +11,18 @@ interface Groupable {
 }
 
 /**
- * Bucket actions by their group, keeping the order the groups first appear in.
- * Ordering by first appearance rather than alphabetically means the sections
- * follow the order the actions were built in, which is already arranged with
- * the most-used things first.
+ * Bucket actions by their section.
+ *
+ * `order` names the sections in the order they should appear. The section list
+ * sits in a fixed column that the user reads every single time, so it has to be
+ * in the same place on every open; ordering by whichever action happened to be
+ * built first would shuffle it about as the selection changed. Anything not
+ * named in `order` falls in behind, in the order it first appears.
  */
-export function groupActions<T extends Groupable>(actions: T[]): Array<[string, T[]]> {
+export function groupActions<T extends Groupable>(
+  actions: T[],
+  order?: string[],
+): Array<[string, T[]]> {
   const buckets = new Map<string, T[]>()
   for (const action of actions) {
     const key = action.group ?? 'Other'
@@ -25,12 +30,24 @@ export function groupActions<T extends Groupable>(actions: T[]): Array<[string, 
     if (list) list.push(action)
     else buckets.set(key, [action])
   }
-  return [...buckets.entries()]
+  if (!order) return [...buckets.entries()]
+
+  const ranked = [...buckets.entries()]
+  const rank = (name: string) => {
+    const i = order.indexOf(name)
+    return i === -1 ? order.length : i
+  }
+  // Stable, so unranked sections keep the order they were built in.
+  return ranked
+    .map((entry, i) => ({ entry, i }))
+    .sort((a, b) => rank(a.entry[0]) - rank(b.entry[0]) || a.i - b.i)
+    .map((x) => x.entry)
 }
 
 /**
- * Headings only earn their space once there is more than one section. On a
- * two-item menu a heading is just noise above the thing you already wanted.
+ * Whether the section list is worth drawing. With one section there is nothing
+ * to choose between, and making the user pick it before seeing the two things
+ * underneath is a click spent on nothing.
  */
 export function showHeadings<T extends Groupable>(actions: T[]): boolean {
   const seen = new Set(actions.map((a) => a.group ?? 'Other'))
