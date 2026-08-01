@@ -157,6 +157,7 @@ const api = {
     }
 
     const built = new Map<string, any>()
+    const preShell = new Map<string, { shape: any; frame: any }>()
     // A body merged into another is no longer a thing of its own, unless the
     // user asked to keep it.
     const consumed = new Set<string>()
@@ -168,7 +169,11 @@ const api = {
       }
     }
     for (const body of doc.bodies) {
-      const { shape, errors: bodyErrors } = evaluateBody(body, { doc, shapes: built })
+      const { shape, errors: bodyErrors } = evaluateBody(body, {
+        doc,
+        shapes: built,
+        preShell,
+      })
       for (const e of bodyErrors) errors.push({ ...e, bodyId: body.id })
       if (!shape) continue
       built.set(body.id, shape)

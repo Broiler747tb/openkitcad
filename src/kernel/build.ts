@@ -12,12 +12,14 @@ import {
   drawRoundedRectangle,
   makeBox,
   makeCylinder,
+  makeSphere,
   Plane,
   sketchCircle,
   type Drawing,
 } from 'replicad'
 import {
   frameToLocal,
+  frameToWorld,
   makeFrame,
   NAMED_FRAMES,
   v3,
@@ -377,6 +379,12 @@ interface EvalContext {
   doc: OkcDocument
   /** Bodies already built this pass, for face references. */
   shapes: Map<string, any>
+  /**
+   * The solid as it stood just before each hollowing, keyed by shell feature.
+   * A lid needs the *outer* cross-section, and once a body has been hollowed
+   * all that is left at the opening is a ring of wall.
+   */
+  preShell: Map<string, { shape: any; frame: Frame }>
 }
 
 function buildHoleCutter(
@@ -524,6 +532,81 @@ function buildPortCutters(
   return cutter
 }
 
+/** How far a lid slice reaches sideways before being trimmed to the solid. */
+const LID_REACH = 4000
+
+/**
+ * A grid of holes across a face, kept clear of its edges.
+ *
+ * Hexagons sit on the usual staggered grid: rows offset by half a pitch and
+ * spaced pitch*sqrt(3)/2 apart, which is what makes the webs between them the
+ * same width in every direction rather than pinching on the diagonal.
+ */
+function buildVentCutter(
+  feature: Extract<Feature, { kind: 'vent' }>,
+  frame: Frame,
+  target: any,
+): any | null {
+  const [min, max] = target.boundingBox.bounds
+  // How far the face runs in the plane's own axes, from the solid's corners.
+  let uMin = Infinity
+  let uMax = -Infinity
+  let vMin = Infinity
+  let vMax = -Infinity
+  for (const x of [min[0], max[0]]) {
+    for (const y of [min[1], max[1]]) {
+      for (const z of [min[2], max[2]]) {
+        const [u, v] = frameToLocal(frame, [x, y, z])
+        uMin = Math.min(uMin, u)
+        uMax = Math.max(uMax, u)
+        vMin = Math.min(vMin, v)
+        vMax = Math.max(vMax, v)
+      }
+    }
+  }
+
+  const size = Math.max(feature.size, 0.2)
+  const pitch = size + Math.max(feature.spacing, 0.2)
+  const rowStep = feature.shape === 'hex' ? (pitch * Math.sqrt(3)) / 2 : pitch
+  // Keep a whole hole plus the border clear of the edge.
+  const inset = feature.margin + size / 2
+  const u0 = uMin + inset
+  const u1 = uMax - inset
+  const v0 = vMin + inset
+  const v1 = vMax - inset
+  if (u1 < u0 || v1 < v0) return null
+
+  const depth = feature.depth === 'through' ? THROUGH_LENGTH : feature.depth
+  const centres: Vec2[] = []
+  const midU = (u0 + u1) / 2
+  const midV = (v0 + v1) / 2
+  const addRow = (v: number, staggered: boolean) => {
+    const shift = feature.shape === 'hex' && staggered ? pitch / 2 : 0
+    for (let u = midU + shift; u <= u1 + 1e-9; u += pitch) centres.push([u, v])
+    for (let u = midU + shift - pitch; u >= u0 - 1e-9; u -= pitch) centres.push([u, v])
+  }
+  let row = 0
+  for (let v = midV; v <= v1 + 1e-9; v += rowStep) addRow(v, row++ % 2 === 1)
+  row = 1
+  for (let v = midV - rowStep; v >= v0 - 1e-9; v -= rowStep) addRow(v, row++ % 2 === 1)
+  if (centres.length === 0) return null
+
+  const outline = (): Drawing => {
+    if (feature.shape === 'round') return drawCircle(size / 2)
+    if (feature.shape === 'square') return drawRectangle(size, size)
+    // Measured across the flats, so the circumradius is size / sqrt(3).
+    return drawPolysides(size / Math.sqrt(3), 6)
+  }
+
+  let merged: Drawing | null = null
+  for (const [u, v] of centres) {
+    const piece = outline().translate(u, v)
+    merged = merged ? merged.fuse(piece) : piece
+  }
+  if (!merged) return null
+  return sketchOn(merged, frame, CUT_MARGIN).extrude(-(depth + CUT_MARGIN))
+}
+
 /** Evaluate one body's feature history into a single solid. */
 export function evaluateBody(
   body: Body,
@@ -652,6 +735,10 @@ export function evaluateBody(
           const resolved = resolveFace(solid, open)
           const normal = resolved?.normal ?? open.normal
           const centre = resolved?.centre ?? open.anchor
+          ctx.preShell.set(feature.id, {
+            shape: solid.clone(),
+            frame: makeFrame(centre, normal),
+          })
           // Positive thickness hollows inward, leaving the outside size alone.
           // The opposite sign grows the part outward instead, which turns a
           // 60 mm box into a 65 mm one and is never what "hollow it out" means.
@@ -685,6 +772,77 @@ export function evaluateBody(
           const { solid, bores } = buildStandoffs(feature, frame, positions)
           if (solid) shape = shape ? shape.fuse(solid) : solid
           if (bores && shape) shape = shape.cut(bores)
+          break
+        }
+
+        case 'sphere': {
+          const frame = frameFromPlaneRef(feature.plane, ctx.shapes)
+          const world = frameToWorld(frame, feature.centre)
+          let ball: any = makeSphere(feature.radius).translate(world)
+          if (feature.half) {
+            // Slice off everything below the plane, leaving it flat side down.
+            // The cutter has to be centred on the ball, not on the plane's
+            // origin: a rectangle drawn at the origin misses a ball placed
+            // anywhere else entirely, and the "dome" comes out a full sphere.
+            const r = feature.radius
+            const cutter = sketchOn(
+              drawRectangle(r * 4, r * 4).translate(feature.centre[0], feature.centre[1]),
+              frame,
+              -r * 2,
+            ).extrude(r * 2)
+            ball = ball.cut(cutter)
+          }
+          shape = combine(shape, ball, feature.operation)
+          break
+        }
+
+        case 'vent': {
+          if (!shape) {
+            errors.push({
+              featureId: feature.id,
+              message: 'There is nothing to put vent holes in yet.',
+              hint: 'Make a panel or a lid first.',
+            })
+            break
+          }
+          const frame = frameFromPlaneRef(feature.plane, ctx.shapes)
+          const cutter = buildVentCutter(feature, frame, shape)
+          if (!cutter) {
+            errors.push({
+              featureId: feature.id,
+              message: 'No holes fitted inside the border you asked for.',
+              hint: 'Try a smaller hole, tighter spacing, or a thinner edge border.',
+            })
+            break
+          }
+          shape = shape.cut(cutter)
+          break
+        }
+
+        case 'lid': {
+          const source = ctx.preShell.get(feature.shellFeatureId)
+          if (!source) {
+            errors.push({
+              featureId: feature.id,
+              message: 'The hollowing this lid belongs to is gone.',
+              hint: 'It may have been deleted or turned off. Delete this lid, or hollow the part out again.',
+            })
+            break
+          }
+          // Take a slice of the *un-hollowed* solid just inside the opening, so
+          // the lid gets the full outer profile rather than a ring of wall,
+          // then lift it out to sit on top of the opening.
+          const slab = sketchOn(
+            drawRectangle(LID_REACH, LID_REACH),
+            source.frame,
+            -feature.thickness,
+          ).extrude(feature.thickness)
+          const cap = source.shape.clone().intersect(slab)
+          shape = combine(
+            shape,
+            cap.translate(v3.scale(source.frame.normal, feature.thickness)),
+            'add',
+          )
           break
         }
 

@@ -203,9 +203,53 @@ export interface CombineFeature extends FeatureBase {
   keepOther: boolean
 }
 
+/** A ball, or half a ball sitting flat on its plane. */
+export interface SphereFeature extends FeatureBase {
+  kind: 'sphere'
+  plane: PlaneRef
+  centre: Vec2
+  radius: number
+  /** Cut in half, flat side down on the plane. */
+  half: boolean
+  operation: BooleanOp
+}
+
+/**
+ * A grid of holes for ventilation.
+ *
+ * `margin` is the solid border left round the outside - the thing you actually
+ * care about, since a vent grille that runs off the edge of a panel leaves
+ * paper-thin slivers that break off.
+ */
+export interface VentFeature extends FeatureBase {
+  kind: 'vent'
+  plane: PlaneRef
+  shape: 'hex' | 'round' | 'square'
+  /** Across the flats for a hexagon, diameter for a circle, side for a square. */
+  size: number
+  /** Material left between neighbouring holes. */
+  spacing: number
+  /** Solid border round the edge of the face. */
+  margin: number
+  depth: 'through' | number
+}
+
+/** A cap for the opening left by hollowing something out. */
+export interface LidFeature extends FeatureBase {
+  kind: 'lid'
+  /** The hollowed body this caps. */
+  sourceBodyId: string
+  /** The shell feature whose opening is being capped. */
+  shellFeatureId: string
+  thickness: number
+}
+
 export type Feature =
   | SketchFeature
   | CombineFeature
+  | SphereFeature
+  | VentFeature
+  | LidFeature
   | ExtrudeFeature
   | RevolveFeature
   | BoxFeature
@@ -277,6 +321,9 @@ export const FEATURE_LABEL: Record<FeatureKind, string> = {
   standoff: 'Standoffs',
   portCutout: 'Port openings',
   combine: 'Combine',
+  sphere: 'Ball',
+  vent: 'Vent holes',
+  lid: 'Lid',
 }
 
 export const FEATURE_ICON: Record<FeatureKind, string> = {
@@ -292,4 +339,7 @@ export const FEATURE_ICON: Record<FeatureKind, string> = {
   standoff: '║',
   portCutout: '⬚',
   combine: '◍',
+  sphere: '●',
+  vent: '⁙',
+  lid: '▭',
 }

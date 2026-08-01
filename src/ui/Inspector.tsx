@@ -454,6 +454,83 @@ function FeatureInspector({ bodyId, featureId }: { bodyId: string; featureId: st
         </>
       )}
 
+      {feature.kind === 'sphere' && (
+        <>
+          <Num
+            label="Radius"
+            value={feature.radius}
+            min={0.1}
+            onChange={(v) => patch({ radius: v } as Partial<Feature>)}
+          />
+          <div className="row">
+            <label>Shape</label>
+            <select
+              value={feature.half ? 'half' : 'full'}
+              onChange={(e) => patch({ half: e.target.value === 'half' } as Partial<Feature>)}
+            >
+              <option value="full">A whole ball</option>
+              <option value="half">A dome, flat side down</option>
+            </select>
+          </div>
+        </>
+      )}
+
+      {feature.kind === 'vent' && (
+        <>
+          <div className="row">
+            <label>Hole shape</label>
+            <select
+              value={feature.shape}
+              onChange={(e) => patch({ shape: e.target.value } as Partial<Feature>)}
+            >
+              <option value="hex">Hexagons</option>
+              <option value="round">Round</option>
+              <option value="square">Square</option>
+            </select>
+          </div>
+          <Num
+            label={feature.shape === 'hex' ? 'Across flats' : 'Hole size'}
+            value={feature.size}
+            step={0.5}
+            min={0.2}
+            onChange={(v) => patch({ size: v } as Partial<Feature>)}
+          />
+          <Num
+            label="Gap between"
+            value={feature.spacing}
+            step={0.2}
+            min={0.2}
+            onChange={(v) => patch({ spacing: v } as Partial<Feature>)}
+          />
+          <Num
+            label="Edge border"
+            value={feature.margin}
+            step={0.5}
+            min={0}
+            onChange={(v) => patch({ margin: v } as Partial<Feature>)}
+          />
+          <p className="hint">
+            The border is solid material left all the way round, so the grid never runs
+            off the edge and leaves slivers that snap off.
+          </p>
+        </>
+      )}
+
+      {feature.kind === 'lid' && (
+        <>
+          <Num
+            label="Thickness"
+            value={feature.thickness}
+            min={0.2}
+            onChange={(v) => patch({ thickness: v } as Partial<Feature>)}
+          />
+          <p className="hint">
+            A separate body, so you can hide it to see inside, vent it, or export it on
+            its own.
+          </p>
+        </>
+      )}
+
       {feature.kind === 'hole' && (
         <>
           <div className="row">

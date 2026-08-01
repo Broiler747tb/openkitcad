@@ -338,6 +338,252 @@ export async function runKernelTest(): Promise<TestResult[]> {
       )
     }
 
+    // --- ready-made shapes, positive and negative ---------------------------
+    {
+      const sphereV = (4 / 3) * Math.PI * 15 ** 3
+      const shapes = await kernel.evaluate({
+        version: 1,
+        name: 'shapes',
+        units: 'mm',
+        parameters: [],
+        placements: [],
+        bodies: [
+          {
+            id: 'ball',
+            name: 'Ball',
+            visible: true,
+            colour: '#ccc',
+            features: [
+              {
+                id: 's',
+                name: 'Ball',
+                kind: 'sphere',
+                plane: { kind: 'named', name: 'XY', offset: 0 },
+                centre: [0, 0],
+                radius: 15,
+                half: false,
+                operation: 'new',
+              },
+            ],
+          },
+          {
+            // Deliberately away from the origin: a dome built with a cutter
+            // centred on the plane instead of on the ball comes out a whole
+            // sphere, and only shows it once it is moved off centre.
+            id: 'dome',
+            name: 'Dome',
+            visible: true,
+            colour: '#ccc',
+            features: [
+              {
+                id: 'd',
+                name: 'Dome',
+                kind: 'sphere',
+                plane: { kind: 'named', name: 'XY', offset: 0 },
+                centre: [60, 0],
+                radius: 15,
+                half: true,
+                operation: 'new',
+              },
+            ],
+          },
+        ],
+      })
+      const ball = shapes.shapes.find((x) => x.id === 'ball')
+      const dome = shapes.shapes.find((x) => x.id === 'dome')
+      add(
+        'a ball has the volume of a sphere',
+        !!ball && Math.abs(ball.volume - sphereV) < 20,
+        `${ball?.volume.toFixed(0) ?? 'nothing'} mm3, expected ${sphereV.toFixed(0)}`,
+      )
+      add(
+        'a dome is half of one, sitting flat on its plane',
+        !!dome && Math.abs(dome.volume - sphereV / 2) < 20 && Math.abs(dome.bounds[2]) < 0.05,
+        `${dome?.volume.toFixed(0) ?? 'nothing'} mm3 (expected ${(sphereV / 2).toFixed(0)}), base at z ${dome?.bounds[2].toFixed(2)}`,
+      )
+
+      const carved = await kernel.evaluate({
+        version: 1,
+        name: 'carve',
+        units: 'mm',
+        parameters: [],
+        placements: [],
+        bodies: [
+          {
+            id: 'b',
+            name: 'B',
+            visible: true,
+            colour: '#ccc',
+            features: [
+              {
+                id: 'bx',
+                name: 'Box',
+                kind: 'box',
+                plane: { kind: 'named', name: 'XY', offset: 0 },
+                origin: [-20, -20],
+                width: 40,
+                depth: 40,
+                height: 40,
+                operation: 'new',
+              },
+              {
+                id: 'sp',
+                name: 'Scoop',
+                kind: 'sphere',
+                plane: { kind: 'named', name: 'XY', offset: 20 },
+                centre: [0, 0],
+                radius: 10,
+                half: false,
+                operation: 'cut',
+              },
+            ],
+          },
+        ],
+      })
+      const expected = 40 ** 3 - (4 / 3) * Math.PI * 10 ** 3
+      add(
+        'a shape used as a negative scoops material out',
+        Math.abs((carved.shapes[0]?.volume ?? 0) - expected) < 10,
+        `${carved.shapes[0]?.volume.toFixed(0) ?? 'nothing'} mm3, expected ${expected.toFixed(0)}`,
+      )
+    }
+
+    // --- vent grid and its border -------------------------------------------
+    {
+      const PANEL = 60
+      const T = 3
+      const SIZE = 6
+      const MARGIN = 4
+      const vented = await kernel.evaluate({
+        version: 1,
+        name: 'vent',
+        units: 'mm',
+        parameters: [],
+        placements: [],
+        bodies: [
+          {
+            id: 'p',
+            name: 'Panel',
+            visible: true,
+            colour: '#ccc',
+            features: [
+              {
+                id: 'pl',
+                name: 'Panel',
+                kind: 'box',
+                plane: { kind: 'named', name: 'XY', offset: 0 },
+                origin: [-PANEL / 2, -PANEL / 2],
+                width: PANEL,
+                depth: PANEL,
+                height: T,
+                operation: 'new',
+              },
+              {
+                id: 'v',
+                name: 'Vent',
+                kind: 'vent',
+                plane: { kind: 'named', name: 'XY', offset: T },
+                shape: 'hex',
+                size: SIZE,
+                spacing: 2,
+                margin: MARGIN,
+                depth: 'through',
+              },
+            ],
+          },
+        ],
+      })
+      const panel = vented.shapes[0]
+      const solidV = PANEL * PANEL * T
+      const hexArea = (Math.sqrt(3) / 2) * SIZE * SIZE
+      const holes = (solidV - (panel?.volume ?? solidV)) / (hexArea * T)
+      add(
+        'a hex vent grid cuts a whole number of hexagons',
+        vented.errors.length === 0 && holes > 10 && Math.abs(holes - Math.round(holes)) < 0.02,
+        `${holes.toFixed(2)} hexagons' worth removed` +
+          (vented.errors.length ? ` (${vented.errors[0].message})` : ''),
+      )
+      // Partial holes at the edge would eat into the outline; a kept border
+      // means the panel is still exactly its original size.
+      add(
+        'and leaves the edge border intact',
+        !!panel &&
+          Math.abs(panel.bounds[3] - panel.bounds[0] - PANEL) < 0.01 &&
+          Math.abs(panel.bounds[4] - panel.bounds[1] - PANEL) < 0.01,
+        `panel still ${(panel ? panel.bounds[3] - panel.bounds[0] : 0).toFixed(2)} mm across`,
+      )
+    }
+
+    // --- hollow, and turn the open side into a lid --------------------------
+    {
+      const W = 50
+      const D = 40
+      const H = 30
+      const WALL = 2
+      const withLid = await kernel.evaluate({
+        version: 1,
+        name: 'lid',
+        units: 'mm',
+        parameters: [],
+        placements: [],
+        bodies: [
+          {
+            id: 'box',
+            name: 'Box',
+            visible: true,
+            colour: '#ccc',
+            features: [
+              {
+                id: 'bx',
+                name: 'Box',
+                kind: 'box',
+                plane: { kind: 'named', name: 'XY', offset: 0 },
+                origin: [0, 0],
+                width: W,
+                depth: D,
+                height: H,
+                operation: 'new',
+              },
+              {
+                id: 'sh',
+                name: 'Hollow',
+                kind: 'shell',
+                thickness: WALL,
+                openFaces: [{ bodyId: 'box', anchor: [W / 2, D / 2, H], normal: [0, 0, 1] }],
+              },
+            ],
+          },
+          {
+            id: 'lid',
+            name: 'Lid',
+            visible: true,
+            colour: '#bbb',
+            features: [
+              {
+                id: 'ld',
+                name: 'Lid',
+                kind: 'lid',
+                sourceBodyId: 'box',
+                shellFeatureId: 'sh',
+                thickness: WALL,
+              },
+            ],
+          },
+        ],
+      })
+      const lid = withLid.shapes.find((x) => x.id === 'lid')
+      add(
+        'the lid takes the outer profile, not the ring of wall',
+        !!lid && Math.abs(lid.volume - W * D * WALL) < 1,
+        `${lid?.volume.toFixed(0) ?? 'nothing'} mm3, expected ${W * D * WALL} for a solid ${W}x${D}x${WALL} cap`,
+      )
+      add(
+        'and sits on top of the opening',
+        !!lid && Math.abs(lid.bounds[2] - H) < 0.05 && Math.abs(lid.bounds[5] - (H + WALL)) < 0.05,
+        `z ${lid?.bounds[2].toFixed(1)}..${lid?.bounds[5].toFixed(1)}, expected ${H}..${H + WALL}`,
+      )
+    }
+
     // --- export path --------------------------------------------------------
     // Rebuild the plate: the checks above replaced what the kernel is holding,
     // and exporting works from the last thing built.

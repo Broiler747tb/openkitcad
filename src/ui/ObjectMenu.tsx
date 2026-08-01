@@ -11,13 +11,21 @@ import { getPart } from '../catalogue'
  * and change its distance". They think "make this thicker". This menu is that
  * sentence.
  */
+interface PromptField {
+  label: string
+  initial: number
+  unit: string
+}
+
 export interface ObjectAction {
   id: string
   label: string
   hint?: string
-  prompt?: { label: string; initial: number; unit: string }
+  prompt?: PromptField
+  /** A second number, for the few things that genuinely need two. */
+  prompt2?: PromptField
   danger?: boolean
-  run: (value: number) => void
+  run: (value: number, value2?: number) => void
 }
 
 /** The extrude that actually made this body, if there is one. */
@@ -85,21 +93,42 @@ export function objectActions(
       })
     }
     if (picked && picked.bodyId === bodyId) {
+      const hollowOut = (thickness: number, withLid: boolean) => {
+        const shellId = newId('shell')
+        store.addFeature(bodyId, {
+          id: shellId,
+          kind: 'shell',
+          name: 'Hollow out',
+          thickness,
+          openFaces: [{ bodyId, anchor: picked.point, normal: picked.normal }],
+        })
+        if (!withLid) return
+        // The lid is its own body: you print it separately, and you want to be
+        // able to hide it to see inside.
+        const lidBody = store.addBody(`${body.name} lid`)
+        store.addFeature(lidBody, {
+          id: newId('lid'),
+          kind: 'lid',
+          name: 'Lid',
+          sourceBodyId: bodyId,
+          shellFeatureId: shellId,
+          thickness,
+        })
+      }
+
       out.push({
         id: 'hollow',
         label: 'Hollow it out, opening this face',
         hint: 'Turns a solid block into a box with walls this thick',
         prompt: { label: 'Wall', initial: 2, unit: 'mm' },
-        run: (thickness) =>
-          store.addFeature(bodyId, {
-            id: newId('shell'),
-            kind: 'shell',
-            name: 'Hollow out',
-            thickness,
-            openFaces: [
-              { bodyId, anchor: picked.point, normal: picked.normal },
-            ],
-          }),
+        run: (thickness) => hollowOut(thickness, false),
+      })
+      out.push({
+        id: 'hollow-lid',
+        label: 'Hollow it out and make this side a lid',
+        hint: 'Same, plus a separate cap you can print and fit afterwards',
+        prompt: { label: 'Wall', initial: 2, unit: 'mm' },
+        run: (thickness) => hollowOut(thickness, true),
       })
     }
     // Anything picked with shift takes priority over the blanket versions,
@@ -142,6 +171,35 @@ export function objectActions(
             edges: refs,
           }),
       })
+    }
+
+    if (picked && picked.bodyId === bodyId) {
+      const ventOn = (shape: 'hex' | 'round' | 'square', label: string) => ({
+        id: `vent-${shape}`,
+        label,
+        hint: 'A grid of holes across this face, with a solid border left round the edge',
+        prompt: { label: 'Hole size', initial: shape === 'hex' ? 6 : 4, unit: 'mm' },
+        prompt2: { label: 'Gap between', initial: 2, unit: 'mm' },
+        run: (size: number, spacing?: number) =>
+          store.addFeature(bodyId, {
+            id: newId('vent'),
+            kind: 'vent',
+            name: 'Vent holes',
+            plane: {
+              kind: 'face',
+              face: { bodyId, anchor: picked.point, normal: picked.normal },
+              offset: 0,
+            },
+            shape,
+            size,
+            spacing: spacing ?? 2,
+            margin: 3,
+            depth: 'through',
+          }),
+      })
+      out.push(ventOn('hex', 'Vent this face with hexagons'))
+      out.push(ventOn('round', 'Vent this face with round holes'))
+      out.push(ventOn('square', 'Vent this face with square holes'))
     }
 
     out.push({
@@ -230,6 +288,50 @@ export function objectActions(
       })
     }
 
+    // Simple shapes used as cutters. Quicker than sketching for the common
+    // "knock a round hollow out of that" jobs.
+    const topOf = () => {
+      const built = store.shapes.find((x) => x.id === bodyId)
+      return built ? built.bounds[5] : 0
+    }
+    out.push({
+      id: 'cut-ball',
+      label: 'Cut a ball-shaped hollow',
+      hint: 'Scoops a sphere out of the part, centred where you clicked',
+      prompt: { label: 'Diameter', initial: 20, unit: 'mm' },
+      run: (diameter) =>
+        store.addFeature(bodyId, {
+          id: newId('sphere'),
+          kind: 'sphere',
+          name: 'Ball hollow',
+          plane: { kind: 'named', name: 'XY', offset: 0 },
+          centre: picked ? [picked.point[0], picked.point[1]] : [0, 0],
+          radius: diameter / 2,
+          half: false,
+          operation: 'cut',
+        }),
+    })
+    out.push({
+      id: 'cut-box',
+      label: 'Cut a square hollow',
+      prompt: { label: 'Across', initial: 20, unit: 'mm' },
+      prompt2: { label: 'Deep', initial: 10, unit: 'mm' },
+      run: (across, deep) =>
+        store.addFeature(bodyId, {
+          id: newId('box'),
+          kind: 'box',
+          name: 'Square hollow',
+          plane: { kind: 'named', name: 'XY', offset: topOf() },
+          origin: picked
+            ? [picked.point[0] - across / 2, picked.point[1] - across / 2]
+            : [-across / 2, -across / 2],
+          width: across,
+          depth: across,
+          height: -(deep ?? 10),
+          operation: 'cut',
+        }),
+    })
+
     out.push({
       id: 'hide',
       label: 'Hide it',
@@ -267,6 +369,83 @@ export function objectActions(
       hint: 'A parallel plane floating at a set height',
       prompt: { label: 'Height', initial: 20, unit: 'mm' },
       run: (offset) => store.startSketch({ kind: 'named', name: 'XY', offset }),
+    })
+    out.push({
+      id: 'add-box',
+      label: 'Add a box',
+      hint: 'A plain rectangular block, no sketching needed',
+      prompt: { label: 'Across', initial: 40, unit: 'mm' },
+      prompt2: { label: 'Tall', initial: 20, unit: 'mm' },
+      run: (across, tall) => {
+        const id = store.addBody('Box')
+        store.addFeature(id, {
+          id: newId('box'),
+          kind: 'box',
+          name: 'Box',
+          plane: { kind: 'named', name: 'XY', offset: 0 },
+          origin: [-across / 2, -across / 2],
+          width: across,
+          depth: across,
+          height: tall ?? 20,
+          operation: 'new',
+        })
+      },
+    })
+    out.push({
+      id: 'add-cylinder',
+      label: 'Add a cylinder',
+      prompt: { label: 'Diameter', initial: 30, unit: 'mm' },
+      prompt2: { label: 'Tall', initial: 20, unit: 'mm' },
+      run: (diameter, tall) => {
+        const id = store.addBody('Cylinder')
+        store.addFeature(id, {
+          id: newId('cyl'),
+          kind: 'cylinder',
+          name: 'Cylinder',
+          plane: { kind: 'named', name: 'XY', offset: 0 },
+          centre: [0, 0],
+          radius: diameter / 2,
+          height: tall ?? 20,
+          operation: 'new',
+        })
+      },
+    })
+    out.push({
+      id: 'add-sphere',
+      label: 'Add a ball',
+      prompt: { label: 'Diameter', initial: 30, unit: 'mm' },
+      run: (diameter) => {
+        const id = store.addBody('Ball')
+        store.addFeature(id, {
+          id: newId('sphere'),
+          kind: 'sphere',
+          name: 'Ball',
+          plane: { kind: 'named', name: 'XY', offset: 0 },
+          centre: [0, 0],
+          radius: diameter / 2,
+          half: false,
+          operation: 'new',
+        })
+      },
+    })
+    out.push({
+      id: 'add-dome',
+      label: 'Add a dome',
+      hint: 'Half a ball, flat side down',
+      prompt: { label: 'Diameter', initial: 30, unit: 'mm' },
+      run: (diameter) => {
+        const id = store.addBody('Dome')
+        store.addFeature(id, {
+          id: newId('sphere'),
+          kind: 'sphere',
+          name: 'Dome',
+          plane: { kind: 'named', name: 'XY', offset: 0 },
+          centre: [0, 0],
+          radius: diameter / 2,
+          half: true,
+          operation: 'new',
+        })
+      },
     })
     out.push({
       id: 'sketch-tilted',
@@ -393,6 +572,7 @@ export function ObjectMenu({
 }) {
   const [pending, setPending] = useState<ObjectAction | null>(null)
   const ref = useRef<HTMLDivElement>(null)
+  const secondRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const away = (e: MouseEvent) => {
@@ -412,9 +592,19 @@ export function ObjectMenu({
     }
   }, [onClose])
 
-  const fire = (action: ObjectAction, value: number) => {
-    action.run(value)
+  const fire = (action: ObjectAction, value: number, value2?: number) => {
+    action.run(value, value2)
     onClose()
+  }
+
+  /** Commit the pending action, reading whichever fields it asked for. */
+  const commit = (first: HTMLInputElement) => {
+    if (!pending) return
+    const a = Number(first.value)
+    const b = pending.prompt2 ? Number(secondRef.current?.value) : undefined
+    if (!Number.isFinite(a)) return
+    if (pending.prompt2 && !Number.isFinite(b as number)) return
+    fire(pending, a, b)
   }
 
   return (
@@ -427,23 +617,41 @@ export function ObjectMenu({
       }}
     >
       {pending ? (
-        <div className="sketch-menu-prompt">
-          <label>{pending.prompt!.label}</label>
-          <input
-            autoFocus
-            type="number"
-            step="0.5"
-            defaultValue={pending.prompt!.initial}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                const value = Number((e.target as HTMLInputElement).value)
-                if (Number.isFinite(value)) fire(pending, value)
-              }
-              if (e.key === 'Escape') setPending(null)
-            }}
-          />
-          <span>{pending.prompt!.unit}</span>
-        </div>
+        <>
+          <div className="sketch-menu-prompt">
+            <label>{pending.prompt!.label}</label>
+            <input
+              autoFocus
+              type="number"
+              step="0.5"
+              defaultValue={pending.prompt!.initial}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commit(e.target as HTMLInputElement)
+                if (e.key === 'Escape') setPending(null)
+              }}
+            />
+            <span>{pending.prompt!.unit}</span>
+          </div>
+          {pending.prompt2 && (
+            <div className="sketch-menu-prompt">
+              <label>{pending.prompt2.label}</label>
+              <input
+                ref={secondRef}
+                type="number"
+                step="0.5"
+                defaultValue={pending.prompt2.initial}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const first = ref.current?.querySelector('input')
+                    if (first) commit(first as HTMLInputElement)
+                  }
+                  if (e.key === 'Escape') setPending(null)
+                }}
+              />
+              <span>{pending.prompt2.unit}</span>
+            </div>
+          )}
+        </>
       ) : actions.length === 0 ? (
         <div className="sketch-menu-empty">Right-click a part to change it.</div>
       ) : (
