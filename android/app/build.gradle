@@ -1,0 +1,21 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.broiler747tb.openkitcad'
+    compileSdk 35
+    buildFeatures { buildConfig true }
+    defaultConfig {
+        applicationId 'com.broiler747tb.openkitcad'
+        minSdk 26
+        targetSdk 35
+        versionCode 502
+        versionName '0.5.2-android'
+        testInstrumentationRunner 'com.broiler747tb.openkitcad.OfflineSmokeTest'
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    // Gradle packages the current Vite output; no remote server or CDN is used.
+    sourceSets.main.assets.srcDir '../../dist'
+    buildTypes { debug { debuggable true }; release { minifyEnabled false } }
+}
+
+dependencies { implementation 'androidx.webkit:webkit:1.12.1' }
