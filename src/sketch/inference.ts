@@ -35,6 +35,10 @@ export interface SnapOptions {
   exclude?: string[]
   /** Round to whole millimetres when nothing better applies. */
   gridStep?: number
+  points?: boolean
+  midpoints?: boolean
+  edges?: boolean
+  alignment?: boolean
 }
 
 /** Something in a sketch the user can point at. */
@@ -51,12 +55,13 @@ export function hitTestSketch(
   sketch: Sketch2D,
   cursor: Vec2,
   tolerance: number,
+  includePoints = true,
 ): SketchTarget | null {
   const pts = new Map<string, Vec2>()
   for (const p of sketch.points) pts.set(p.id, [p.x, p.y])
 
   let best: { target: SketchTarget; d: number } | null = null
-  for (const p of sketch.points) {
+  for (const p of includePoints ? sketch.points : []) {
     const d = v2.dist(cursor, [p.x, p.y])
     if (d < tolerance && (!best || d < best.d)) {
       best = { target: { kind: 'point', id: p.id }, d }
@@ -126,7 +131,7 @@ export function findSnap(
   // 1. Existing points win outright: joining geometry is almost always what
   //    someone means when they click near a corner.
   let bestPoint: { id: string; d: number } | null = null
-  for (const p of sketch.points) {
+  for (const p of options.points === false ? [] : sketch.points) {
     if (exclude.includes(p.id)) continue
     const d = v2.dist(cursor, [p.x, p.y])
     if (d < tolerance && (!bestPoint || d < bestPoint.d)) bestPoint = { id: p.id, d }
@@ -142,7 +147,7 @@ export function findSnap(
   }
 
   // 2. Midpoints and centres, which are useful and easy to miss by hand.
-  for (const entity of sketch.entities) {
+  for (const entity of options.midpoints === false ? [] : sketch.entities) {
     if (entity.kind !== 'line') continue
     const mid = v2.mid(pts.get(entity.p1)!, pts.get(entity.p2)!)
     if (v2.dist(cursor, mid) < tolerance) {
@@ -158,7 +163,7 @@ export function findSnap(
 
   // 3. Lying on an existing edge.
   let bestEdge: { entity: SketchEntity; point: Vec2; d: number } | null = null
-  for (const entity of sketch.entities) {
+  for (const entity of options.edges === false ? [] : sketch.entities) {
     if (entity.kind === 'line') {
       const a = pts.get(entity.p1)!
       const b = pts.get(entity.p2)!
@@ -193,21 +198,23 @@ export function findSnap(
   }
 
   // 4. Straight across or straight up from where the segment started.
-  if (from) {
+  const step = options.gridStep ?? 1
+  const roundGrid = (v:number) => step > 0 ? Math.round(v / step) * step : v
+  if (from && options.alignment !== false) {
     const dx = cursor[0] - from[0]
     const dy = cursor[1] - from[1]
     if (Math.abs(dy) < tolerance && Math.abs(dx) > tolerance) {
-      return { ...result, point: [cursor[0], from[1]], align: 'horizontal', hint: 'horizontal' }
+      return { ...result, point: [roundGrid(cursor[0]), from[1]], align: 'horizontal', hint: 'horizontal' }
     }
     if (Math.abs(dx) < tolerance && Math.abs(dy) > tolerance) {
-      return { ...result, point: [from[0], cursor[1]], align: 'vertical', hint: 'vertical' }
+      return { ...result, point: [from[0], roundGrid(cursor[1])], align: 'vertical', hint: 'vertical' }
     }
   }
 
   // 5. Nothing to infer: fall back to a round number.
-  const step = options.gridStep ?? 1
   if (step > 0) {
     result.point = [Math.round(cursor[0] / step) * step, Math.round(cursor[1] / step) * step]
+    result.hint = `grid ${step} mm`
   }
   return result
 }

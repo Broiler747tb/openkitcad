@@ -27,6 +27,7 @@ import type { FastenerKind, ThreadSize } from '../fasteners'
 import type { CataloguePart } from '../catalogue/types'
 
 export interface Parameter {
+  expression?: string
   id: string
   /** Referenced in expressions as this exact name. */
   name: string
@@ -402,6 +403,7 @@ export interface Placement {
 }
 
 export interface OkcDocument {
+  bindings?: Array<{bodyId:string;featureId:string;field:string;expression:string}>
   version: 1
   name: string
   units: 'mm'

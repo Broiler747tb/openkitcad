@@ -11,6 +11,7 @@ import { emptyDocument, type OkcDocument } from './types'
 import type { CataloguePart } from '../catalogue/types'
 import { getPart, refreshUserParts, upsertUserPart } from '../catalogue'
 import { loadUserParts } from '../catalogue/userParts'
+import { androidDownload } from '../platform/android'
 
 const AUTOSAVE_KEY = 'openkitcad.autosave.v1'
 const FILE_EXTENSION = '.okc'
@@ -24,7 +25,11 @@ let autosaveTimer: number | undefined
 /** Debounced autosave. Cheap enough to run on every edit. */
 export function scheduleAutosave(doc: OkcDocument): void {
   clearTimeout(autosaveTimer)
-  autosaveTimer = window.setTimeout(() => {
+  autosaveTimer = window.setTimeout(() => saveAutosaveNow(doc), 600)
+}
+
+export function saveAutosaveNow(doc: OkcDocument): void {
+  clearTimeout(autosaveTimer)
     try {
       localStorage.setItem(
         AUTOSAVE_KEY,
@@ -33,7 +38,6 @@ export function scheduleAutosave(doc: OkcDocument): void {
     } catch {
       // A full or disabled storage must never break editing.
     }
-  }, 600)
 }
 
 export function loadAutosave(): { doc: OkcDocument; savedAt: string } | null {
@@ -142,6 +146,7 @@ function sanitiseFilename(name: string): string {
 
 /** Trigger a browser download. The universal fallback. */
 export function downloadBlob(blob: Blob, filename: string): void {
+  if(androidDownload(blob,filename))return
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url

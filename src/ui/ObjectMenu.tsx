@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
 import { newId, useStore, type Selection } from '../doc/store'
 import type {
   ExtrudeFeature,
+  Feature,
   MoveFeature,
   OkcDocument,
   LidFit,
@@ -10,7 +10,8 @@ import type {
 } from '../doc/types'
 import { resizeSketch } from '../sketch/edit'
 import { getPart } from '../catalogue'
-import { FlyoutMenu } from './FlyoutMenu'
+import { ContextMenu } from './ContextMenu'
+import { chooseAction } from './ActionDialog'
 
 /**
  * Right-click menu for finished solids and placed parts.
@@ -24,6 +25,8 @@ interface PromptField {
   label: string
   initial: number
   unit: string
+  min?: number
+  max?: number
 }
 
 export interface ObjectAction {
@@ -176,26 +179,45 @@ export const OBJECT_GROUP_ORDER = [
  * Glyphs rather than words: at four items a row of icons is quicker to hit than
  * four lines of text, and these four are distinct enough not to need reading.
  */
-const QUICK: Array<{ id: string; glyph: string; short: string }> = [
-  { id: 'move', glyph: '✥', short: 'Move' },
-  { id: 'turn', glyph: '↻', short: 'Turn' },
-  { id: 'negative', glyph: '⊘', short: 'Hole' },
-  { id: 'delete', glyph: '✕', short: 'Delete' },
-]
 
 export function objectActions(
   selection: Selection,
   picked?: PickedFace | null,
+  targetBodyId?: string,
 ): ObjectAction[] {
-  return buildObjectActions(selection, picked).map((a) => ({
+  return buildObjectActions(selection, picked, targetBodyId).map((a) => ({
     ...a,
     group: objectGroupOf(a.id),
+    ...(a.id.startsWith('add-') ? { run: (v: number, v2?: number, v3?: number, choice?: string) => {
+      a.run(v, v2, v3, choice)
+      const store = useStore.getState()
+      const body = store.doc.bodies.at(-1)
+      if (body) store.select({ kind: 'body', id: body.id })
+      window.dispatchEvent(new CustomEvent('okc:fit'))
+    } } : {}),
+    ...(['holes', 'standoffs', 'ports'].includes(a.id) ? {
+      choice: { label: 'Target body', initial: targetBodyId ?? useStore.getState().doc.bodies[0]?.id ?? '',
+        options: useStore.getState().doc.bodies.map((b) => ({ value: b.id, label: b.name })) },
+      run: (v: number, v2?: number, v3?: number, target?: string) => {
+        buildObjectActions(selection, picked, target).find((item) => item.id === a.id)?.run(v, v2, v3)
+      },
+    } : {}),
   }))
+}
+
+/** Create the body and its first step in one undoable operation. */
+function addPrimitive(name: string, feature: Feature) {
+  const store = useStore.getState()
+  const id = newId('body')
+  store.commit((doc) => {
+    doc.bodies.push({ id, name, visible: true, colour: '#b9c0c7', features: [feature] })
+  })
 }
 
 function buildObjectActions(
   selection: Selection,
   picked?: PickedFace | null,
+  targetBodyId?: string,
 ): ObjectAction[] {
   const store = useStore.getState()
   const doc = store.doc
@@ -681,18 +703,18 @@ function buildObjectActions(
       id: 'add-box',
       label: 'Add a box',
       hint: 'A plain rectangular block, no sketching needed',
-      prompt: { label: 'Across', initial: 40, unit: 'mm' },
-      prompt2: { label: 'Tall', initial: 20, unit: 'mm' },
-      run: (across, tall) => {
-        const id = store.addBody('Box')
-        store.addFeature(id, {
+      prompt: { label: 'Width', initial: 40, unit: 'mm', min: 0.01 },
+      prompt2: { label: 'Depth', initial: 30, unit: 'mm', min: 0.01 },
+      prompt3: { label: 'Height', initial: 20, unit: 'mm', min: 0.01 },
+      run: (across, depth = 30, tall = 20) => {
+        addPrimitive('Box', {
           id: newId('box'),
           kind: 'box',
           name: 'Box',
           plane: { kind: 'named', name: 'XY', offset: 0 },
-          origin: [-across / 2, -across / 2],
+          origin: [-across / 2, -depth / 2],
           width: across,
-          depth: across,
+          depth,
           height: tall ?? 20,
           operation: 'new',
         })
@@ -701,11 +723,10 @@ function buildObjectActions(
     out.push({
       id: 'add-cylinder',
       label: 'Add a cylinder',
-      prompt: { label: 'Diameter', initial: 30, unit: 'mm' },
-      prompt2: { label: 'Tall', initial: 20, unit: 'mm' },
+      prompt: { label: 'Diameter', initial: 30, unit: 'mm', min: 0.01 },
+      prompt2: { label: 'Height', initial: 20, unit: 'mm', min: 0.01 },
       run: (diameter, tall) => {
-        const id = store.addBody('Cylinder')
-        store.addFeature(id, {
+        addPrimitive('Cylinder', {
           id: newId('cyl'),
           kind: 'cylinder',
           name: 'Cylinder',
@@ -720,10 +741,9 @@ function buildObjectActions(
     out.push({
       id: 'add-sphere',
       label: 'Add a ball',
-      prompt: { label: 'Diameter', initial: 30, unit: 'mm' },
+      prompt: { label: 'Diameter', initial: 30, unit: 'mm', min: 0.01 },
       run: (diameter) => {
-        const id = store.addBody('Ball')
-        store.addFeature(id, {
+        addPrimitive('Ball', {
           id: newId('sphere'),
           kind: 'sphere',
           name: 'Ball',
@@ -739,10 +759,9 @@ function buildObjectActions(
       id: 'add-dome',
       label: 'Add a dome',
       hint: 'Half a ball, flat side down',
-      prompt: { label: 'Diameter', initial: 30, unit: 'mm' },
+      prompt: { label: 'Diameter', initial: 30, unit: 'mm', min: 0.01 },
       run: (diameter) => {
-        const id = store.addBody('Dome')
-        store.addFeature(id, {
+        addPrimitive('Dome', {
           id: newId('sphere'),
           kind: 'sphere',
           name: 'Dome',
@@ -776,7 +795,7 @@ function buildObjectActions(
     const placement = doc.placements.find((p) => p.id === id)
     if (!placement) return raw
     const part = getPart(placement.partId)
-    const targetBody = doc.bodies[0]?.id
+    const targetBody = targetBodyId ?? doc.bodies[0]?.id
 
     out.push({
       id: 'move',
@@ -874,189 +893,9 @@ function buildObjectActions(
   return raw
 }
 
-export function ObjectMenu({
-  x,
-  y,
-  actions,
-  onClose,
-}: {
-  x: number
-  y: number
-  actions: ObjectAction[]
-  onClose: () => void
+export function ObjectMenu({ x, y, actions, onClose }: {
+  x: number; y: number; actions: ObjectAction[]; onClose: () => void
 }) {
-  const [pending, setPending] = useState<ObjectAction | null>(null)
-  const [choiceHint, setChoiceHint] = useState('')
-  const ref = useRef<HTMLDivElement>(null)
-  const secondRef = useRef<HTMLInputElement>(null)
-  const thirdRef = useRef<HTMLInputElement>(null)
-  const choiceRef = useRef<HTMLSelectElement>(null)
-
-  useEffect(() => {
-    const away = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) onClose()
-    }
-    const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    const timer = setTimeout(() => {
-      window.addEventListener('pointerdown', away)
-      window.addEventListener('keydown', key)
-    }, 0)
-    return () => {
-      clearTimeout(timer)
-      window.removeEventListener('pointerdown', away)
-      window.removeEventListener('keydown', key)
-    }
-  }, [onClose])
-
-  const fire = (
-    action: ObjectAction,
-    value: number,
-    value2?: number,
-    value3?: number,
-    choice?: string,
-  ) => {
-    action.run(value, value2, value3, choice)
-    onClose()
-  }
-
-  /** Commit the pending action, reading whichever fields it asked for. */
-  const commit = (first: HTMLInputElement) => {
-    if (!pending) return
-    const a = Number(first.value)
-    const b = pending.prompt2 ? Number(secondRef.current?.value) : undefined
-    const c = pending.prompt3 ? Number(thirdRef.current?.value) : undefined
-    if (!Number.isFinite(a)) return
-    if (pending.prompt2 && !Number.isFinite(b as number)) return
-    if (pending.prompt3 && !Number.isFinite(c as number)) return
-    fire(pending, a, b, c, choiceRef.current?.value)
-  }
-
-  return (
-    <div
-      className="sketch-menu"
-      ref={ref}
-      style={{
-        left: Math.min(x, window.innerWidth - 260),
-        top: Math.min(y, window.innerHeight - 300),
-      }}
-    >
-      {pending ? (
-        <>
-          {pending.choice && (
-            <div className="sketch-menu-choice">
-              <label>{pending.choice.label}</label>
-              <select
-                ref={choiceRef}
-                defaultValue={pending.choice.initial}
-                onChange={() => setChoiceHint(choiceRef.current?.value ?? '')}
-              >
-                {pending.choice.options.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-              {(() => {
-                const picked = pending.choice.options.find(
-                  (o) => o.value === (choiceHint || pending.choice!.initial),
-                )
-                return picked?.hint ? <p>{picked.hint}</p> : null
-              })()}
-            </div>
-          )}
-          <div className="sketch-menu-prompt">
-            <label>{pending.prompt!.label}</label>
-            <input
-              autoFocus
-              type="number"
-              step="0.5"
-              defaultValue={pending.prompt!.initial}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') commit(e.target as HTMLInputElement)
-                if (e.key === 'Escape') setPending(null)
-              }}
-            />
-            <span>{pending.prompt!.unit}</span>
-          </div>
-          {pending.prompt2 && (
-            <div className="sketch-menu-prompt">
-              <label>{pending.prompt2.label}</label>
-              <input
-                ref={secondRef}
-                type="number"
-                step="0.5"
-                defaultValue={pending.prompt2.initial}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    const first = ref.current?.querySelector('input')
-                    if (first) commit(first as HTMLInputElement)
-                  }
-                  if (e.key === 'Escape') setPending(null)
-                }}
-              />
-              <span>{pending.prompt2.unit}</span>
-            </div>
-          )}
-          {pending.prompt3 && (
-            <div className="sketch-menu-prompt">
-              <label>{pending.prompt3.label}</label>
-              <input
-                ref={thirdRef}
-                type="number"
-                step="0.5"
-                defaultValue={pending.prompt3.initial}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    const first = ref.current?.querySelector('input')
-                    if (first) commit(first as HTMLInputElement)
-                  }
-                  if (e.key === 'Escape') setPending(null)
-                }}
-              />
-              <span>{pending.prompt3.unit}</span>
-            </div>
-          )}
-        </>
-      ) : actions.length === 0 ? (
-        <div className="sketch-menu-empty">Right-click a part to change it.</div>
-      ) : (
-        <>
-          {(() => {
-            const quick = QUICK.map((q) => ({
-              ...q,
-              action: actions.find((a) => a.id === q.id),
-            })).filter((q) => q.action)
-            if (!quick.length) return null
-            return (
-              <div className="quick-row">
-                {quick.map((q) => (
-                  <button
-                    key={q.id}
-                    className="quick"
-                    // The label is the action's own, so "Turn it into a hole"
-                    // reads "Make it solid again" once it already is one.
-                    title={q.action!.label}
-                    aria-label={q.action!.label}
-                    onClick={() =>
-                      q.action!.prompt ? setPending(q.action!) : fire(q.action!, 0)
-                    }
-                  >
-                    <span className="quick-glyph">{q.glyph}</span>
-                    <span className="quick-name">{q.short}</span>
-                  </button>
-                ))}
-              </div>
-            )
-          })()}
-          <FlyoutMenu
-            actions={actions.filter((a) => !QUICK.some((q) => q.id === a.id))}
-            order={OBJECT_GROUP_ORDER}
-            onPick={(action) => (action.prompt ? setPending(action) : fire(action, 0))}
-          />
-        </>
-      )}
-    </div>
-  )
+  return <ContextMenu x={x} y={y} actions={actions} order={OBJECT_GROUP_ORDER}
+    onClose={onClose} onPick={(action) => { onClose(); chooseAction(action) }} />
 }

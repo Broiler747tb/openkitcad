@@ -3,10 +3,15 @@ import { ViewportEngine, type ScreenLabel } from './engine'
 import { activeSketchFeature, newId, useStore } from '../doc/store'
 import { frameFromPlaneRefLocal } from '../doc/planes'
 import { findSnap, hitTestSketch, toggleSelection } from '../sketch/inference'
+import { circleRadius, continueLine, emptyDraft, type Draft } from '../sketch/draft'
+import { sketchActions } from '../sketch/actions'
+import { isAndroidApp, usePenMode } from '../platform/android'
 import { SketchMenu } from '../ui/SketchMenu'
+import { chooseAction } from '../ui/ActionDialog'
 import { ObjectMenu, objectActions, trailingMove, type PickedFace } from '../ui/ObjectMenu'
 import { fastenerGhosts } from './ghosts'
 import { saveDocument } from '../doc/persist'
+import { usePreferences, snapOptions } from '../doc/preferences'
 import { fmt, frameToWorld, v2, type Frame, type Vec2, type Vec3 } from '../core/math'
 import type { Constraint, NewConstraint, Sketch2D } from '../sketch/types'
 
@@ -15,13 +20,13 @@ const SNAP_PX = 11
 /** How far the pointer may travel and still count as a click rather than a drag. */
 const CLICK_SLOP_PX = 4
 
+/** Press and hold this long with a finger or pen to get the right-click menu. */
+const HOLD_MS = 480
+/** A finger wanders more than a mouse, so a hold gets more room than a click. */
+const HOLD_SLOP_PX = 12
+
 /** Gizmo output is snapped to whole millimetres; keep the stored value tidy. */
 const round = (n: number) => Math.round(n * 1000) / 1000
-
-interface Draft {
-  anchors: Vec2[]
-  anchorIds: Array<string | null>
-}
 
 interface DimensionPrompt {
   x: number
@@ -152,14 +157,38 @@ function pasteClipboard(): boolean {
 }
 
 export function Viewport() {
+  const preferences = usePreferences(s=>s.values)
   const mountRef = useRef<HTMLDivElement>(null)
   const engineRef = useRef<ViewportEngine | null>(null)
   const draftRef = useRef<Draft>({ anchors: [], anchorIds: [] })
   const draggingRef = useRef<{ pointId: string; moved: boolean } | null>(null)
+  const penContactRef = useRef(false)
   const downRef = useRef<{ x: number; y: number } | null>(null)
+  /**
+   * Long-press stands in for right-click on a phone.
+   *
+   * It raises the same contextmenu event a mouse would, so the whole menu -
+   * object or sketch, face under the finger and all - runs through one path.
+   * Anything else would be a second menu to keep in step with the first.
+   */
+  const holdRef = useRef<number | null>(null)
+  const cancelHold = () => {
+    if (holdRef.current !== null) {
+      clearTimeout(holdRef.current)
+      holdRef.current = null
+    }
+  }
   const [labels, setLabels] = useState<ScreenLabel[]>([])
   const [cursorHint, setCursorHint] = useState<{ x: number; y: number; text: string } | null>(null)
   const [prompt, setPrompt] = useState<DimensionPrompt | null>(null)
+  useEffect(() => {
+    if (!prompt) return
+    chooseAction({ id: 'dimension-value', label: 'Set dimension',
+      prompt: { label: 'Value', initial: Number(prompt.value), unit: 'mm' },
+      run: (value) => prompt.apply(value),
+    })
+    setPrompt(null)
+  }, [prompt])
   const [, forceRender] = useState(0)
 
   const shapes = useStore((s) => s.shapes)
@@ -168,6 +197,7 @@ export function Viewport() {
   const selection = useStore((s) => s.selection)
   const section = useStore((s) => s.section)
   const tool = useStore((s) => s.tool)
+  const fingerMode = usePenMode(s=>s.fingerMode)
   const activeSketch = useStore((s) => s.activeSketch)
   const doc = useStore((s) => s.doc)
   const gizmoMode = useStore((s) => s.gizmoMode)
@@ -367,6 +397,31 @@ export function Viewport() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSketch?.featureId])
 
+  // A gesture belongs to one tool and one sketch only.
+  useEffect(() => {
+    draftRef.current = emptyDraft()
+    draggingRef.current = null
+    engineRef.current?.setControlsEnabled(true)
+  }, [tool, activeSketch?.bodyId, activeSketch?.featureId])
+
+  useEffect(()=>{
+    if(isAndroidApp)engineRef.current?.setFingerNavigation(!activeSketch && fingerMode==='orbit')
+  },[fingerMode,activeSketch])
+
+  useEffect(()=>{
+    const cancel=()=>{
+      draftRef.current=emptyDraft()
+      draggingRef.current=null
+      cancelHold()
+      engineRef.current?.setControlsEnabled(true)
+      useStore.getState().setTool('select')
+      setMenu(null);setObjectMenu(null)
+      forceRender(n=>n+1)
+    }
+    window.addEventListener('okc:cancel',cancel)
+    return()=>window.removeEventListener('okc:cancel',cancel)
+  },[])
+
   // Redraw the sketch whenever it changes.
   useEffect(() => {
     const engine = engineRef.current
@@ -380,14 +435,16 @@ export function Viewport() {
       looseGeometry(sketchFeature.sketch, sketchStatus),
     )
     engine.setLabels(sketchLabels(sketchFeature.sketch, frame))
-  }, [doc, sketchFeature, frame, sketchSelection, sketchStatus])
+  }, [doc, sketchFeature, frame, sketchSelection, sketchStatus, tool])
+
+  useEffect(()=>{engineRef.current?.setGridPreferences(preferences,frame)},[preferences,frame])
 
   // --- helpers -------------------------------------------------------------
 
   const toleranceAt = (): number => {
     const engine = engineRef.current
     if (!engine || !frame) return 1
-    return engine.pixelSize(frame.origin) * SNAP_PX
+    return engine.pixelSize(frame.origin) * usePreferences.getState().values.snapRadius
   }
 
   const pointerToSketch = (e: { clientX: number; clientY: number }): Vec2 | null => {
@@ -398,7 +455,7 @@ export function Viewport() {
 
   /** Reuse a snapped point, or add a new one. */
   function ensurePoint(sketch: Sketch2D, pos: Vec2, snapId: string | null): string {
-    if (snapId) return snapId
+    if (snapId && sketch.points.some(p => p.id === snapId)) return snapId
     const id = newId('p')
     sketch.points.push({ id, x: pos[0], y: pos[1] })
     return id
@@ -408,16 +465,29 @@ export function Viewport() {
     sketch.constraints.push({ ...c, id: newId('c') } as Constraint)
   }
 
+  useEffect(()=>{
+    const input=(event:Event)=>{
+      if(!['line','rectangle','circle','arc'].includes(tool)||!activeSketch)return
+      const {x,y,relative}=(event as CustomEvent<{x:number;y:number;relative:boolean}>).detail
+      if(!Number.isFinite(x)||!Number.isFinite(y))return
+      const base=relative?draftRef.current.anchors.at(-1):null
+      commitClick([x+(base?.[0]??0),y+(base?.[1]??0)],true)
+    }
+    window.addEventListener('okc:coordinate',input)
+    return()=>window.removeEventListener('okc:coordinate',input)
+  },[tool,activeSketch,frame])
+
   // --- sketch drawing ------------------------------------------------------
 
-  function commitClick(raw: Vec2) {
+  function commitClick(raw: Vec2, bypass=false) {
+    if (!['line', 'rectangle', 'circle', 'arc'].includes(tool)) return
     const store = useStore.getState()
     const draft = draftRef.current
     const sketch = activeSketchFeature(store)?.sketch
     if (!sketch) return
 
     const snap = findSnap(sketch, raw, {
-      tolerance: toleranceAt(),
+      ...snapOptions(toleranceAt(),bypass),
       from: draft.anchors.length ? draft.anchors[draft.anchors.length - 1] : undefined,
     })
 
@@ -429,9 +499,11 @@ export function Viewport() {
     }
 
     if (tool === 'line' && draft.anchors.length === 2) {
+      let endpointId = ''
       store.editSketch((s) => {
         const a = ensurePoint(s, draft.anchors[0], draft.anchorIds[0])
         const b = ensurePoint(s, draft.anchors[1], draft.anchorIds[1])
+        endpointId = b
         const id = newId('e')
         s.entities.push({ id, kind: 'line', p1: a, p2: b, construction: false })
         if (snap.align === 'horizontal') pushConstraint(s, { kind: 'horizontal', e: id })
@@ -441,11 +513,8 @@ export function Viewport() {
         }
       })
       // Chain: keep drawing from the end of the segment just made.
-      draftRef.current = {
-        anchors: [draft.anchors[1]],
-        anchorIds: [null],
-      }
       store.solveActiveSketch()
+      draftRef.current = continueLine(activeSketchFeature(useStore.getState())!.sketch, endpointId)
     } else if (tool === 'rectangle' && draft.anchors.length === 2) {
       const [a, b] = draft.anchors
       store.editSketch((s) => {
@@ -474,7 +543,13 @@ export function Viewport() {
       store.setTool('select')
     } else if (tool === 'circle' && draft.anchors.length === 2) {
       const [c, edge] = draft.anchors
-      const radius = Math.max(v2.dist(c, edge), 0.5)
+      const radius = circleRadius(c, edge)
+      if (radius === null) {
+        draft.anchors.pop()
+        draft.anchorIds.pop()
+        store.setStatus('Circle radius must be greater than zero. Choose another edge point.')
+        return
+      }
       store.editSketch((s) => {
         const centre = ensurePoint(s, c, draft.anchorIds[0])
         s.entities.push({
@@ -592,16 +667,24 @@ export function Viewport() {
           draggingRef.current.moved = true
           store.beginTransient()
         }
+        const dragged = findSnap(sketch,cursor,{...snapOptions(toleranceAt(),e.altKey),exclude:[draggingRef.current.pointId],edges:false,midpoints:false})
         store.solveActiveSketch({
           point: draggingRef.current.pointId,
-          x: cursor[0],
-          y: cursor[1],
+          x: dragged.point[0],
+          y: dragged.point[1],
         })
         return
       }
 
+      if (tool === 'trim') {
+        const hit = hitTestSketch(sketch, cursor, toleranceAt(), false)
+        setCursorHint({ x: e.clientX, y: e.clientY, text: 'Trim: click to remove · Esc to finish' })
+        engine.setSketch(sketch, frame, null, selectionHighlight(hit ? [hit] : []), looseGeometry(sketch, store.sketchStatus))
+        return
+      }
+
       const snap = findSnap(sketch, cursor, {
-        tolerance: toleranceAt(),
+        ...snapOptions(toleranceAt(),e.altKey),
         from: draftRef.current.anchors.at(-1),
       })
       setCursorHint(
@@ -674,8 +757,19 @@ export function Viewport() {
         return
       }
 
+      if (tool === 'trim') {
+        // Ignore point hits: Trim operates on the edge portion under the cursor.
+        const hit = hitTestSketch(sketch, cursor, toleranceAt(), false)
+        const action = hit && sketchActions(sketch, [hit], cursor).find(a => a.id === 'trim')
+        if (action) {
+          store.setSketchSelection([])
+          store.applySketchAction(action.build(0))
+        } else store.setStatus('Trim: click a line, circle or arc.')
+        return
+      }
+
       engine.setControlsEnabled(false)
-      commitClick(cursor)
+      commitClick(cursor,e.altKey)
       return
     }
 
@@ -807,6 +901,7 @@ export function Viewport() {
   // --- keyboard ------------------------------------------------------------
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.repeat || (e.target instanceof Element && e.target.closest('dialog'))) return
       // Never take a key off a field somebody is typing in. Ctrl+C in a text
       // box has to copy text, and Delete has to delete a character.
       const target = e.target
@@ -826,11 +921,14 @@ export function Viewport() {
         } else if (store.tool !== 'select') {
           store.setTool('select')
         } else if (store.activeSketch) {
-          store.closeSketch()
+          store.setSketchSelection([])
+        } else {
+          store.select({ kind: 'none' })
+          store.setSubSelection([])
         }
       }
       const mod = e.ctrlKey || e.metaKey
-      const key = e.key.toLowerCase()
+      const key = e.code.startsWith('Key') ? e.code.slice(3).toLowerCase() : e.key.toLowerCase()
 
       if (mod && key === 'z') {
         e.preventDefault()
@@ -888,15 +986,12 @@ export function Viewport() {
         return
       }
 
-      if (!mod && (key === 'f' || e.key === 'Home')) {
+      if (!mod && !e.altKey && e.key === 'Home') {
         window.dispatchEvent(new CustomEvent('okc:fit'))
         return
       }
 
-      if (!store.activeSketch) return
-      const map: Record<string, string> = { l: 'line', r: 'rectangle', c: 'circle', a: 'arc', d: 'dimension', s: 'select' }
-      const next = map[e.key.toLowerCase()]
-      if (next && !e.ctrlKey && !e.metaKey) store.setTool(next as never)
+      // Modelling shortcuts are resolved centrally by the workspace toolbar.
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -907,9 +1002,63 @@ export function Viewport() {
       <div
         ref={mountRef}
         className="viewport-canvas"
-        onPointerMove={onPointerMove}
-        onPointerDown={onPointerDown}
-        onPointerUp={onPointerUp}
+        onPointerDownCapture={e=>{
+          if(!isAndroidApp)return
+          if(e.pointerType==='pen')penContactRef.current=true
+          if(e.pointerType==='touch'&&penContactRef.current){e.preventDefault();e.stopPropagation()}
+        }}
+        onPointerMoveCapture={e=>{
+          if(isAndroidApp&&e.pointerType==='touch'&&penContactRef.current){e.preventDefault();e.stopPropagation()}
+        }}
+        onPointerUpCapture={e=>{if(e.pointerType==='pen')penContactRef.current=false}}
+        onPointerMove={(e) => {
+          if(isAndroidApp && e.pointerType==='touch')return
+          // Any real movement means a drag, not a press-and-hold.
+          if (
+            holdRef.current !== null &&
+            downRef.current &&
+            Math.hypot(e.clientX - downRef.current.x, e.clientY - downRef.current.y) > HOLD_SLOP_PX
+          ) {
+            cancelHold()
+          }
+          onPointerMove(e)
+        }}
+        onPointerDown={(e) => {
+          // Finger gestures only navigate; they never create points or drag sketch geometry.
+          // OrbitControls receives these events directly on its canvas.
+          if(isAndroidApp && e.pointerType==='touch')return
+          // A mouse already has a right button. The S Pen has a barrel button
+          // and raises contextmenu itself, so this is for finger and for a pen
+          // held down without it.
+          if ((e.pointerType === 'touch' || e.pointerType === 'pen') && (!activeSketch || tool==='select')) {
+            const { clientX, clientY } = e
+            const target = e.currentTarget
+            cancelHold()
+            holdRef.current = window.setTimeout(() => {
+              holdRef.current = null
+              // Tell the user it landed. A menu appearing with no other signal
+              // reads as a misfire on a touchscreen.
+              if (navigator.vibrate) navigator.vibrate(12)
+              target.dispatchEvent(
+                new MouseEvent('contextmenu', { bubbles: true, clientX, clientY }),
+              )
+            }, HOLD_MS)
+          }
+          onPointerDown(e)
+        }}
+        onPointerUp={(e) => {
+          if(isAndroidApp && e.pointerType==='touch')return
+          cancelHold()
+          onPointerUp(e)
+        }}
+        onPointerCancel={()=>{
+          penContactRef.current=false
+          cancelHold()
+          if(draggingRef.current?.moved)useStore.getState().endTransient()
+          draggingRef.current=null
+          engineRef.current?.setControlsEnabled(true)
+        }}
+        onPointerLeave={cancelHold}
         onContextMenu={(e) => {
           e.preventDefault()
           // Outside a sketch, right-click acts on the solid under the cursor.
@@ -1001,25 +1150,6 @@ export function Viewport() {
           style={{ left: cursorHint.x + 14, top: cursorHint.y + 14 }}
         >
           {cursorHint.text}
-        </div>
-      )}
-
-      {prompt && (
-        <div className="vp-prompt" style={{ left: prompt.x, top: prompt.y }}>
-          <input
-            autoFocus
-            defaultValue={prompt.value}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                const value = Number((e.target as HTMLInputElement).value)
-                if (Number.isFinite(value) && value > 0) prompt.apply(value)
-                setPrompt(null)
-              }
-              if (e.key === 'Escape') setPrompt(null)
-            }}
-            onBlur={() => setPrompt(null)}
-          />
-          <span>mm</span>
         </div>
       )}
 

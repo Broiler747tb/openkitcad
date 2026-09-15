@@ -22,6 +22,7 @@ import {
   type ProjectionPlane,
 } from 'replicad'
 import type { OkcDocument } from '../doc/types'
+import { resolveParameters } from '../doc/parameters'
 import { CATEGORY_COLOUR, getPart, setCustomParts } from '../catalogue'
 import { buildPlacement, evaluateBody } from './build'
 import { flattenSvgPaths } from '../export/svgpath'
@@ -126,6 +127,8 @@ const api = {
    * cheaper than the bugs a partial-invalidation cache would introduce.
    */
   async evaluate(doc: OkcDocument): Promise<EvaluateResult> {
+    doc=structuredClone(doc)
+    resolveParameters(doc)
     await ensureOC()
     setCustomParts(doc.customParts ?? [])
     const t0 = performance.now()

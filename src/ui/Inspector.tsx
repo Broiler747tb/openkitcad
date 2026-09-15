@@ -1,4 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useId, useState } from 'react'
+import { SelectionActions } from './SelectionActions'
+import { PrecisionSketchTools } from './PrecisionTools'
+import { SketchPowerTools, SceneTools } from './PowerTools'
+import { chooseAction, chooseSketchAction } from './ActionDialog'
+import { objectActions } from './ObjectMenu'
+import { FlyoutMenu } from './FlyoutMenu'
 import { activeSketchFeature, newId, useStore } from '../doc/store'
 import { sketchActions } from '../sketch/actions'
 import { CONFIDENCE_LABEL, getPart } from '../catalogue'
@@ -7,7 +13,7 @@ import type { Feature, HoleFeature, StandoffFeature } from '../doc/types'
 import { kernel } from '../kernel/api'
 import type { Clash, PrintWarning } from '../kernel/types'
 
-export function Inspector() {
+export function Inspector({ tab, onTab }: { tab: 'properties' | 'actions' | 'checks'; onTab: (tab: 'properties' | 'actions' | 'checks') => void }) {
   const selection = useStore((s) => s.selection)
   const errors = useStore((s) => s.errors)
   const activeSketch = useStore((s) => s.activeSketch)
@@ -16,7 +22,10 @@ export function Inspector() {
   if (activeSketch) {
     return (
       <div className="panel-right">
-        <SketchSelectionPanel />
+        <div className="panel-caption">SKETCH PALETTE</div>
+        <SketchPowerTools key={activeSketch.featureId} />
+        <details className="sketch-panel-group"><summary>Pointer coordinates & polar input</summary><PrecisionSketchTools /></details>
+        <details className="sketch-panel-group"><summary>Selection dimensions & constraints</summary><SketchSelectionPanel /></details>
       </div>
     )
   }
@@ -35,11 +44,15 @@ export function Inspector() {
         </div>
       )}
 
+      <div className="tabs inspector-tabs">{(['properties', 'actions', 'checks'] as const).map((t) =>
+        <button className={tab === t ? 'active' : ''} key={t} onClick={() => onTab(t)}>{t === 'properties' ? 'Properties' : t === 'actions' ? 'Actions' : 'Checks'}</button>)}</div>
+      {tab !== 'checks' && <SceneTools />}
+      {tab === 'checks' ? <ToolsSection /> : tab === 'actions' ? <><SelectionActions />{selection.kind === 'none' && <div className="empty">Select a body or hardware part to see its actions.</div>}</> : <>
       <SubSelectionPanel />
-      {selection.kind === 'placement' && <PlacementInspector id={selection.id!} />}
+      {selection.kind === 'placement' && <PlacementInspector key={selection.id} id={selection.id!} />}
       {selection.kind === 'body' && <BodyInspector id={selection.id!} />}
       {selection.kind === 'feature' && (
-        <FeatureInspector bodyId={selection.bodyId!} featureId={selection.id!} />
+        <FeatureInspector key={selection.id} bodyId={selection.bodyId!} featureId={selection.id!} />
       )}
       {selection.kind === 'none' && (
         <div className="section">
@@ -50,7 +63,8 @@ export function Inspector() {
         </div>
       )}
 
-      <ToolsSection />
+      {selection.kind !== 'none' && <button className="inspector-action-link" onClick={() => onTab('actions')}>Show all actions for this selection →</button>}
+      </>}
     </div>
   )
 }
@@ -70,22 +84,24 @@ function Num({
   min?: number
   suffix?: string
 }) {
-  return (
-    <div className="row">
-      <label>{label}</label>
-      <input
-        type="number"
-        value={Number.isFinite(value) ? value : 0}
-        step={step}
-        min={min}
-        onChange={(e) => {
-          const v = Number(e.target.value)
-          if (Number.isFinite(v)) onChange(v)
-        }}
-      />
-      <span style={{ color: 'var(--text-faint)', fontSize: 11, width: 20 }}>{suffix}</span>
-    </div>
-  )
+  const id = useId()
+  const [draft, setDraft] = useState(String(value))
+  useEffect(() => setDraft(String(value)), [value])
+  const commit = () => {
+    const v = Number(draft)
+    if (!draft.trim() || !Number.isFinite(v) || (min != null && v < min)) { setDraft(String(value)); return }
+    if (v !== value) onChange(v)
+  }
+  return <div className="row">
+    <label htmlFor={id}>{label}</label>
+    <input id={id} type="number" value={draft} step={step} min={min}
+      onChange={(e) => setDraft(e.target.value)} onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur() }
+        if (e.key === 'Escape') { e.stopPropagation(); setDraft(String(value)) }
+      }} />
+    <span style={{ color: 'var(--text-faint)', fontSize: 11, width: 20 }}>{suffix}</span>
+  </div>
 }
 
 // ---------------------------------------------------------------------------
@@ -352,49 +368,9 @@ function BodyInspector({ id }: { id: string }) {
       </div>
 
       <div className="section">
-        <h3>Change the shape</h3>
-        <button
-          className="btn"
-          onClick={() =>
-            store.addFeature(id, {
-              id: newId('fillet'),
-              kind: 'fillet',
-              name: 'Round edges',
-              radius: 2,
-              edges: [],
-            })
-          }
-        >
-          Round off every edge
-          <small>Softens all the corners at once</small>
-        </button>
-        <button
-          className="btn"
-          onClick={() =>
-            store.addFeature(id, {
-              id: newId('chamfer'),
-              kind: 'chamfer',
-              name: 'Bevel edges',
-              distance: 1,
-              edges: [],
-            })
-          }
-        >
-          Bevel every edge
-          <small>A flat 45° cut instead of a round</small>
-        </button>
-        <button
-          className="btn"
-          onClick={() =>
-            store.startSketch(
-              { kind: 'named', name: 'XY', offset: shape ? shape.bounds[5] : 0 },
-              id,
-            )
-          }
-        >
-          Sketch on top of this
-          <small>Draw on the highest face to add or cut more</small>
-        </button>
+        <h3>Quick actions</h3>
+        {objectActions({ kind: 'body', id }).filter((a) => ['size', 'round', 'bevel', 'sketch-on-top'].includes(a.id)).map((action) =>
+          <button key={action.id} className="btn" onClick={() => chooseAction(action)}>{action.label}<small>{action.hint}</small></button>)}
       </div>
     </>
   )
@@ -676,7 +652,7 @@ function SubSelectionPanel() {
     <div className="section">
       <h3>Picked on the shape</h3>
       <p className="hint" style={{ marginTop: 0 }}>
-        {parts.join(', ')} selected. Shift-click to add more, then right-click for
+        {parts.join(', ')} selected. Shift-click to add more, then use Actions for
         what you can do with them.
       </p>
       <button className="btn" onClick={() => useStore.getState().setSubSelection([])}>
@@ -730,7 +706,7 @@ function SketchSelectionPanel() {
           <h3>Nothing picked</h3>
           <p className="hint" style={{ marginTop: 0 }}>
             Click a line, a circle or a corner. Shift-click to add a second one.
-            Then right-click for everything you can do to it.
+            Available dimensions and constraints appear here.
           </p>
         </div>
       ) : (
@@ -801,39 +777,7 @@ function SketchSelectionPanel() {
           {actions.length > 0 && (
             <>
               <h3 style={{ marginTop: 14 }}>What you can do</h3>
-              {actions.map((action) => (
-                <button
-                  key={action.id}
-                  className="btn"
-                  onClick={() => {
-                    if (!action.prompt) {
-                      store.applySketchAction(action.build(0))
-                      return
-                    }
-                    const raw = window.prompt(
-                      `${action.prompt.label} in ${action.prompt.unit}`,
-                      String(action.prompt.initial),
-                    )
-                    if (raw === null) return
-                    const value = Number(raw)
-                    if (!Number.isFinite(value)) return
-                    let second: number | undefined
-                    if (action.prompt2) {
-                      const raw2 = window.prompt(
-                        `${action.prompt2.label} in ${action.prompt2.unit}`,
-                        String(action.prompt2.initial),
-                      )
-                      if (raw2 === null) return
-                      second = Number(raw2)
-                      if (!Number.isFinite(second)) return
-                    }
-                    store.applySketchAction(action.build(value, second))
-                  }}
-                >
-                  {action.label}
-                  {action.hint && <small>{action.hint}</small>}
-                </button>
-              ))}
+              <FlyoutMenu actions={actions} onPick={chooseSketchAction} />
             </>
           )}
         </div>

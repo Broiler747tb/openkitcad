@@ -10,16 +10,16 @@ import {
   CONFIDENCE_LABEL,
 } from '../catalogue'
 
-export function LeftPanel() {
-  const [tab, setTab] = useState<'design' | 'catalogue'>('design')
+export function LeftPanel({ tab, onTab: setTab }: { tab: 'design' | 'catalogue'; onTab: (tab: 'design' | 'catalogue') => void }) {
   return (
     <div className="panel-left">
+      <div className="panel-caption">BROWSER <span>▾</span></div>
       <div className="tabs">
         <button className={tab === 'design' ? 'active' : ''} onClick={() => setTab('design')}>
           Design
         </button>
         <button className={tab === 'catalogue' ? 'active' : ''} onClick={() => setTab('catalogue')}>
-          Parts catalogue
+          Components
         </button>
       </div>
       {tab === 'design' ? <DesignTree /> : <Catalogue />}
@@ -41,17 +41,19 @@ function DesignTree() {
   if (doc.bodies.length === 0 && doc.placements.length === 0) {
     return (
       <div className="empty">
-        Nothing here yet.
+        Untitled design
         <br />
         <br />
-        Press <strong>New sketch</strong> to draw a shape and turn it into a solid, or open the{' '}
-        <strong>Parts catalogue</strong> and drop in a board to build around.
+        Create Sketch → choose a plane → draw a profile → Finish Sketch → Extrude (E). Insert hardware from the toolbar to build around a component.
       </div>
     )
   }
 
   return (
     <div className="tree">
+      <div className="browser-document">◈ {doc.name} <small>mm</small></div>
+      <details className="origin-planes"><summary>▱ Origin</summary>{(['XY','XZ','YZ'] as const).map(name=><button key={name} onClick={()=>store.startSketch({kind:'named',name,offset:0})}>▧ {name} plane · Create sketch</button>)}</details>
+      <div className="browser-folder">▾ Bodies ({doc.bodies.length})</div>
       {doc.bodies.map((body) => (
         <BodyBranch
           key={body.id}
@@ -65,7 +67,7 @@ function DesignTree() {
         <>
           <div className="tree-item tree-body" style={{ marginTop: 14 }}>
             <span className="glyph">▦</span>
-            <span className="name">Parts from the catalogue</span>
+            <span className="name">Components</span>
           </div>
           {doc.placements.map((placement) => (
             <div
@@ -152,6 +154,8 @@ function BodyBranch({
         </button>
       </div>
 
+      <details className="feature-history" open={selection.kind === 'feature' && selection.bodyId === body.id ? true : undefined}>
+      <summary>{body.features.length} modelling step{body.features.length === 1 ? '' : 's'}</summary>
       {body.features.map((feature) => (
         <FeatureRow
           key={feature.id}
@@ -161,6 +165,7 @@ function BodyBranch({
           failed={errorFeatures.has(feature.id)}
         />
       ))}
+      </details>
     </>
   )
 }
@@ -190,6 +195,7 @@ function FeatureRow({
       <span className="name" style={{ opacity: feature.suppressed ? 0.45 : 1 }}>
         {feature.name || FEATURE_LABEL[feature.kind]}
       </span>
+      {feature.kind === 'sketch' && <button className="act" title="Edit sketch" onClick={(e) => { e.stopPropagation(); store.openSketch(bodyId, feature.id) }}>✎</button>}
       <button
         className="act"
         title="Move earlier"
@@ -308,10 +314,10 @@ function Catalogue() {
                 key={part.id}
                 className="cat-item"
                 title={`${CONFIDENCE_LABEL[part.confidence]}\n\n${part.source}`}
-                onClick={() => useStore.getState().addPlacement(part.id)}
+                onClick={() => { useStore.getState().addPlacement(part.id); useStore.getState().setStatus(`${part.name} added. Drag the arrows or enter its position in Properties.`); window.dispatchEvent(new CustomEvent('okc:fit')) }}
               >
                 <strong>
-                  {part.name}
+                  {part.name}<span className="add-indicator" aria-hidden="true">＋</span>
                   {part.confidence === 'approximate' && (
                     <span style={{ color: 'var(--warn)', marginLeft: 6, fontSize: 10 }}>
                       approx

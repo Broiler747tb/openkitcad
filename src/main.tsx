@@ -2,6 +2,9 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
 import './styles.css'
+import './workspace.css'
+import './fusion.css'
+import './android.css'
 
 const root = createRoot(document.getElementById('root')!)
 
@@ -14,9 +17,9 @@ if (new URLSearchParams(location.search).has('selftest')) {
     'font:13px/1.55 ui-monospace,monospace;color:#e8e2d8;background:#16181b;' +
     'padding:24px;min-height:100vh;box-sizing:border-box;white-space:pre'
   mount.textContent = 'running…'
-  Promise.all([import('./dev/selftest'), import('./dev/kerneltest')]).then(
-    async ([selftest, kerneltest]) => {
-      const results = [...selftest.runSelfTest(), ...(await kerneltest.runKernelTest())]
+  Promise.all([import('./dev/selftest'), import('./dev/kerneltest'), import('./dev/workflowtest'), import('./dev/precisiontest'), import('./dev/powertest'),import('./dev/parametertest')]).then(
+    async ([selftest, kerneltest, workflowtest, precisiontest, powertest,parametertest]) => {
+      const results = [...selftest.runSelfTest(), ...workflowtest.runWorkflowTest(), ...precisiontest.runPrecisionTest(), ...powertest.runPowerTest(), ...(await parametertest.runParameterTest()), ...(await kerneltest.runKernelTest())]
       ;(window as any).__okc_tests = results
       const failed = results.filter((r) => !r.pass)
       mount.textContent =

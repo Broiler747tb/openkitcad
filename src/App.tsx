@@ -8,16 +8,25 @@ import { Tutorial } from './ui/Tutorial'
 import { ExportDialog } from './ui/ExportDialog'
 import { useStore } from './doc/store'
 import { kernel } from './kernel/api'
-import { loadAutosave, readShareLink, scheduleAutosave } from './doc/persist'
+import { loadAutosave, readShareLink, scheduleAutosave, saveAutosaveNow } from './doc/persist'
 import { planeLabel } from './doc/planes'
 import { activeSketchFeature } from './doc/store'
+import { ActionDialogHost } from './ui/ActionDialog'
+import { Timeline, NavigationBar } from './ui/Timeline'
+import { PenBar } from './ui/PenBar'
+import { isAndroidApp } from './platform/android'
 
 export function App() {
   const [showExport, setShowExport] = useState(false)
+  const [leftTab, setLeftTab] = useState<'design' | 'catalogue'>('design')
+  const [inspectorTab, setInspectorTab] = useState<'properties' | 'actions' | 'checks'>('properties')
+  /** Which side panel is pulled over the model, on a screen too narrow for both. */
+  const [sheet, setSheet] = useState<'left' | 'right' | null>(null)
   const [showTutorial, setShowTutorial] = useState(false)
   const kernelReady = useStore((s) => s.kernelReady)
   const doc = useStore((s) => s.doc)
   const activeSketch = useStore((s) => s.activeSketch)
+  const selection = useStore((s) => s.selection)
 
   // Boot the kernel, then restore whatever the user was last working on.
   useEffect(() => {
@@ -39,7 +48,6 @@ export function App() {
           useStore.getState().setDoc(saved.doc)
           return
         }
-        setShowTutorial(true)
       })
     return () => {
       cancelled = true
@@ -47,18 +55,68 @@ export function App() {
   }, [])
 
   useEffect(() => {
-    scheduleAutosave(doc)
-  }, [doc])
+    // Slow mobile WASM startup must not overwrite the previous autosave with an empty document.
+    if(kernelReady)scheduleAutosave(doc)
+  }, [doc,kernelReady])
+
+  useEffect(()=>{
+    const save=()=>{const s=useStore.getState();if(s.kernelReady)saveAutosaveNow(s.doc)}
+    const hidden=()=>{if(document.visibilityState==='hidden')save()}
+    window.addEventListener('okc:background',save)
+    window.addEventListener('pagehide',save)
+    document.addEventListener('visibilitychange',hidden)
+    return()=>{window.removeEventListener('okc:background',save);window.removeEventListener('pagehide',save);document.removeEventListener('visibilitychange',hidden)}
+  },[])
+
+  /*
+   * Which panel is pulled over the model, written as a custom property on the
+   * root element rather than as a class the stylesheet reacts to.
+   *
+   * A rule keyed on two classes of the same element - `.app.sheet-left` - was
+   * not winning the cascade here, and a descendant form of it was being dropped
+   * from the parsed stylesheet outright. Rather than keep guessing at why, the
+   * value is set where nothing can outrank it: an inline custom property on
+   * :root beats every stylesheet rule, and inherits to both panels.
+   */
+  useEffect(() => {
+    const root = document.documentElement.style
+    root.setProperty('--sheet-left', sheet === 'left' ? '0px' : '-360px')
+    root.setProperty('--sheet-right', sheet === 'right' ? '0px' : '-360px')
+  }, [sheet])
 
   return (
-    <div className={`app ${activeSketch ? 'sketching' : ''}`}>
-      <Toolbar onExport={() => setShowExport(true)} onTutorial={() => setShowTutorial(true)} />
-      <LeftPanel />
+    <div className={`app ${activeSketch ? 'sketching' : ''} ${selection.kind === 'none' && !activeSketch && inspectorTab === 'properties' ? 'inspector-empty' : ''} ${sheet ? `sheet-${sheet}` : ''}`}>
+      <Toolbar onExport={() => setShowExport(true)} onTutorial={() => setShowTutorial(true)}
+        onCatalogue={() => { setLeftTab('catalogue'); if (isAndroidApp || innerWidth <= 900) setSheet('left') }}
+        onInspect={() => { setInspectorTab('checks'); if (isAndroidApp || innerWidth <= 900) setSheet('right') }} />
+      <LeftPanel tab={leftTab} onTab={setLeftTab} />
       <div className="viewport-wrap" style={{ display: 'contents' }}>
         <Viewport />
         <BuildProgress />
       </div>
-      <Inspector />
+      {/* Only drawn on a narrow screen, where the side panels are stacked on
+          top of the model rather than beside it. A tap on the model itself
+          puts them away again, which is the gesture people try first. */}
+      <div className="sheet-backdrop" onPointerDown={() => setSheet(null)} />
+      <div className="sheet-tabs">
+        <button
+          className={sheet === 'left' ? 'active' : ''}
+          onClick={() => setSheet(sheet === 'left' ? null : 'left')}
+        >
+          Parts
+        </button>
+        <button
+          className={sheet === 'right' ? 'active' : ''}
+          onClick={() => setSheet(sheet === 'right' ? null : 'right')}
+        >
+          Details
+        </button>
+      </div>
+      <Inspector tab={inspectorTab} onTab={setInspectorTab} />
+      <NavigationBar />
+      <PenBar onComponents={()=>{setLeftTab('catalogue');setSheet('left')}} onDetails={()=>setSheet(sheet==='right'?null:'right')} onClosePanel={()=>setSheet(null)} panelOpen={!!sheet}/>
+      <Timeline onEdit={() => { setInspectorTab('properties'); if (innerWidth <= 900) setSheet('right') }} />
+      <ActionDialogHost />
       <StatusBar />
 
       {!kernelReady && (
@@ -90,7 +148,7 @@ function SketchBanner() {
   const sketch = activeSketchFeature(useStore.getState())
   const help: Record<string, string> = {
     select:
-      'Drag a corner to move it. Click something and right-click for what you can do to it.',
+      'Drag a corner to move it. Select geometry to see available actions in the right panel.',
     line: 'Click for each corner. Right-click or Escape to stop the chain.',
     rectangle: 'Click one corner, then the opposite one.',
     circle: 'Click the centre, then click to set how big.',
@@ -101,9 +159,6 @@ function SketchBanner() {
     <div className="sketch-banner">
       <strong>Drawing on {sketch ? planeLabel(sketch.plane).toLowerCase() : 'a plane'}</strong>
       <span style={{ color: 'var(--text-faint)' }}>{help[tool]}</span>
-      <button className="tb" onClick={() => useStore.getState().closeSketch()}>
-        Done
-      </button>
     </div>
   )
 }
@@ -121,11 +176,11 @@ function StatusBar() {
 
   return (
     <div className="statusbar">
-      <span>{building ? 'Rebuilding…' : `Built in ${buildMs} ms`}</span>
+      <span className="engine-state" title={`Last rebuild: ${buildMs} ms`}>{building ? 'Updating geometry…' : '● Ready'}</span>
       <span>
         {shapes.length} shape{shapes.length === 1 ? '' : 's'}
       </span>
-      <span>{triangles.toLocaleString()} triangles</span>
+      <span className="mesh-stat">{triangles.toLocaleString()} triangles</span>
       {errors.length > 0 && (
         <span style={{ color: 'var(--err)' }}>
           {errors.length} step{errors.length === 1 ? '' : 's'} need attention

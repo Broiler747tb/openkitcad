@@ -7,6 +7,7 @@
  * change geometry without the viewport catching up.
  */
 import { create } from 'zustand'
+import { resolveParameters } from './parameters'
 import type { EvaluateResult, KernelError, ShapeResult } from '../kernel/types'
 import { requestBuild } from '../kernel/api'
 import {
@@ -62,6 +63,7 @@ export type ToolId =
   | 'circle'
   | 'arc'
   | 'dimension'
+  | 'trim'
   | 'measure'
 
 export interface Selection {
@@ -227,6 +229,8 @@ export const useStore = create<AppState>((set, get) => ({
   statusMessage: null,
 
   setDoc(doc, resetHistory = true) {
+    doc=clone(doc)
+    resolveParameters(doc)
     set(
       resetHistory
         ? {
@@ -246,6 +250,7 @@ export const useStore = create<AppState>((set, get) => ({
     const state = get()
     const next = clone(state.doc)
     fn(next)
+    resolveParameters(next,true)
 
     // Typing "12.5" into a box fires an edit per keystroke. Without merging,
     // undo walks back through "12.", "12", "1" one press at a time, which is
@@ -275,7 +280,11 @@ export const useStore = create<AppState>((set, get) => ({
     const { past, doc, future } = get()
     if (past.length === 0) return
     const previous = past[past.length - 1]
-    set({ doc: previous, past: past.slice(0, -1), future: [doc, ...future].slice(0, HISTORY_LIMIT) })
+    const active = get().activeSketch
+    const activeSketch = active && previous.bodies.some((b) => b.id === active.bodyId && b.features.some((f) => f.id === active.featureId)) ? active : null
+    set({ doc: previous, past: past.slice(0, -1), future: [doc, ...future].slice(0, HISTORY_LIMIT),
+      selection: { kind: 'none' }, subSelection: [], sketchSelection: [], hovered: null,
+      activeSketch, tool: activeSketch ? get().tool : 'select', sketchStatus: null })
     get().rebuild()
   },
 
@@ -283,7 +292,11 @@ export const useStore = create<AppState>((set, get) => ({
     lastMerge = null
     const { future, doc, past } = get()
     if (future.length === 0) return
-    set({ doc: future[0], future: future.slice(1), past: [...past, doc].slice(-HISTORY_LIMIT) })
+    const active = get().activeSketch
+    const activeSketch = active && future[0].bodies.some((b) => b.id === active.bodyId && b.features.some((f) => f.id === active.featureId)) ? active : null
+    set({ doc: future[0], future: future.slice(1), past: [...past, doc].slice(-HISTORY_LIMIT),
+      selection: { kind: 'none' }, subSelection: [], sketchSelection: [], hovered: null,
+      activeSketch, tool: activeSketch ? get().tool : 'select', sketchStatus: null })
     get().rebuild()
   },
 
@@ -412,6 +425,8 @@ export const useStore = create<AppState>((set, get) => ({
         const body = d.bodies.find((b) => b.id === bodyId)
         const index = body?.features.findIndex((f) => f.id === featureId) ?? -1
         if (body && index >= 0) {
+          // Explicit numeric editing detaches that field's formula; Undo restores both.
+          d.bindings=d.bindings?.filter(link=>!(link.bodyId===bodyId&&link.featureId===featureId&&typeof (patch as Record<string,unknown>)[link.field]==='number'))
           body.features[index] = { ...body.features[index], ...patch } as Feature
         }
       },
@@ -510,7 +525,8 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   startSketch(plane, bodyId) {
-    const targetBody = bodyId ?? get().doc.bodies[0]?.id ?? get().addBody()
+    // Create starts a new body. Drawing on an existing face passes its body explicitly.
+    const targetBody = bodyId ?? newId('body')
     const featureId = newId('sketch')
     const feature: SketchFeature = {
       id: featureId,
@@ -519,10 +535,13 @@ export const useStore = create<AppState>((set, get) => ({
       plane,
       sketch: emptySketch(),
     }
-    get().addFeature(targetBody, feature)
+    get().commit((doc) => {
+      if (!bodyId) doc.bodies.push({ id: targetBody, name: `Part ${doc.bodies.length + 1}`, visible: true, colour: '#b9c0c7', features: [] })
+      doc.bodies.find((body) => body.id === targetBody)?.features.push(feature)
+    })
     set({
       activeSketch: { bodyId: targetBody, featureId },
-      tool: 'rectangle',
+      tool: 'select',
       selection: { kind: 'feature', id: featureId, bodyId: targetBody },
     })
   },
@@ -536,7 +555,9 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   closeSketch() {
-    set({ activeSketch: null, tool: 'select', sketchStatus: null, sketchSelection: [] })
+    const active = get().activeSketch
+    set({ activeSketch: null, tool: 'select', sketchStatus: null, sketchSelection: [],
+      ...(active ? { selection: { kind: 'feature' as const, bodyId: active.bodyId, id: active.featureId } } : {}) })
   },
 
   editSketch(fn, opts) {

@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../doc/store'
 import { EXPORT_FORMATS, exportShape } from '../export'
 import type { ExportFormat } from '../kernel/types'
 
 export function ExportDialog({ onClose }: { onClose: () => void }) {
+  const dialog = useRef<HTMLDialogElement>(null)
+  useEffect(() => { dialog.current?.showModal() }, [])
   const shapes = useStore((s) => s.shapes)
   const selection = useStore((s) => s.selection)
   const bodies = shapes.filter((s) => s.kind === 'body')
@@ -16,14 +18,14 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
   const chosen = bodies.find((b) => b.id === target)
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+    <dialog ref={dialog} className="action-dialog" onCancel={onClose} onKeyDown={(e) => e.stopPropagation()} aria-label="Export design">
+      <div>
         <h2>Export</h2>
         <p className="sub">Everything happens in your browser. Nothing is uploaded.</p>
 
         {bodies.length === 0 ? (
           <div className="msg info">
-            There is nothing solid to export yet. Draw a sketch and press Make solid first.
+            Create a solid in the Create toolbar, or draw a closed sketch and choose Extrude.
           </div>
         ) : (
           <>
@@ -78,6 +80,6 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   )
 }

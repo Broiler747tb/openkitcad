@@ -13,6 +13,7 @@ import type { ShapeResult } from '../kernel/types'
 import type { Frame, Vec2, Vec3 } from '../core/math'
 import { frameToWorld } from '../core/math'
 import type { Sketch2D } from '../sketch/types'
+import { usePreferences, type Preferences } from '../doc/preferences'
 import { arcMidpoint } from '../kernel/profile'
 
 export interface ScreenLabel {
@@ -97,7 +98,7 @@ export class ViewportEngine {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2))
     this.renderer.localClippingEnabled = true
-    this.renderer.setClearColor(0x15171a, 1)
+    this.renderer.setClearColor(0xe8eaec, 1)
     container.appendChild(this.renderer.domElement)
 
     this.camera = new THREE.PerspectiveCamera(38, 1, 0.5, 20000)
@@ -111,10 +112,16 @@ export class ViewportEngine {
     // Middle-drag pans rather than dollies: the wheel already zooms, and every
     // CAD package a tinkerer has touched pans on the middle button.
     this.controls.mouseButtons = {
-      LEFT: THREE.MOUSE.ROTATE,
+      LEFT: null,
       MIDDLE: THREE.MOUSE.PAN,
-      RIGHT: THREE.MOUSE.PAN,
+      RIGHT: null,
     }
+    this.controls.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN }
+
+    // Capture before OrbitControls: its PAN handler swaps to orbit on Shift.
+    this.renderer.domElement.addEventListener('pointerdown', (event) => {
+      if (event.button === 1) this.controls.enableRotate = event.shiftKey
+    }, { capture: true })
 
     this.scene.add(
       this.solidGroup,
@@ -147,7 +154,7 @@ export class ViewportEngine {
   }
 
   private buildGrid() {
-    const grid = new THREE.GridHelper(1000, 100, 0x3a4048, 0x24282d)
+    const grid = new THREE.GridHelper(1000, 100, 0x969da5, 0xc4c9ce)
     grid.rotation.x = Math.PI / 2
     ;(grid.material as THREE.Material).transparent = true
     ;(grid.material as THREE.Material).opacity = 0.55
@@ -166,6 +173,33 @@ export class ViewportEngine {
     axes.add(axis([0, 40, 0], 0x74b352))
     axes.add(axis([0, 0, 40], 0x4d8fd6))
     this.gridGroup.add(axes)
+  }
+
+  setGridPreferences(p:Preferences, frame:Frame|null) {
+    for(const child of [...this.gridGroup.children]) {
+      this.gridGroup.remove(child)
+      child.traverse(obj=>{const mesh=obj as THREE.LineSegments;if(mesh.geometry)mesh.geometry.dispose();if(mesh.material){for(const m of Array.isArray(mesh.material)?mesh.material:[mesh.material])m.dispose()}})
+    }
+    this.gridGroup.position.set(0,0,0);this.gridGroup.quaternion.identity()
+    if(frame) {
+      this.gridGroup.position.set(...frame.origin)
+      this.gridGroup.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(...frame.xDir),new THREE.Vector3(...frame.yDir),new THREE.Vector3(...frame.normal)))
+    }
+    const add=(positions:number[],colour:number,opacity:number)=>{
+      const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3))
+      this.gridGroup.add(new THREE.LineSegments(geometry,new THREE.LineBasicMaterial({color:colour,transparent:true,opacity,depthWrite:false})))
+    }
+    if(p.gridVisible) {
+      // Decimate visual lines at extreme settings, never change the snapping interval.
+      const stride=Math.max(1,Math.ceil(p.gridExtent/p.gridStep/400))
+      const step=p.gridStep*stride, n=Math.floor(p.gridExtent/step/2), half=n*step
+      const minor:number[]=[],major:number[]=[]
+      for(let i=-n;i<=n;i++){const at=i*step;const lines=(i*stride)%p.majorEvery===0?major:minor;lines.push(at,-half,0,at,half,0,-half,at,0,half,at,0)}
+      add(minor,0xa9b4bf,p.gridOpacity);add(major,0x738597,Math.min(1,p.gridOpacity+0.2))
+    }
+    if(p.axesVisible){const size=p.gridExtent/2;add([-size,0,0,size,0,0],0xc34d44,0.8);add([0,-size,0,0,size,0],0x598d46,0.8)}
+    this.transform?.setTranslationSnap(p.moveSnap||null)
+    this.transform?.setRotationSnap(p.angleSnap?THREE.MathUtils.degToRad(p.angleSnap):null)
   }
 
   // -------------------------------------------------------------------------
@@ -478,8 +512,9 @@ export class ViewportEngine {
     const tc = new TransformControls(this.camera, this.renderer.domElement)
     tc.setSize(0.9)
     // Snap to whole millimetres and 15 degrees. Hold shift for fine control.
-    tc.setTranslationSnap(1)
-    tc.setRotationSnap(THREE.MathUtils.degToRad(15))
+    const preferences=usePreferences.getState().values
+    tc.setTranslationSnap(preferences.moveSnap||null)
+    tc.setRotationSnap(preferences.angleSnap?THREE.MathUtils.degToRad(preferences.angleSnap):null)
 
     tc.addEventListener('dragging-changed', (event) => {
       const dragging = (event as unknown as { value: boolean }).value
@@ -1020,6 +1055,11 @@ export class ViewportEngine {
 
   setControlsEnabled(enabled: boolean) {
     this.controls.enableRotate = enabled
+  }
+
+  setFingerNavigation(orbit: boolean) {
+    this.controls.touches.ONE = orbit ? THREE.TOUCH.ROTATE : THREE.TOUCH.PAN
+    this.controls.enableRotate = orbit
   }
 
   // -------------------------------------------------------------------------

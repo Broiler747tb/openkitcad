@@ -18,7 +18,7 @@ interface Step {
 const STEPS: Step[] = [
   {
     title: 'Draw the outline',
-    body: 'Press New sketch, then drag out a rectangle on the grid. It does not matter how big - we will fix the size next.',
+    body: 'Choose Create Sketch, select XY and click OK. Press R, click one corner of a rectangle, then its opposite corner. Set exact dimensions next.',
     done: (s) =>
       s.doc.bodies.some((b) =>
         b.features.some((f) => f.kind === 'sketch' && f.sketch.entities.length > 0),
@@ -26,7 +26,7 @@ const STEPS: Step[] = [
   },
   {
     title: 'Tell it the real size',
-    body: 'Pick the Size tool, click one edge of your rectangle, and type the length you actually want. Do the same for an edge going the other way.',
+    body: 'Choose Dimension, click an edge, enter its length and press Apply. Repeat for the other direction. Escape returns to Select without leaving the sketch.',
     done: (s) =>
       s.doc.bodies.some((b) =>
         b.features.some(
@@ -40,17 +40,17 @@ const STEPS: Step[] = [
   },
   {
     title: 'Turn it into a solid',
-    body: 'Press Make solid. Your flat outline becomes a real 3 mm plate. You can change the thickness afterwards in the panel on the right.',
+    body: 'Choose Extrude, enter a thickness of 3 mm and press Apply. The closed outline becomes a solid. Its dimensions remain editable in Properties.',
     done: (s) => s.doc.bodies.some((b) => b.features.some((f) => f.kind === 'extrude')),
   },
   {
     title: 'Drop a board onto it',
-    body: 'Open the Parts catalogue on the left and pick a board - a Raspberry Pi, say. Then set its Height so it sits above the plate.',
+    body: 'Choose Insert and search for a board. Click its card to place it. Set Height in Properties so it sits above your plate.',
     done: (s) => s.doc.placements.length > 0,
   },
   {
     title: 'Let it do the tedious bit',
-    body: 'With the board selected, press Mounting holes. The exact hole pattern is cut into your plate. Move the board and the holes follow it.',
+    body: 'Select the board, open ASSEMBLE and choose mounting holes. Pick the target body and press OK. Moving the board also moves its hole pattern.',
     done: (s) =>
       s.doc.bodies.some((b) =>
         b.features.some((f) => f.kind === 'hole' || f.kind === 'standoff'),

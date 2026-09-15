@@ -1202,3 +1202,123 @@ input[type='checkbox'] {
   border-color: rgba(228, 104, 94, 0.4);
   color: var(--err);
 }
+
+/* ------------------------------------------------------------------ mobile */
+
+/*
+ * Below this the three columns will not fit, so the side panels come off the
+ * grid and slide over the model instead. The model keeps the whole screen,
+ * which is the right call on a phone: it is the thing being worked on, and the
+ * panels are consulted rather than watched.
+ */
+.sheet-backdrop,
+.sheet-tabs {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .app,
+  .app.sketching {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'top'
+      'main'
+      'status';
+  }
+
+  .panel-left,
+  .panel-right {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: min(86vw, 340px);
+    z-index: 40;
+    /* Slid on `left`/`right` rather than a transform: the panels sit in a grid
+       area on the desktop layout, and a transform on a grid item was being
+       dropped somewhere between the two. Position is not contested. */
+    transition: left 0.18s ease-out, right 0.18s ease-out;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.55);
+  }
+
+  /*
+   * Position comes from :root, set by App as the panel is opened and closed.
+   * The fallbacks here are what applies before React has written anything, so
+   * the panels start off screen rather than covering the model on first paint.
+   */
+  .panel-left {
+    left: var(--sheet-left, -360px);
+  }
+
+  .panel-right {
+    right: var(--sheet-right, -360px);
+  }
+
+  .app.sheet-left .sheet-backdrop,
+  .app.sheet-right .sheet-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 35;
+    background: rgba(10, 11, 13, 0.5);
+  }
+
+  /* Two tabs at the bottom, within reach of a thumb rather than up by the
+     toolbar where a phone is hardest to reach. */
+  .sheet-tabs {
+    display: flex;
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(34px + env(safe-area-inset-bottom, 0px));
+    z-index: 45;
+    gap: 4px;
+    padding: 4px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
+  }
+
+  .sheet-tabs button {
+    padding: 8px 18px;
+    border-radius: 999px;
+    color: var(--text-dim);
+    font-size: 12.5px;
+  }
+
+  .sheet-tabs button.active {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  /* Touch targets. A 5 px toolbar button is a mouse target, not a finger one. */
+  .tb {
+    padding: 9px 12px;
+  }
+
+  .topbar {
+    gap: 3px;
+    padding: 5px 6px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .sketch-menu {
+    max-width: min(88vw, 300px);
+  }
+
+  .sketch-menu-item,
+  .flyout-group,
+  .flyout-sub {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .quick {
+    padding: 10px 2px 8px;
+  }
+
+  .build-progress {
+    bottom: 92px;
+  }
+}
