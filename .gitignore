@@ -1,6 +1,8 @@
 node_modules/
 dist/
 dist-ssr/
+release/
+release-portable/
 *.local
 
 # Editors
@@ -19,3 +21,9 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 *.log
+
+# Android build outputs and machine-local configuration
+android/.gradle/
+android/**/build/
+android/local.properties
+release-android/
