@@ -1,24 +1,39 @@
-/**
- * Application state.
- *
- * One store holds the document, its undo history, the current selection and
- * the last result from the kernel. Every mutation goes through `commit`, which
- * snapshots for undo and schedules a rebuild, so no caller can accidentally
- * change geometry without the viewport catching up.
- */
 import { create } from 'zustand'
 import { resolveParameters } from './parameters'
-import type { EvaluateResult, KernelError, ShapeResult } from '../kernel/types'
+import type { BodyMesh, EvaluateResult, Instance, KernelError } from '../kernel/types'
 import { requestBuild } from '../kernel/api'
 import {
   emptyDocument,
   type Body,
+  type Component,
   type Feature,
+  type LengthUnit,
+  type Matrix4,
+  type Occurrence,
   type OkcDocument,
-  type Placement,
   type PlaneRef,
   type SketchFeature,
 } from './types'
+import {
+  canMoveFeature,
+  childOccurrences,
+  expandInstances,
+  featureCreatesBodies,
+  featureDependents,
+  featureIndex,
+  featureModifiesBodies,
+  featureReadsBodies,
+  findBody,
+  findComponent,
+  findFeature,
+  findOccurrence,
+  identityMatrix,
+  markerIndex,
+  multiplyMatrices,
+  parseInstanceId,
+  translationMatrix,
+  wouldCreateCycle,
+} from './model'
 import { emptySketch, type Constraint, type NewConstraint, type Sketch2D } from '../sketch/types'
 import { applySolve, solveSketch, type SolveResult } from '../sketch/solver'
 import type { SketchTarget } from '../sketch/inference'
@@ -37,8 +52,10 @@ import {
 } from '../sketch/edit'
 import { getPart, userParts } from '../catalogue'
 import { planHole, planPillar } from '../fasteners'
-import { v3 } from '../core/math'
+import { v3, type Vec3 } from '../core/math'
 import { frameFromPlaneRefLocal } from './planes'
+import { lengthLabel } from '../core/units'
+import { worldBounds, type Bounds } from './placement'
 
 let counter = 0
 export function newId(prefix: string): string {
@@ -46,14 +63,20 @@ export function newId(prefix: string): string {
   return `${prefix}-${counter.toString(36)}${Math.random().toString(36).slice(2, 6)}`
 }
 
+export const DEFAULT_BODY_COLOUR = '#b9c0c7'
+
 export type ToolId =
   'select' | 'line' | 'rectangle' | 'circle' | 'arc' | 'dimension' | 'trim' | 'measure'
 
 export interface Selection {
-  kind: 'none' | 'body' | 'placement' | 'feature' | 'face' | 'edge'
+  kind: 'none' | 'body' | 'occurrence' | 'feature' | 'face' | 'edge'
   id?: string
-  /** For feature selection, which body owns it. */
-  bodyId?: string
+  instanceId?: string
+}
+
+export interface ActiveSketch {
+  featureId: string
+  componentId: string
 }
 
 export interface SectionState {
@@ -68,15 +91,11 @@ interface AppState {
   past: OkcDocument[]
   future: OkcDocument[]
 
-  shapes: ShapeResult[]
+  meshes: Map<string, BodyMesh>
+  instances: Instance[]
   errors: KernelError[]
   buildMs: number
   building: boolean
-  /**
-   * What the app is busy doing, for the progress bar. Separate from `building`
-   * because exporting a STEP file is the slowest thing here and is not a
-   * rebuild.
-   */
   busy: string | null
   setBusy: (busy: string | null) => void
   kernelReady: boolean
@@ -84,25 +103,22 @@ interface AppState {
   selection: Selection
   hovered: string | null
   tool: ToolId
-  /** Set while a sketch is open for editing. */
-  activeSketch: { bodyId: string; featureId: string } | null
+  activeComponentId: string
+  activeSketch: ActiveSketch | null
   sketchStatus: {
     dof: number
     failing: string[]
     closed: boolean
-    /** Geometry the solver says can still move, for colouring it differently. */
     freePoints: string[]
     freeRadii: string[]
   } | null
 
   section: SectionState
   showPlacements: boolean
-  /** Draw ghosts of the screws and inserts the holes were made for. */
   showFasteners: boolean
   setShowFasteners: (show: boolean) => void
   statusMessage: string | null
 
-  // --- actions
   setDoc: (doc: OkcDocument, resetHistory?: boolean) => void
   commit: (
     fn: (draft: OkcDocument) => void,
@@ -117,36 +133,38 @@ interface AppState {
   select: (selection: Selection) => void
   setHovered: (id: string | null) => void
   setStatus: (message: string | null) => void
-  /** Two picked points, for the measure tool. */
   measure: { a: [number, number, number] | null; b: [number, number, number] | null }
   addMeasurePoint: (point: [number, number, number]) => void
   clearMeasure: () => void
   setSection: (patch: Partial<SectionState>) => void
   setShowPlacements: (show: boolean) => void
 
-  addBody: (name?: string) => string
+  setUnits: (units: LengthUnit) => void
+  activateComponent: (componentId: string) => void
+  createComponent: (name?: string) => string
+  linkedCopy: (occurrenceId: string, offset?: Vec3) => string | null
+  insertCatalogue: (partId: string, position?: Vec3) => string
+  updateOccurrence: (
+    id: string,
+    patch: Partial<Omit<Occurrence, 'id'>>,
+    opts?: { transient?: boolean },
+  ) => void
+  removeOccurrence: (id: string) => void
+  updateComponent: (id: string, patch: Partial<Pick<Component, 'name' | 'source'>>) => void
+
+  updateBody: (bodyId: string, patch: Partial<Omit<Body, 'id'>>) => void
   removeBody: (bodyId: string) => void
-  /** Move one body above another, so it is built first. */
-  moveBodyBefore: (bodyId: string, beforeId: string) => void
-  addFeature: (bodyId: string, feature: Feature) => void
+  addFeature: (feature: Feature, bodies?: Record<string, Partial<Body>>) => void
+  addFeatures: (features: Feature[], bodies?: Record<string, Partial<Body>>) => void
   updateFeature: (
-    bodyId: string,
     featureId: string,
     patch: Partial<Feature>,
     opts?: { transient?: boolean },
   ) => void
-  removeFeature: (bodyId: string, featureId: string) => void
-  moveFeature: (bodyId: string, featureId: string, delta: number) => void
+  removeFeature: (featureId: string, opts?: { withDependents?: boolean }) => boolean
+  moveFeature: (featureId: string, toIndex: number) => boolean
+  setMarker: (index: number | null) => void
 
-  addPlacement: (partId: string, position?: [number, number, number]) => string
-  updatePlacement: (id: string, patch: Partial<Placement>, opts?: { transient?: boolean }) => void
-  removePlacement: (id: string) => void
-
-  /**
-   * Bracket a drag so it lands in the undo history as one step rather than
-   * sixty. Without this, dragging a gizmo across the screen buries everything
-   * that came before it under a hundred identical undo entries.
-   */
   gizmoMode: 'translate' | 'rotate'
   setGizmoMode: (mode: 'translate' | 'rotate') => void
   transientBase: OkcDocument | null
@@ -154,34 +172,327 @@ interface AppState {
   endTransient: () => void
 
   startSketch: (plane: PlaneRef, bodyId?: string) => void
-  openSketch: (bodyId: string, featureId: string) => void
+  openSketch: (featureId: string) => void
   closeSketch: () => void
   editSketch: (fn: (sketch: Sketch2D) => void, opts?: { transient?: boolean }) => void
   solveActiveSketch: (drag?: { point: string; x: number; y: number }) => SolveResult | null
   addConstraint: (constraint: NewConstraint) => void
 
-  /**
-   * Faces, edges and corners picked on a built solid. Shift-clicking adds to
-   * it, which is what makes per-edge operations possible.
-   */
   subSelection: SubPick[]
   setSubSelection: (picks: SubPick[]) => void
 
-  /** What the user has picked inside the open sketch, for the right-click menu. */
   sketchSelection: SketchTarget[]
   setSketchSelection: (selection: SketchTarget[]) => void
   applySketchAction: (result: ActionResult) => void
 }
 
+export type StoreState = AppState
+
 const HISTORY_LIMIT = 80
 let statusTimer: number | undefined
-/** How long edits to the same field keep folding into one undo step. */
 const MERGE_WINDOW_MS = 900
 let lastMerge: { key: string; at: number } | null = null
 let buildTicket = 0
+const sketchTargets = new Map<string, string>()
 
 function clone<T>(v: T): T {
   return structuredClone(v)
+}
+
+export function insertFeatures(
+  doc: OkcDocument,
+  features: Feature[],
+  bodies: Record<string, Partial<Body>> = {},
+): void {
+  const at = markerIndex(doc)
+  doc.timeline.splice(at, 0, ...features)
+  if (doc.marker !== null) doc.marker = at + features.length
+  for (const feature of features) {
+    const component = findComponent(doc, feature.componentId)
+    if (!component) continue
+    for (const bodyId of featureCreatesBodies(feature)) {
+      if (findBody(doc, bodyId)) continue
+      component.bodies.push({
+        name: nextBodyName(doc),
+        visible: true,
+        colour: DEFAULT_BODY_COLOUR,
+        ...bodies[bodyId],
+        id: bodyId,
+      })
+    }
+  }
+}
+
+export function nextBodyName(doc: OkcDocument, base = 'Body'): string {
+  const names = new Set(doc.components.flatMap((c) => c.bodies.map((b) => b.name)))
+  let n = doc.components.reduce((sum, c) => sum + c.bodies.length, 0) + 1
+  while (names.has(`${base}${n}`)) n++
+  return `${base}${n}`
+}
+
+export function dependentClosure(doc: OkcDocument, ids: Iterable<string>): Set<string> {
+  const out = new Set<string>(ids)
+  const stack = [...out]
+  while (stack.length) {
+    const id = stack.pop()!
+    for (const dependent of featureDependents(doc, id)) {
+      if (out.has(dependent.id)) continue
+      out.add(dependent.id)
+      stack.push(dependent.id)
+    }
+  }
+  return out
+}
+
+export function deleteFeatures(doc: OkcDocument, ids: Set<string>): void {
+  if (!ids.size) return
+  const bodies = new Set<string>()
+  let before = 0
+  doc.timeline.forEach((feature, index) => {
+    if (!ids.has(feature.id)) return
+    for (const bodyId of featureCreatesBodies(feature)) bodies.add(bodyId)
+    if (doc.marker !== null && index < doc.marker) before++
+  })
+  doc.timeline = doc.timeline.filter((feature) => !ids.has(feature.id))
+  if (doc.marker !== null) {
+    doc.marker = Math.min(Math.max(0, doc.marker - before), doc.timeline.length)
+  }
+  for (const component of doc.components) {
+    component.bodies = component.bodies.filter((body) => !bodies.has(body.id))
+  }
+  doc.groups = doc.groups.filter((group) => !ids.has(group.firstId) && !ids.has(group.lastId))
+}
+
+export function occurrenceReferences(feature: Feature): string[] {
+  if (
+    (feature.kind === 'hole' || feature.kind === 'standoff') &&
+    feature.source.kind === 'occurrence'
+  )
+    return [...feature.source.occurrencePath, ...feature.source.contextPath]
+  if (feature.kind === 'portCutout') return [...feature.occurrencePath, ...feature.contextPath]
+  return []
+}
+
+export function removeBodyFromDocument(doc: OkcDocument, bodyId: string): void {
+  const others = (ids: string[]) => ids.filter((id) => id !== bodyId)
+  for (const feature of doc.timeline) {
+    if (
+      'result' in feature &&
+      (feature.result.kind === 'cut' || feature.result.kind === 'intersect') &&
+      feature.result.bodyIds.length > 1
+    )
+      feature.result.bodyIds = others(feature.result.bodyIds)
+    if (feature.kind === 'move' && feature.bodyIds.length > 1)
+      feature.bodyIds = others(feature.bodyIds)
+    if (feature.kind === 'combine' && feature.toolBodyIds.length > 1)
+      feature.toolBodyIds = others(feature.toolBodyIds)
+  }
+  const touching = doc.timeline.filter(
+    (feature) =>
+      featureCreatesBodies(feature).includes(bodyId) ||
+      featureModifiesBodies(feature).includes(bodyId) ||
+      featureReadsBodies(feature).includes(bodyId),
+  )
+  deleteFeatures(
+    doc,
+    dependentClosure(
+      doc,
+      touching.map((feature) => feature.id),
+    ),
+  )
+  for (const component of doc.components) {
+    component.bodies = component.bodies.filter((body) => body.id !== bodyId)
+  }
+}
+
+export function removeOccurrencesFromDocument(doc: OkcDocument, ids: string[]): void {
+  const goneOccurrences = new Set<string>()
+  const goneComponents = new Set<string>()
+  const queue = [...ids]
+  while (queue.length) {
+    const id = queue.pop()!
+    if (goneOccurrences.has(id)) continue
+    const occurrence = findOccurrence(doc, id)
+    if (!occurrence) continue
+    goneOccurrences.add(id)
+    const componentId = occurrence.componentId
+    if (componentId === doc.rootComponentId || goneComponents.has(componentId)) continue
+    if (doc.occurrences.some((o) => o.componentId === componentId && !goneOccurrences.has(o.id)))
+      continue
+    goneComponents.add(componentId)
+    for (const child of childOccurrences(doc, componentId)) queue.push(child.id)
+  }
+  const features = doc.timeline.filter(
+    (feature) =>
+      goneComponents.has(feature.componentId) ||
+      occurrenceReferences(feature).some((id) => goneOccurrences.has(id)),
+  )
+  deleteFeatures(
+    doc,
+    dependentClosure(
+      doc,
+      features.map((feature) => feature.id),
+    ),
+  )
+  doc.occurrences = doc.occurrences.filter((o) => !goneOccurrences.has(o.id))
+  doc.components = doc.components.filter((c) => !goneComponents.has(c.id))
+}
+
+export function occurrenceName(doc: OkcDocument, component: Component): string {
+  const names = new Set(doc.occurrences.map((o) => o.name))
+  const existing = doc.occurrences.filter((o) => o.componentId === component.id).length
+  if (component.source.kind === 'catalogue' && existing === 0 && !names.has(component.name))
+    return component.name
+  let n = existing + 1
+  while (names.has(`${component.name}:${n}`)) n++
+  return `${component.name}:${n}`
+}
+
+function componentName(doc: OkcDocument): string {
+  const names = new Set(doc.components.map((c) => c.name))
+  let n = 1
+  while (names.has(`Component${n}`)) n++
+  return `Component${n}`
+}
+
+export function componentInstance(
+  doc: OkcDocument,
+  componentId: string,
+): { path: string[]; matrix: Matrix4 } | null {
+  const node = expandInstances(doc).find((candidate) => candidate.componentId === componentId)
+  return node ? { path: node.path, matrix: node.matrix } : null
+}
+
+export function occurrencePathOf(
+  doc: OkcDocument,
+  occurrenceId: string,
+  instanceId?: string,
+): string[] | null {
+  if (instanceId) {
+    const { path } = parseInstanceId(instanceId)
+    const at = path.indexOf(occurrenceId)
+    if (at >= 0) return path.slice(0, at + 1)
+  }
+  return (
+    expandInstances(doc).find((node) => node.path[node.path.length - 1] === occurrenceId)?.path ??
+    null
+  )
+}
+
+export function targetBodies(doc: OkcDocument): Array<{ value: string; label: string }> {
+  const placed = new Set(expandInstances(doc).map((node) => node.componentId))
+  return doc.components
+    .filter((component) => component.source.kind === 'design' && placed.has(component.id))
+    .flatMap((component) =>
+      component.bodies.map((body) => ({
+        value: body.id,
+        label:
+          component.id === doc.rootComponentId ? body.name : `${component.name} / ${body.name}`,
+      })),
+    )
+}
+
+export function componentMatrix(doc: OkcDocument, componentId: string): Matrix4 {
+  return componentInstance(doc, componentId)?.matrix ?? identityMatrix()
+}
+
+export function bodyInstance(
+  state: Pick<AppState, 'instances'>,
+  bodyId: string,
+): Instance | undefined {
+  return state.instances.find((instance) => instance.kind === 'body' && instance.bodyId === bodyId)
+}
+
+export function bodyBounds(
+  state: Pick<AppState, 'instances' | 'meshes'>,
+  bodyId: string,
+): Bounds | undefined {
+  const instance = bodyInstance(state, bodyId)
+  return instance ? state.meshes.get(instance.meshKey)?.bounds : undefined
+}
+
+export function instanceWorldBounds(
+  state: Pick<AppState, 'meshes'>,
+  instance: Instance,
+): Bounds | undefined {
+  const bounds = state.meshes.get(instance.meshKey)?.bounds
+  return bounds ? worldBounds(bounds, instance.matrix) : undefined
+}
+
+export function sketchTargetBody(doc: OkcDocument, sketch: SketchFeature): string | undefined {
+  const produced = doc.timeline.flatMap((feature) =>
+    (feature.kind === 'extrude' || feature.kind === 'revolve') && feature.sketchId === sketch.id
+      ? [
+          feature.result.kind === 'newBody' || feature.result.kind === 'join'
+            ? feature.result.bodyId
+            : feature.result.bodyIds[0],
+        ]
+      : [],
+  )
+  const candidates = [
+    sketch.plane.kind === 'face' ? sketch.plane.face.bodyId : undefined,
+    sketchTargets.get(sketch.id),
+    ...produced,
+  ]
+  return candidates.find((id) => !!id && findBody(doc, id)?.component.id === sketch.componentId)
+}
+
+export function selectedBodyId(state: Pick<AppState, 'doc' | 'selection'>): string | undefined {
+  const s = state.selection
+  if ((s.kind === 'body' || s.kind === 'face' || s.kind === 'edge') && s.id)
+    return findBody(state.doc, s.id) ? s.id : undefined
+  if (s.kind === 'feature' && s.id) {
+    const feature = findFeature(state.doc, s.id)
+    if (!feature) return undefined
+    return [...featureCreatesBodies(feature), ...featureModifiesBodies(feature)].find(
+      (id) => !!findBody(state.doc, id),
+    )
+  }
+  return undefined
+}
+
+export function activeComponentOf(state: Pick<AppState, 'doc' | 'activeComponentId'>): string {
+  const component = findComponent(state.doc, state.activeComponentId)
+  return component && component.source.kind === 'design' ? component.id : state.doc.rootComponentId
+}
+
+function reconcile(state: AppState, doc: OkcDocument): Partial<AppState> {
+  const out: Partial<AppState> = {}
+  if (!findComponent(doc, state.activeComponentId)) out.activeComponentId = doc.rootComponentId
+  if (state.activeSketch && findFeature(doc, state.activeSketch.featureId)?.kind !== 'sketch') {
+    out.activeSketch = null
+    out.sketchStatus = null
+    out.sketchSelection = []
+    out.tool = 'select'
+  }
+  const s = state.selection
+  const gone =
+    s.kind === 'body' || s.kind === 'face' || s.kind === 'edge'
+      ? !findBody(doc, s.id ?? '')
+      : s.kind === 'occurrence'
+        ? !findOccurrence(doc, s.id ?? '')
+        : s.kind === 'feature'
+          ? !findFeature(doc, s.id ?? '')
+          : false
+  if (gone) out.selection = { kind: 'none' }
+  const picks = state.subSelection.filter((pick) => findBody(doc, pick.bodyId))
+  if (picks.length !== state.subSelection.length) out.subSelection = picks
+  return out
+}
+
+function copyOffset(state: AppState, occurrenceId: string): Vec3 {
+  let lo = Infinity
+  let hi = -Infinity
+  for (const instance of state.instances) {
+    if (!instance.path.includes(occurrenceId)) continue
+    const bounds = instanceWorldBounds(state, instance)
+    if (!bounds) continue
+    lo = Math.min(lo, bounds[0])
+    hi = Math.max(hi, bounds[3])
+  }
+  return Number.isFinite(lo) && Number.isFinite(hi)
+    ? [Math.round((hi - lo + 10) * 1000) / 1000, 0, 0]
+    : [10, 10, 0]
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -189,7 +500,8 @@ export const useStore = create<AppState>((set, get) => ({
   past: [],
   future: [],
 
-  shapes: [],
+  meshes: new Map(),
+  instances: [],
   errors: [],
   buildMs: 0,
   building: false,
@@ -199,6 +511,7 @@ export const useStore = create<AppState>((set, get) => ({
   selection: { kind: 'none' },
   hovered: null,
   tool: 'select',
+  activeComponentId: emptyDocument().rootComponentId,
   activeSketch: null,
   sketchStatus: null,
 
@@ -217,10 +530,13 @@ export const useStore = create<AppState>((set, get) => ({
             past: [],
             future: [],
             activeSketch: null,
+            sketchStatus: null,
             selection: { kind: 'none' },
             subSelection: [],
+            sketchSelection: [],
+            activeComponentId: doc.rootComponentId,
           }
-        : { doc },
+        : { doc, ...reconcile(get(), doc) },
     )
     get().rebuild()
   },
@@ -231,9 +547,6 @@ export const useStore = create<AppState>((set, get) => ({
     fn(next)
     resolveParameters(next, true)
 
-    // Typing "12.5" into a box fires an edit per keystroke. Without merging,
-    // undo walks back through "12.", "12", "1" one press at a time, which is
-    // what makes Ctrl+Z feel like it is not working.
     const now = performance.now()
     const merges =
       !!opts?.mergeKey &&
@@ -242,13 +555,15 @@ export const useStore = create<AppState>((set, get) => ({
       now - lastMerge.at < MERGE_WINDOW_MS
     lastMerge = opts?.mergeKey ? { key: opts.mergeKey, at: now } : null
 
+    const fixes = reconcile(state, next)
     if (opts?.transient || merges) {
-      set({ doc: next })
+      set({ doc: next, ...fixes })
     } else {
       set({
         doc: next,
         past: [...state.past, state.doc].slice(-HISTORY_LIMIT),
         future: [],
+        ...fixes,
       })
     }
     get().rebuild()
@@ -256,17 +571,13 @@ export const useStore = create<AppState>((set, get) => ({
 
   undo() {
     lastMerge = null
-    const { past, doc, future } = get()
+    const state = get()
+    const { past, doc, future } = state
     if (past.length === 0) return
     const previous = past[past.length - 1]
-    const active = get().activeSketch
+    const active = state.activeSketch
     const activeSketch =
-      active &&
-      previous.bodies.some(
-        (b) => b.id === active.bodyId && b.features.some((f) => f.id === active.featureId),
-      )
-        ? active
-        : null
+      active && findFeature(previous, active.featureId)?.kind === 'sketch' ? active : null
     set({
       doc: previous,
       past: past.slice(0, -1),
@@ -276,26 +587,26 @@ export const useStore = create<AppState>((set, get) => ({
       sketchSelection: [],
       hovered: null,
       activeSketch,
-      tool: activeSketch ? get().tool : 'select',
+      tool: activeSketch ? state.tool : 'select',
       sketchStatus: null,
+      activeComponentId: findComponent(previous, state.activeComponentId)
+        ? state.activeComponentId
+        : previous.rootComponentId,
     })
     get().rebuild()
   },
 
   redo() {
     lastMerge = null
-    const { future, doc, past } = get()
+    const state = get()
+    const { future, doc, past } = state
     if (future.length === 0) return
-    const active = get().activeSketch
+    const next = future[0]
+    const active = state.activeSketch
     const activeSketch =
-      active &&
-      future[0].bodies.some(
-        (b) => b.id === active.bodyId && b.features.some((f) => f.id === active.featureId),
-      )
-        ? active
-        : null
+      active && findFeature(next, active.featureId)?.kind === 'sketch' ? active : null
     set({
-      doc: future[0],
+      doc: next,
       future: future.slice(1),
       past: [...past, doc].slice(-HISTORY_LIMIT),
       selection: { kind: 'none' },
@@ -303,25 +614,36 @@ export const useStore = create<AppState>((set, get) => ({
       sketchSelection: [],
       hovered: null,
       activeSketch,
-      tool: activeSketch ? get().tool : 'select',
+      tool: activeSketch ? state.tool : 'select',
       sketchStatus: null,
+      activeComponentId: findComponent(next, state.activeComponentId)
+        ? state.activeComponentId
+        : next.rootComponentId,
     })
     get().rebuild()
   },
 
   rebuild() {
-    // Custom parts ride along with the document: the worker cannot read them
-    // from storage itself.
     const doc = { ...get().doc, customParts: userParts() }
     const ticket = ++buildTicket
     set({ building: true })
-    requestBuild(doc).then((result: EvaluateResult) => {
-      // Results can arrive out of order. Comparing a sequence number is exact,
-      // where the old identity check could drop a result that was actually the
-      // newest and leave stale geometry on screen.
+    requestBuild(doc, () => [...get().meshes.keys()]).then((result: EvaluateResult) => {
       if (ticket !== buildTicket) return
+      const crashed =
+        result.instances.length === 0 &&
+        result.meshes.length === 0 &&
+        result.errors.some((error) => error.featureId === '')
+      if (crashed && get().instances.length) {
+        set({ errors: result.errors, buildMs: result.elapsedMs, building: false })
+        return
+      }
+      const meshes = new Map(get().meshes)
+      for (const mesh of result.meshes) meshes.set(mesh.key, mesh)
+      const used = new Set(result.instances.map((instance) => instance.meshKey))
+      for (const key of [...meshes.keys()]) if (!used.has(key)) meshes.delete(key)
       set({
-        shapes: result.shapes,
+        meshes,
+        instances: result.instances,
         errors: result.errors,
         buildMs: result.elapsedMs,
         building: false,
@@ -347,8 +669,6 @@ export const useStore = create<AppState>((set, get) => ({
   },
   setStatus(statusMessage) {
     set({ statusMessage })
-    // Clear itself after a few seconds. A message that stays forever stops
-    // being read, and the next one then goes unnoticed too.
     clearTimeout(statusTimer)
     if (statusMessage) {
       statusTimer = setTimeout(() => {
@@ -360,7 +680,6 @@ export const useStore = create<AppState>((set, get) => ({
   measure: { a: null, b: null },
   addMeasurePoint(point) {
     const current = get().measure
-    // Third click starts a fresh measurement rather than extending the old one.
     const next =
       current.a && current.b
         ? { a: point, b: null }
@@ -369,12 +688,14 @@ export const useStore = create<AppState>((set, get) => ({
           : { a: point, b: null }
     set({ measure: next })
     if (next.a && next.b) {
+      const unit = get().doc.units
       const dx = next.b[0] - next.a[0]
       const dy = next.b[1] - next.a[1]
       const dz = next.b[2] - next.a[2]
       const d = Math.hypot(dx, dy, dz)
+      const show = (mm: number) => lengthLabel(mm, unit, false)
       get().setStatus(
-        `${d.toFixed(2)} mm apart  (across ${dx.toFixed(2)}, along ${dy.toFixed(2)}, up ${dz.toFixed(2)})`,
+        `${show(d)} ${unit} apart  (across ${show(dx)}, along ${show(dy)}, up ${show(dz)})`,
       )
     } else {
       get().setStatus('Now click the second point.')
@@ -393,116 +714,227 @@ export const useStore = create<AppState>((set, get) => ({
     set({ showPlacements })
   },
 
-  addBody(name) {
-    const id = newId('body')
+  setUnits(units) {
+    if (get().doc.units === units) return
     get().commit((d) => {
-      d.bodies.push({
-        id,
-        name: name ?? `Part ${d.bodies.length + 1}`,
+      d.units = units
+    })
+  },
+
+  activateComponent(componentId) {
+    const component = findComponent(get().doc, componentId)
+    if (!component || component.source.kind !== 'design') return
+    set({ activeComponentId: componentId })
+  },
+
+  createComponent(name) {
+    const parent = activeComponentOf(get())
+    const componentId = newId('comp')
+    const occurrenceId = newId('occ')
+    get().commit((d) => {
+      const component: Component = {
+        id: componentId,
+        name: name ?? componentName(d),
+        source: { kind: 'design' },
+        bodies: [],
+      }
+      d.components.push(component)
+      d.occurrences.push({
+        id: occurrenceId,
+        parentComponentId: parent,
+        componentId,
+        name: occurrenceName(d, component),
+        transform: identityMatrix(),
         visible: true,
-        colour: '#b9c0c7',
-        features: [],
+        grounded: false,
       })
     })
+    set({
+      activeComponentId: componentId,
+      selection: { kind: 'occurrence', id: occurrenceId },
+      subSelection: [],
+    })
+    return occurrenceId
+  },
+
+  linkedCopy(occurrenceId, offset) {
+    const state = get()
+    const source = findOccurrence(state.doc, occurrenceId)
+    if (!source) return null
+    if (wouldCreateCycle(state.doc, source.parentComponentId, source.componentId)) {
+      state.setStatus('A component cannot contain a copy of itself.')
+      return null
+    }
+    const id = newId('occ')
+    const shift = offset ?? copyOffset(state, occurrenceId)
+    state.commit((d) => {
+      const component = findComponent(d, source.componentId)
+      if (!component) return
+      d.occurrences.push({
+        ...clone(source),
+        id,
+        name: occurrenceName(d, component),
+        transform: multiplyMatrices(translationMatrix(shift), source.transform),
+      })
+    })
+    set({ selection: { kind: 'occurrence', id }, subSelection: [] })
     return id
   },
 
-  removeBody(bodyId) {
+  insertCatalogue(partId, position = [0, 0, 0]) {
+    const part = getPart(partId)
+    const parent = activeComponentOf(get())
+    const componentId = newId('part')
+    const occurrenceId = newId('occ')
     get().commit((d) => {
-      d.bodies = d.bodies.filter((b) => b.id !== bodyId)
+      const component: Component = {
+        id: componentId,
+        name: part?.name ?? partId,
+        source: { kind: 'catalogue', partId },
+        bodies: [],
+      }
+      d.components.push(component)
+      d.occurrences.push({
+        id: occurrenceId,
+        parentComponentId: parent,
+        componentId,
+        name: occurrenceName(d, component),
+        transform: translationMatrix(position),
+        visible: true,
+        grounded: false,
+      })
     })
-    if (get().selection.id === bodyId) set({ selection: { kind: 'none' } })
+    set({ selection: { kind: 'occurrence', id: occurrenceId }, subSelection: [] })
+    return occurrenceId
   },
 
-  moveBodyBefore(bodyId, beforeId) {
-    get().commit((d) => {
-      const from = d.bodies.findIndex((b) => b.id === bodyId)
-      const to = d.bodies.findIndex((b) => b.id === beforeId)
-      if (from < 0 || to < 0 || from < to) return
-      const [moved] = d.bodies.splice(from, 1)
-      d.bodies.splice(to, 0, moved)
-    })
-  },
-
-  addFeature(bodyId, feature) {
-    get().commit((d) => {
-      d.bodies.find((b) => b.id === bodyId)?.features.push(feature)
-    })
-  },
-
-  updateFeature(bodyId, featureId, patch, opts) {
+  updateOccurrence(id, patch, opts) {
     get().commit(
       (d) => {
-        const body = d.bodies.find((b) => b.id === bodyId)
-        const index = body?.features.findIndex((f) => f.id === featureId) ?? -1
-        if (body && index >= 0) {
-          // Explicit numeric editing detaches that field's formula; Undo restores both.
-          d.bindings = d.bindings?.filter(
-            (link) =>
-              !(
-                link.bodyId === bodyId &&
-                link.featureId === featureId &&
-                typeof (patch as Record<string, unknown>)[link.field] === 'number'
-              ),
-          )
-          body.features[index] = { ...body.features[index], ...patch } as Feature
+        const occurrence = findOccurrence(d, id)
+        if (occurrence) Object.assign(occurrence, patch)
+      },
+      { ...opts, mergeKey: `occurrence:${id}:${Object.keys(patch).join(',')}` },
+    )
+  },
+
+  removeOccurrence(id) {
+    get().commit((d) => removeOccurrencesFromDocument(d, [id]))
+  },
+
+  updateComponent(id, patch) {
+    get().commit(
+      (d) => {
+        const component = findComponent(d, id)
+        if (component) Object.assign(component, patch)
+      },
+      { mergeKey: `component:${id}:${Object.keys(patch).join(',')}` },
+    )
+  },
+
+  updateBody(bodyId, patch) {
+    get().commit(
+      (d) => {
+        const found = findBody(d, bodyId)
+        if (found) Object.assign(found.body, patch)
+      },
+      { mergeKey: `body:${bodyId}:${Object.keys(patch).join(',')}` },
+    )
+  },
+
+  removeBody(bodyId) {
+    get().commit((d) => removeBodyFromDocument(d, bodyId))
+  },
+
+  addFeature(feature, bodies) {
+    get().commit((d) => insertFeatures(d, [feature], bodies))
+  },
+
+  addFeatures(features, bodies) {
+    get().commit((d) => insertFeatures(d, features, bodies))
+  },
+
+  updateFeature(featureId, patch, opts) {
+    get().commit(
+      (d) => {
+        const index = featureIndex(d, featureId)
+        if (index < 0) return
+        d.bindings = d.bindings.filter(
+          (link) =>
+            !(
+              link.featureId === featureId &&
+              typeof (patch as Record<string, unknown>)[link.field] === 'number'
+            ),
+        )
+        const before = featureCreatesBodies(d.timeline[index])
+        const updated = { ...d.timeline[index], ...patch } as Feature
+        d.timeline[index] = updated
+        const after = featureCreatesBodies(updated)
+        for (const bodyId of before) {
+          if (after.includes(bodyId)) continue
+          for (const component of d.components) {
+            component.bodies = component.bodies.filter((body) => body.id !== bodyId)
+          }
+        }
+        const component = findComponent(d, updated.componentId)
+        for (const bodyId of after) {
+          if (findBody(d, bodyId) || !component) continue
+          component.bodies.push({
+            id: bodyId,
+            name: nextBodyName(d),
+            visible: true,
+            colour: DEFAULT_BODY_COLOUR,
+          })
         }
       },
       {
-        // A gizmo drag is one undo step, not one per frame. Merging alone is
-        // not enough: a slow drag outlasts the merge window and would leave a
-        // trail of half-moves behind it.
         transient: opts?.transient,
         mergeKey: `feature:${featureId}:${Object.keys(patch).join(',')}`,
       },
     )
   },
 
-  removeFeature(bodyId, featureId) {
-    get().commit((d) => {
-      const body = d.bodies.find((b) => b.id === bodyId)
-      if (body) body.features = body.features.filter((f) => f.id !== featureId)
-    })
+  removeFeature(featureId, opts) {
+    const state = get()
+    const feature = findFeature(state.doc, featureId)
+    if (!feature) return false
+    const closure = dependentClosure(state.doc, [featureId])
+    if (closure.size > 1 && !opts?.withDependents) {
+      const names = state.doc.timeline
+        .filter((f) => closure.has(f.id) && f.id !== featureId)
+        .map((f) => f.name)
+      state.setStatus(
+        `${feature.name} can't be deleted on its own: ${names.join(', ')} ${names.length === 1 ? 'depends' : 'depend'} on it.`,
+      )
+      return false
+    }
+    state.commit((d) => deleteFeatures(d, closure))
+    return true
   },
 
-  moveFeature(bodyId, featureId, delta) {
-    get().commit((d) => {
-      const body = d.bodies.find((b) => b.id === bodyId)
-      if (!body) return
-      const i = body.features.findIndex((f) => f.id === featureId)
-      const j = i + delta
-      if (i < 0 || j < 0 || j >= body.features.length) return
-      const [moved] = body.features.splice(i, 1)
-      body.features.splice(j, 0, moved)
+  moveFeature(featureId, toIndex) {
+    const state = get()
+    const from = featureIndex(state.doc, featureId)
+    if (from < 0 || from === toIndex) return false
+    if (!canMoveFeature(state.doc, featureId, toIndex)) {
+      state.setStatus('That would put a step before something it depends on.')
+      return false
+    }
+    state.commit((d) => {
+      const index = featureIndex(d, featureId)
+      const [moved] = d.timeline.splice(index, 1)
+      d.timeline.splice(toIndex, 0, moved)
     })
+    return true
   },
 
-  addPlacement(partId, position) {
-    const id = newId('place')
-    const part = getPart(partId)
+  setMarker(index) {
+    const doc = get().doc
+    const next = index === null || index >= doc.timeline.length ? null : Math.max(0, index)
+    if (next === doc.marker) return
     get().commit((d) => {
-      d.placements.push({
-        id,
-        partId,
-        name: part?.name ?? partId,
-        position: position ?? [0, 0, 0],
-        rotation: 0,
-        flipped: false,
-        visible: true,
-      })
+      d.marker = next
     })
-    set({ selection: { kind: 'placement', id } })
-    return id
-  },
-
-  updatePlacement(id, patch, opts) {
-    get().commit(
-      (d) => {
-        const i = d.placements.findIndex((p) => p.id === id)
-        if (i >= 0) d.placements[i] = { ...d.placements[i], ...patch }
-      },
-      { ...opts, mergeKey: `placement:${id}:${Object.keys(patch).join(',')}` },
-    )
   },
 
   gizmoMode: 'translate',
@@ -524,58 +956,37 @@ export const useStore = create<AppState>((set, get) => ({
     set({ transientBase: null })
   },
 
-  removePlacement(id) {
-    get().commit((d) => {
-      d.placements = d.placements.filter((p) => p.id !== id)
-      // Any feature driven by this placement would silently produce nothing,
-      // so drop those too rather than leave dead steps in the tree.
-      for (const body of d.bodies) {
-        body.features = body.features.filter((f) => {
-          if (f.kind === 'portCutout') return f.placementId !== id
-          if ((f.kind === 'hole' || f.kind === 'standoff') && f.source.kind === 'placement') {
-            return f.source.placementId !== id
-          }
-          return true
-        })
-      }
-    })
-    if (get().selection.id === id) set({ selection: { kind: 'none' } })
-  },
-
   startSketch(plane, bodyId) {
-    // Create starts a new body. Drawing on an existing face passes its body explicitly.
-    const targetBody = bodyId ?? newId('body')
+    const state = get()
+    const owner = plane.kind === 'face' ? plane.face.bodyId : bodyId
+    const componentId =
+      (owner ? findBody(state.doc, owner)?.component.id : undefined) ?? activeComponentOf(state)
     const featureId = newId('sketch')
+    if (owner) sketchTargets.set(featureId, owner)
     const feature: SketchFeature = {
       id: featureId,
       kind: 'sketch',
       name: 'Sketch',
+      componentId,
       plane,
       sketch: emptySketch(),
+      visible: true,
     }
-    get().commit((doc) => {
-      if (!bodyId)
-        doc.bodies.push({
-          id: targetBody,
-          name: `Part ${doc.bodies.length + 1}`,
-          visible: true,
-          colour: '#b9c0c7',
-          features: [],
-        })
-      doc.bodies.find((body) => body.id === targetBody)?.features.push(feature)
-    })
+    state.commit((doc) => insertFeatures(doc, [feature]))
     set({
-      activeSketch: { bodyId: targetBody, featureId },
+      activeSketch: { featureId, componentId },
       tool: 'select',
-      selection: { kind: 'feature', id: featureId, bodyId: targetBody },
+      selection: { kind: 'feature', id: featureId },
     })
   },
 
-  openSketch(bodyId, featureId) {
+  openSketch(featureId) {
+    const feature = findFeature(get().doc, featureId)
+    if (feature?.kind !== 'sketch') return
     set({
-      activeSketch: { bodyId, featureId },
+      activeSketch: { featureId, componentId: feature.componentId },
       tool: 'select',
-      selection: { kind: 'feature', id: featureId, bodyId },
+      selection: { kind: 'feature', id: featureId },
     })
   },
 
@@ -586,9 +997,7 @@ export const useStore = create<AppState>((set, get) => ({
       tool: 'select',
       sketchStatus: null,
       sketchSelection: [],
-      ...(active
-        ? { selection: { kind: 'feature' as const, bodyId: active.bodyId, id: active.featureId } }
-        : {}),
+      ...(active ? { selection: { kind: 'feature' as const, id: active.featureId } } : {}),
     })
   },
 
@@ -596,23 +1005,16 @@ export const useStore = create<AppState>((set, get) => ({
     const active = get().activeSketch
     if (!active) return
     get().commit((d) => {
-      const body = d.bodies.find((b) => b.id === active.bodyId)
-      const feature = body?.features.find((f) => f.id === active.featureId)
+      const feature = findFeature(d, active.featureId)
       if (feature?.kind === 'sketch') fn(feature.sketch)
     }, opts)
   },
 
   solveActiveSketch(drag) {
-    const active = get().activeSketch
-    if (!active) return null
-    const body = get().doc.bodies.find((b) => b.id === active.bodyId)
-    const feature = body?.features.find((f) => f.id === active.featureId)
-    if (feature?.kind !== 'sketch') return null
+    const feature = activeSketchFeature(get())
+    if (!feature) return null
 
     const result = solveSketch(feature.sketch, drag ? { drag } : undefined)
-    // Always transient. Solving is what happens *because* of an edit, not an
-    // edit in its own right; pushing history here meant every constraint,
-    // fillet and trim cost two presses of Ctrl+Z to undo.
     get().editSketch((sketch) => applySolve(sketch, result), { transient: true })
     set({
       sketchStatus: {
@@ -651,8 +1053,6 @@ export const useStore = create<AppState>((set, get) => ({
       case 'deleteEntity':
         get().editSketch((sketch) => {
           sketch.entities = sketch.entities.filter((e) => e.id !== result.entityId)
-          // Drop constraints that referenced it, or the solver would carry rows
-          // pointing at geometry that no longer exists.
           sketch.constraints = sketch.constraints.filter(
             (c) =>
               !(
@@ -756,8 +1156,6 @@ export const useStore = create<AppState>((set, get) => ({
           }
         })
         if (!outcome.ok) {
-          // The edit above cannot have changed anything on failure, so undoing
-          // it would eat the user's previous step. Just say why instead.
           get().undo()
           set({ statusMessage: outcome.message ?? null })
         } else {
@@ -772,12 +1170,11 @@ export const useStore = create<AppState>((set, get) => ({
         if (!seat) break
         const plan = planPillar(result.kindOf, result.size, result.height)
         if (plan.warning) get().setStatus(plan.warning)
-        get().addFeature(seat.bodyId, {
+        get().addFeature({
           id: newId('standoff'),
           kind: 'standoff',
           name: plan.name,
-          // Pillars grow along the plane normal, so the same lifted plane that
-          // puts a hole at the top surface stands a pillar on it.
+          componentId: seat.componentId,
           plane: seat.plane,
           source: { kind: 'explicit', positions: result.positions },
           height: result.height,
@@ -785,6 +1182,9 @@ export const useStore = create<AppState>((set, get) => ({
           boreDiameter: plan.boreDiameter,
           boreDepth: plan.boreDepth,
           fastener: { kind: result.kindOf, size: result.size },
+          result: seat.bodyId
+            ? { kind: 'join', bodyId: seat.bodyId }
+            : { kind: 'newBody', bodyId: newId('body') },
         })
         break
       }
@@ -792,18 +1192,21 @@ export const useStore = create<AppState>((set, get) => ({
       case 'fastener': {
         const seat = surfacePlane(get())
         if (!seat) break
+        if (!seat.bodyId) {
+          get().setStatus('Holes need a solid to cut into. Extrude the sketch first.')
+          break
+        }
         const plan = planHole(result.kindOf, result.size)
-        get().addFeature(seat.bodyId, {
+        get().addFeature({
           id: newId('hole'),
           kind: 'hole',
           name: plan.name,
+          componentId: seat.componentId,
+          bodyId: seat.bodyId,
           plane: seat.plane,
           source: { kind: 'explicit', positions: result.positions },
           style: plan.style,
           diameter: plan.diameter,
-          // The hole is measured from the surface it starts at, which is where
-          // the plane has just been lifted to - not from where the sketch was
-          // drawn, which may be somewhere in the middle of the part.
           depth: result.depth > 0 ? result.depth : 'through',
           counterboreDiameter: plan.counterboreDiameter,
           counterboreDepth: plan.counterboreDepth,
@@ -817,26 +1220,17 @@ export const useStore = create<AppState>((set, get) => ({
   },
 }))
 
-/**
- * The plane to hang a hole or a pillar off, given the sketch that is open.
- *
- * Both cut or grow along the sketch plane's normal, so the plane has to sit on
- * the far surface of the material: a hole started under the part comes out the
- * other side without touching it, and a pillar started there is buried inside
- * it. The offset is measured rather than assumed, because the sketch may be on
- * a base plane, on a face, or on something tilted - the built solid's corners
- * are projected onto the plane normal and the furthest one wins.
- */
-function surfacePlane(state: AppState): { bodyId: string; plane: PlaneRef } | null {
-  const active = state.activeSketch
-  if (!active) return null
+function surfacePlane(
+  state: AppState,
+): { bodyId?: string; componentId: string; plane: PlaneRef } | null {
   const sketchFeature = activeSketchFeature(state)
   if (!sketchFeature) return null
   const frame = frameFromPlaneRefLocal(sketchFeature.plane)
-  const built = state.shapes.find((sh) => sh.id === active.bodyId)
+  const bodyId = sketchTargetBody(state.doc, sketchFeature)
+  const bounds = bodyId ? bodyBounds(state, bodyId) : undefined
   let lift = 0
-  if (built) {
-    const [x0, y0, z0, x1, y1, z1] = built.bounds
+  if (bounds) {
+    const [x0, y0, z0, x1, y1, z1] = bounds
     for (const x of [x0, x1]) {
       for (const y of [y0, y1]) {
         for (const z of [z0, z1]) {
@@ -847,19 +1241,14 @@ function surfacePlane(state: AppState): { bodyId: string; plane: PlaneRef } | nu
     }
   }
   return {
-    bodyId: active.bodyId,
+    bodyId,
+    componentId: sketchFeature.componentId,
     plane: { ...sketchFeature.plane, offset: sketchFeature.plane.offset + lift },
   }
 }
 
-/** The sketch currently open for editing, if any. */
 export function activeSketchFeature(state: AppState = useStore.getState()): SketchFeature | null {
   if (!state.activeSketch) return null
-  const body = state.doc.bodies.find((b) => b.id === state.activeSketch!.bodyId)
-  const feature = body?.features.find((f) => f.id === state.activeSketch!.featureId)
+  const feature = findFeature(state.doc, state.activeSketch.featureId)
   return feature?.kind === 'sketch' ? feature : null
-}
-
-export function findBody(doc: OkcDocument, id: string | undefined): Body | undefined {
-  return doc.bodies.find((b) => b.id === id)
 }

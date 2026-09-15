@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ViewportEngine, type ScreenLabel } from './engine'
-import { activeSketchFeature, newId, useStore } from '../doc/store'
-import { frameFromPlaneRefLocal } from '../doc/planes'
+import {
+  activeSketchFeature,
+  bodyInstance,
+  componentMatrix,
+  DEFAULT_BODY_COLOUR,
+  newId,
+  occurrencePathOf,
+  useStore,
+} from '../doc/store'
+import { frameFromPlaneRefLocal, transformFrame } from '../doc/planes'
 import { findSnap, hitTestSketch, toggleSelection } from '../sketch/inference'
 import { circleRadius, continueLine, emptyDraft, type Draft } from '../sketch/draft'
 import { sketchActions } from '../sketch/actions'
@@ -14,6 +22,22 @@ import { saveDocument } from '../doc/persist'
 import { usePreferences, snapOptions } from '../doc/preferences'
 import { fmt, frameToWorld, v2, type Frame, type Vec2, type Vec3 } from '../core/math'
 import type { Constraint, NewConstraint, Sketch2D } from '../sketch/types'
+import type { Body, Component, Feature, LengthUnit, Matrix4, Occurrence } from '../doc/types'
+import type { Instance } from '../kernel/types'
+import {
+  featureCreatesBodies,
+  featureModifiesBodies,
+  findBody,
+  findComponent,
+  findOccurrence,
+  invertRigidMatrix,
+  multiplyMatrices,
+  pathMatrix,
+  transformPoint,
+} from '../doc/model'
+import { poseMatrix, poseOf } from '../doc/placement'
+import { CATEGORY_COLOUR, getPart } from '../catalogue'
+import { lengthLabel } from '../core/units'
 
 /** Snap radius in screen pixels. */
 const SNAP_PX = 11
@@ -28,49 +52,69 @@ const HOLD_SLOP_PX = 12
 /** Gizmo output is snapped to whole millimetres; keep the stored value tidy. */
 const round = (n: number) => Math.round(n * 1000) / 1000
 
+const NEGATIVE_COLOUR = '#4a5560'
+
 interface DimensionPrompt {
   x: number
   y: number
   value: string
+  unit: string
   apply: (value: number) => void
 }
 
-/**
- * What Ctrl+C put aside, kept in memory rather than the system clipboard.
- *
- * A body is a feature history, not text, and there is nothing sensible to hand
- * the operating system that another application could use. Keeping it here also
- * means a copy survives clicking into a text box and back, which pasting from
- * the real clipboard would not.
- */
-let clipboard: { kind: 'body' | 'placement'; data: unknown } | null = null
+type Clipboard =
+  | { kind: 'body'; body: Body; features: Feature[] }
+  | { kind: 'occurrence'; occurrence: Occurrence; component: Component }
+
+let clipboard: Clipboard | null = null
 
 /** Pasted copies land beside the original, not on top of it. */
 const PASTE_OFFSET = 10
+
+function bodyFeatures(bodyId: string): Feature[] {
+  const doc = useStore.getState().doc
+  const ids = new Set<string>()
+  for (const feature of doc.timeline) {
+    const touched = new Set([...featureCreatesBodies(feature), ...featureModifiesBodies(feature)])
+    if (!touched.has(bodyId) || touched.size !== 1 || feature.kind === 'combine') continue
+    ids.add(feature.id)
+    if (feature.kind === 'extrude' || feature.kind === 'revolve') ids.add(feature.sketchId)
+  }
+  return structuredClone(doc.timeline.filter((feature) => ids.has(feature.id)))
+}
 
 function copySelection(cut: boolean): boolean {
   const store = useStore.getState()
   const { selection, doc } = store
   if (selection.kind === 'body' && selection.id) {
-    const body = doc.bodies.find((b) => b.id === selection.id)
-    if (!body) return false
-    clipboard = { kind: 'body', data: structuredClone(body) }
+    const found = findBody(doc, selection.id)
+    if (!found) return false
+    clipboard = {
+      kind: 'body',
+      body: structuredClone(found.body),
+      features: bodyFeatures(found.body.id),
+    }
     if (cut) {
-      store.removeBody(body.id)
+      store.removeBody(found.body.id)
       store.select({ kind: 'none' })
     }
-    store.setStatus(`${cut ? 'Cut' : 'Copied'} "${body.name}".`)
+    store.setStatus(`${cut ? 'Cut' : 'Copied'} "${found.body.name}".`)
     return true
   }
-  if (selection.kind === 'placement' && selection.id) {
-    const placement = doc.placements.find((p) => p.id === selection.id)
-    if (!placement) return false
-    clipboard = { kind: 'placement', data: structuredClone(placement) }
+  if (selection.kind === 'occurrence' && selection.id) {
+    const occurrence = findOccurrence(doc, selection.id)
+    const component = occurrence ? findComponent(doc, occurrence.componentId) : undefined
+    if (!occurrence || !component) return false
+    clipboard = {
+      kind: 'occurrence',
+      occurrence: structuredClone(occurrence),
+      component: structuredClone(component),
+    }
     if (cut) {
-      store.removePlacement(placement.id)
+      store.removeOccurrence(occurrence.id)
       store.select({ kind: 'none' })
     }
-    store.setStatus(`${cut ? 'Cut' : 'Copied'} "${placement.name}".`)
+    store.setStatus(`${cut ? 'Cut' : 'Copied'} "${occurrence.name}".`)
     return true
   }
   return false
@@ -102,33 +146,41 @@ function pasteClipboard(): boolean {
   if (!clipboard) return false
   const store = useStore.getState()
 
-  if (clipboard.kind === 'placement') {
-    const source = clipboard.data as { partId: string; position: Vec3; [k: string]: unknown }
-    const id = store.addPlacement(source.partId, [
-      source.position[0] + PASTE_OFFSET,
-      source.position[1] + PASTE_OFFSET,
-      source.position[2],
-    ])
-    // Carry across everything that was set on the original except where it is,
-    // which has just been moved, and its identity.
-    const rest = { ...source } as Record<string, unknown>
-    delete rest.position
-    delete rest.id
-    store.updatePlacement(id, rest as never)
-    store.select({ kind: 'placement', id })
+  if (clipboard.kind === 'occurrence') {
+    const { occurrence, component } = clipboard
+    if (findOccurrence(store.doc, occurrence.id)) {
+      return !!store.linkedCopy(occurrence.id)
+    }
+    if (component.source.kind !== 'catalogue') {
+      store.setStatus(`"${occurrence.name}" was deleted, so there is nothing left to paste.`)
+      return false
+    }
+    const pose = poseOf(occurrence.transform)
+    const id = store.insertCatalogue(component.source.partId)
+    const inserted = findOccurrence(useStore.getState().doc, id)
+    if (inserted) {
+      store.updateOccurrence(id, {
+        transform: poseMatrix({
+          ...pose,
+          position: [
+            pose.position[0] + PASTE_OFFSET,
+            pose.position[1] + PASTE_OFFSET,
+            pose.position[2],
+          ],
+        }),
+        negative: occurrence.negative,
+      })
+      if (component.source.overrides)
+        store.updateComponent(inserted.componentId, { source: component.source })
+    }
+    store.select({ kind: 'occurrence', id })
     return true
   }
 
-  // Every feature needs a fresh id, and every reference between features has to
-  // follow it. Copying the ids as they stand would give two bodies whose
-  // features point at each other's sketches, and editing one would change both.
-  const source = clipboard.data as {
-    name: string
-    colour: string
-    features: Array<Record<string, unknown>>
-  }
-  const remap = new Map<string, string>()
-  for (const f of source.features) remap.set(f.id as string, newId('f'))
+  const { body, features } = clipboard
+  const bodyId = newId('body')
+  const remap = new Map<string, string>([[body.id, bodyId]])
+  for (const feature of features) remap.set(feature.id, newId('f'))
   const rename = (value: unknown): unknown => {
     if (typeof value === 'string') return remap.get(value) ?? value
     if (Array.isArray(value)) return value.map(rename)
@@ -137,21 +189,28 @@ function pasteClipboard(): boolean {
     }
     return value
   }
-
-  const bodyId = store.addBody(`${source.name} copy`)
-  for (const feature of source.features) {
-    store.addFeature(bodyId, rename(structuredClone(feature)) as never)
+  const componentId = features[0]?.componentId ?? store.doc.rootComponentId
+  if (!findComponent(store.doc, componentId) || !features.length) {
+    store.setStatus(`There is nothing left of "${body.name}" to paste.`)
+    return false
   }
-  // Nudged clear of the original so it is obvious a copy was made.
-  store.addFeature(bodyId, {
-    id: newId('move'),
-    kind: 'move',
-    name: 'Move',
-    offset: [PASTE_OFFSET, PASTE_OFFSET, 0],
-    rotation: [0, 0, 0],
-  } as never)
+  store.addFeatures(
+    [
+      ...features.map((feature) => rename(feature) as Feature),
+      {
+        id: newId('move'),
+        kind: 'move',
+        name: 'Move',
+        componentId,
+        bodyIds: [bodyId],
+        offset: [PASTE_OFFSET, PASTE_OFFSET, 0],
+        rotation: [0, 0, 0],
+      },
+    ],
+    { [bodyId]: { name: `${body.name} copy`, colour: body.colour } },
+  )
   store.select({ kind: 'body', id: bodyId })
-  store.setStatus(`Pasted a copy of "${source.name}".`)
+  store.setStatus(`Pasted a copy of "${body.name}".`)
   return true
 }
 
@@ -185,14 +244,15 @@ export function Viewport() {
     chooseAction({
       id: 'dimension-value',
       label: 'Set dimension',
-      prompt: { label: 'Value', initial: Number(prompt.value), unit: 'mm' },
+      prompt: { label: 'Value', initial: Number(prompt.value), unit: prompt.unit },
       run: (value) => prompt.apply(value),
     })
     setPrompt(null)
   }, [prompt])
   const [, forceRender] = useState(0)
 
-  const shapes = useStore((s) => s.shapes)
+  const instances = useStore((s) => s.instances)
+  const meshes = useStore((s) => s.meshes)
   const showPlacements = useStore((s) => s.showPlacements)
   const hovered = useStore((s) => s.hovered)
   const selection = useStore((s) => s.selection)
@@ -203,8 +263,8 @@ export function Viewport() {
   const doc = useStore((s) => s.doc)
   const gizmoMode = useStore((s) => s.gizmoMode)
   const showFasteners = useStore((s) => s.showFasteners)
-  /** Where the gizmo was picked up, and the part's offset at that moment. */
-  const gizmoBase = useRef<{ anchor: Vec3; offset: Vec3 } | null>(null)
+  const gizmoBase = useRef<{ anchor: Vec3; offset: Vec3; inverse: Matrix4 } | null>(null)
+  const gizmoParent = useRef<Matrix4 | null>(null)
   const sketchSelection = useStore((s) => s.sketchSelection)
   const sketchStatus = useStore((s) => s.sketchStatus)
   const subSelection = useStore((s) => s.subSelection)
@@ -223,7 +283,13 @@ export function Viewport() {
     [doc, activeSketch],
   )
   const frame: Frame | null = useMemo(
-    () => (sketchFeature ? frameFromPlaneRefLocal(sketchFeature.plane) : null),
+    () =>
+      sketchFeature
+        ? transformFrame(
+            frameFromPlaneRefLocal(sketchFeature.plane),
+            componentMatrix(useStore.getState().doc, sketchFeature.componentId),
+          )
+        : null,
     [sketchFeature],
   )
 
@@ -235,7 +301,7 @@ export function Viewport() {
     engine.onLabels = setLabels
     if (import.meta.env.DEV) (window as any).__okcEngine = engine
 
-    engine.onGizmoChange = (position, rotationDeg, rotationXyz) => {
+    engine.onGizmoChange = (pose) => {
       const store = useStore.getState()
       const tidy = (a: number) => Math.round(a * 10) / 10
 
@@ -243,34 +309,44 @@ export function Viewport() {
         const move = trailingMove(store.doc, store.selection.id)
         const base = gizmoBase.current
         if (!move || !base) return
-        // The gizmo sits at the middle of the part but the move step counts
-        // from where the part was built, so what gets stored is how far the
-        // handle has come since it was picked up, not where it now is.
+        const local = transformPoint(base.inverse, pose.position)
         store.beginTransient()
         store.updateFeature(
-          store.selection.id,
           move.id,
           {
             offset: [
-              round(base.offset[0] + position[0] - base.anchor[0]),
-              round(base.offset[1] + position[1] - base.anchor[1]),
-              round(base.offset[2] + position[2] - base.anchor[2]),
+              round(base.offset[0] + local[0] - base.anchor[0]),
+              round(base.offset[1] + local[1] - base.anchor[1]),
+              round(base.offset[2] + local[2] - base.anchor[2]),
             ],
-            rotation: [tidy(rotationXyz[0]), tidy(rotationXyz[1]), tidy(rotationXyz[2])],
-          } as never,
+            rotation: [
+              tidy(pose.rotationXyz[0]),
+              tidy(pose.rotationXyz[1]),
+              tidy(pose.rotationXyz[2]),
+            ],
+          } as Partial<Feature>,
           { transient: true },
         )
         return
       }
 
-      if (store.selection.kind !== 'placement' || !store.selection.id) return
+      if (store.selection.kind !== 'occurrence' || !store.selection.id) return
+      const parent = gizmoParent.current
+      if (!parent) return
+      const local = poseOf(multiplyMatrices(invertRigidMatrix(parent), pose.matrix))
       store.beginTransient()
-      store.updatePlacement(
+      store.updateOccurrence(
         store.selection.id,
         {
-          position: [round(position[0]), round(position[1]), round(position[2])],
-          // Keep it in 0-360 so the number in the panel reads sensibly.
-          rotation: (((Math.round(rotationDeg * 10) / 10) % 360) + 360) % 360,
+          transform: poseMatrix({
+            position: [
+              round(local.position[0]),
+              round(local.position[1]),
+              round(local.position[2]),
+            ],
+            turn: (((Math.round(local.turn * 10) / 10) % 360) + 360) % 360,
+            flipped: local.flipped,
+          }),
         },
         { transient: true },
       )
@@ -293,20 +369,33 @@ export function Viewport() {
     }
   }, [])
 
+  useEffect(() => {
+    const engine = engineRef.current
+    if (!engine) return
+    const colourOf = (instance: Instance) => {
+      if (instance.negative) return NEGATIVE_COLOUR
+      if (instance.kind === 'catalogue') {
+        const component = findComponent(doc, instance.componentId)
+        const part =
+          component?.source.kind === 'catalogue' ? getPart(component.source.partId) : undefined
+        return part ? CATEGORY_COLOUR[part.category] : '#7f878f'
+      }
+      return findBody(doc, instance.bodyId)?.body.colour ?? DEFAULT_BODY_COLOUR
+    }
+    engine.setScene(instances, meshes, colourOf, showPlacements)
+  }, [instances, meshes, showPlacements, doc])
+
   // Ghosts of the screws and inserts the holes were drilled for.
   useEffect(() => {
     const engine = engineRef.current
     if (!engine) return
     // Hidden while sketching: the whole point of being in a sketch is to see
     // the outline, and a row of screws standing on it is in the way.
-    engine.setFastenerGhosts(showFasteners && !activeSketch ? fastenerGhosts(doc, shapes) : [])
-  }, [doc, shapes, showFasteners, activeSketch])
+    engine.setFastenerGhosts(
+      showFasteners && !activeSketch ? fastenerGhosts(doc, instances, meshes) : [],
+    )
+  }, [doc, instances, meshes, showFasteners, activeSketch])
 
-  // Show the move / turn gizmo on whatever is selected.
-  //
-  // A body gets one once it has a move step, which "Move it" in the right-click
-  // menu creates. That keeps the gizmo off parts nobody has asked to move,
-  // without needing a mode to be in: delete the move step and it goes away.
   useEffect(() => {
     const engine = engineRef.current
     if (!engine) return
@@ -316,31 +405,44 @@ export function Viewport() {
     }
     if (selection.kind === 'body' && selection.id) {
       const move = trailingMove(doc, selection.id)
-      const built = shapes.find((s) => s.id === selection.id)
-      if (move && built) {
-        // The gizmo sits at the middle of the part, which is where the turn
-        // rings are centred, so what you grab is where it pivots.
-        const b = built.bounds
-        const centre: Vec3 = [(b[0] + b[3]) / 2, (b[1] + b[4]) / 2, (b[2] + b[5]) / 2]
-        // Where the handle started and what the part's offset was at that
-        // moment. Not while a drag is running, or the reference would follow
-        // the part and the drag would never get anywhere.
+      const state = useStore.getState()
+      const instance =
+        (selection.instanceId && instances.find((i) => i.id === selection.instanceId)) ||
+        bodyInstance(state, selection.id)
+      const bounds = instance ? meshes.get(instance.meshKey)?.bounds : undefined
+      if (move && instance && bounds) {
+        const centre: Vec3 = [
+          (bounds[0] + bounds[3]) / 2,
+          (bounds[1] + bounds[4]) / 2,
+          (bounds[2] + bounds[5]) / 2,
+        ]
         if (!engine.isGizmoDragging()) {
-          gizmoBase.current = { anchor: centre, offset: move.offset }
+          gizmoBase.current = {
+            anchor: centre,
+            offset: move.offset,
+            inverse: invertRigidMatrix(instance.matrix),
+          }
         }
-        engine.setGizmo({ position: centre, rotationXyz: move.rotation }, gizmoMode)
+        engine.setGizmo(
+          { position: transformPoint(instance.matrix, centre), rotationXyz: move.rotation },
+          gizmoMode,
+        )
         return
       }
     }
-    gizmoBase.current = null
-    const placement =
-      selection.kind === 'placement' ? doc.placements.find((p) => p.id === selection.id) : undefined
-    if (!placement) {
-      engine.setGizmo(null, gizmoMode)
-    } else {
-      engine.setGizmo({ position: placement.position, rotation: placement.rotation }, gizmoMode)
+    if (!engine.isGizmoDragging()) gizmoBase.current = null
+    if (selection.kind === 'occurrence' && selection.id) {
+      const path = occurrencePathOf(doc, selection.id, selection.instanceId)
+      const world = path ? pathMatrix(doc, path) : null
+      const parent = path ? pathMatrix(doc, path.slice(0, -1)) : null
+      if (world && parent) {
+        if (!engine.isGizmoDragging()) gizmoParent.current = parent
+        engine.setGizmo({ position: [world[12], world[13], world[14]], matrix: world }, gizmoMode)
+        return
+      }
     }
-  }, [selection, doc, shapes, gizmoMode, activeSketch])
+    engine.setGizmo(null, gizmoMode)
+  }, [selection, doc, instances, meshes, gizmoMode, activeSketch])
 
   // Frame whenever geometry appears out of nothing: opening a document, or
   // turning the first sketch into a solid. Waiting for the shapes rather than
@@ -348,22 +450,18 @@ export function Viewport() {
   // since the kernel rebuild is asynchronous.
   const hadShapesRef = useRef(false)
   useEffect(() => {
-    const has = shapes.length > 0
+    const has = instances.length > 0
     if (has && !hadShapesRef.current) engineRef.current?.frameAll()
     hadShapesRef.current = has
-  }, [shapes])
+  }, [instances])
 
   useEffect(() => {
-    engineRef.current?.setShapes(shapes, showPlacements)
-  }, [shapes, showPlacements])
-
-  useEffect(() => {
-    engineRef.current?.setHighlight(hovered, selection.id ?? null)
+    engineRef.current?.setHighlight(hovered, selection.instanceId ?? selection.id ?? null)
   }, [hovered, selection])
 
   useEffect(() => {
     engineRef.current?.setSubHighlight(activeSketch ? [] : subSelection)
-  }, [subSelection, activeSketch, shapes])
+  }, [subSelection, activeSketch, instances])
 
   useEffect(() => {
     engineRef.current?.setSection(section.enabled, section.axis, section.position, section.flipped)
@@ -386,7 +484,7 @@ export function Viewport() {
     draftRef.current = emptyDraft()
     draggingRef.current = null
     engineRef.current?.setControlsEnabled(true)
-  }, [tool, activeSketch?.bodyId, activeSketch?.featureId])
+  }, [tool, activeSketch?.featureId])
 
   useEffect(() => {
     if (isAndroidApp)
@@ -420,7 +518,7 @@ export function Viewport() {
       selectionHighlight(sketchSelection),
       looseGeometry(sketchFeature.sketch, sketchStatus),
     )
-    engine.setLabels(sketchLabels(sketchFeature.sketch, frame))
+    engine.setLabels(sketchLabels(sketchFeature.sketch, frame, doc.units))
   }, [doc, sketchFeature, frame, sketchSelection, sketchStatus, tool])
 
   useEffect(() => {
@@ -689,17 +787,8 @@ export function Viewport() {
     }
 
     const hit = engine.pick(e.clientX, e.clientY)
-    if (hit?.id !== store.hovered) store.setHovered(hit?.id ?? null)
-    // Show what a click would take. Set straight on the engine rather than
-    // through the store: this fires on every pointer move and does not need a
-    // React render.
-    //
-    // Deliberately not gated on the surface hit above. Corners sit on the
-    // silhouette where that raycast misses, and gating on it made exactly the
-    // corners people aim for un-hoverable.
-    const sub = engine.pickSub(e.clientX, e.clientY)
-    const onABody = sub && store.doc.bodies.some((b) => b.id === sub.bodyId)
-    engine.setHoverPick(onABody ? sub : null)
+    if ((hit?.instanceId ?? null) !== store.hovered) store.setHovered(hit?.instanceId ?? null)
+    engine.setHoverPick(engine.pickSub(e.clientX, e.clientY))
   }
 
   const onPointerDown = (e: React.PointerEvent) => {
@@ -808,14 +897,17 @@ export function Viewport() {
       return
     }
 
-    store.select({ kind: hit.kind, id: hit.id })
-
-    // Catalogue parts are moved as a whole, so picking their individual faces
-    // would only get in the way of the gizmo.
-    if (hit.kind !== 'body') {
+    if (hit.kind === 'catalogue') {
+      store.select({
+        kind: 'occurrence',
+        id: hit.path[hit.path.length - 1],
+        instanceId: hit.instanceId,
+      })
       store.setSubSelection([])
       return
     }
+
+    store.select({ kind: 'body', id: hit.bodyId, instanceId: hit.instanceId })
 
     const sub = engine.pickSub(e.clientX, e.clientY)
     if (!sub) {
@@ -823,7 +915,7 @@ export function Viewport() {
       return
     }
     const current = store.subSelection
-    const at = current.findIndex((s) => s.bodyId === sub.bodyId && s.id === sub.id)
+    const at = current.findIndex((s) => s.instanceId === sub.instanceId && s.id === sub.id)
     store.setSubSelection(
       e.shiftKey ? (at >= 0 ? current.filter((_, i) => i !== at) : [...current, sub]) : [sub],
     )
@@ -852,6 +944,7 @@ export function Viewport() {
           x: screenX,
           y: screenY,
           value: fmt(v2.dist(a, b)),
+          unit: 'mm',
           apply: (value) => {
             store.addConstraint({ kind: 'distance', a: entity.p1, b: entity.p2, value })
           },
@@ -865,6 +958,7 @@ export function Viewport() {
           x: screenX,
           y: screenY,
           value: fmt(entity.r * 2),
+          unit: 'mm',
           apply: (value) => {
             store.addConstraint({ kind: 'diameter', e: entity.id, value })
           },
@@ -922,9 +1016,6 @@ export function Viewport() {
         return
       }
 
-      // Delete. In a sketch it takes the picked geometry; outside it takes the
-      // selected part. Backspace as well as Delete, because a laptop without a
-      // Delete key is a laptop somebody is using.
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (store.activeSketch) {
           if (store.sketchSelection.length) {
@@ -937,9 +1028,9 @@ export function Viewport() {
           e.preventDefault()
           store.removeBody(store.selection.id)
           store.select({ kind: 'none' })
-        } else if (store.selection.kind === 'placement' && store.selection.id) {
+        } else if (store.selection.kind === 'occurrence' && store.selection.id) {
           e.preventDefault()
-          store.removePlacement(store.selection.id)
+          store.removeOccurrence(store.selection.id)
           store.select({ kind: 'none' })
         }
         return
@@ -1053,23 +1144,33 @@ export function Viewport() {
         onPointerLeave={cancelHold}
         onContextMenu={(e) => {
           e.preventDefault()
-          // Outside a sketch, right-click acts on the solid under the cursor.
           if (!activeSketch) {
             const engine = engineRef.current
             if (!engine) return
             const hit = engine.pick(e.clientX, e.clientY)
             const store = useStore.getState()
-            store.select(hit ? { kind: hit.kind, id: hit.id } : { kind: 'none' })
-            // Empty space gets a menu too - it is where "start a sketch on a
-            // tilted plane" belongs, since there is no object to hang it off.
+            store.select(
+              !hit
+                ? { kind: 'none' }
+                : hit.kind === 'catalogue'
+                  ? {
+                      kind: 'occurrence',
+                      id: hit.path[hit.path.length - 1],
+                      instanceId: hit.instanceId,
+                    }
+                  : { kind: 'body', id: hit.bodyId, instanceId: hit.instanceId },
+            )
             setObjectMenu({
               x: e.clientX,
               y: e.clientY,
-              // Remember the exact face, so "draw on this face" lands where
-              // the user pointed rather than on some default plane.
               picked:
                 hit && hit.kind === 'body'
-                  ? { bodyId: hit.id, point: hit.point, normal: hit.normal }
+                  ? {
+                      bodyId: hit.bodyId,
+                      instanceId: hit.instanceId,
+                      point: hit.localPoint,
+                      normal: hit.localNormal,
+                    }
                   : null,
             })
             return
@@ -1114,10 +1215,15 @@ export function Viewport() {
                 .getState()
                 .applySketchAction({ kind: 'deleteConstraint', constraintId: label.id })
             } else {
+              const constraint = activeSketchFeature(useStore.getState())?.sketch.constraints.find(
+                (c) => c.id === label.id,
+              )
+              if (!constraint || !('value' in constraint)) return
               setPrompt({
                 x: e.clientX,
                 y: e.clientY,
-                value: label.text.replace(/[^0-9.\-]/g, ''),
+                value: String(constraint.value),
+                unit: constraint.kind === 'angle' ? '°' : 'mm',
                 apply: (value) => {
                   const store = useStore.getState()
                   store.editSketch((sketch) => {
@@ -1209,15 +1315,7 @@ const GLYPH: Partial<Record<Constraint['kind'], string>> = {
   symmetric: '><',
 }
 
-/**
- * Everything the sketch has been told, drawn on the sketch.
- *
- * Dimensions show their number; the rest show a small symbol. Both are
- * clickable, because a constraint you cannot see is a constraint you cannot
- * remove, and "why won't this move?" with no way to find out is the single
- * most demoralising thing about parametric CAD.
- */
-function sketchLabels(sketch: Sketch2D, frame: Frame) {
+function sketchLabels(sketch: Sketch2D, frame: Frame, unit: LengthUnit) {
   const pts = new Map(sketch.points.map((p) => [p.id, [p.x, p.y] as Vec2]))
   const out: Array<{
     id: string
@@ -1225,6 +1323,7 @@ function sketchLabels(sketch: Sketch2D, frame: Frame) {
     at: [number, number, number]
     kind: 'dimension' | 'constraint'
   }> = []
+  const length = (mm: number) => lengthLabel(mm, unit, false)
 
   const entityAnchor = (entityId: string): Vec2 | null => {
     const entity = sketch.entities.find((e) => e.id === entityId)
@@ -1253,7 +1352,7 @@ function sketchLabels(sketch: Sketch2D, frame: Frame) {
       if (!a || !b) continue
       out.push({
         id: c.id,
-        text: fmt(c.value),
+        text: length(c.value),
         at: frameToWorld(frame, v2.mid(a, b)),
         kind: 'dimension',
       })
@@ -1264,7 +1363,7 @@ function sketchLabels(sketch: Sketch2D, frame: Frame) {
       if (!anchor) continue
       out.push({
         id: c.id,
-        text: c.kind === 'radius' ? `R${fmt(c.value)}` : `⌀${fmt(c.value)}`,
+        text: c.kind === 'radius' ? `R${length(c.value)}` : `⌀${length(c.value)}`,
         at: frameToWorld(frame, anchor),
         kind: 'dimension',
       })

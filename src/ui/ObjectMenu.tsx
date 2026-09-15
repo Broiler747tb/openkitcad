@@ -1,5 +1,15 @@
-import { newId, useStore, type Selection } from '../doc/store'
+import {
+  activeComponentOf,
+  bodyBounds,
+  componentInstance,
+  newId,
+  occurrencePathOf,
+  targetBodies,
+  useStore,
+  type Selection,
+} from '../doc/store'
 import type {
+  Body,
   ExtrudeFeature,
   Feature,
   MoveFeature,
@@ -8,19 +18,22 @@ import type {
   SketchFeature,
   VentShape,
 } from '../doc/types'
+import {
+  activeFeatures,
+  bodyCreator,
+  featureCreatesBodies,
+  featureModifiesBodies,
+  findBody,
+  findComponent,
+  findFeature,
+  findOccurrence,
+} from '../doc/model'
+import { poseOf, withPose } from '../doc/placement'
 import { resizeSketch } from '../sketch/edit'
 import { getPart } from '../catalogue'
 import { ContextMenu } from './ContextMenu'
 import { chooseAction } from './ActionDialog'
 
-/**
- * Right-click menu for finished solids and placed parts.
- *
- * The feature tree already exposes all of this, but a beginner looking at a
- * plate on screen does not think "I should find the extrude step in the tree
- * and change its distance". They think "make this thicker". This menu is that
- * sentence.
- */
 interface PromptField {
   label: string
   initial: number
@@ -52,16 +65,10 @@ export interface ObjectAction {
   run: (value: number, value2?: number, value3?: number, choice?: string) => void
 }
 
-/**
- * Menu headings, keyed off the action id.
- *
- * Combining is matched by prefix because there is one entry per other body in
- * the document, and with a few bodies that section alone is longer than the
- * rest of the menu put together.
- */
 const OBJECT_GROUPS: Array<[string, string[]]> = [
   ['Start a sketch', ['sketch-XY', 'sketch-XZ', 'sketch-YZ', 'sketch-offset', 'sketch-tilted']],
   ['Add a shape', ['add-box', 'add-cylinder', 'add-sphere', 'add-dome']],
+  ['Assemble', ['create-component', 'linked-copy', 'activate']],
   ['Draw on it', ['sketch-on-face', 'sketch-on-top', 'edit-sketch']],
   [
     'Change its shape',
@@ -98,27 +105,27 @@ export function objectGroupOf(id: string): string {
   return 'Other'
 }
 
-/**
- * The move step at the end of a body's history, if it has one.
- *
- * Only the trailing step counts. A move part way up the history was put there
- * deliberately - there is geometry built on top of it - so nudging the part
- * about must not reach back and disturb it.
- */
 export function trailingMove(doc: OkcDocument, bodyId: string): MoveFeature | undefined {
-  const body = doc.bodies.find((b) => b.id === bodyId)
-  const last = body?.features[body.features.length - 1]
-  return last?.kind === 'move' ? last : undefined
+  const touching = activeFeatures(doc).filter(
+    (feature) =>
+      featureCreatesBodies(feature).includes(bodyId) ||
+      featureModifiesBodies(feature).includes(bodyId),
+  )
+  const last = touching[touching.length - 1]
+  return last?.kind === 'move' && last.bodyIds.length === 1 ? last : undefined
 }
 
-/** Find that step, or start one, so the gizmo has something to drive. */
 function ensureMove(bodyId: string): void {
   const store = useStore.getState()
   if (trailingMove(store.doc, bodyId)) return
-  store.addFeature(bodyId, {
+  const componentId = findBody(store.doc, bodyId)?.component.id
+  if (!componentId) return
+  store.addFeature({
     id: newId('move'),
     kind: 'move',
     name: 'Move',
+    componentId,
+    bodyIds: [bodyId],
     offset: [0, 0, 0],
     rotation: [0, 0, 0],
   })
@@ -138,46 +145,25 @@ function sketchExtent(sketch: SketchFeature['sketch']): { width: number; height:
   return { width, height }
 }
 
-/** The extrude that actually made this body, if there is one. */
 function mainExtrude(doc: OkcDocument, bodyId: string): ExtrudeFeature | undefined {
-  const body = doc.bodies.find((b) => b.id === bodyId)
-  return body?.features.find((f): f is ExtrudeFeature => f.kind === 'extrude')
+  const creator = bodyCreator(doc, bodyId)
+  if (creator?.kind === 'extrude') return creator
+  return doc.timeline.find(
+    (f): f is ExtrudeFeature => f.kind === 'extrude' && featureModifiesBodies(f).includes(bodyId),
+  )
 }
 
-/** Where the user right-clicked, so "draw on this face" knows which face. */
 export interface PickedFace {
   bodyId: string
+  instanceId: string
   point: [number, number, number]
   normal: [number, number, number]
 }
 
-/**
- * Sort the sections the way OBJECT_GROUPS lists them.
- *
- * The flyout keeps the section list in a fixed left-hand column, so the order
- * has to be the same every time for it to become muscle memory. Ordering by
- * whichever section happened to be built first would shuffle it about.
- */
 export const OBJECT_GROUP_ORDER = [
   ...OBJECT_GROUPS.map(([name]) => name),
   'Combine with another part',
 ]
-
-/**
- * Tagging happens here, at the one exit, rather than at each of the five
- * returns inside. Doing it per-return meant a path could be missed - and one
- * was, so right-clicking a solid came back with no sections at all.
- */
-/**
- * The four things done often enough to deserve the top of the menu.
- *
- * Everything else is a phrase you read; these are a shape you aim at. They are
- * lifted out of the sections below rather than repeated in both, because an
- * action in two places is an action somebody has to decide between.
- *
- * Glyphs rather than words: at four items a row of icons is quicker to hit than
- * four lines of text, and these four are distinct enough not to need reading.
- */
 
 export function objectActions(
   selection: Selection,
@@ -191,9 +177,6 @@ export function objectActions(
       ? {
           run: (v: number, v2?: number, v3?: number, choice?: string) => {
             a.run(v, v2, v3, choice)
-            const store = useStore.getState()
-            const body = store.doc.bodies.at(-1)
-            if (body) store.select({ kind: 'body', id: body.id })
             window.dispatchEvent(new CustomEvent('okc:fit'))
           },
         }
@@ -202,8 +185,8 @@ export function objectActions(
       ? {
           choice: {
             label: 'Target body',
-            initial: targetBodyId ?? useStore.getState().doc.bodies[0]?.id ?? '',
-            options: useStore.getState().doc.bodies.map((b) => ({ value: b.id, label: b.name })),
+            initial: targetBodyId ?? targetBodies(useStore.getState().doc)[0]?.value ?? '',
+            options: targetBodies(useStore.getState().doc),
           },
           run: (v: number, v2?: number, v3?: number, target?: string) => {
             buildObjectActions(selection, picked, target)
@@ -215,13 +198,75 @@ export function objectActions(
   }))
 }
 
-/** Create the body and its first step in one undoable operation. */
-function addPrimitive(name: string, feature: Feature) {
+function addPrimitive(name: string, build: (componentId: string, bodyId: string) => Feature) {
   const store = useStore.getState()
-  const id = newId('body')
-  store.commit((doc) => {
-    doc.bodies.push({ id, name, visible: true, colour: '#b9c0c7', features: [feature] })
-  })
+  const componentId = activeComponentOf(store)
+  const bodyId = newId('body')
+  store.addFeature(build(componentId, bodyId), { [bodyId]: { name } })
+  useStore.getState().select({ kind: 'body', id: bodyId })
+}
+
+export function mountFeature(
+  kind: 'holes' | 'standoffs' | 'ports',
+  occurrenceId: string,
+  targetBodyId: string,
+  options: { height?: number; instanceId?: string } = {},
+): Feature | null {
+  const state = useStore.getState()
+  const doc = state.doc
+  const occurrence = findOccurrence(doc, occurrenceId)
+  const component = occurrence ? findComponent(doc, occurrence.componentId) : undefined
+  const target = findBody(doc, targetBodyId)
+  if (!occurrence || component?.source.kind !== 'catalogue' || !target) return null
+  const part = getPart(component.source.partId)
+  const occurrencePath = occurrencePathOf(doc, occurrenceId, options.instanceId)
+  if (!occurrencePath) return null
+  const contextPath = componentInstance(doc, target.component.id)?.path ?? []
+  const drillZ = bodyBounds(state, targetBodyId)?.[5] ?? poseOf(occurrence.transform).position[2]
+  const hole = part?.mountingHoles?.[0]
+  if (kind === 'holes') {
+    return {
+      id: newId('hole'),
+      kind: 'hole',
+      name: `Holes for ${occurrence.name}`,
+      componentId: target.component.id,
+      bodyId: targetBodyId,
+      plane: { kind: 'named', name: 'XY', offset: drillZ },
+      source: { kind: 'occurrence', occurrencePath, contextPath },
+      style: 'counterbore',
+      diameter: (hole?.diameter ?? 3) + 0.2,
+      depth: 'through',
+      counterboreDiameter: (hole?.diameter ?? 3) + 3,
+      counterboreDepth: 2,
+    }
+  }
+  if (kind === 'standoffs') {
+    const height = options.height ?? 6
+    return {
+      id: newId('standoff'),
+      kind: 'standoff',
+      name: `Standoffs for ${occurrence.name}`,
+      componentId: target.component.id,
+      plane: { kind: 'named', name: 'XY', offset: drillZ },
+      source: { kind: 'occurrence', occurrencePath, contextPath },
+      height,
+      outerDiameter: (hole?.diameter ?? 3) + 3,
+      boreDiameter: Math.max((hole?.diameter ?? 3) - 0.6, 1.2),
+      boreDepth: Math.max(height - 1, 2),
+      result: { kind: 'join', bodyId: targetBodyId },
+    }
+  }
+  return {
+    id: newId('ports'),
+    kind: 'portCutout',
+    name: `Openings for ${occurrence.name}`,
+    componentId: target.component.id,
+    bodyId: targetBodyId,
+    occurrencePath,
+    contextPath,
+    connectorIds: [],
+    tolerance: 0.6,
+  }
 }
 
 function buildObjectActions(
@@ -236,15 +281,15 @@ function buildObjectActions(
 
   if (selection.kind === 'body' && selection.id) {
     const bodyId = selection.id
-    const body = doc.bodies.find((b) => b.id === bodyId)
-    if (!body) return raw
+    const found = findBody(doc, bodyId)
+    if (!found) return raw
+    const { body, component } = found
+    const componentId = component.id
     const extrude = mainExtrude(doc, bodyId)
-    const sketchId = extrude?.sketchId ?? body.features.find((f) => f.kind === 'sketch')?.id
+    const sketchId = extrude?.sketchId
+    const onThis = !!picked && picked.bodyId === bodyId
 
-    // The headline action: draw directly on the face under the cursor. Without
-    // this you can only ever sketch on the three base planes, which means you
-    // cannot put a hole in the side of a box.
-    if (picked && picked.bodyId === bodyId) {
+    if (picked && onThis) {
       out.push({
         id: 'sketch-on-face',
         label: 'Draw on this face',
@@ -261,18 +306,16 @@ function buildObjectActions(
       })
     }
 
-    if (sketchId) {
+    if (sketchId && findFeature(doc, sketchId)?.kind === 'sketch') {
       out.push({
         id: 'edit-sketch',
         label: 'Edit the shape this was drawn from',
         hint: 'Go back to the outline and change it',
-        run: () => store.openSketch(bodyId, sketchId),
+        run: () => store.openSketch(sketchId),
       })
     }
-    // "Change its size" covers whichever way the part was made: typed-in
-    // shapes carry their sides directly, drawn ones have to have the outline
-    // stretched underneath them.
-    const solid = body.features.find((f) => f.kind === 'box' || f.kind === 'cylinder')
+    const creator = bodyCreator(doc, bodyId)
+    const solid = creator?.kind === 'box' || creator?.kind === 'cylinder' ? creator : undefined
     if (solid?.kind === 'box') {
       out.push({
         id: 'size',
@@ -282,11 +325,11 @@ function buildObjectActions(
         prompt2: { label: 'Depth', initial: solid.depth, unit: 'mm' },
         prompt3: { label: 'Height', initial: solid.height, unit: 'mm' },
         run: (width, depth, height) =>
-          store.updateFeature(bodyId, solid.id, {
+          store.updateFeature(solid.id, {
             width,
             depth: depth ?? solid.depth,
             height: height ?? solid.height,
-          } as never),
+          } as Partial<Feature>),
       })
     } else if (solid?.kind === 'cylinder') {
       out.push({
@@ -296,15 +339,14 @@ function buildObjectActions(
         prompt: { label: 'Diameter', initial: solid.radius * 2, unit: 'mm' },
         prompt2: { label: 'Height', initial: solid.height, unit: 'mm' },
         run: (diameter, height) =>
-          store.updateFeature(bodyId, solid.id, {
+          store.updateFeature(solid.id, {
             radius: diameter / 2,
             height: height ?? solid.height,
-          } as never),
+          } as Partial<Feature>),
       })
     } else if (extrude) {
-      const drawn = body.features.find(
-        (f): f is SketchFeature => f.kind === 'sketch' && f.id === extrude.sketchId,
-      )
+      const source = findFeature(doc, extrude.sketchId)
+      const drawn = source?.kind === 'sketch' ? source : undefined
       const box = drawn ? sketchExtent(drawn.sketch) : null
       out.push({
         id: 'size',
@@ -317,23 +359,22 @@ function buildObjectActions(
         prompt3: box ? { label: 'Thickness', initial: extrude.distance, unit: 'mm' } : undefined,
         run: (a, b, c) => {
           if (!box || !drawn) {
-            store.updateFeature(bodyId, extrude.id, { distance: a } as never)
+            store.updateFeature(extrude.id, { distance: a } as Partial<Feature>)
             return
           }
           const thickness = c ?? extrude.distance
           const resized = resizeSketch(drawn.sketch, a / box.width, (b ?? box.height) / box.height)
           if (!resized.ok) {
-            // Say why rather than silently applying half of it.
             store.setStatus(resized.reason)
-            store.updateFeature(bodyId, extrude.id, { distance: thickness } as never)
+            store.updateFeature(extrude.id, { distance: thickness } as Partial<Feature>)
             return
           }
-          store.updateFeature(bodyId, drawn.id, { sketch: resized.sketch } as never)
-          store.updateFeature(bodyId, extrude.id, { distance: thickness } as never)
+          store.updateFeature(drawn.id, { sketch: resized.sketch } as Partial<Feature>)
+          store.updateFeature(extrude.id, { distance: thickness } as Partial<Feature>)
         },
       })
     }
-    if (picked && picked.bodyId === bodyId) {
+    if (picked && onThis) {
       const hollowOut = (
         thickness: number,
         withLid: boolean,
@@ -341,40 +382,46 @@ function buildObjectActions(
         fit: LidFit = 'friction',
       ) => {
         const shellId = newId('shell')
-        store.addFeature(bodyId, {
-          id: shellId,
-          kind: 'shell',
-          name: 'Hollow out',
-          thickness,
-          openFaces: [{ bodyId, anchor: picked.point, normal: picked.normal }],
-        })
-        if (!withLid) return
-        // The lid is its own body: you print it separately, and you want to be
-        // able to hide it to see inside.
-        const lidBody = store.addBody(`${body.name} lid`)
-        const lidId = newId('lid')
-        store.addFeature(lidBody, {
-          id: lidId,
-          kind: 'lid',
-          name: 'Lid',
-          sourceBodyId: bodyId,
-          shellFeatureId: shellId,
-          thickness,
-          clearance,
-          fit,
-        })
-        // The matching half - the step or the groove - is cut into the box, so
-        // it belongs in the box's history rather than the lid's. Nothing is
-        // needed for a plain drop-in lid.
-        if (fit !== 'friction') {
-          store.addFeature(bodyId, {
-            id: newId('seat'),
-            kind: 'lidSocket',
-            name: fit === 'ledge' ? 'Ledge for the lid' : 'Groove for the lid',
-            lidBodyId: lidBody,
-            lidFeatureId: lidId,
+        const features: Feature[] = [
+          {
+            id: shellId,
+            kind: 'shell',
+            name: 'Hollow out',
+            componentId,
+            bodyId,
+            thickness,
+            openFaces: [{ bodyId, anchor: picked.point, normal: picked.normal }],
+          },
+        ]
+        const bodies: Record<string, Partial<Body>> = {}
+        if (withLid) {
+          const lidBodyId = newId('body')
+          const lidId = newId('lid')
+          bodies[lidBodyId] = { name: `${body.name} lid` }
+          features.push({
+            id: lidId,
+            kind: 'lid',
+            name: 'Lid',
+            componentId,
+            sourceBodyId: bodyId,
+            shellFeatureId: shellId,
+            thickness,
+            clearance,
+            fit,
+            result: { kind: 'newBody', bodyId: lidBodyId },
           })
+          if (fit !== 'friction') {
+            features.push({
+              id: newId('seat'),
+              kind: 'lidSocket',
+              name: fit === 'ledge' ? 'Ledge for the lid' : 'Groove for the lid',
+              componentId,
+              bodyId,
+              lidFeatureId: lidId,
+            })
+          }
         }
+        store.addFeatures(features, bodies)
       }
 
       out.push({
@@ -410,17 +457,11 @@ function buildObjectActions(
           ],
         },
         prompt: { label: 'Wall', initial: 2, unit: 'mm' },
-        // A fifth of a millimetre is the usual starting point for a printed
-        // part that has to go into another printed part. It is a prompt rather
-        // than a fixed number because the right gap depends on the printer.
         prompt2: { label: 'Gap round the lid', initial: 0.2, unit: 'mm' },
         run: (thickness, clearance, _third, fit) =>
           hollowOut(thickness, true, clearance ?? 0.2, (fit as LidFit) ?? 'ledge'),
       })
     }
-    // Anything picked with shift takes priority over the blanket versions,
-    // because "round these three edges" is nearly always what was meant when
-    // the user went to the trouble of selecting them.
     const pickedEdges = store.subSelection.filter((s) => s.bodyId === bodyId && s.kind === 'edge')
     if (pickedEdges.length > 0) {
       const refs = pickedEdges.map((s) => ({
@@ -435,10 +476,12 @@ function buildObjectActions(
         hint: 'Only the ones you selected',
         prompt: { label: 'Radius', initial: 2, unit: 'mm' },
         run: (radius) =>
-          store.addFeature(bodyId, {
+          store.addFeature({
             id: newId('fillet'),
             kind: 'fillet',
             name: many ? `Round ${pickedEdges.length} edges` : 'Round an edge',
+            componentId,
+            bodyId,
             radius,
             edges: refs,
           }),
@@ -448,22 +491,22 @@ function buildObjectActions(
         label: `Bevel ${many ? `these ${pickedEdges.length} edges` : 'this edge'}`,
         prompt: { label: 'Size', initial: 1, unit: 'mm' },
         run: (distance) =>
-          store.addFeature(bodyId, {
+          store.addFeature({
             id: newId('chamfer'),
             kind: 'chamfer',
             name: many ? `Bevel ${pickedEdges.length} edges` : 'Bevel an edge',
+            componentId,
+            bodyId,
             distance,
             edges: refs,
           }),
       })
     }
 
-    if (picked && picked.bodyId === bodyId) {
+    if (picked && onThis) {
       const ventOn = (shape: VentShape, label: string, hint: string, initial: number) => ({
         id: `vent-${shape}`,
         label,
-        // Every vent leaves a solid border round the edge of the face. Without
-        // it the pattern runs off the side and prints as loose threads.
         hint,
         sub: 'Vent it',
         prompt: {
@@ -473,10 +516,12 @@ function buildObjectActions(
         },
         prompt2: { label: 'Gap between', initial: 2, unit: 'mm' },
         run: (size: number, spacing?: number) =>
-          store.addFeature(bodyId, {
+          store.addFeature({
             id: newId('vent'),
             kind: 'vent',
             name: 'Vent holes',
+            componentId,
+            bodyId,
             plane: {
               kind: 'face',
               face: { bodyId, anchor: picked.point, normal: picked.normal },
@@ -533,10 +578,12 @@ function buildObjectActions(
       hint: 'Softens every corner at once',
       prompt: { label: 'Radius', initial: 2, unit: 'mm' },
       run: (radius) =>
-        store.addFeature(bodyId, {
+        store.addFeature({
           id: newId('fillet'),
           kind: 'fillet',
           name: 'Round edges',
+          componentId,
+          bodyId,
           radius,
           edges: [],
         }),
@@ -546,10 +593,12 @@ function buildObjectActions(
       label: 'Bevel all the edges',
       prompt: { label: 'Size', initial: 1, unit: 'mm' },
       run: (distance) =>
-        store.addFeature(bodyId, {
+        store.addFeature({
           id: newId('chamfer'),
           kind: 'chamfer',
           name: 'Bevel edges',
+          componentId,
+          bodyId,
           distance,
           edges: [],
         }),
@@ -559,55 +608,44 @@ function buildObjectActions(
       label: 'Draw on top of this',
       hint: 'Start a new outline on the highest face',
       run: () => {
-        const shape = store.shapes.find((s) => s.id === bodyId)
-        store.startSketch(
-          { kind: 'named', name: 'XY', offset: shape ? shape.bounds[5] : 0 },
-          bodyId,
-        )
+        const bounds = bodyBounds(useStore.getState(), bodyId)
+        store.startSketch({ kind: 'named', name: 'XY', offset: bounds ? bounds[5] : 0 }, bodyId)
       },
     })
-    // One entry per other body rather than a picker: with the handful of bodies
-    // a project this size has, naming them outright is faster to read and
-    // impossible to get wrong.
-    const others = doc.bodies.filter((other) => other.id !== bodyId)
-    const positionOf = (id: string) => doc.bodies.findIndex((x) => x.id === id)
-    for (const other of others) {
-      const later = positionOf(other.id) > positionOf(bodyId)
-      const note = later ? ` (will move "${other.name}" above this one first)` : ''
-      const withOrdering = (op: 'add' | 'cut' | 'intersect') => () => {
-        // Bodies build top to bottom, so the tool has to come first.
-        if (later) store.moveBodyBefore(other.id, bodyId)
-        store.addFeature(bodyId, {
+    for (const other of component.bodies.filter((candidate) => candidate.id !== bodyId)) {
+      const combine = (operation: 'join' | 'cut' | 'intersect') => () =>
+        store.addFeature({
           id: newId('combine'),
           kind: 'combine',
           name:
-            op === 'add'
+            operation === 'join'
               ? `Join with ${other.name}`
-              : op === 'cut'
+              : operation === 'cut'
                 ? `Cut away ${other.name}`
                 : `Overlap with ${other.name}`,
-          otherBodyId: other.id,
-          operation: op,
-          keepOther: false,
+          componentId,
+          bodyId,
+          toolBodyIds: [other.id],
+          operation,
+          keepTools: false,
         })
-      }
       out.push({
         id: `join-${other.id}`,
         label: `Join with ${other.name}`,
-        hint: `Fuses the two into one part${note}`,
-        run: withOrdering('add'),
+        hint: 'Fuses the two into one part',
+        run: combine('join'),
       })
       out.push({
         id: `cut-${other.id}`,
         label: `Cut ${other.name} away from this`,
-        hint: `Uses it as a cookie cutter${note}`,
-        run: withOrdering('cut'),
+        hint: 'Uses it as a cookie cutter',
+        run: combine('cut'),
       })
       out.push({
         id: `overlap-${other.id}`,
         label: `Keep only where they overlap`,
-        hint: `The part they share with ${other.name}${note}`,
-        run: withOrdering('intersect'),
+        hint: `The part they share with ${other.name}`,
+        run: combine('intersect'),
       })
     }
 
@@ -630,27 +668,23 @@ function buildObjectActions(
       },
     })
 
-    // Simple shapes used as cutters. Quicker than sketching for the common
-    // "knock a round hollow out of that" jobs.
-    const topOf = () => {
-      const built = store.shapes.find((x) => x.id === bodyId)
-      return built ? built.bounds[5] : 0
-    }
+    const topOf = () => bodyBounds(useStore.getState(), bodyId)?.[5] ?? 0
     out.push({
       id: 'cut-ball',
       label: 'Cut a ball-shaped hollow',
       hint: 'Scoops a sphere out of the part, centred where you clicked',
       prompt: { label: 'Diameter', initial: 20, unit: 'mm' },
       run: (diameter) =>
-        store.addFeature(bodyId, {
+        store.addFeature({
           id: newId('sphere'),
           kind: 'sphere',
           name: 'Ball hollow',
+          componentId,
           plane: { kind: 'named', name: 'XY', offset: 0 },
           centre: picked ? [picked.point[0], picked.point[1]] : [0, 0],
           radius: diameter / 2,
           half: false,
-          operation: 'cut',
+          result: { kind: 'cut', bodyIds: [bodyId] },
         }),
     })
     out.push({
@@ -659,10 +693,11 @@ function buildObjectActions(
       prompt: { label: 'Across', initial: 20, unit: 'mm' },
       prompt2: { label: 'Deep', initial: 10, unit: 'mm' },
       run: (across, deep) =>
-        store.addFeature(bodyId, {
+        store.addFeature({
           id: newId('box'),
           kind: 'box',
           name: 'Square hollow',
+          componentId,
           plane: { kind: 'named', name: 'XY', offset: topOf() },
           origin: picked
             ? [picked.point[0] - across / 2, picked.point[1] - across / 2]
@@ -670,7 +705,7 @@ function buildObjectActions(
           width: across,
           depth: across,
           height: -(deep ?? 10),
-          operation: 'cut',
+          result: { kind: 'cut', bodyIds: [bodyId] },
         }),
     })
 
@@ -680,20 +715,12 @@ function buildObjectActions(
       hint: body.negative
         ? 'Back to being a part in its own right'
         : 'Cuts its shape out of every other part instead of being one',
-      run: () =>
-        store.commit((d) => {
-          const target = d.bodies.find((x) => x.id === bodyId)
-          if (target) target.negative = !target.negative
-        }),
+      run: () => store.updateBody(bodyId, { negative: !body.negative }),
     })
     out.push({
       id: 'hide',
       label: 'Hide it',
-      run: () =>
-        store.commit((d) => {
-          const target = d.bodies.find((x) => x.id === bodyId)
-          if (target) target.visible = false
-        }),
+      run: () => store.updateBody(bodyId, { visible: false }),
     })
     out.push({
       id: 'delete',
@@ -732,17 +759,18 @@ function buildObjectActions(
       prompt2: { label: 'Depth', initial: 30, unit: 'mm', min: 0.01 },
       prompt3: { label: 'Height', initial: 20, unit: 'mm', min: 0.01 },
       run: (across, depth = 30, tall = 20) => {
-        addPrimitive('Box', {
+        addPrimitive('Box', (componentId, bodyId) => ({
           id: newId('box'),
           kind: 'box',
           name: 'Box',
+          componentId,
           plane: { kind: 'named', name: 'XY', offset: 0 },
           origin: [-across / 2, -depth / 2],
           width: across,
           depth,
           height: tall ?? 20,
-          operation: 'new',
-        })
+          result: { kind: 'newBody', bodyId },
+        }))
       },
     })
     out.push({
@@ -751,16 +779,17 @@ function buildObjectActions(
       prompt: { label: 'Diameter', initial: 30, unit: 'mm', min: 0.01 },
       prompt2: { label: 'Height', initial: 20, unit: 'mm', min: 0.01 },
       run: (diameter, tall) => {
-        addPrimitive('Cylinder', {
+        addPrimitive('Cylinder', (componentId, bodyId) => ({
           id: newId('cyl'),
           kind: 'cylinder',
           name: 'Cylinder',
+          componentId,
           plane: { kind: 'named', name: 'XY', offset: 0 },
           centre: [0, 0],
           radius: diameter / 2,
           height: tall ?? 20,
-          operation: 'new',
-        })
+          result: { kind: 'newBody', bodyId },
+        }))
       },
     })
     out.push({
@@ -768,16 +797,17 @@ function buildObjectActions(
       label: 'Add a ball',
       prompt: { label: 'Diameter', initial: 30, unit: 'mm', min: 0.01 },
       run: (diameter) => {
-        addPrimitive('Ball', {
+        addPrimitive('Ball', (componentId, bodyId) => ({
           id: newId('sphere'),
           kind: 'sphere',
           name: 'Ball',
+          componentId,
           plane: { kind: 'named', name: 'XY', offset: 0 },
           centre: [0, 0],
           radius: diameter / 2,
           half: false,
-          operation: 'new',
-        })
+          result: { kind: 'newBody', bodyId },
+        }))
       },
     })
     out.push({
@@ -786,16 +816,17 @@ function buildObjectActions(
       hint: 'Half a ball, flat side down',
       prompt: { label: 'Diameter', initial: 30, unit: 'mm', min: 0.01 },
       run: (diameter) => {
-        addPrimitive('Dome', {
+        addPrimitive('Dome', (componentId, bodyId) => ({
           id: newId('sphere'),
           kind: 'sphere',
           name: 'Dome',
+          componentId,
           plane: { kind: 'named', name: 'XY', offset: 0 },
           centre: [0, 0],
           radius: diameter / 2,
           half: true,
-          operation: 'new',
-        })
+          result: { kind: 'newBody', bodyId },
+        }))
       },
     })
     out.push({
@@ -812,15 +843,25 @@ function buildObjectActions(
           offset: 0,
         }),
     })
+    out.push({
+      id: 'create-component',
+      label: 'New Component',
+      hint: 'An empty component inside the active one. It becomes the active component.',
+      run: () => store.createComponent(),
+    })
     return raw
   }
 
-  if (selection.kind === 'placement' && selection.id) {
+  if (selection.kind === 'occurrence' && selection.id) {
     const id = selection.id
-    const placement = doc.placements.find((p) => p.id === id)
-    if (!placement) return raw
-    const part = getPart(placement.partId)
-    const targetBody = targetBodyId ?? doc.bodies[0]?.id
+    const occurrence = findOccurrence(doc, id)
+    const component = occurrence ? findComponent(doc, occurrence.componentId) : undefined
+    if (!occurrence || !component) return raw
+    const pose = poseOf(occurrence.transform)
+    const catalogue = component.source.kind === 'catalogue'
+    const part =
+      component.source.kind === 'catalogue' ? getPart(component.source.partId) : undefined
+    const targetBody = targetBodyId ?? targetBodies(doc)[0]?.value
 
     out.push({
       id: 'move',
@@ -834,47 +875,42 @@ function buildObjectActions(
       hint: 'Drag the ring. Snaps to 15 degrees',
       run: () => store.setGizmoMode('rotate'),
     })
+    out.push({
+      id: 'linked-copy',
+      label: 'Linked Copy',
+      hint: 'Another occurrence of the same component. Changing one changes both.',
+      run: () => store.linkedCopy(id),
+    })
+    if (!catalogue) {
+      out.push({
+        id: 'activate',
+        label: 'Activate Component',
+        hint: 'New sketches, bodies and features go into this component.',
+        run: () => store.activateComponent(component.id),
+      })
+    }
 
     const holes = part?.mountingHoles
+    const add = (kind: 'holes' | 'standoffs' | 'ports', height?: number) => {
+      if (!targetBody) return
+      const feature = mountFeature(kind, id, targetBody, {
+        height,
+        instanceId: selection.instanceId,
+      })
+      if (feature) store.addFeature(feature)
+    }
     if (targetBody && holes?.length) {
-      const drillZ = () => {
-        const shape = store.shapes.find((s) => s.id === targetBody)
-        return shape ? shape.bounds[5] : placement.position[2]
-      }
       out.push({
         id: 'holes',
         label: 'Put its mounting holes in',
         hint: `${holes.length} holes, cut right through`,
-        run: () =>
-          store.addFeature(targetBody, {
-            id: newId('hole'),
-            kind: 'hole',
-            name: `Holes for ${placement.name}`,
-            plane: { kind: 'named', name: 'XY', offset: drillZ() },
-            source: { kind: 'placement', placementId: id },
-            style: 'counterbore',
-            diameter: (holes[0].diameter ?? 3) + 0.2,
-            depth: 'through',
-            counterboreDiameter: (holes[0].diameter ?? 3) + 3,
-            counterboreDepth: 2,
-          }),
+        run: () => add('holes'),
       })
       out.push({
         id: 'standoffs',
         label: 'Stand it off on pillars',
         prompt: { label: 'Height', initial: 6, unit: 'mm' },
-        run: (height) =>
-          store.addFeature(targetBody, {
-            id: newId('standoff'),
-            kind: 'standoff',
-            name: `Standoffs for ${placement.name}`,
-            plane: { kind: 'named', name: 'XY', offset: drillZ() },
-            source: { kind: 'placement', placementId: id },
-            height,
-            outerDiameter: (holes[0].diameter ?? 3) + 3,
-            boreDiameter: Math.max((holes[0].diameter ?? 3) - 0.6, 1.2),
-            boreDepth: Math.max(height - 1, 2),
-          }),
+        run: (height) => add('standoffs', height),
       })
     }
     if (targetBody && part?.connectors?.length) {
@@ -885,36 +921,31 @@ function buildObjectActions(
           .map((c) => c.label)
           .slice(0, 3)
           .join(', '),
-        run: () =>
-          store.addFeature(targetBody, {
-            id: newId('ports'),
-            kind: 'portCutout',
-            name: `Openings for ${placement.name}`,
-            placementId: id,
-            connectorIds: [],
-            tolerance: 0.6,
-          }),
+        run: () => add('ports'),
       })
     }
 
     out.push({
       id: 'negative',
-      label: placement.negative ? 'Make it solid again' : 'Turn it into a hole',
-      hint: placement.negative
+      label: occurrence.negative ? 'Make it solid again' : 'Turn it into a hole',
+      hint: occurrence.negative
         ? 'Back to being a part sitting there'
         : 'Cuts a recess of exactly this shape into everything around it',
-      run: () => store.updatePlacement(id, { negative: !placement.negative }),
+      run: () => store.updateOccurrence(id, { negative: !occurrence.negative }),
     })
     out.push({
       id: 'flip',
-      label: placement.flipped ? 'Turn it right way up' : 'Flip it upside down',
-      run: () => store.updatePlacement(id, { flipped: !placement.flipped }),
+      label: pose.flipped ? 'Turn it right way up' : 'Flip it upside down',
+      run: () =>
+        store.updateOccurrence(id, {
+          transform: withPose(occurrence.transform, { flipped: !pose.flipped }),
+        }),
     })
     out.push({
       id: 'delete',
-      label: 'Remove this part',
+      label: catalogue ? 'Remove this part' : 'Delete this component',
       danger: true,
-      run: () => store.removePlacement(id),
+      run: () => store.removeOccurrence(id),
     })
   }
 

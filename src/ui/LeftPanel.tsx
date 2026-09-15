@@ -1,6 +1,24 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../doc/store'
-import { FEATURE_ICON, FEATURE_LABEL, type Body, type Feature } from '../doc/types'
+import {
+  FEATURE_ICON,
+  FEATURE_LABEL,
+  type Body,
+  type Component,
+  type Feature,
+  type LengthUnit,
+  type Occurrence,
+} from '../doc/types'
+import {
+  canMoveFeature,
+  childOccurrences,
+  featureCreatesBodies,
+  featureIndex,
+  featureModifiesBodies,
+  findComponent,
+  isRolledBack,
+} from '../doc/model'
+import { LENGTH_UNITS, UNIT_NAME } from '../core/units'
 import { PartMaker } from './PartMaker'
 import type { PartCategory } from '../catalogue'
 import { groupedCatalogue, searchParts, CATEGORY_BLURB, CONFIDENCE_LABEL } from '../catalogue'
@@ -32,124 +50,240 @@ export function LeftPanel({
 
 function DesignTree() {
   const doc = useStore((s) => s.doc)
-  const selection = useStore((s) => s.selection)
   const errors = useStore((s) => s.errors)
+  const failed = useMemo(
+    () => new Set(errors.filter((e) => e.severity === 'error').map((e) => e.featureId)),
+    [errors],
+  )
+  const root = findComponent(doc, doc.rootComponentId)
   const store = useStore.getState()
-
-  const errorFeatures = useMemo(() => new Set(errors.map((e) => e.featureId)), [errors])
-
-  if (doc.bodies.length === 0 && doc.placements.length === 0) {
-    return (
-      <div className="empty">
-        Untitled design
-        <br />
-        <br />
-        Create Sketch → choose a plane → draw a profile → Finish Sketch → Extrude (E). Insert
-        hardware from the toolbar to build around a component.
-      </div>
-    )
-  }
 
   return (
     <div className="tree">
-      <div className="browser-document">
-        ◈ {doc.name} <small>mm</small>
-      </div>
+      <DocumentSettings name={doc.name} units={doc.units} />
       <details className="origin-planes">
         <summary>▱ Origin</summary>
         {(['XY', 'XZ', 'YZ'] as const).map((name) => (
           <button key={name} onClick={() => store.startSketch({ kind: 'named', name, offset: 0 })}>
-            ▧ {name} plane · Create sketch
+            ▧ {name} plane · Create Sketch
           </button>
         ))}
       </details>
-      <div className="browser-folder">▾ Bodies ({doc.bodies.length})</div>
-      {doc.bodies.map((body) => (
-        <BodyBranch key={body.id} body={body} selection={selection} errorFeatures={errorFeatures} />
-      ))}
-
-      {doc.placements.length > 0 && (
-        <>
-          <div className="tree-item tree-body" style={{ marginTop: 14 }}>
-            <span className="glyph">▦</span>
-            <span className="name">Components</span>
-          </div>
-          {doc.placements.map((placement) => (
-            <div
-              key={placement.id}
-              className={`tree-item tree-feature ${
-                selection.id === placement.id ? 'selected' : ''
-              }`}
-              onClick={() => store.select({ kind: 'placement', id: placement.id })}
-              onMouseEnter={() => store.setHovered(placement.id)}
-              onMouseLeave={() => store.setHovered(null)}
-            >
-              <span className="glyph">▪</span>
-              <span className="name">{placement.name}</span>
-              <button
-                className="act"
-                title={placement.visible ? 'Hide' : 'Show'}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  store.updatePlacement(placement.id, { visible: !placement.visible })
-                }}
-              >
-                {placement.visible ? '◉' : '○'}
-              </button>
-              <button
-                className="act"
-                title="Remove"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  store.removePlacement(placement.id)
-                }}
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-        </>
+      {root && <ComponentContents component={root} failed={failed} lineage={[root.id]} />}
+      {!doc.timeline.length && !doc.occurrences.length && (
+        <div className="empty">
+          Create Sketch → choose a plane → draw a profile → Finish Sketch → Extrude (E). Insert
+          hardware from the toolbar to build around a component.
+        </div>
       )}
     </div>
   )
 }
 
-function BodyBranch({
-  body,
-  selection,
-  errorFeatures,
+function DocumentSettings({ name, units }: { name: string; units: LengthUnit }) {
+  return (
+    <details className="document-settings">
+      <summary className="browser-document">
+        ◈ {name} <small>{units}</small>
+      </summary>
+      <label
+        className="browser-setting"
+        title="Lengths are shown and typed in this unit. The design is stored in millimetres."
+        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 10px' }}
+      >
+        <span>Units</span>
+        <select
+          aria-label="Document units"
+          value={units}
+          onChange={(e) => useStore.getState().setUnits(e.target.value as LengthUnit)}
+        >
+          {LENGTH_UNITS.map((unit) => (
+            <option key={unit} value={unit}>
+              {UNIT_NAME[unit]} ({unit})
+            </option>
+          ))}
+        </select>
+      </label>
+    </details>
+  )
+}
+
+function ComponentContents({
+  component,
+  failed,
+  lineage,
 }: {
-  body: Body
-  selection: ReturnType<typeof useStore.getState>['selection']
-  errorFeatures: Set<string>
+  component: Component
+  failed: Set<string>
+  lineage: string[]
 }) {
+  const doc = useStore((s) => s.doc)
+  const selection = useStore((s) => s.selection)
+  const sketches = doc.timeline.filter(
+    (feature) => feature.kind === 'sketch' && feature.componentId === component.id,
+  )
+  const children = childOccurrences(doc, component.id).filter(
+    (occurrence) => !lineage.includes(occurrence.componentId),
+  )
+
+  return (
+    <>
+      {component.bodies.length > 0 && (
+        <details className="browser-folder" open>
+          <summary>Bodies ({component.bodies.length})</summary>
+          {component.bodies.map((body) => (
+            <BodyBranch key={body.id} body={body} failed={failed} />
+          ))}
+        </details>
+      )}
+      {sketches.length > 0 && (
+        <details className="browser-folder">
+          <summary>Sketches ({sketches.length})</summary>
+          {sketches.map((feature) => (
+            <FeatureRow
+              key={feature.id}
+              feature={feature}
+              selected={selection.kind === 'feature' && selection.id === feature.id}
+              failed={failed.has(feature.id)}
+            />
+          ))}
+        </details>
+      )}
+      {children.map((occurrence) => (
+        <OccurrenceBranch
+          key={occurrence.id}
+          occurrence={occurrence}
+          failed={failed}
+          lineage={lineage}
+        />
+      ))}
+    </>
+  )
+}
+
+function OccurrenceBranch({
+  occurrence,
+  failed,
+  lineage,
+}: {
+  occurrence: Occurrence
+  failed: Set<string>
+  lineage: string[]
+}) {
+  const doc = useStore((s) => s.doc)
+  const selection = useStore((s) => s.selection)
+  const activeComponentId = useStore((s) => s.activeComponentId)
   const store = useStore.getState()
+  const component = findComponent(doc, occurrence.componentId)
+  if (!component) return null
+  const catalogue = component.source.kind === 'catalogue'
+  const active = activeComponentId === component.id
+  const selected = selection.kind === 'occurrence' && selection.id === occurrence.id
+
+  return (
+    <div className="browser-occurrence">
+      <div
+        className={`tree-item tree-body ${selected ? 'selected' : ''}`}
+        onClick={() => store.select({ kind: 'occurrence', id: occurrence.id })}
+        onMouseEnter={() => store.setHovered(occurrence.id)}
+        onMouseLeave={() => store.setHovered(null)}
+      >
+        {!catalogue && (
+          <input
+            type="radio"
+            className="activate"
+            aria-label={`Activate ${occurrence.name}`}
+            title={active ? 'Active component: new sketches and bodies go here' : 'Activate'}
+            checked={active}
+            onClick={(e) => e.stopPropagation()}
+            onChange={() => store.activateComponent(component.id)}
+          />
+        )}
+        <span className="glyph">{catalogue ? '▪' : '▦'}</span>
+        <span className="name" style={{ opacity: occurrence.visible ? 1 : 0.45 }}>
+          {occurrence.name}
+        </span>
+        <button
+          className="act"
+          title="Linked copy: shares this component's design"
+          onClick={(e) => {
+            e.stopPropagation()
+            store.linkedCopy(occurrence.id)
+          }}
+        >
+          ⧉
+        </button>
+        <button
+          className="act"
+          title={occurrence.visible ? 'Hide' : 'Show'}
+          onClick={(e) => {
+            e.stopPropagation()
+            store.updateOccurrence(occurrence.id, { visible: !occurrence.visible })
+          }}
+        >
+          {occurrence.visible ? '◉' : '○'}
+        </button>
+        <button
+          className="act"
+          title="Delete"
+          onClick={(e) => {
+            e.stopPropagation()
+            store.removeOccurrence(occurrence.id)
+          }}
+        >
+          ✕
+        </button>
+      </div>
+      {!catalogue && (
+        <div className="browser-children" style={{ paddingLeft: 12 }}>
+          <ComponentContents
+            component={component}
+            failed={failed}
+            lineage={[...lineage, component.id]}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function BodyBranch({ body, failed }: { body: Body; failed: Set<string> }) {
+  const doc = useStore((s) => s.doc)
+  const selection = useStore((s) => s.selection)
+  const store = useStore.getState()
+  const steps = doc.timeline.filter(
+    (feature) =>
+      featureCreatesBodies(feature).includes(body.id) ||
+      featureModifiesBodies(feature).includes(body.id),
+  )
+
   return (
     <>
       <div
-        className={`tree-item tree-body ${selection.id === body.id ? 'selected' : ''}`}
+        className={`tree-item tree-body ${
+          selection.kind === 'body' && selection.id === body.id ? 'selected' : ''
+        }`}
         onClick={() => store.select({ kind: 'body', id: body.id })}
         onMouseEnter={() => store.setHovered(body.id)}
         onMouseLeave={() => store.setHovered(null)}
       >
         <span className="glyph">▣</span>
-        <span className="name">{body.name}</span>
+        <span className="name" style={{ opacity: body.visible ? 1 : 0.45 }}>
+          {body.name}
+        </span>
         <button
           className="act"
           title={body.visible ? 'Hide' : 'Show'}
           onClick={(e) => {
             e.stopPropagation()
-            store.commit((d) => {
-              const b = d.bodies.find((x) => x.id === body.id)
-              if (b) b.visible = !b.visible
-            })
+            store.updateBody(body.id, { visible: !body.visible })
           }}
         >
           {body.visible ? '◉' : '○'}
         </button>
         <button
           className="act"
-          title="Delete this part"
+          title="Delete this body and every step that builds it"
           onClick={(e) => {
             e.stopPropagation()
             store.removeBody(body.id)
@@ -158,21 +292,23 @@ function BodyBranch({
           ✕
         </button>
       </div>
-
       <details
         className="feature-history"
-        open={selection.kind === 'feature' && selection.bodyId === body.id ? true : undefined}
+        open={
+          selection.kind === 'feature' && steps.some((feature) => feature.id === selection.id)
+            ? true
+            : undefined
+        }
       >
         <summary>
-          {body.features.length} modelling step{body.features.length === 1 ? '' : 's'}
+          {steps.length} modelling step{steps.length === 1 ? '' : 's'}
         </summary>
-        {body.features.map((feature) => (
+        {steps.map((feature) => (
           <FeatureRow
             key={feature.id}
-            bodyId={body.id}
             feature={feature}
-            selected={selection.id === feature.id}
-            failed={errorFeatures.has(feature.id)}
+            selected={selection.kind === 'feature' && selection.id === feature.id}
+            failed={failed.has(feature.id)}
           />
         ))}
       </details>
@@ -181,37 +317,39 @@ function BodyBranch({
 }
 
 function FeatureRow({
-  bodyId,
   feature,
   selected,
   failed,
 }: {
-  bodyId: string
   feature: Feature
   selected: boolean
   failed: boolean
 }) {
+  const doc = useStore((s) => s.doc)
   const store = useStore.getState()
+  const index = featureIndex(doc, feature.id)
+  const dimmed = !!feature.suppressed || isRolledBack(doc, index)
+
   return (
     <div
       className={`tree-item tree-feature ${selected ? 'selected' : ''} ${failed ? 'error' : ''}`}
-      onClick={() => store.select({ kind: 'feature', id: feature.id, bodyId })}
+      onClick={() => store.select({ kind: 'feature', id: feature.id })}
       onDoubleClick={() => {
-        if (feature.kind === 'sketch') store.openSketch(bodyId, feature.id)
+        if (feature.kind === 'sketch') store.openSketch(feature.id)
       }}
       title={feature.kind === 'sketch' ? 'Double-click to edit this sketch' : undefined}
     >
       <span className="glyph">{FEATURE_ICON[feature.kind]}</span>
-      <span className="name" style={{ opacity: feature.suppressed ? 0.45 : 1 }}>
+      <span className="name" style={{ opacity: dimmed ? 0.45 : 1 }}>
         {feature.name || FEATURE_LABEL[feature.kind]}
       </span>
       {feature.kind === 'sketch' && (
         <button
           className="act"
-          title="Edit sketch"
+          title="Edit Sketch"
           onClick={(e) => {
             e.stopPropagation()
-            store.openSketch(bodyId, feature.id)
+            store.openSketch(feature.id)
           }}
         >
           ✎
@@ -219,30 +357,33 @@ function FeatureRow({
       )}
       <button
         className="act"
-        title="Move earlier"
+        title="Move earlier in the timeline"
+        disabled={index <= 0 || !canMoveFeature(doc, feature.id, index - 1)}
         onClick={(e) => {
           e.stopPropagation()
-          store.moveFeature(bodyId, feature.id, -1)
+          store.moveFeature(feature.id, index - 1)
         }}
       >
         ↑
       </button>
       <button
         className="act"
-        title={feature.suppressed ? 'Turn this step back on' : 'Turn this step off'}
+        title={feature.suppressed ? 'Unsuppress' : 'Suppress'}
         onClick={(e) => {
           e.stopPropagation()
-          store.updateFeature(bodyId, feature.id, { suppressed: !feature.suppressed })
+          store.updateFeature(feature.id, { suppressed: !feature.suppressed })
         }}
       >
         {feature.suppressed ? '○' : '◉'}
       </button>
       <button
         className="act"
-        title="Delete this step"
+        title="Delete"
         onClick={(e) => {
           e.stopPropagation()
-          store.removeFeature(bodyId, feature.id)
+          if (store.removeFeature(feature.id)) return
+          if (confirm(`Delete ${feature.name} and the steps that depend on it?`))
+            store.removeFeature(feature.id, { withDependents: true })
         }}
       >
         ✕
@@ -254,16 +395,7 @@ function FeatureRow({
 function Catalogue() {
   const [query, setQuery] = useState('')
   const [making, setMaking] = useState(false)
-  /**
-   * Which type is open, or null for the list of types.
-   *
-   * The catalogue is past the size where one scrolling list is useful. Picking
-   * a type first is the same move the right-click menus make: what you read on
-   * the first look is ten short phrases rather than fifty part names, and you
-   * already know which one you want before you have read any of them.
-   */
   const [openType, setOpenType] = useState<PartCategory | null>(null)
-  // Bumped when a part is added, so the list picks it up.
   const [version, setVersion] = useState(0)
   const groups = useMemo(() => groupedCatalogue(searchParts(query)), [query, version])
 
@@ -285,9 +417,6 @@ function Catalogue() {
         />
       </div>
       <div className="scroll" style={{ flex: 1 }}>
-        {/* Searching cuts across every type, so the type list gets out of the
-            way: somebody typing "pi" wants the Pi, not to be asked which shelf
-            it is on. */}
         {!query && openType && (
           <button className="cat-back" onClick={() => setOpenType(null)}>
             <span className="cat-back-arrow">‹</span> All types
@@ -336,12 +465,11 @@ function Catalogue() {
                 className="cat-item"
                 title={`${CONFIDENCE_LABEL[part.confidence]}\n\n${part.source}`}
                 onClick={() => {
-                  useStore.getState().addPlacement(part.id)
-                  useStore
-                    .getState()
-                    .setStatus(
-                      `${part.name} added. Drag the arrows or enter its position in Properties.`,
-                    )
+                  const store = useStore.getState()
+                  store.insertCatalogue(part.id)
+                  store.setStatus(
+                    `${part.name} inserted as a component. Drag the arrows or enter its position in Properties.`,
+                  )
                   window.dispatchEvent(new CustomEvent('okc:fit'))
                 }}
               >

@@ -6,20 +6,17 @@ export function ParametersDialog({ onClose }: { onClose: () => void }) {
   const state = useStore(),
     ref = useRef<HTMLDialogElement>(null)
   const [parameters, setParameters] = useState(() => structuredClone(state.doc.parameters))
-  const [bindings, setBindings] = useState(() => structuredClone(state.doc.bindings ?? []))
+  const [bindings, setBindings] = useState(() => structuredClone(state.doc.bindings))
   const [failure, setFailure] = useState('')
   useEffect(() => {
     ref.current?.showModal()
   }, [])
-  const targets = state.doc.bodies.flatMap((body) =>
-    body.features.flatMap((feature) =>
-      parameterFields(feature).map((field) => ({
-        body,
-        feature,
-        field,
-        key: `${body.id}/${feature.id}/${field}`,
-      })),
-    ),
+  const targets = state.doc.timeline.flatMap((feature) =>
+    parameterFields(feature).map((field) => ({
+      feature,
+      field,
+      key: `${feature.id}/${field}`,
+    })),
   )
   const preview = structuredClone(state.doc)
   preview.parameters = structuredClone(parameters)
@@ -51,8 +48,8 @@ export function ParametersDialog({ onClose }: { onClose: () => void }) {
         </button>
       </header>
       <p>
-        Persistent scalar formulas. Parameters use model millimetres; angle links interpret values
-        as degrees. No dimensional unit analysis.
+        Persistent scalar formulas. Plain numbers are millimetres; type a unit (mm, cm, m, in, ft)
+        to use another. Angle links read values as degrees.
       </p>
       <h3>Parameter table</h3>
       <div className="parameter-table">
@@ -111,7 +108,8 @@ export function ParametersDialog({ onClose }: { onClose: () => void }) {
       <button onClick={add}>Add parameter</button>
       <p className="hint">
         Examples: width = 80; depth = width/2; wall = 3mm. Lowercase names. + − * /, parentheses,
-        pi, mm/cm/m/in. References may point to later rows. Rename referenced names in formulas too.
+        pi, mm/cm/m/in/ft. References may point to later rows. Rename referenced names in formulas
+        too.
       </p>
       <h3>Linked feature dimensions</h3>
       <p className="hint">
@@ -121,21 +119,20 @@ export function ParametersDialog({ onClose }: { onClose: () => void }) {
         <div className="binding-row" key={index}>
           <select
             aria-label={`Link ${index + 1} target`}
-            value={`${b.bodyId}/${b.featureId}/${b.field}`}
+            value={`${b.featureId}/${b.field}`}
             onChange={(e) => {
-              const t = targets.find((t) => t.key === e.target.value)!
+              const t = targets.find((candidate) => candidate.key === e.target.value)
+              if (!t) return
               setBindings(
                 bindings.map((q, i) =>
-                  i === index
-                    ? { ...q, bodyId: t.body.id, featureId: t.feature.id, field: t.field }
-                    : q,
+                  i === index ? { ...q, featureId: t.feature.id, field: t.field } : q,
                 ),
               )
             }}
           >
             {targets.map((t) => (
               <option key={t.key} value={t.key}>
-                {t.body.name} / {t.feature.name} / {t.field}
+                {t.feature.name} / {t.field}
               </option>
             ))}
           </select>
@@ -157,17 +154,15 @@ export function ParametersDialog({ onClose }: { onClose: () => void }) {
         disabled={!targets.length}
         onClick={() => {
           const t = targets.find(
-            (t) =>
+            (candidate) =>
               !bindings.some(
-                (b) =>
-                  b.bodyId === t.body.id && b.featureId === t.feature.id && b.field === t.field,
+                (b) => b.featureId === candidate.feature.id && b.field === candidate.field,
               ),
           )
           if (t)
             setBindings([
               ...bindings,
               {
-                bodyId: t.body.id,
                 featureId: t.feature.id,
                 field: t.field,
                 expression: parameters[0]?.name ?? '10',

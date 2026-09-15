@@ -9,7 +9,8 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
 import type { FastenerGhost } from './ghosts'
-import type { ShapeResult } from '../kernel/types'
+import type { BodyMesh, Instance } from '../kernel/types'
+import type { Matrix4 } from '../doc/types'
 import type { Frame, Vec2, Vec3 } from '../core/math'
 import { frameToWorld } from '../core/math'
 import type { Sketch2D } from '../sketch/types'
@@ -25,32 +26,51 @@ export interface ScreenLabel {
 }
 
 export interface PickResult {
-  id: string
-  kind: 'body' | 'placement'
+  instanceId: string
+  kind: Instance['kind']
+  bodyId: string
+  path: string[]
   point: Vec3
   normal: Vec3
+  localPoint: Vec3
+  localNormal: Vec3
   faceId: number
 }
 
-/** A face, edge or corner of a built solid. */
 export interface SubPick {
+  instanceId: string
   bodyId: string
   kind: 'face' | 'edge' | 'vertex'
-  /** Stable within one rebuild: the kernel's own id, or a welded position. */
   id: string
   point: Vec3
   normal?: Vec3
-  /** Edge length, so a fillet can record a fingerprint of what was picked. */
   length?: number
 }
 
-/** Per-shape tessellation kept so a pick can be traced back to a B-rep face. */
+export interface GizmoPose {
+  position: Vec3
+  rotationXyz: Vec3
+  matrix: Matrix4
+}
+
 interface ShapeGroups {
   vertices: Float32Array
   triangles: Uint32Array
-  faceGroups: ShapeResult['mesh']['faceGroups']
+  faceGroups: BodyMesh['mesh']['faceGroups']
   lines: Float32Array
-  edgeGroups: ShapeResult['edges']['edgeGroups']
+  edgeGroups: BodyMesh['edges']['edgeGroups']
+}
+
+interface GeometryEntry {
+  surface: THREE.BufferGeometry
+  edges: THREE.BufferGeometry
+  data: ShapeGroups
+}
+
+interface InstanceObject {
+  mesh: THREE.Mesh
+  outline: THREE.LineSegments
+  instance: Instance
 }
 
 /**
@@ -72,6 +92,10 @@ const CONSTRUCTION = 0x6f7681
 /** Geometry that is not yet pinned down. */
 const UNDERDEFINED = 0x5aa9e6
 
+function matchesKey(instance: Instance, key: string | null): boolean {
+  return !!key && (instance.id === key || instance.bodyId === key || instance.path.includes(key))
+}
+
 export class ViewportEngine {
   readonly scene = new THREE.Scene()
   readonly camera: THREE.PerspectiveCamera
@@ -84,11 +108,16 @@ export class ViewportEngine {
   private overlayGroup = new THREE.Group()
   private gridGroup = new THREE.Group()
 
-  private meshes = new Map<string, THREE.Mesh>()
-  private outlines = new Map<string, THREE.LineSegments>()
-  private groups = new Map<string, ShapeGroups>()
+  private geometries = new Map<string, GeometryEntry>()
+  private objects = new Map<string, InstanceObject>()
   private highlightGroup = new THREE.Group()
   private clipPlane = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0)
+  private sectionPlanes: THREE.Plane[] = []
+  private dimmed = false
+  private highlightKeys: { hovered: string | null; selected: string | null } = {
+    hovered: null,
+    selected: null,
+  }
 
   private disposed = false
   labels: ScreenLabel[] = []
@@ -243,80 +272,117 @@ export class ViewportEngine {
     this.transform?.setRotationSnap(p.angleSnap ? THREE.MathUtils.degToRad(p.angleSnap) : null)
   }
 
-  // -------------------------------------------------------------------------
-  // Solids
-  // -------------------------------------------------------------------------
+  private geometryFor(source: BodyMesh): GeometryEntry {
+    const existing = this.geometries.get(source.key)
+    if (existing) return existing
+    const surface = new THREE.BufferGeometry()
+    surface.setAttribute('position', new THREE.BufferAttribute(source.mesh.vertices, 3))
+    surface.setAttribute('normal', new THREE.BufferAttribute(source.mesh.normals, 3))
+    surface.setIndex(new THREE.BufferAttribute(source.mesh.triangles, 1))
+    surface.computeBoundingSphere()
+    const edges = new THREE.BufferGeometry()
+    edges.setAttribute('position', new THREE.BufferAttribute(source.edges.lines, 3))
+    edges.computeBoundingSphere()
+    const entry: GeometryEntry = {
+      surface,
+      edges,
+      data: {
+        vertices: source.mesh.vertices,
+        triangles: source.mesh.triangles,
+        faceGroups: source.mesh.faceGroups,
+        lines: source.edges.lines,
+        edgeGroups: source.edges.edgeGroups,
+      },
+    }
+    this.geometries.set(source.key, entry)
+    return entry
+  }
 
-  setShapes(shapes: ShapeResult[], showPlacements: boolean) {
+  setScene(
+    instances: Instance[],
+    meshes: ReadonlyMap<string, BodyMesh>,
+    colourOf: (instance: Instance) => string,
+    showPlacements: boolean,
+  ) {
     const seen = new Set<string>()
+    for (const instance of instances) {
+      if (!instance.visible) continue
+      if (instance.kind === 'catalogue' && !showPlacements) continue
+      const source = meshes.get(instance.meshKey)
+      if (!source) continue
+      const geometry = this.geometryFor(source)
+      seen.add(instance.id)
 
-    for (const shape of shapes) {
-      if (shape.kind === 'placement' && !showPlacements) continue
-      seen.add(shape.id)
-
-      let mesh = this.meshes.get(shape.id)
-      if (!mesh) {
+      let entry = this.objects.get(instance.id)
+      if (!entry) {
         const material = new THREE.MeshStandardMaterial({
-          color: new THREE.Color(shape.colour),
           roughness: 0.62,
           metalness: 0.08,
-          clippingPlanes: [],
+          clippingPlanes: this.sectionPlanes,
           side: THREE.DoubleSide,
         })
-        mesh = new THREE.Mesh(new THREE.BufferGeometry(), material)
-        mesh.userData = { id: shape.id, kind: shape.kind }
-        this.meshes.set(shape.id, mesh)
-        this.solidGroup.add(mesh)
-
+        this.applyOpacity(material)
+        const mesh = new THREE.Mesh(geometry.surface, material)
+        mesh.matrixAutoUpdate = false
         const outline = new THREE.LineSegments(
-          new THREE.BufferGeometry(),
-          new THREE.LineBasicMaterial({ color: 0x1a1d21, transparent: true, opacity: 0.85 }),
+          geometry.edges,
+          new THREE.LineBasicMaterial({
+            color: 0x1a1d21,
+            transparent: true,
+            opacity: 0.85,
+            clippingPlanes: this.sectionPlanes,
+          }),
         )
-        this.outlines.set(shape.id, outline)
-        this.solidGroup.add(outline)
+        outline.matrixAutoUpdate = false
+        this.solidGroup.add(mesh, outline)
+        entry = { mesh, outline, instance }
+        this.objects.set(instance.id, entry)
       }
 
-      const geometry = mesh.geometry
-      geometry.setAttribute('position', new THREE.BufferAttribute(shape.mesh.vertices, 3))
-      geometry.setAttribute('normal', new THREE.BufferAttribute(shape.mesh.normals, 3))
-      geometry.setIndex(new THREE.BufferAttribute(shape.mesh.triangles, 1))
-      geometry.computeBoundingSphere()
-      ;(mesh.material as THREE.MeshStandardMaterial).color.set(shape.colour)
-
-      const outline = this.outlines.get(shape.id)!
-      outline.geometry.setAttribute('position', new THREE.BufferAttribute(shape.edges.lines, 3))
-      outline.geometry.computeBoundingSphere()
-
-      this.groups.set(shape.id, {
-        vertices: shape.mesh.vertices,
-        triangles: shape.mesh.triangles,
-        faceGroups: shape.mesh.faceGroups,
-        lines: shape.edges.lines,
-        edgeGroups: shape.edges.edgeGroups,
-      })
+      entry.instance = instance
+      entry.mesh.geometry = geometry.surface
+      entry.outline.geometry = geometry.edges
+      entry.mesh.userData = { instanceId: instance.id }
+      entry.outline.userData = { instanceId: instance.id }
+      entry.mesh.matrix.fromArray(instance.matrix)
+      entry.outline.matrix.fromArray(instance.matrix)
+      entry.mesh.matrixWorldNeedsUpdate = true
+      entry.outline.matrixWorldNeedsUpdate = true
+      ;(entry.mesh.material as THREE.MeshStandardMaterial).color.set(colourOf(instance))
     }
 
-    for (const [id, mesh] of [...this.meshes]) {
+    for (const [id, entry] of [...this.objects]) {
       if (seen.has(id)) continue
-      this.solidGroup.remove(mesh)
-      mesh.geometry.dispose()
-      this.meshes.delete(id)
-      const outline = this.outlines.get(id)
-      if (outline) {
-        this.solidGroup.remove(outline)
-        outline.geometry.dispose()
-        this.outlines.delete(id)
-      }
+      this.solidGroup.remove(entry.mesh, entry.outline)
+      ;(entry.mesh.material as THREE.Material).dispose()
+      ;(entry.outline.material as THREE.Material).dispose()
+      this.objects.delete(id)
     }
+    for (const [key, geometry] of [...this.geometries]) {
+      if (meshes.has(key)) continue
+      geometry.surface.dispose()
+      geometry.edges.dispose()
+      this.geometries.delete(key)
+    }
+
+    this.solidGroup.updateMatrixWorld(true)
+    this.applyHighlight()
+    this.rebuildHighlight()
   }
 
   setHighlight(hovered: string | null, selected: string | null) {
-    for (const [id, mesh] of this.meshes) {
+    this.highlightKeys = { hovered, selected }
+    this.applyHighlight()
+  }
+
+  private applyHighlight() {
+    const { hovered, selected } = this.highlightKeys
+    for (const { mesh, instance } of this.objects.values()) {
       const material = mesh.material as THREE.MeshStandardMaterial
-      if (id === selected) {
+      if (matchesKey(instance, selected)) {
         material.emissive.setHex(ACCENT)
         material.emissiveIntensity = 0.32
-      } else if (id === hovered) {
+      } else if (matchesKey(instance, hovered)) {
         material.emissive.setHex(ACCENT_DIM)
         material.emissiveIntensity = 0.16
       } else {
@@ -326,12 +392,16 @@ export class ViewportEngine {
     }
   }
 
+  private applyOpacity(material: THREE.MeshStandardMaterial) {
+    material.transparent = this.dimmed
+    material.opacity = this.dimmed ? 0.28 : 1
+    material.depthWrite = !this.dimmed
+  }
+
   setOpacity(dimmed: boolean) {
-    for (const mesh of this.meshes.values()) {
-      const material = mesh.material as THREE.MeshStandardMaterial
-      material.transparent = dimmed
-      material.opacity = dimmed ? 0.28 : 1
-      material.depthWrite = !dimmed
+    this.dimmed = dimmed
+    for (const { mesh } of this.objects.values()) {
+      this.applyOpacity(mesh.material as THREE.MeshStandardMaterial)
     }
   }
 
@@ -344,12 +414,10 @@ export class ViewportEngine {
     if (!flipped) normal.negate()
     this.clipPlane.normal.copy(normal)
     this.clipPlane.constant = flipped ? -position : position
-    const planes = enabled ? [this.clipPlane] : []
-    for (const mesh of this.meshes.values()) {
-      ;(mesh.material as THREE.Material).clippingPlanes = planes
-    }
-    for (const outline of this.outlines.values()) {
-      ;(outline.material as THREE.Material).clippingPlanes = planes
+    this.sectionPlanes = enabled ? [this.clipPlane] : []
+    for (const { mesh, outline } of this.objects.values()) {
+      ;(mesh.material as THREE.Material).clippingPlanes = this.sectionPlanes
+      ;(outline.material as THREE.Material).clippingPlanes = this.sectionPlanes
     }
   }
 
@@ -534,20 +602,14 @@ export class ViewportEngine {
   // -------------------------------------------------------------------------
 
   private transform: TransformControls | null = null
-  /**
-   * The gizmo drags this stand-in rather than the mesh itself. Placed parts are
-   * rebuilt from scratch by the kernel on every edit, so the mesh the user sees
-   * is replaced mid-drag; a proxy survives that.
-   */
   private gizmoProxy = new THREE.Object3D()
-  onGizmoChange: ((position: Vec3, rotationDeg: number, rotationXyz: Vec3) => void) | null = null
+  onGizmoChange: ((pose: GizmoPose) => void) | null = null
   onGizmoRelease: (() => void) | null = null
 
   private ensureTransform(): TransformControls {
     if (this.transform) return this.transform
     const tc = new TransformControls(this.camera, this.renderer.domElement)
     tc.setSize(0.9)
-    // Snap to whole millimetres and 15 degrees. Hold shift for fine control.
     const preferences = usePreferences.getState().values
     tc.setTranslationSnap(preferences.moveSnap || null)
     tc.setRotationSnap(
@@ -556,18 +618,20 @@ export class ViewportEngine {
 
     tc.addEventListener('dragging-changed', (event) => {
       const dragging = (event as unknown as { value: boolean }).value
-      // Orbiting while dragging a gizmo handle is nauseating; stop it dead.
       this.controls.enabled = !dragging
       if (!dragging) this.onGizmoRelease?.()
     })
     tc.addEventListener('objectChange', () => {
-      const p = this.gizmoProxy.position
-      const r = this.gizmoProxy.rotation
+      const proxy = this.gizmoProxy
+      proxy.updateMatrix()
       const deg = (a: number) => THREE.MathUtils.radToDeg(a)
-      this.onGizmoChange?.([p.x, p.y, p.z], deg(r.z), [deg(r.x), deg(r.y), deg(r.z)])
+      this.onGizmoChange?.({
+        position: [proxy.position.x, proxy.position.y, proxy.position.z],
+        rotationXyz: [deg(proxy.rotation.x), deg(proxy.rotation.y), deg(proxy.rotation.z)],
+        matrix: Array.from(proxy.matrix.elements) as Matrix4,
+      })
     })
 
-    // three moved the visible gizmo behind getHelper() in recent versions.
     const helper =
       typeof (tc as unknown as { getHelper?: () => THREE.Object3D }).getHelper === 'function'
         ? (tc as unknown as { getHelper: () => THREE.Object3D }).getHelper()
@@ -577,14 +641,11 @@ export class ViewportEngine {
     return tc
   }
 
-  /** Show the gizmo on something, or pass null to hide it. */
   setGizmo(
     target: {
       position: Vec3
-      /** Turn about the vertical axis only, for placed catalogue parts. */
-      rotation?: number
-      /** Turn about all three, for a body you modelled yourself. */
       rotationXyz?: Vec3
+      matrix?: Matrix4
     } | null,
     mode: 'translate' | 'rotate',
   ) {
@@ -596,19 +657,21 @@ export class ViewportEngine {
     if (!this.gizmoProxy.parent) this.scene.add(this.gizmoProxy)
     const rad = THREE.MathUtils.degToRad
     const xyz = target.rotationXyz
-    // Never move the proxy out from under a drag in progress.
     if (!tc.dragging) {
-      this.gizmoProxy.position.set(...target.position)
-      if (xyz) this.gizmoProxy.rotation.set(rad(xyz[0]), rad(xyz[1]), rad(xyz[2]))
-      else this.gizmoProxy.rotation.set(0, 0, rad(target.rotation ?? 0))
+      if (target.matrix) {
+        const scale = new THREE.Vector3()
+        new THREE.Matrix4()
+          .fromArray(target.matrix)
+          .decompose(this.gizmoProxy.position, this.gizmoProxy.quaternion, scale)
+      } else {
+        this.gizmoProxy.position.set(...target.position)
+        this.gizmoProxy.rotation.set(rad(xyz?.[0] ?? 0), rad(xyz?.[1] ?? 0), rad(xyz?.[2] ?? 0))
+      }
+      this.gizmoProxy.updateMatrix()
     }
     tc.attach(this.gizmoProxy)
     tc.setMode(mode)
-    // A placed part sits on a plate and only ever turns about the vertical, so
-    // it gets one ring rather than three the user can get wrong. A body you
-    // modelled yourself has no such assumption - tilting a bracket onto its
-    // side is a normal thing to want - so it gets all three.
-    const freeTurn = mode === 'translate' || !!xyz
+    const freeTurn = mode === 'translate' || !target.matrix
     tc.showX = freeTurn
     tc.showY = freeTurn
     tc.showZ = true
@@ -703,12 +766,8 @@ export class ViewportEngine {
   // -------------------------------------------------------------------------
 
   private pointerToNdc(clientX: number, clientY: number): THREE.Vector2 {
-    // The raycaster reads camera.matrixWorld, which is normally refreshed by
-    // the renderer once per frame. Anything that moves the camera and then
-    // picks before the next frame - entering sketch mode and clicking straight
-    // away, or a tab that is not compositing - would otherwise cast the ray
-    // from where the camera used to be.
     this.camera.updateMatrixWorld()
+    this.solidGroup.updateMatrixWorld(true)
     const rect = this.renderer.domElement.getBoundingClientRect()
     return new THREE.Vector2(
       ((clientX - rect.left) / rect.width) * 2 - 1,
@@ -716,27 +775,35 @@ export class ViewportEngine {
     )
   }
 
+  private pickables(): THREE.Mesh[] {
+    return [...this.objects.values()].map((entry) => entry.mesh)
+  }
+
   pick(clientX: number, clientY: number): PickResult | null {
     this.raycaster.setFromCamera(this.pointerToNdc(clientX, clientY), this.camera)
-    const hits = this.raycaster.intersectObjects([...this.meshes.values()], false)
-    const hit = hits[0]
+    const hit = this.raycaster.intersectObjects(this.pickables(), false)[0]
     if (!hit) return null
-    const normal = hit.face
-      ? hit.face.normal
-          .clone()
-          .applyMatrix3(new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld))
-          .normalize()
-      : new THREE.Vector3(0, 0, 1)
+    const entry = this.objects.get(hit.object.userData.instanceId)
+    if (!entry) return null
+    const localNormal = hit.face ? hit.face.normal.clone().normalize() : new THREE.Vector3(0, 0, 1)
+    const normal = localNormal
+      .clone()
+      .applyMatrix3(new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld))
+      .normalize()
+    const local = hit.object.worldToLocal(hit.point.clone())
     return {
-      id: hit.object.userData.id,
-      kind: hit.object.userData.kind,
+      instanceId: entry.instance.id,
+      kind: entry.instance.kind,
+      bodyId: entry.instance.bodyId,
+      path: entry.instance.path,
       point: [hit.point.x, hit.point.y, hit.point.z],
       normal: [normal.x, normal.y, normal.z],
+      localPoint: [local.x, local.y, local.z],
+      localNormal: [localNormal.x, localNormal.y, localNormal.z],
       faceId: hit.faceIndex ?? -1,
     }
   }
 
-  /** Where the cursor lands on a sketch plane, in that plane's 2D coordinates. */
   pickOnPlane(clientX: number, clientY: number, frame: Frame): Vec2 | null {
     this.raycaster.setFromCamera(this.pointerToNdc(clientX, clientY), this.camera)
     const plane = new THREE.Plane()
@@ -769,88 +836,83 @@ export class ViewportEngine {
       return [((p.x + 1) / 2) * rect.width, ((1 - p.y) / 2) * rect.height]
     }
 
-    // --- corners ------------------------------------------------------------
-    // Done in screen space and *before* any surface test, for two reasons: the
-    // target is then the same size however far you are zoomed out, and corners
-    // on the silhouette still work. Requiring a surface hit first meant the ray
-    // grazed the mesh at exactly the corners people aim for, and five of a
-    // box's eight were unpickable.
+    const bodies = [...this.objects.values()].filter((entry) => entry.instance.kind === 'body')
+
     const VERTEX_PX = 9
-    let bestVertex: { bodyId: string; pos: Vec3; d: number } | null = null
-    for (const [id, groups] of this.groups) {
+    let bestVertex: { entry: InstanceObject; pos: Vec3; d: number } | null = null
+    const world = new THREE.Vector3()
+    for (const entry of bodies) {
+      const groups = this.geometries.get(entry.instance.meshKey)?.data
+      if (!groups) continue
       const seen = new Set<string>()
       for (let i = 0; i < groups.lines.length; i += 3) {
-        const v = new THREE.Vector3(groups.lines[i], groups.lines[i + 1], groups.lines[i + 2])
-        const key = `${v.x.toFixed(4)},${v.y.toFixed(4)},${v.z.toFixed(4)}`
+        const x = groups.lines[i]
+        const y = groups.lines[i + 1]
+        const z = groups.lines[i + 2]
+        const key = `${x.toFixed(4)},${y.toFixed(4)},${z.toFixed(4)}`
         if (seen.has(key)) continue
         seen.add(key)
-        const [sx, sy] = toScreen(v)
+        world.set(x, y, z).applyMatrix4(entry.mesh.matrixWorld)
+        const [sx, sy] = toScreen(world)
         const d = Math.hypot(sx - cx, sy - cy)
         if (d < VERTEX_PX && (!bestVertex || d < bestVertex.d)) {
-          bestVertex = { bodyId: id, pos: [v.x, v.y, v.z], d }
+          bestVertex = { entry, pos: [x, y, z], d }
         }
       }
     }
     if (bestVertex) {
       const p = bestVertex.pos
       return {
-        bodyId: bestVertex.bodyId,
+        instanceId: bestVertex.entry.instance.id,
+        bodyId: bestVertex.entry.instance.bodyId,
         kind: 'vertex',
         id: `v:${p[0].toFixed(3)},${p[1].toFixed(3)},${p[2].toFixed(3)}`,
         point: p,
       }
     }
 
-    // Edges and faces still need a surface under the cursor, so that geometry
-    // hidden behind the solid is not picked through it.
-    const hit = this.raycaster.intersectObjects([...this.meshes.values()], false)[0]
+    const hit = this.raycaster.intersectObjects(
+      bodies.map((entry) => entry.mesh),
+      false,
+    )[0]
     if (!hit) return null
 
-    const bodyId = hit.object.userData.id as string
-    const data = this.groups.get(bodyId)
-    const point: Vec3 = [hit.point.x, hit.point.y, hit.point.z]
-    if (!data) return null
+    const entry = this.objects.get(hit.object.userData.instanceId)
+    const data = entry ? this.geometries.get(entry.instance.meshKey)?.data : undefined
+    if (!entry || !data) return null
+    const worldPoint: Vec3 = [hit.point.x, hit.point.y, hit.point.z]
+    const localHit = hit.object.worldToLocal(hit.point.clone())
 
-    // --- edges --------------------------------------------------------------
-    const outline = this.outlines.get(bodyId)
-    if (outline) {
-      const previous = this.raycaster.params.Line?.threshold
-      this.raycaster.params.Line = { threshold: this.pixelSize(point) * 6 }
-      const lineHit = this.raycaster.intersectObject(outline, false)[0]
-      this.raycaster.params.Line = { threshold: previous ?? 1 }
-      // Only accept an edge at least as near as the surface, so edges on the
-      // far side are not picked straight through the solid.
-      if (lineHit && lineHit.distance <= hit.distance + this.pixelSize(point) * 6) {
-        const vertexIndex = lineHit.index ?? 0
-        const group = data.edgeGroups.find(
-          (g) => vertexIndex >= g.start && vertexIndex < g.start + g.count,
-        )
-        if (group) {
-          return {
-            bodyId,
-            kind: 'edge',
-            id: `e:${group.edgeId}`,
-            point: this.edgeMidpoint(data, group),
-            length: this.edgeLength(data, group),
-          }
+    const previous = this.raycaster.params.Line?.threshold
+    this.raycaster.params.Line = { threshold: this.pixelSize(worldPoint) * 6 }
+    const lineHit = this.raycaster.intersectObject(entry.outline, false)[0]
+    this.raycaster.params.Line = { threshold: previous ?? 1 }
+    if (lineHit && lineHit.distance <= hit.distance + this.pixelSize(worldPoint) * 6) {
+      const vertexIndex = lineHit.index ?? 0
+      const group = data.edgeGroups.find(
+        (g) => vertexIndex >= g.start && vertexIndex < g.start + g.count,
+      )
+      if (group) {
+        return {
+          instanceId: entry.instance.id,
+          bodyId: entry.instance.bodyId,
+          kind: 'edge',
+          id: `e:${group.edgeId}`,
+          point: this.edgeMidpoint(data, group),
+          length: this.edgeLength(data, group),
         }
       }
     }
 
-    // --- faces --------------------------------------------------------------
     const triangle = (hit.faceIndex ?? 0) * 3
     const group = data.faceGroups.find((g) => triangle >= g.start && triangle < g.start + g.count)
-    const normal = hit.face
-      ? hit.face.normal
-          .clone()
-          .applyMatrix3(new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld))
-          .normalize()
-      : new THREE.Vector3(0, 0, 1)
+    const normal = hit.face ? hit.face.normal.clone().normalize() : new THREE.Vector3(0, 0, 1)
     return {
-      bodyId,
+      instanceId: entry.instance.id,
+      bodyId: entry.instance.bodyId,
       kind: 'face',
       id: `f:${group?.faceId ?? 'unknown'}`,
-      point,
+      point: [localHit.x, localHit.y, localHit.z],
       normal: [normal.x, normal.y, normal.z],
     }
   }
@@ -896,7 +958,7 @@ export class ViewportEngine {
   setHoverPick(pick: SubPick | null) {
     const same =
       (pick?.id ?? null) === (this.hoverPick?.id ?? null) &&
-      (pick?.bodyId ?? null) === (this.hoverPick?.bodyId ?? null)
+      (pick?.instanceId ?? null) === (this.hoverPick?.instanceId ?? null)
     if (same) return
     this.hoverPick = pick
     this.rebuildHighlight()
@@ -906,39 +968,57 @@ export class ViewportEngine {
     const picks = this.selectedPicks
     for (const child of [...this.highlightGroup.children]) {
       this.highlightGroup.remove(child)
-      ;(child as any).geometry?.dispose?.()
+      child.traverse((obj) => (obj as THREE.Mesh).geometry?.dispose?.())
     }
 
-    const faceTriangles: number[] = []
-    const edgeVertices: number[] = []
-    const cornerVertices: number[] = []
-    const hoverFaces: number[] = []
-    const hoverEdges: number[] = []
-    const hoverCorners: number[] = []
-
     const alreadySelected = (p: SubPick) =>
-      picks.some((s) => s.bodyId === p.bodyId && s.id === p.id)
+      picks.some((s) => s.instanceId === p.instanceId && s.id === p.id)
     const all =
       this.hoverPick && !alreadySelected(this.hoverPick) ? [...picks, this.hoverPick] : picks
 
+    const buckets = new Map<
+      string,
+      {
+        faces: number[]
+        edges: number[]
+        corners: number[]
+        hoverFaces: number[]
+        hoverEdges: number[]
+        hoverCorners: number[]
+      }
+    >()
+
     for (const pick of all) {
       const isHover = pick === this.hoverPick && !alreadySelected(pick)
-      const data = this.groups.get(pick.bodyId)
+      const entry = this.objects.get(pick.instanceId)
+      const data = entry ? this.geometries.get(entry.instance.meshKey)?.data : undefined
       if (!data) continue
+      let bucket = buckets.get(pick.instanceId)
+      if (!bucket) {
+        bucket = {
+          faces: [],
+          edges: [],
+          corners: [],
+          hoverFaces: [],
+          hoverEdges: [],
+          hoverCorners: [],
+        }
+        buckets.set(pick.instanceId, bucket)
+      }
 
       if (pick.kind === 'vertex') {
-        ;(isHover ? hoverCorners : cornerVertices).push(...pick.point)
+        ;(isHover ? bucket.hoverCorners : bucket.corners).push(...pick.point)
       } else if (pick.kind === 'edge') {
         const group = data.edgeGroups.find((g) => `e:${g.edgeId}` === pick.id)
         if (!group) continue
-        const into = isHover ? hoverEdges : edgeVertices
+        const into = isHover ? bucket.hoverEdges : bucket.edges
         for (let i = group.start; i < group.start + group.count; i++) {
           into.push(data.lines[i * 3], data.lines[i * 3 + 1], data.lines[i * 3 + 2])
         }
       } else {
         const group = data.faceGroups.find((g) => `f:${g.faceId}` === pick.id)
         if (!group) continue
-        const into = isHover ? hoverFaces : faceTriangles
+        const into = isHover ? bucket.hoverFaces : bucket.faces
         for (let i = group.start; i < group.start + group.count; i++) {
           const v = data.triangles[i] * 3
           into.push(data.vertices[v], data.vertices[v + 1], data.vertices[v + 2])
@@ -946,8 +1026,16 @@ export class ViewportEngine {
       }
     }
 
-    const drawFaces = (coords: number[], opacity: number) => {
-      if (coords.length) {
+    for (const [instanceId, bucket] of buckets) {
+      const entry = this.objects.get(instanceId)
+      if (!entry) continue
+      const holder = new THREE.Group()
+      holder.matrixAutoUpdate = false
+      holder.matrix.copy(entry.mesh.matrix)
+      holder.matrixWorldNeedsUpdate = true
+
+      const drawFaces = (coords: number[], opacity: number) => {
+        if (!coords.length) return
         const geometry = new THREE.BufferGeometry()
         geometry.setAttribute('position', new THREE.Float32BufferAttribute(coords, 3))
         geometry.computeVertexNormals()
@@ -959,54 +1047,52 @@ export class ViewportEngine {
             opacity,
             side: THREE.DoubleSide,
             depthWrite: false,
-            // Lift it off the surface it covers, or the two z-fight.
             polygonOffset: true,
             polygonOffsetFactor: -2,
             polygonOffsetUnits: -2,
           }),
         )
         mesh.renderOrder = 5
-        this.highlightGroup.add(mesh)
+        holder.add(mesh)
       }
-    }
 
-    const drawEdges = (coords: number[], colour: number) => {
-      if (!coords.length) return
-      const geometry = new THREE.BufferGeometry()
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(coords, 3))
-      const lines = new THREE.LineSegments(
-        geometry,
-        new THREE.LineBasicMaterial({ color: colour, depthTest: false }),
-      )
-      lines.renderOrder = 12
-      this.highlightGroup.add(lines)
-    }
+      const drawEdges = (coords: number[], colour: number) => {
+        if (!coords.length) return
+        const geometry = new THREE.BufferGeometry()
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(coords, 3))
+        const lines = new THREE.LineSegments(
+          geometry,
+          new THREE.LineBasicMaterial({ color: colour, depthTest: false }),
+        )
+        lines.renderOrder = 12
+        holder.add(lines)
+      }
 
-    const drawCorners = (coords: number[], colour: number, size: number) => {
-      if (!coords.length) return
-      const geometry = new THREE.BufferGeometry()
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(coords, 3))
-      const points = new THREE.Points(
-        geometry,
-        new THREE.PointsMaterial({
-          color: colour,
-          size,
-          sizeAttenuation: false,
-          depthTest: false,
-        }),
-      )
-      points.renderOrder = 13
-      this.highlightGroup.add(points)
-    }
+      const drawCorners = (coords: number[], colour: number, size: number) => {
+        if (!coords.length) return
+        const geometry = new THREE.BufferGeometry()
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(coords, 3))
+        const points = new THREE.Points(
+          geometry,
+          new THREE.PointsMaterial({
+            color: colour,
+            size,
+            sizeAttenuation: false,
+            depthTest: false,
+          }),
+        )
+        points.renderOrder = 13
+        holder.add(points)
+      }
 
-    // Hover is drawn fainter and smaller than a real selection, so the two are
-    // never confused for one another.
-    drawFaces(hoverFaces, 0.18)
-    drawEdges(hoverEdges, HOVER)
-    drawCorners(hoverCorners, HOVER, 8)
-    drawFaces(faceTriangles, 0.45)
-    drawEdges(edgeVertices, ACCENT)
-    drawCorners(cornerVertices, ACCENT, 9)
+      drawFaces(bucket.hoverFaces, 0.18)
+      drawEdges(bucket.hoverEdges, HOVER)
+      drawCorners(bucket.hoverCorners, HOVER, 8)
+      drawFaces(bucket.faces, 0.45)
+      drawEdges(bucket.edges, ACCENT)
+      drawCorners(bucket.corners, ACCENT, 9)
+      this.highlightGroup.add(holder)
+    }
   }
 
   /** Millimetres per screen pixel at a point, for size-independent snapping. */

@@ -13,16 +13,48 @@ import { getPart, refreshUserParts, upsertUserPart } from '../catalogue'
 import { loadUserParts } from '../catalogue/userParts'
 import { androidDownload } from '../platform/android'
 
-const AUTOSAVE_KEY = 'openkitcad.autosave.v1'
+const AUTOSAVE_KEY = 'openkitcad.autosave.v2'
+const OLD_AUTOSAVE_KEY = 'openkitcad.autosave.v1'
 const FILE_EXTENSION = '.okc'
 
-// ---------------------------------------------------------------------------
-// Autosave
-// ---------------------------------------------------------------------------
+export const OLD_DESIGN_MESSAGE =
+  "This design was made with OpenKitCAD 0.6 or earlier and can't be opened by this version."
+
+export function isCurrentDesign(value: unknown): value is OkcDocument {
+  const candidate = value as { format?: unknown; version?: unknown } | null
+  return (
+    !!candidate &&
+    typeof candidate === 'object' &&
+    candidate.format === 'openkitcad' &&
+    candidate.version === 2
+  )
+}
+
+function normalise(doc: OkcDocument): OkcDocument {
+  const base = emptyDocument(doc.name ?? 'Untitled')
+  return {
+    ...base,
+    ...doc,
+    units: doc.units ?? base.units,
+    parameters: doc.parameters ?? [],
+    bindings: doc.bindings ?? [],
+    occurrences: doc.occurrences ?? [],
+    timeline: doc.timeline ?? [],
+    marker: doc.marker ?? null,
+    groups: doc.groups ?? [],
+  }
+}
+
+export function discardOldAutosave(): void {
+  try {
+    localStorage.removeItem(OLD_AUTOSAVE_KEY)
+  } catch {
+    return
+  }
+}
 
 let autosaveTimer: number | undefined
 
-/** Debounced autosave. Cheap enough to run on every edit. */
 export function scheduleAutosave(doc: OkcDocument): void {
   clearTimeout(autosaveTimer)
   autosaveTimer = window.setTimeout(() => saveAutosaveNow(doc), 600)
@@ -33,7 +65,7 @@ export function saveAutosaveNow(doc: OkcDocument): void {
   try {
     localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({ savedAt: new Date().toISOString(), doc }))
   } catch {
-    // A full or disabled storage must never break editing.
+    return
   }
 }
 
@@ -42,8 +74,8 @@ export function loadAutosave(): { doc: OkcDocument; savedAt: string } | null {
     const raw = localStorage.getItem(AUTOSAVE_KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw)
-    if (!parsed?.doc?.version) return null
-    return { doc: migrate(parsed.doc), savedAt: parsed.savedAt }
+    if (!isCurrentDesign(parsed?.doc)) return null
+    return { doc: normalise(parsed.doc), savedAt: parsed.savedAt }
   } catch {
     return null
   }
@@ -53,32 +85,16 @@ export function clearAutosave(): void {
   try {
     localStorage.removeItem(AUTOSAVE_KEY)
   } catch {
-    /* ignore */
+    return
   }
 }
 
-// ---------------------------------------------------------------------------
-// Files
-// ---------------------------------------------------------------------------
-
-/** Forward-compatibility hook: older documents get upgraded here. */
-function migrate(doc: OkcDocument): OkcDocument {
-  return { ...emptyDocument(doc.name), ...doc, version: 1 }
-}
-
-/**
- * Custom parts travel with the file that uses them.
- *
- * Without this, a design sent to somebody else opens with a hole where their
- * board should be - the placement names a part that only exists in the sender's
- * browser. Only the parts actually placed are attached: the rest of somebody's
- * private catalogue is not theirs to hand over with a bracket.
- */
 function partsUsedBy(doc: OkcDocument): CataloguePart[] {
-  const wanted = new Set(doc.placements.map((p) => p.partId))
-  // Read storage directly rather than the catalogue's cached copy. Saving is
-  // rare enough that the cache buys nothing, and going straight to the source
-  // means a save cannot be caught out by a cache filled at some other moment.
+  const wanted = new Set(
+    doc.components.flatMap((component) =>
+      component.source.kind === 'catalogue' ? [component.source.partId] : [],
+    ),
+  )
   return loadUserParts().filter((p) => wanted.has(p.id))
 }
 
@@ -90,17 +106,6 @@ export function serialise(doc: OkcDocument): string {
   return JSON.stringify(out, null, 2)
 }
 
-/**
- * Take on the custom parts an opened file brought with it.
- *
- * Only ones whose id is not already known are kept. A file must not be able to
- * redefine a Raspberry Pi: someone else's measurements silently replacing the
- * catalogue's would be a quiet way to ruin a panel, and the person opening the
- * file would have no reason to suspect it.
- *
- * Returns what happened, so the app can say so rather than changing somebody's
- * catalogue behind their back.
- */
 let lastAdoption: { added: string[]; skipped: string[] } = { added: [], skipped: [] }
 
 /** What the last opened file or link brought with it, for the app to report. */
@@ -129,10 +134,19 @@ export function adoptCustomParts(doc: OkcDocument): { added: string[]; skipped: 
   return lastAdoption
 }
 
+export function parseDesign(text: string): OkcDocument {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(text)
+  } catch {
+    throw new Error(OLD_DESIGN_MESSAGE)
+  }
+  if (!isCurrentDesign(parsed)) throw new Error(OLD_DESIGN_MESSAGE)
+  return normalise(parsed)
+}
+
 export function deserialise(text: string): OkcDocument {
-  const parsed = JSON.parse(text)
-  if (!parsed?.version) throw new Error('That does not look like an OpenKitCAD file.')
-  const doc = migrate(parsed)
+  const doc = parseDesign(text)
   adoptCustomParts(doc)
   return doc
 }
@@ -192,9 +206,9 @@ export async function saveDocument(doc: OkcDocument): Promise<'saved' | 'cancell
   return 'saved'
 }
 
-/** Open a document from disk. Returns null when the user cancels. */
 export async function openDocument(): Promise<OkcDocument | null> {
   if (typeof (window as any).showOpenFilePicker === 'function' && window.self === window.top) {
+    let text: string | null = null
     try {
       const [handle] = await (window as any).showOpenFilePicker({
         types: [
@@ -205,13 +219,14 @@ export async function openDocument(): Promise<OkcDocument | null> {
         ],
       })
       const file = await handle.getFile()
-      return deserialise(await file.text())
+      text = await file.text()
     } catch (e) {
       if ((e as Error).name === 'AbortError') return null
     }
+    if (text !== null) return deserialise(text)
   }
 
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = `${FILE_EXTENSION},application/json`
@@ -220,18 +235,14 @@ export async function openDocument(): Promise<OkcDocument | null> {
       if (!file) return resolve(null)
       try {
         resolve(deserialise(await file.text()))
-      } catch {
-        resolve(null)
+      } catch (e) {
+        reject(e)
       }
     }
     input.oncancel = () => resolve(null)
     input.click()
   })
 }
-
-// ---------------------------------------------------------------------------
-// Share links
-// ---------------------------------------------------------------------------
 
 function toBase64Url(bytes: Uint8Array): string {
   let binary = ''
@@ -267,13 +278,13 @@ export function makeShareLink(doc: OkcDocument): string {
 export function readShareLink(hash: string = location.hash): OkcDocument | null {
   const match = /[#&]d=([A-Za-z0-9\-_]+)/.exec(hash)
   if (!match) return null
+  let text: string
   try {
-    const doc = migrate(JSON.parse(strFromU8(inflateSync(fromBase64Url(match[1])))))
-    adoptCustomParts(doc)
-    return doc
+    text = strFromU8(inflateSync(fromBase64Url(match[1])))
   } catch {
-    return null
+    throw new Error(OLD_DESIGN_MESSAGE)
   }
+  return deserialise(text)
 }
 
 /** Roughly how long a share link would be, so the UI can warn before copying. */

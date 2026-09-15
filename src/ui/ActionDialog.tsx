@@ -3,6 +3,7 @@ import { quantity } from '../core/quantity'
 import type { ObjectAction } from './ObjectMenu'
 import type { SketchAction } from '../sketch/actions'
 import { useStore } from '../doc/store'
+import { lengthText } from '../core/units'
 
 export function chooseAction(action: ObjectAction) {
   if (action.prompt || action.choice) {
@@ -35,9 +36,13 @@ export function ActionDialogHost() {
 
 function ActionDialog({ action, onClose }: { action: ObjectAction; onClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null)
+  const units = useStore((s) => s.doc.units)
   const [choice, setChoice] = useState(action.choice?.initial ?? '')
   const [error, setError] = useState('')
   const fields = [action.prompt, action.prompt2, action.prompt3].filter((p) => p != null)
+  const unitOf = (unit: string) => (unit === 'mm' ? units : unit)
+  const shown = (value: number, unit: string) =>
+    unit === 'mm' ? lengthText(value, units) : String(value)
   useEffect(() => {
     ref.current?.showModal()
     const firstField =
@@ -59,13 +64,13 @@ function ActionDialog({ action, onClose }: { action: ObjectAction; onClose: () =
           const data = new FormData(event.currentTarget)
           try {
             const values = fields.map((field, i) => {
-              const value = quantity(String(data.get(`value-${i}`) ?? ''), field.unit)
+              const value = quantity(String(data.get(`value-${i}`) ?? ''), unitOf(field.unit))
               if (
                 (field.min !== undefined && value < field.min) ||
                 (field.max !== undefined && value > field.max)
               )
                 throw new Error(
-                  `${field.label}: expected ${field.min ?? '−∞'} to ${field.max ?? '∞'} ${field.unit}.`,
+                  `${field.label}: expected ${field.min !== undefined ? shown(field.min, field.unit) : '−∞'} to ${field.max !== undefined ? shown(field.max, field.unit) : '∞'} ${unitOf(field.unit)}.`,
                 )
               return value
             })
@@ -110,17 +115,17 @@ function ActionDialog({ action, onClose }: { action: ObjectAction; onClose: () =
                 autoFocus={i === 0}
                 name={`value-${i}`}
                 type="text"
-                defaultValue={field.initial}
+                defaultValue={shown(field.initial, field.unit)}
                 onFocus={(e) => e.currentTarget.select()}
               />
-              <span>{field.unit}</span>
+              <span>{unitOf(field.unit)}</span>
             </div>
           </label>
         ))}
         {!!fields.length && (
           <p className="hint">
-            Arithmetic: 25.4/2, (10+5)*2, pi. Length fields accept mm, cm, m, in; angles accept deg
-            or rad. Values are evaluated once, not linked formulas.
+            Arithmetic: 25.4/2, (10+5)*2, pi. Length fields accept mm, cm, m, in and ft; angles
+            accept deg or rad. Values are evaluated once, not linked formulas.
           </p>
         )}
         {error && (

@@ -1,6 +1,9 @@
-/** Small arithmetic parser for parameter fields. Never executes JavaScript. */
+const LENGTH: Record<string, number> = { mm: 1, cm: 10, m: 1000, in: 25.4, ft: 304.8 }
+
 export function quantity(input: string, unit = '', variable?: (name: string) => number): number {
   if (!input.trim() || input.length > 256) throw new Error('Enter a number or a short expression.')
+  const isLength = unit in LENGTH
+  const scale = isLength ? LENGTH[unit] : 1
   const text = input.toLowerCase()
   let pos = 0
   const skip = () => {
@@ -22,7 +25,7 @@ export function quantity(input: string, unit = '', variable?: (name: string) => 
       const name = text.slice(pos).match(/^[a-z_][a-z0-9_]*/)![0]
       pos += name.length
       if (name === 'pi') value = Math.PI
-      else if (variable) value = variable(name)
+      else if (variable) value = variable(name) / scale
       else throw new Error(`Unknown parameter: ${name}`)
     } else {
       const match = text.slice(pos).match(/^(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?/)
@@ -31,11 +34,11 @@ export function quantity(input: string, unit = '', variable?: (name: string) => 
       value = Number(match[0])
     }
     skip()
-    const suffix = text.slice(pos).match(/^(mm|cm|in|m|deg|rad|°)/)?.[0]
+    const suffix = text.slice(pos).match(/^(mm|cm|ft|in|m|deg|rad|°)/)?.[0]
     if (suffix) {
       pos += suffix.length
-      if (unit === 'mm' && suffix in { mm: 1, cm: 10, in: 25.4, m: 1000 }) {
-        value *= ({ mm: 1, cm: 10, in: 25.4, m: 1000 } as Record<string, number>)[suffix]
+      if (isLength && suffix in LENGTH) {
+        value *= LENGTH[suffix] / scale
       } else if (['°', 'deg', 'degrees'].includes(unit) && ['deg', 'rad', '°'].includes(suffix)) {
         if (suffix === 'rad') value *= 180 / Math.PI
       } else throw new Error(`Unit ${suffix} is not valid for this ${unit || 'unitless'} field.`)
@@ -69,5 +72,5 @@ export function quantity(input: string, unit = '', variable?: (name: string) => 
   skip()
   if (pos !== text.length || !Number.isFinite(result))
     throw new Error('Invalid or non-finite expression.')
-  return result
+  return result * scale
 }

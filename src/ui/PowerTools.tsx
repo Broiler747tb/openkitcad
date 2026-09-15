@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { activeSketchFeature, newId, useStore } from '../doc/store'
+import { activeSketchFeature, newId, selectedBodyId, useStore } from '../doc/store'
+import { allBodies, expandInstances, findBody, findComponent } from '../doc/model'
+import type { OkcDocument } from '../doc/types'
 import type { Sketch2D } from '../sketch/types'
 import {
   addExactShape,
@@ -262,27 +264,52 @@ export function SketchPowerTools() {
   )
 }
 
+function isolationSet(
+  doc: OkcDocument,
+  target: string | undefined,
+): { bodies: Set<string>; occurrences: Set<string> } {
+  const bodies = new Set<string>()
+  const occurrences = new Set<string>()
+  if (!target) return { bodies, occurrences }
+  const nodes = expandInstances(doc)
+  const owner = findBody(doc, target)
+  if (owner) {
+    bodies.add(target)
+    for (const node of nodes)
+      if (node.componentId === owner.component.id) node.path.forEach((id) => occurrences.add(id))
+    return { bodies, occurrences }
+  }
+  for (const node of nodes) {
+    if (!node.path.includes(target)) continue
+    node.path.forEach((id) => occurrences.add(id))
+    findComponent(doc, node.componentId)?.bodies.forEach((body) => bodies.add(body.id))
+  }
+  return { bodies, occurrences }
+}
+
 export function SceneTools() {
-  const state = useStore(),
-    items = [...state.doc.bodies, ...state.doc.placements],
-    selected = state.selection.bodyId ?? state.selection.id
+  const state = useStore()
+  const bodies = allBodies(state.doc).map(({ body }) => body)
+  const occurrences = state.doc.occurrences
+  const items = [...bodies, ...occurrences]
+  const selected =
+    state.selection.kind === 'occurrence' ? state.selection.id : selectedBodyId(state)
   const visibility = (mode: 'all' | 'none' | 'invert' | 'isolate') =>
     state.commit((d) => {
-      for (const item of [...d.bodies, ...d.placements])
-        item.visible =
-          mode === 'all'
-            ? true
-            : mode === 'none'
-              ? false
-              : mode === 'invert'
-                ? !item.visible
-                : item.id === selected
+      const keep = mode === 'isolate' ? isolationSet(d, selected) : null
+      const next = (visible: boolean, kept: boolean) =>
+        mode === 'all' ? true : mode === 'none' ? false : mode === 'invert' ? !visible : kept
+      for (const component of d.components)
+        for (const body of component.bodies)
+          body.visible = next(body.visible, !!keep?.bodies.has(body.id))
+      for (const occurrence of d.occurrences)
+        occurrence.visible = next(occurrence.visible, !!keep?.occurrences.has(occurrence.id))
     })
   return (
     <section className="section power-tools">
       <h3>Scene visibility</h3>
       <p className="hint">
-        {state.doc.bodies.length} bodies · {state.doc.placements.length} hardware parts ·{' '}
+        {bodies.length} bodies · {occurrences.length} components ·{' '}
         {items.filter((i) => i.visible).length} visible
       </p>
       <div className="power-buttons">

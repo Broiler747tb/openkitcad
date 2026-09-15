@@ -797,26 +797,53 @@ export function runSelfTest(): TestResult[] {
   })
 
   test('the fastener ghost sits where the fastener would', () => {
-    const plate = (feature: unknown) => ({
-      version: 1,
+    const plate = (feature: any): any => ({
+      format: 'openkitcad',
+      version: 2,
       name: 'g',
-      units: 'mm' as const,
+      units: 'mm',
       parameters: [],
-      placements: [],
-      bodies: [
+      bindings: [],
+      rootComponentId: 'root',
+      components: [
         {
-          id: 'p',
-          name: 'Plate',
-          visible: true,
-          colour: '#ccc',
-          features: [feature],
+          id: 'root',
+          name: 'g',
+          source: { kind: 'design' },
+          bodies: [{ id: 'p', name: 'Plate', visible: true, colour: '#ccc' }],
         },
       ],
+      occurrences: [],
+      timeline: [
+        {
+          ...feature,
+          componentId: 'root',
+          ...(feature.kind === 'standoff'
+            ? { result: { kind: 'join', bodyId: 'p' } }
+            : { bodyId: 'p' }),
+        },
+      ],
+      marker: null,
+      groups: [],
     })
-    const shapes = [{ id: 'p', bounds: [-30, -30, 0, 30, 30, 5] }]
+    const plateView = (bounds: number[]) => ({
+      instances: [
+        {
+          id: 'root|p',
+          kind: 'body',
+          path: [],
+          componentId: 'root',
+          bodyId: 'p',
+          meshKey: 'plate',
+          matrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+          visible: true,
+          negative: false,
+        },
+      ],
+      meshes: new Map([['plate', { bounds }]]),
+    })
+    const slab = plateView([-30, -30, 0, 30, 30, 5])
 
-    // A counterbored M3 through a 5 mm plate: head sunk by its counterbore, and
-    // the shaft long enough to show the tip coming out the far side.
     const bored = fastenerGhosts(
       plate({
         id: 'h',
@@ -830,7 +857,8 @@ export function runSelfTest(): TestResult[] {
         counterboreDepth: 3.2,
         fastener: { kind: 'counterbore', size: 'M3' },
       }) as never,
-      shapes as never,
+      slab.instances as never,
+      slab.meshes as never,
     )
     check(bored.length === 1, `${bored.length} ghost for one hole`)
     near(bored[0].at[2], 5, 'head sits at the surface')
@@ -842,7 +870,6 @@ export function runSelfTest(): TestResult[] {
     )
     check(bored[0].metal === 'steel', 'a screw is drawn as steel')
 
-    // An insert is the insert, not the hole it melts into.
     const inserted = fastenerGhosts(
       plate({
         id: 'h',
@@ -855,7 +882,8 @@ export function runSelfTest(): TestResult[] {
         depth: 6.2,
         fastener: { kind: 'insert', size: 'M3' },
       }) as never,
-      shapes as never,
+      slab.instances as never,
+      slab.meshes as never,
     )
     near(
       inserted[0].shaftDiameter,
@@ -864,7 +892,6 @@ export function runSelfTest(): TestResult[] {
     )
     check(inserted[0].metal === 'brass', 'an insert is drawn as brass')
 
-    // A pillar puts the screw in at the top of the pillar, not on the plate.
     const pillared = fastenerGhosts(
       plate({
         id: 's',
@@ -878,13 +905,12 @@ export function runSelfTest(): TestResult[] {
         boreDepth: 7,
         fastener: { kind: 'tapped', size: 'M3' },
       }) as never,
-      shapes as never,
+      slab.instances as never,
+      slab.meshes as never,
     )
     near(pillared[0].at[2], 13, 'screw starts at the top of an 8 mm pillar on a 5 mm plate')
     near(pillared[0].shaftLength, 7, 'and goes in as far as the bore')
 
-    // A hole nobody said what goes in gets no ghost: guessing from the diameter
-    // would put an M3 screw in a 3 mm cable gland.
     const untagged = fastenerGhosts(
       plate({
         id: 'h',
@@ -896,58 +922,46 @@ export function runSelfTest(): TestResult[] {
         diameter: 3,
         depth: 'through',
       }) as never,
-      shapes as never,
+      slab.instances as never,
+      slab.meshes as never,
     )
     check(untagged.length === 0, 'an untagged hole gets no ghost')
 
-    // Holes generated from a placed board carry no tag, but the board names the
-    // screw its own mounting holes take, so those are known rather than guessed.
-    const withBoard = {
-      version: 1,
-      name: 'g',
-      units: 'mm' as const,
-      parameters: [],
-      placements: [
-        {
-          id: 'pi',
-          partId: 'raspberry-pi-4b',
-          name: 'Pi',
-          position: [10, 10, 9],
-          rotation: 0,
-          flipped: false,
-          visible: true,
-        },
-      ],
-      bodies: [
-        {
-          id: 'p',
-          name: 'Plate',
-          visible: true,
-          colour: '#ccc',
-          features: [
-            {
-              id: 'h',
-              name: 'h',
-              kind: 'hole',
-              plane: { kind: 'named', name: 'XY', offset: 3 },
-              source: { kind: 'placement', placementId: 'pi' },
-              style: 'counterbore',
-              diameter: 2.9,
-              depth: 'through',
-              counterboreDepth: 2,
-            },
-          ],
-        },
-      ],
-    }
+    const withBoard = plate({
+      id: 'h',
+      name: 'h',
+      kind: 'hole',
+      plane: { kind: 'named', name: 'XY', offset: 3 },
+      source: { kind: 'occurrence', occurrencePath: ['pi'], contextPath: [] },
+      style: 'counterbore',
+      diameter: 2.9,
+      depth: 'through',
+      counterboreDepth: 2,
+    })
+    withBoard.components.push({
+      id: 'pi-part',
+      name: 'Pi',
+      source: { kind: 'catalogue', partId: 'raspberry-pi-4b' },
+      bodies: [],
+    })
+    withBoard.occurrences.push({
+      id: 'pi',
+      parentComponentId: 'root',
+      componentId: 'pi-part',
+      name: 'Pi',
+      transform: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 10, 10, 9, 1],
+      visible: true,
+      grounded: false,
+    })
+    const board = plateView([0, 0, 0, 120, 100, 3])
     const fromBoard = fastenerGhosts(
       withBoard as never,
-      [{ id: 'p', bounds: [0, 0, 0, 120, 100, 3] }] as never,
+      board.instances as never,
+      board.meshes as never,
     )
     check(fromBoard.length === 4, `a Pi's four mounting holes give ${fromBoard.length} ghosts`)
     near(fromBoard[0].shaftDiameter, SCREWS['M2.5'].major, "sized M2.5 from the Pi's own hole data")
     near(fromBoard[0].headDiameter, SCREWS['M2.5'].headDiameter, 'with the M2.5 head')
-    // Placed at 10,10 with the first hole 3.5,3.5 in from the board corner.
     near(fromBoard[0].at[0], 13.5, 'and follows the board rather than the plate')
   })
 

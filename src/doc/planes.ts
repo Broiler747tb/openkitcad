@@ -8,7 +8,9 @@
  * is drawing anyway.
  */
 import { makeFrame, NAMED_FRAMES, v3, type Frame } from '../core/math'
-import type { PlaneRef } from './types'
+import type { LengthUnit, Matrix4, PlaneRef } from './types'
+import { transformDirection, transformPoint } from './model'
+import { lengthLabel } from '../core/units'
 
 /**
  * Tip a base plane over about one of its own in-plane axes.
@@ -57,13 +59,24 @@ export function frameFromPlaneRefLocal(ref: PlaneRef): Frame {
   return makeFrame(v3.add(ref.face.anchor, v3.scale(ref.face.normal, ref.offset)), ref.face.normal)
 }
 
-export function planeLabel(ref: PlaneRef): string {
+export function transformFrame(frame: Frame, m: Matrix4): Frame {
+  return {
+    origin: transformPoint(m, frame.origin),
+    xDir: transformDirection(m, frame.xDir),
+    yDir: transformDirection(m, frame.yDir),
+    normal: transformDirection(m, frame.normal),
+  }
+}
+
+export function planeLabel(ref: PlaneRef, unit: LengthUnit = 'mm'): string {
   const names = { XY: 'Top', XZ: 'Front', YZ: 'Right' } as const
   if (ref.kind === 'named') {
-    return ref.offset ? `${names[ref.name]} plane, ${ref.offset} mm up` : `${names[ref.name]} plane`
+    return ref.offset
+      ? `${names[ref.name]} plane, ${lengthLabel(ref.offset, unit)} up`
+      : `${names[ref.name]} plane`
   }
   if (ref.kind === 'angled') {
     return `${names[ref.name]} plane tipped ${ref.angle}°`
   }
-  return ref.offset ? `A face, ${ref.offset} mm off` : 'A face'
+  return ref.offset ? `A face, ${lengthLabel(ref.offset, unit)} off` : 'A face'
 }

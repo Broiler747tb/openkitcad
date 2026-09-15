@@ -1,23 +1,43 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../doc/store'
+import { findBody, findOccurrence } from '../doc/model'
 import { EXPORT_FORMATS, exportShape } from '../export'
-import type { ExportFormat } from '../kernel/types'
+import type { ExportFormat, Instance } from '../kernel/types'
+import type { OkcDocument } from '../doc/types'
+
+function instanceLabel(doc: OkcDocument, instance: Instance): string {
+  const body = findBody(doc, instance.bodyId)?.body.name ?? instance.bodyId
+  const path = instance.path.map((id) => findOccurrence(doc, id)?.name ?? id)
+  return [...path, body].join(' / ')
+}
 
 export function ExportDialog({ onClose }: { onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null)
   useEffect(() => {
     dialog.current?.showModal()
   }, [])
-  const shapes = useStore((s) => s.shapes)
+  const doc = useStore((s) => s.doc)
+  const instances = useStore((s) => s.instances)
   const selection = useStore((s) => s.selection)
-  const bodies = shapes.filter((s) => s.kind === 'body')
-  const [target, setTarget] = useState(
-    bodies.find((b) => b.id === selection.id)?.id ?? bodies[0]?.id ?? '',
+  const bodies = instances.filter(
+    (instance) => instance.kind === 'body' && instance.visible && !instance.negative,
   )
+  const preferred =
+    bodies.find((instance) => instance.id === selection.instanceId) ??
+    bodies.find(
+      (instance) =>
+        (selection.kind === 'body' || selection.kind === 'face' || selection.kind === 'edge') &&
+        instance.bodyId === selection.id,
+    ) ??
+    bodies.find(
+      (instance) =>
+        selection.kind === 'occurrence' && !!selection.id && instance.path.includes(selection.id),
+    )
+  const [target, setTarget] = useState(preferred?.id ?? bodies[0]?.id ?? '')
   const [busy, setBusy] = useState<ExportFormat | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const chosen = bodies.find((b) => b.id === target)
+  const chosen = bodies.find((instance) => instance.id === target)
 
   return (
     <dialog
@@ -39,11 +59,11 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
           <>
             {bodies.length > 1 && (
               <div className="row" style={{ marginBottom: 14 }}>
-                <label>Which part</label>
+                <label>Which body</label>
                 <select value={target} onChange={(e) => setTarget(e.target.value)}>
-                  {bodies.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
+                  {bodies.map((instance) => (
+                    <option key={instance.id} value={instance.id}>
+                      {instanceLabel(doc, instance)}
                     </option>
                   ))}
                 </select>
@@ -60,7 +80,10 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
                   setBusy(format.id)
                   setError(null)
                   try {
-                    await exportShape(format.id, { id: chosen.id, name: chosen.name })
+                    await exportShape(format.id, {
+                      id: chosen.id,
+                      name: instanceLabel(doc, chosen),
+                    })
                   } catch (e) {
                     setError((e as Error).message)
                   } finally {
@@ -76,8 +99,8 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
             {error && <div className="msg error">{error}</div>}
 
             <p className="hint">
-              DXF, SVG and the drill template are flattened looking straight down at the part, so
-              lay the face you want to cut flat before exporting.
+              DXF, SVG and the drill template are flattened looking straight down at the body in its
+              assembly position, so lay the face you want to cut flat before exporting.
             </p>
           </>
         )}

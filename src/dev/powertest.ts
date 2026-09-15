@@ -148,7 +148,8 @@ export function runPowerTest() {
       selection: { kind: 'none' },
       activeSketch: null,
       sketchSelection: [],
-      shapes: [],
+      meshes: new Map(),
+      instances: [],
     })
     useStore.getState().startSketch({ kind: 'named', name: 'XY', offset: 0 })
     const before = useStore.getState().past.length

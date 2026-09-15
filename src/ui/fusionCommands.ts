@@ -1,7 +1,8 @@
-import { activeSketchFeature, newId, useStore } from '../doc/store'
+import { activeSketchFeature, newId, selectedBodyId, useStore } from '../doc/store'
 import { sketchActions } from '../sketch/actions'
 import { extrusionAction, selectedObjectActions } from './workflow'
 import type { ObjectAction } from './ObjectMenu'
+import { findBody, findOccurrence, multiplyMatrices, translationMatrix } from '../doc/model'
 
 export const SHORTCUTS = [
   ['S', 'Command toolbox'],
@@ -52,12 +53,21 @@ export function createSketchAction(): ObjectAction {
   }
 }
 
-/** Shared resolver for toolbar, command-first selection and keyboard shortcuts. */
+export function createComponentAction(): ObjectAction {
+  return {
+    id: 'create-component',
+    label: 'New Component',
+    hint: 'An empty component inside the active one. It becomes the active component.',
+    run: () => useStore.getState().createComponent(),
+  }
+}
+
 export function resolveCommand(id: string): ObjectAction | null {
   const state = useStore.getState()
   const actions = selectedObjectActions()
   if (id === 'extrude' || id === 'revolve') return extrusionAction(id === 'revolve')
   if (id === 'create-sketch') return createSketchAction()
+  if (id === 'create-component') return createComponentAction()
   const sketch = activeSketchFeature(state)
   if (sketch && id === 'trim')
     return {
@@ -75,9 +85,20 @@ export function resolveCommand(id: string): ObjectAction | null {
       ? { ...a, run: (v, b, c, choice) => state.applySketchAction(a.build(v, b, c, choice)) }
       : null
   }
-  const body = state.doc.bodies.find((b) => b.id === (state.selection.bodyId ?? state.selection.id))
-  const part = state.doc.placements.find((p) => p.id === state.selection.id)
-  if (id === 'move' && (body || part))
+  const bodyId = selectedBodyId(state)
+  const found = bodyId ? findBody(state.doc, bodyId) : undefined
+  const occurrence =
+    state.selection.kind === 'occurrence' && state.selection.id
+      ? findOccurrence(state.doc, state.selection.id)
+      : undefined
+  if (id === 'linked-copy' && occurrence)
+    return {
+      id,
+      label: 'Linked Copy',
+      hint: 'Another occurrence of the same component. Changing one changes both.',
+      run: () => state.linkedCopy(occurrence.id),
+    }
+  if (id === 'move' && (found || occurrence))
     return {
       id,
       label: 'Move',
@@ -87,30 +108,32 @@ export function resolveCommand(id: string): ObjectAction | null {
       prompt3: { label: 'Z distance', initial: 0, unit: 'mm' },
       run: (x, y = 0, z = 0) => {
         if (!x && !y && !z) return
-        if (body)
-          state.addFeature(body.id, {
+        if (found)
+          state.addFeature({
             id: newId('move'),
             kind: 'move',
             name: 'Move',
+            componentId: found.component.id,
+            bodyIds: [found.body.id],
             offset: [x, y, z],
             rotation: [0, 0, 0],
           })
-        else if (part)
-          state.updatePlacement(part.id, {
-            position: [part.position[0] + x, part.position[1] + y, part.position[2] + z],
+        else if (occurrence)
+          state.updateOccurrence(occurrence.id, {
+            transform: multiplyMatrices(translationMatrix([x, y, z]), occurrence.transform),
           })
       },
     }
-  if (id === 'appearance' && body)
+  if (id === 'appearance' && found)
     return {
       id,
       label: 'Appearance',
       hint: 'Body display colour. Physical material properties are not changed.',
       choice: {
         label: 'Colour',
-        initial: body.colour,
+        initial: found.body.colour,
         options: [
-          { value: body.colour, label: 'Current' },
+          { value: found.body.colour, label: 'Current' },
           ...[
             ['#b9c0c7', 'Aluminium'],
             ['#355c8a', 'Blue'],
@@ -118,28 +141,27 @@ export function resolveCommand(id: string): ObjectAction | null {
             ['#31363c', 'Graphite'],
             ['#eeeeea', 'White'],
           ]
-            .filter(([v]) => v !== body.colour)
+            .filter(([v]) => v !== found.body.colour)
             .map(([value, label]) => ({ value, label })),
         ],
       },
-      run: (_a, _b, _c, colour) =>
-        state.commit((d) => {
-          d.bodies.find((b) => b.id === body.id)!.colour = colour!
-        }),
+      run: (_a, _b, _c, colour) => state.updateBody(found.body.id, { colour: colour! }),
     }
-  if (id === 'hole' && body)
+  if (id === 'hole' && found)
     return {
       id,
       label: 'Hole',
-      hint: 'Through hole normal to the XY plane. X and Y are world coordinates in millimetres.',
+      hint: 'Through hole normal to the XY plane. X and Y are coordinates in the body’s component.',
       prompt: { label: 'Diameter', initial: 3.4, unit: 'mm', min: 0.01 },
       prompt2: { label: 'X', initial: 0, unit: 'mm' },
       prompt3: { label: 'Y', initial: 0, unit: 'mm' },
       run: (diameter, x, y) =>
-        state.addFeature(body.id, {
+        state.addFeature({
           id: newId('hole'),
           name: 'Hole',
           kind: 'hole',
+          componentId: found.component.id,
+          bodyId: found.body.id,
           plane: { kind: 'named', name: 'XY', offset: 0 },
           source: { kind: 'explicit', positions: [[x ?? 0, y ?? 0]] },
           style: 'simple',
@@ -164,13 +186,13 @@ export function resolveCommand(id: string): ObjectAction | null {
 
 export function toggleVisibility() {
   const s = useStore.getState()
-  const id = s.selection.bodyId ?? s.selection.id
-  const body = s.doc.bodies.find((b) => b.id === id)
-  const part = s.doc.placements.find((p) => p.id === id)
-  if (body)
-    s.commit((d) => {
-      d.bodies.find((b) => b.id === id)!.visible = !body.visible
-    })
-  else if (part) s.updatePlacement(part.id, { visible: !part.visible })
+  const bodyId = selectedBodyId(s)
+  const found = bodyId ? findBody(s.doc, bodyId) : undefined
+  const occurrence =
+    s.selection.kind === 'occurrence' && s.selection.id
+      ? findOccurrence(s.doc, s.selection.id)
+      : undefined
+  if (found) s.updateBody(found.body.id, { visible: !found.body.visible })
+  else if (occurrence) s.updateOccurrence(occurrence.id, { visible: !occurrence.visible })
   else s.setStatus('Select a body or component to toggle visibility.')
 }

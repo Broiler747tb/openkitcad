@@ -3,15 +3,19 @@ import { SelectionActions } from './SelectionActions'
 import { PrecisionSketchTools } from './PrecisionTools'
 import { SketchPowerTools, SceneTools } from './PowerTools'
 import { chooseAction, chooseSketchAction } from './ActionDialog'
-import { objectActions } from './ObjectMenu'
+import { mountFeature, objectActions } from './ObjectMenu'
 import { FlyoutMenu } from './FlyoutMenu'
-import { activeSketchFeature, newId, useStore } from '../doc/store'
+import { activeSketchFeature, bodyBounds, newId, targetBodies, useStore } from '../doc/store'
 import { sketchActions } from '../sketch/actions'
 import { CONFIDENCE_LABEL, getPart } from '../catalogue'
 import { fmt } from '../core/math'
-import type { Feature, HoleFeature, StandoffFeature } from '../doc/types'
+import type { BodyOperation, Feature } from '../doc/types'
+import { findBody, findComponent, findFeature, findOccurrence } from '../doc/model'
+import { poseOf, withPose, type Pose } from '../doc/placement'
 import { kernel } from '../kernel/api'
 import type { Clash, PrintWarning } from '../kernel/types'
+import { quantity } from '../core/quantity'
+import { lengthLabel, lengthText, volumeLabel } from '../core/units'
 
 export function Inspector({
   tab,
@@ -24,7 +28,6 @@ export function Inspector({
   const errors = useStore((s) => s.errors)
   const activeSketch = useStore((s) => s.activeSketch)
 
-  // Inside a sketch the panel is about the sketch, not the feature tree.
   if (activeSketch) {
     return (
       <div className="panel-right">
@@ -48,7 +51,7 @@ export function Inspector({
         <div className="section">
           <h3>Needs attention</h3>
           {errors.map((e, i) => (
-            <div className="msg error" key={i}>
+            <div className={`msg ${e.severity === 'warning' ? 'warn' : 'error'}`} key={i}>
               <strong>{e.message}</strong>
               {e.hint && <em>{e.hint}</em>}
             </div>
@@ -76,16 +79,18 @@ export function Inspector({
       ) : (
         <>
           <SubSelectionPanel />
-          {selection.kind === 'placement' && (
-            <PlacementInspector key={selection.id} id={selection.id!} />
-          )}
-          {selection.kind === 'body' && <BodyInspector id={selection.id!} />}
-          {selection.kind === 'feature' && (
-            <FeatureInspector
+          {selection.kind === 'occurrence' && (
+            <OccurrenceInspector
               key={selection.id}
-              bodyId={selection.bodyId!}
-              featureId={selection.id!}
+              id={selection.id!}
+              instanceId={selection.instanceId}
             />
+          )}
+          {selection.kind === 'body' && (
+            <BodyInspector id={selection.id!} instanceId={selection.instanceId} />
+          )}
+          {selection.kind === 'feature' && (
+            <FeatureInspector key={selection.id} featureId={selection.id!} />
           )}
           {selection.kind === 'none' && (
             <div className="section">
@@ -111,7 +116,6 @@ function Num({
   label,
   value,
   onChange,
-  step = 0.5,
   min,
   suffix = 'mm',
 }: {
@@ -123,12 +127,22 @@ function Num({
   suffix?: string
 }) {
   const id = useId()
-  const [draft, setDraft] = useState(String(value))
-  useEffect(() => setDraft(String(value)), [value])
+  const units = useStore((s) => s.doc.units)
+  const isLength = suffix === 'mm'
+  const shown = isLength ? lengthText(value, units) : String(value)
+  const [draft, setDraft] = useState(shown)
+  useEffect(() => setDraft(shown), [shown])
   const commit = () => {
-    const v = Number(draft)
-    if (!draft.trim() || !Number.isFinite(v) || (min != null && v < min)) {
-      setDraft(String(value))
+    if (draft.trim() === shown) return
+    let v: number
+    try {
+      v = quantity(draft, isLength ? units : suffix === '°' ? '°' : '')
+    } catch {
+      setDraft(shown)
+      return
+    }
+    if (min != null && v < min) {
+      setDraft(shown)
       return
     }
     if (v !== value) onChange(v)
@@ -138,10 +152,9 @@ function Num({
       <label htmlFor={id}>{label}</label>
       <input
         id={id}
-        type="number"
+        type="text"
+        inputMode="decimal"
         value={draft}
-        step={step}
-        min={min}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
         onKeyDown={(e) => {
@@ -151,55 +164,55 @@ function Num({
           }
           if (e.key === 'Escape') {
             e.stopPropagation()
-            setDraft(String(value))
+            setDraft(shown)
           }
         }}
       />
-      <span style={{ color: 'var(--text-faint)', fontSize: 11, width: 20 }}>{suffix}</span>
+      <span style={{ color: 'var(--text-faint)', fontSize: 11, width: 20 }}>
+        {isLength ? units : suffix}
+      </span>
     </div>
   )
 }
 
-// ---------------------------------------------------------------------------
-
-function PlacementInspector({ id }: { id: string }) {
+function OccurrenceInspector({ id, instanceId }: { id: string; instanceId?: string }) {
   const doc = useStore((s) => s.doc)
-  const placement = doc.placements.find((p) => p.id === id)
+  const instances = useStore((s) => s.instances)
+  const meshes = useStore((s) => s.meshes)
+  const activeComponentId = useStore((s) => s.activeComponentId)
   const store = useStore.getState()
   const [targetBody, setTargetBody] = useState('')
-  /**
-   * Null means the field has not been touched, so it keeps following the gap
-   * between the board and the plate. Once a number is typed it stays put -
-   * otherwise moving the board would silently overwrite what was asked for.
-   */
   const [standoffHeight, setStandoffHeight] = useState<number | null>(null)
-  if (!placement) return null
-  const part = getPart(placement.partId)
-  const body = targetBody || doc.bodies[0]?.id || ''
-
-  // The same top-of-the-plate figure generate() drills from, needed out here so
-  // the height field can show what the pillars would come out at.
-  const targetTopZ = store.shapes.find((s) => s.id === body)?.bounds[5] ?? placement.position[2]
-  const suggestedStandoff = Math.max(Math.round((placement.position[2] - targetTopZ) * 10) / 10, 5)
+  const occurrence = findOccurrence(doc, id)
+  const component = occurrence ? findComponent(doc, occurrence.componentId) : undefined
+  if (!occurrence || !component) return null
+  const pose = poseOf(occurrence.transform)
+  const setPose = (patch: Partial<Pose>) =>
+    store.updateOccurrence(id, { transform: withPose(occurrence.transform, patch) })
+  const source = component.source
+  const part = source.kind === 'catalogue' ? getPart(source.partId) : undefined
+  const bodies = targetBodies(doc)
+  const body = bodies.some((b) => b.value === targetBody) ? targetBody : (bodies[0]?.value ?? '')
+  const top = body ? bodyBounds({ instances, meshes }, body)?.[5] : undefined
+  const targetTopZ = top ?? pose.position[2]
+  const suggestedStandoff = Math.max(Math.round((pose.position[2] - targetTopZ) * 10) / 10, 5)
   const pillarHeight = standoffHeight ?? suggestedStandoff
 
-  const generate = (make: (planeZ: number) => Feature) => {
+  const generate = (kind: 'holes' | 'standoffs' | 'ports') => {
     if (!body) {
       store.setStatus('Make a plate or box first - there is nothing to put holes in yet.')
       return
     }
-    // Drill from the top of the target body, which is what a board sitting on a
-    // plate almost always means.
-    const shape = store.shapes.find((s) => s.id === body)
-    const topZ = shape ? shape.bounds[5] : placement.position[2]
-    store.addFeature(body, make(topZ))
+    const feature = mountFeature(kind, id, body, { height: pillarHeight, instanceId })
+    if (!feature) return
+    store.addFeature(feature)
     store.select({ kind: 'body', id: body })
   }
 
   return (
     <>
       <div className="section">
-        <h3>{placement.name}</h3>
+        <h3>{occurrence.name}</h3>
         {part && (
           <p className="hint" style={{ marginTop: 0 }}>
             {part.summary}
@@ -207,161 +220,139 @@ function PlacementInspector({ id }: { id: string }) {
         )}
         <Num
           label="Across (X)"
-          value={placement.position[0]}
-          onChange={(v) =>
-            store.updatePlacement(id, {
-              position: [v, placement.position[1], placement.position[2]],
-            })
-          }
+          value={pose.position[0]}
+          onChange={(v) => setPose({ position: [v, pose.position[1], pose.position[2]] })}
         />
         <Num
           label="Along (Y)"
-          value={placement.position[1]}
-          onChange={(v) =>
-            store.updatePlacement(id, {
-              position: [placement.position[0], v, placement.position[2]],
-            })
-          }
+          value={pose.position[1]}
+          onChange={(v) => setPose({ position: [pose.position[0], v, pose.position[2]] })}
         />
         <Num
           label="Height (Z)"
-          value={placement.position[2]}
-          onChange={(v) =>
-            store.updatePlacement(id, {
-              position: [placement.position[0], placement.position[1], v],
-            })
-          }
+          value={pose.position[2]}
+          onChange={(v) => setPose({ position: [pose.position[0], pose.position[1], v] })}
         />
         <Num
           label="Turn"
-          value={placement.rotation}
+          value={pose.turn}
           step={15}
           suffix="°"
-          onChange={(v) => store.updatePlacement(id, { rotation: v })}
+          onChange={(v) => setPose({ turn: v })}
         />
         <div className="row">
           <label>Upside down</label>
           <input
             type="checkbox"
-            checked={placement.flipped}
-            onChange={(e) => store.updatePlacement(id, { flipped: e.target.checked })}
+            checked={pose.flipped}
+            onChange={(e) => setPose({ flipped: e.target.checked })}
           />
         </div>
-        {part?.geometry.kind === 'extrusion' && (
+        {source.kind === 'catalogue' && part?.geometry.kind === 'extrusion' && (
           <Num
             label="Length"
-            value={placement.overrides?.length ?? part.geometry.length}
+            value={source.overrides?.length ?? part.geometry.length}
             step={10}
             min={10}
             onChange={(v) =>
-              store.updatePlacement(id, { overrides: { ...placement.overrides, length: v } })
+              store.updateComponent(component.id, {
+                source: { ...source, overrides: { ...source.overrides, length: v } },
+              })
             }
           />
         )}
       </div>
 
       <div className="section">
-        <h3>Build around this part</h3>
-        {doc.bodies.length > 1 && (
-          <div className="row">
-            <label>Into</label>
-            <select value={body} onChange={(e) => setTargetBody(e.target.value)}>
-              {doc.bodies.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        <h3>Component</h3>
+        <button
+          className="btn"
+          title="Another occurrence of the same component. Changing one changes both."
+          onClick={() => store.linkedCopy(id)}
+        >
+          Linked Copy
+          <small>Another occurrence of {component.name} beside this one</small>
+        </button>
+        {source.kind === 'design' && (
+          <button
+            className="btn"
+            disabled={activeComponentId === component.id}
+            title="New sketches, bodies and features go into the active component."
+            onClick={() => store.activateComponent(component.id)}
+          >
+            {activeComponentId === component.id ? 'Active component' : 'Activate Component'}
+            <small>New sketches, bodies and features go into {component.name}</small>
+          </button>
         )}
-
-        <button
-          className="btn"
-          disabled={!part?.mountingHoles?.length}
-          onClick={() =>
-            generate(
-              (z) =>
-                ({
-                  id: newId('hole'),
-                  kind: 'hole',
-                  name: `Holes for ${placement.name}`,
-                  plane: { kind: 'named', name: 'XY', offset: z },
-                  source: { kind: 'placement', placementId: id },
-                  style: 'counterbore',
-                  diameter: (part?.mountingHoles?.[0]?.diameter ?? 3) + 0.2,
-                  depth: 'through',
-                  counterboreDiameter: (part?.mountingHoles?.[0]?.diameter ?? 3) + 3,
-                  counterboreDepth: 2,
-                }) as HoleFeature,
-            )
-          }
-        >
-          Mounting holes
-          <small>
-            {part?.mountingHoles?.length
-              ? `${part.mountingHoles.length} holes, sized for ${part.mountingHoles[0].screw ?? 'the screws'}, cut right through`
-              : 'This part has no mounting holes'}
-          </small>
-        </button>
-
-        {!!part?.mountingHoles?.length && (
-          <Num label="Pillar height" value={pillarHeight} min={0.5} onChange={setStandoffHeight} />
-        )}
-        <button
-          className="btn"
-          disabled={!part?.mountingHoles?.length}
-          onClick={() =>
-            generate(
-              (z) =>
-                ({
-                  id: newId('standoff'),
-                  kind: 'standoff',
-                  name: `Standoffs for ${placement.name}`,
-                  plane: { kind: 'named', name: 'XY', offset: z },
-                  source: { kind: 'placement', placementId: id },
-                  height: pillarHeight,
-                  outerDiameter: (part?.mountingHoles?.[0]?.diameter ?? 3) + 3,
-                  boreDiameter: Math.max((part?.mountingHoles?.[0]?.diameter ?? 3) - 0.6, 1.2),
-                  // A screw that bottoms out before the head lands splits the
-                  // pillar, so the bore stops short of the full height.
-                  boreDepth: Math.max(pillarHeight - 1, 2),
-                }) as StandoffFeature,
-            )
-          }
-        >
-          Standoffs
-          <small>
-            {standoffHeight === null
-              ? `Printed pillars ${pillarHeight} mm tall under each hole, which is where the board is sitting`
-              : `Printed pillars ${pillarHeight} mm tall under each hole, bored for a self-tapping screw`}
-          </small>
-        </button>
-
-        <button
-          className="btn"
-          disabled={!part?.connectors?.length}
-          onClick={() =>
-            generate(() => ({
-              id: newId('ports'),
-              kind: 'portCutout',
-              name: `Openings for ${placement.name}`,
-              placementId: id,
-              connectorIds: [],
-              tolerance: 0.6,
-            }))
-          }
-        >
-          Port openings
-          <small>
-            {part?.connectors?.length
-              ? `Cuts openings for ${part.connectors
-                  .map((c) => c.label)
-                  .slice(0, 3)
-                  .join(', ')}${part.connectors.length > 3 ? '…' : ''}`
-              : 'This part has no connectors listed'}
-          </small>
-        </button>
       </div>
+
+      {part && (
+        <div className="section">
+          <h3>Build around this part</h3>
+          {bodies.length > 1 && (
+            <div className="row">
+              <label>Into</label>
+              <select value={body} onChange={(e) => setTargetBody(e.target.value)}>
+                {bodies.map((b) => (
+                  <option key={b.value} value={b.value}>
+                    {b.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <button
+            className="btn"
+            disabled={!part.mountingHoles?.length}
+            onClick={() => generate('holes')}
+          >
+            Mounting holes
+            <small>
+              {part.mountingHoles?.length
+                ? `${part.mountingHoles.length} holes, sized for ${part.mountingHoles[0].screw ?? 'the screws'}, cut right through`
+                : 'This part has no mounting holes'}
+            </small>
+          </button>
+
+          {!!part.mountingHoles?.length && (
+            <Num
+              label="Pillar height"
+              value={pillarHeight}
+              min={0.5}
+              onChange={setStandoffHeight}
+            />
+          )}
+          <button
+            className="btn"
+            disabled={!part.mountingHoles?.length}
+            onClick={() => generate('standoffs')}
+          >
+            Standoffs
+            <small>
+              {standoffHeight === null
+                ? `Printed pillars ${lengthLabel(pillarHeight, doc.units)} tall under each hole, which is where the board is sitting`
+                : `Printed pillars ${lengthLabel(pillarHeight, doc.units)} tall under each hole, bored for a self-tapping screw`}
+            </small>
+          </button>
+
+          <button
+            className="btn"
+            disabled={!part.connectors?.length}
+            onClick={() => generate('ports')}
+          >
+            Port openings
+            <small>
+              {part.connectors?.length
+                ? `Cuts openings for ${part.connectors
+                    .map((c) => c.label)
+                    .slice(0, 3)
+                    .join(', ')}${part.connectors.length > 3 ? '…' : ''}`
+                : 'This part has no connectors listed'}
+            </small>
+          </button>
+        </div>
+      )}
 
       {part && (
         <div className="section">
@@ -392,21 +383,27 @@ function PlacementInspector({ id }: { id: string }) {
   )
 }
 
-function BodyInspector({ id }: { id: string }) {
+function BodyInspector({ id, instanceId }: { id: string; instanceId?: string }) {
   const doc = useStore((s) => s.doc)
-  const shapes = useStore((s) => s.shapes)
-  const body = doc.bodies.find((b) => b.id === id)
-  const shape = shapes.find((s) => s.id === id)
+  const instances = useStore((s) => s.instances)
+  const meshes = useStore((s) => s.meshes)
+  const found = findBody(doc, id)
   const store = useStore.getState()
-  if (!body) return null
-
-  const size = shape
+  if (!found) return null
+  const { body } = found
+  const instance =
+    instances.find((i) => i.id === instanceId) ??
+    instances.find((i) => i.kind === 'body' && i.bodyId === id)
+  const mesh = instance ? meshes.get(instance.meshKey) : undefined
+  const units = doc.units
+  const size = mesh
     ? [
-        shape.bounds[3] - shape.bounds[0],
-        shape.bounds[4] - shape.bounds[1],
-        shape.bounds[5] - shape.bounds[2],
+        mesh.bounds[3] - mesh.bounds[0],
+        mesh.bounds[4] - mesh.bounds[1],
+        mesh.bounds[5] - mesh.bounds[2],
       ]
     : null
+  const show = (mm: number) => (units === 'mm' ? fmt(mm, 1) : lengthLabel(mm, units, false))
 
   return (
     <>
@@ -416,19 +413,14 @@ function BodyInspector({ id }: { id: string }) {
           <label>Name</label>
           <input
             value={body.name}
-            onChange={(e) =>
-              store.commit((d) => {
-                const b = d.bodies.find((x) => x.id === id)
-                if (b) b.name = e.target.value
-              })
-            }
+            onChange={(e) => store.updateBody(id, { name: e.target.value })}
           />
         </div>
-        {size && (
+        {size && mesh && (
           <p className="hint mono" style={{ marginTop: 8 }}>
-            {fmt(size[0], 1)} × {fmt(size[1], 1)} × {fmt(size[2], 1)} mm
+            {show(size[0])} × {show(size[1])} × {show(size[2])} {units}
             <br />
-            {fmt(shape!.volume / 1000, 1)} cm³ of material
+            {volumeLabel(mesh.volume, units)} of material
           </p>
         )}
       </div>
@@ -448,14 +440,20 @@ function BodyInspector({ id }: { id: string }) {
   )
 }
 
-function FeatureInspector({ bodyId, featureId }: { bodyId: string; featureId: string }) {
+function resultValue(result: BodyOperation): string {
+  if (result.kind === 'newBody') return 'new'
+  if (result.kind === 'join') return `join:${result.bodyId}`
+  return `${result.kind}:${result.bodyIds[0] ?? ''}`
+}
+
+function FeatureInspector({ featureId }: { featureId: string }) {
   const doc = useStore((s) => s.doc)
-  const body = doc.bodies.find((b) => b.id === bodyId)
-  const feature = body?.features.find((f) => f.id === featureId)
+  const feature = findFeature(doc, featureId)
   const store = useStore.getState()
   if (!feature) return null
 
-  const patch = (p: Partial<Feature>) => store.updateFeature(bodyId, featureId, p)
+  const patch = (p: Partial<Feature>) => store.updateFeature(featureId, p)
+  const component = findComponent(doc, feature.componentId)
 
   return (
     <div className="section">
@@ -467,7 +465,7 @@ function FeatureInspector({ bodyId, featureId }: { bodyId: string; featureId: st
             {feature.sketch.entities.length} line
             {feature.sketch.entities.length === 1 ? '' : 's'} drawn.
           </p>
-          <button className="btn primary" onClick={() => store.openSketch(bodyId, featureId)}>
+          <button className="btn primary" onClick={() => store.openSketch(featureId)}>
             Edit this sketch
           </button>
         </>
@@ -492,14 +490,37 @@ function FeatureInspector({ bodyId, featureId }: { bodyId: string; featureId: st
             </select>
           </div>
           <div className="row">
-            <label>What it does</label>
+            <label title="New Body, Join or Cut">Operation</label>
             <select
-              value={feature.operation}
-              onChange={(e) => patch({ operation: e.target.value } as Partial<Feature>)}
+              value={resultValue(feature.result)}
+              onChange={(e) => {
+                const [kind, bodyId] = e.target.value.split(':')
+                const result: BodyOperation =
+                  kind === 'join'
+                    ? { kind: 'join', bodyId }
+                    : kind === 'cut'
+                      ? { kind: 'cut', bodyIds: [bodyId] }
+                      : {
+                          kind: 'newBody',
+                          bodyId:
+                            feature.result.kind === 'newBody'
+                              ? feature.result.bodyId
+                              : newId('body'),
+                        }
+                patch({ result } as Partial<Feature>)
+              }}
             >
-              <option value="new">Start a new shape</option>
-              <option value="add">Add to the shape</option>
-              <option value="cut">Cut into the shape</option>
+              <option value="new">New Body</option>
+              {component?.bodies
+                .filter((b) => feature.result.kind !== 'newBody' || b.id !== feature.result.bodyId)
+                .flatMap((b) => [
+                  <option key={`join:${b.id}`} value={`join:${b.id}`}>
+                    Join to {b.name}
+                  </option>,
+                  <option key={`cut:${b.id}`} value={`cut:${b.id}`}>
+                    Cut {b.name}
+                  </option>,
+                ])}
             </select>
           </div>
         </>
@@ -665,7 +686,7 @@ function FeatureInspector({ bodyId, featureId }: { bodyId: string; featureId: st
               onChange={(v) => patch({ depth: v } as Partial<Feature>)}
             />
           )}
-          {feature.source.kind === 'placement' && (
+          {feature.source.kind === 'occurrence' && (
             <p className="hint">
               These follow the part they were made for. Move the board and the holes move with it.
             </p>
@@ -778,21 +799,14 @@ function SubSelectionPanel() {
   )
 }
 
-/**
- * What is selected inside the open sketch, with its measurements editable.
- *
- * The right-click menu can already do all of this, but a number you can see and
- * type over is a much shorter path to "make that edge 100 mm" than remembering
- * that a menu exists.
- */
 function SketchSelectionPanel() {
   const doc = useStore((s) => s.doc)
   const selection = useStore((s) => s.sketchSelection)
   const status = useStore((s) => s.sketchStatus)
   const store = useStore.getState()
   const sketch = activeSketchFeature(useStore.getState())?.sketch
-  void doc
   if (!sketch) return null
+  const units = doc.units
 
   const pts = new Map(sketch.points.map((p) => [p.id, p]))
   const actions = sketchActions(sketch, selection)
@@ -881,7 +895,7 @@ function SketchSelectionPanel() {
               const p = pts.get(single.id)
               return p ? (
                 <p className="hint mono" style={{ marginTop: 0 }}>
-                  at {fmt(p.x, 2)}, {fmt(p.y, 2)} mm
+                  at {lengthLabel(p.x, units, false)}, {lengthLabel(p.y, units)}
                 </p>
               ) : null
             })()}
@@ -900,12 +914,13 @@ function SketchSelectionPanel() {
 
 function ToolsSection() {
   const section = useStore((s) => s.section)
-  const shapes = useStore((s) => s.shapes)
+  const instances = useStore((s) => s.instances)
   const doc = useStore((s) => s.doc)
   const store = useStore.getState()
   const [clashes, setClashes] = useState<Clash[] | null>(null)
   const [warnings, setWarnings] = useState<PrintWarning[] | null>(null)
   const [busy, setBusy] = useState(false)
+  const printable = instances.filter((i) => i.kind === 'body' && i.visible)
 
   return (
     <>
@@ -971,13 +986,17 @@ function ToolsSection() {
 
         <button
           className="btn"
-          disabled={busy || shapes.length === 0}
+          disabled={busy || printable.length === 0}
           onClick={async () => {
             setBusy(true)
             setClashes(null)
             try {
-              const bodies = shapes.filter((s) => s.kind === 'body').map((s) => s.id)
-              setWarnings(await kernel().printPrep(bodies, { nozzle: 0.4, bed: [220, 220, 250] }))
+              setWarnings(
+                await kernel().printPrep(
+                  printable.map((i) => i.id),
+                  { nozzle: 0.4, bed: [220, 220, 250] },
+                ),
+              )
             } finally {
               setBusy(false)
             }
@@ -993,7 +1012,7 @@ function ToolsSection() {
             <strong>
               {c.aLabel} runs into {c.bLabel}
             </strong>
-            <em>Overlapping by roughly {fmt(c.overlap, 1)} mm.</em>
+            <em>Overlapping by roughly {lengthLabel(c.overlap, doc.units)}.</em>
           </div>
         ))}
 

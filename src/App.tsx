@@ -8,8 +8,16 @@ import { Tutorial } from './ui/Tutorial'
 import { ExportDialog } from './ui/ExportDialog'
 import { useStore } from './doc/store'
 import { kernel } from './kernel/api'
-import { loadAutosave, readShareLink, scheduleAutosave, saveAutosaveNow } from './doc/persist'
+import {
+  discardOldAutosave,
+  loadAutosave,
+  readShareLink,
+  scheduleAutosave,
+  saveAutosaveNow,
+} from './doc/persist'
 import { planeLabel } from './doc/planes'
+import { UNIT_NAME } from './core/units'
+import type { OkcDocument } from './doc/types'
 import { activeSketchFeature } from './doc/store'
 import { ActionDialogHost } from './ui/ActionDialog'
 import { Timeline, NavigationBar } from './ui/Timeline'
@@ -33,20 +41,27 @@ export function App() {
   // Boot the kernel, then restore whatever the user was last working on.
   useEffect(() => {
     let cancelled = false
+    discardOldAutosave()
     kernel()
       .ready()
       .then(() => {
         if (cancelled) return
         useStore.getState().setKernelReady(true)
 
-        const shared = readShareLink()
+        let shared: OkcDocument | null = null
+        try {
+          shared = readShareLink()
+        } catch (e) {
+          history.replaceState(null, '', location.pathname)
+          useStore.getState().setStatus((e as Error).message)
+        }
         if (shared) {
           useStore.getState().setDoc(shared)
           history.replaceState(null, '', location.pathname)
           return
         }
         const saved = loadAutosave()
-        if (saved && (saved.doc.bodies.length || saved.doc.placements.length)) {
+        if (saved && (saved.doc.timeline.length || saved.doc.occurrences.length)) {
           useStore.getState().setDoc(saved.doc)
           return
         }
@@ -180,6 +195,7 @@ export function App() {
 
 function SketchBanner() {
   const tool = useStore((s) => s.tool)
+  const units = useStore((s) => s.doc.units)
   const sketch = activeSketchFeature(useStore.getState())
   const help: Record<string, string> = {
     select:
@@ -192,7 +208,9 @@ function SketchBanner() {
   }
   return (
     <div className="sketch-banner">
-      <strong>Drawing on {sketch ? planeLabel(sketch.plane).toLowerCase() : 'a plane'}</strong>
+      <strong>
+        Drawing on {sketch ? planeLabel(sketch.plane, units).toLowerCase() : 'a plane'}
+      </strong>
       <span style={{ color: 'var(--text-faint)' }}>{help[tool]}</span>
     </div>
   )
@@ -201,13 +219,20 @@ function SketchBanner() {
 function StatusBar() {
   const building = useStore((s) => s.building)
   const buildMs = useStore((s) => s.buildMs)
-  const shapes = useStore((s) => s.shapes)
+  const instances = useStore((s) => s.instances)
+  const meshes = useStore((s) => s.meshes)
   const errors = useStore((s) => s.errors)
+  const units = useStore((s) => s.doc.units)
   const status = useStore((s) => s.statusMessage)
   const showPlacements = useStore((s) => s.showPlacements)
   const showFasteners = useStore((s) => s.showFasteners)
 
-  const triangles = shapes.reduce((n, s) => n + s.mesh.triangles.length / 3, 0)
+  const shapes = instances.filter((instance) => instance.visible)
+  const triangles = shapes.reduce(
+    (n, instance) => n + (meshes.get(instance.meshKey)?.mesh.triangles.length ?? 0) / 3,
+    0,
+  )
+  const failures = errors.filter((error) => error.severity === 'error')
 
   return (
     <div className="statusbar">
@@ -218,9 +243,9 @@ function StatusBar() {
         {shapes.length} shape{shapes.length === 1 ? '' : 's'}
       </span>
       <span className="mesh-stat">{triangles.toLocaleString()} triangles</span>
-      {errors.length > 0 && (
+      {failures.length > 0 && (
         <span style={{ color: 'var(--err)' }}>
-          {errors.length} step{errors.length === 1 ? '' : 's'} need attention
+          {failures.length} step{failures.length === 1 ? '' : 's'} need attention
         </span>
       )}
       {status && <span style={{ color: 'var(--warn)' }}>{status}</span>}
@@ -241,7 +266,7 @@ function StatusBar() {
         />
         Show screws
       </label>
-      <span>millimetres</span>
+      <span>{UNIT_NAME[units].toLowerCase()}</span>
     </div>
   )
 }

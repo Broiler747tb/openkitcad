@@ -107,7 +107,7 @@ export function Toolbar({
   function newDesign() {
     const s = useStore.getState()
     if (
-      (s.doc.bodies.length || s.doc.placements.length) &&
+      (s.doc.timeline.length || s.doc.occurrences.length) &&
       !confirm('Start a new design? Save the current design first to keep it.')
     )
       return
@@ -299,7 +299,7 @@ export function Toolbar({
             <button onClick={() => saveDocument(state.doc)}>
               Save <kbd>Ctrl S</kbd>
             </button>
-            <button disabled={!state.shapes.length} onClick={onExport}>
+            <button disabled={!state.instances.length} onClick={onExport}>
               Export…
             </button>
           </div>
