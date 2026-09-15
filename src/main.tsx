@@ -31,6 +31,7 @@ if (params.has('selftest') || params.has('kerneltest')) {
   }
   suites.push(
     ['model', async () => (await import('./dev/modeltest')).runModelTest()],
+    ['naming', async () => (await import('./dev/namingtest')).runNamingTest()],
     ['kernel', async () => (await import('./dev/kerneltest')).runKernelTest()],
   )
   ;(async () => {
