@@ -1,15 +1,11 @@
-/**
- * Feature evaluation: turning a document into solids.
- *
- * Runs entirely inside the worker. Every function here may allocate OpenCascade
- * objects, so it must never be imported from the main thread.
- */
 import {
+  cast,
   draw,
   drawCircle,
   drawPolysides,
   drawRectangle,
   drawRoundedRectangle,
+  getOC,
   makeBox,
   makeCylinder,
   makeSphere,
@@ -21,53 +17,77 @@ import {
   frameToLocal,
   frameToWorld,
   makeFrame,
-  NAMED_FRAMES,
   v3,
   type Frame,
   type Vec2,
   type Vec3,
 } from '../core/math'
 import type {
-  Body,
-  LidFeature,
-  BooleanOp,
+  BodyOperation,
   EdgeRef,
   FaceRef,
   Feature,
   HoleFeature,
+  LidFeature,
+  Matrix4,
   OkcDocument,
-  Placement,
   PlaneRef,
+  PositionSource,
   SketchFeature,
   StandoffFeature,
+  VentFeature,
 } from '../doc/types'
-import { placementToWorld } from '../doc/placement'
+import type { KernelError } from './types'
+import { sketchToProfile } from './profile'
+import {
+  featureDependencies,
+  findBody,
+  findComponent,
+  identityMatrix,
+  invertRigidMatrix,
+  multiplyMatrices,
+  pathComponent,
+  pathMatrix,
+  transformPoint,
+} from '../doc/model'
 import { frameFromPlaneRefLocal } from '../doc/planes'
 import { getPart, type CataloguePart } from '../catalogue'
-import { sketchToProfile } from './profile'
 
-export interface BuildError {
+export const CUT_MARGIN = 0.5
+const THROUGH_LENGTH = 1000
+const LID_REACH = 4000
+
+export interface BodyState {
+  shape: any
+  key: string
   featureId: string
-  message: string
-  hint?: string
 }
 
-/** How far cutters overshoot the material, so nothing is left paper-thin. */
-const CUT_MARGIN = 0.5
-/** Length used for "through" cuts when the body size is unknown. */
-const THROUGH_LENGTH = 1000
+export interface PreShell {
+  shape: any
+  frame: Frame
+}
 
-// ---------------------------------------------------------------------------
-// Planes
-// ---------------------------------------------------------------------------
+export function isIdentity(m: Matrix4): boolean {
+  const id = identityMatrix()
+  return m.every((value, i) => Math.abs(value - id[i]) < 1e-12)
+}
 
-export function frameFromPlaneRef(ref: PlaneRef, shapes: Map<string, any>): Frame {
-  // Named and tilted planes need no geometry, so they come from the shared
-  // helper the viewport uses. Keeping one implementation is what stops a sketch
-  // landing in a different place on screen than it does in the kernel.
+export function transformShape(shape: any, m: Matrix4): any {
+  if (isIdentity(m)) return shape.clone()
+  const oc = getOC() as any
+  const trsf = new oc.gp_Trsf_1()
+  trsf.SetValues(m[0], m[4], m[8], m[12], m[1], m[5], m[9], m[13], m[2], m[6], m[10], m[14])
+  const builder = new oc.BRepBuilderAPI_Transform_2(shape.wrapped, trsf, true)
+  const result = cast(builder.ModifiedShape(shape.wrapped))
+  builder.delete()
+  trsf.delete()
+  return result
+}
+
+export function frameFromPlaneRef(ref: PlaneRef, bodies: ReadonlyMap<string, BodyState>): Frame {
   if (ref.kind !== 'face') return frameFromPlaneRefLocal(ref)
-
-  const resolved = resolveFace(shapes.get(ref.face.bodyId), ref.face)
+  const resolved = resolveFace(bodies.get(ref.face.bodyId)?.shape, ref.face)
   const normal = resolved?.normal ?? ref.face.normal
   const anchor = resolved?.centre ?? ref.face.anchor
   return makeFrame(v3.add(anchor, v3.scale(normal, ref.offset)), normal)
@@ -78,21 +98,9 @@ export function toReplicadPlane(frame: Frame, offset = 0): Plane {
   return new Plane(origin, frame.xDir, frame.normal)
 }
 
-/**
- * Place a drawing on a frame, optionally offset along its normal.
- *
- * replicad's `sketchOnPlane` only accepts an offset alongside a *named* plane,
- * so for an arbitrary frame the offset has to be baked into the plane's origin.
- * The return is deliberately `any`: the declared type is a union that does not
- * expose `extrude`, even though every value this can produce does.
- */
 function sketchOn(drawing: Drawing, frame: Frame, offset = 0): any {
   return drawing.sketchOnPlane(toReplicadPlane(frame, offset)) as any
 }
-
-// ---------------------------------------------------------------------------
-// Resolving picked faces and edges after a rebuild
-// ---------------------------------------------------------------------------
 
 function faceCentre(face: any): Vec3 {
   const c = face.center
@@ -104,10 +112,6 @@ function faceNormal(face: any): Vec3 {
   return v3.norm([n.x, n.y, n.z])
 }
 
-/**
- * Find the face that best matches a stored fingerprint: the closest one whose
- * normal still points roughly the same way.
- */
 export function resolveFace(
   shape: any,
   ref: FaceRef,
@@ -123,7 +127,6 @@ export function resolveFace(
     } catch {
       continue
     }
-    // Reject anything facing more than 60 degrees away from the original pick.
     if (v3.dot(normal, ref.normal) < 0.5) continue
     const score = v3.dist(centre, ref.anchor)
     if (!best || score < best.score) best = { face, centre, normal, score }
@@ -140,7 +143,6 @@ function edgeAnchor(edge: any): Vec3 | null {
   }
 }
 
-/** Predicate matching an edge against any of the stored fingerprints. */
 function edgeMatcher(refs: EdgeRef[]): (edge: any) => boolean {
   if (refs.length === 0) return () => true
   return (edge: any) => {
@@ -150,34 +152,12 @@ function edgeMatcher(refs: EdgeRef[]): (edge: any) => boolean {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Booleans
-// ---------------------------------------------------------------------------
-
-function combine(current: any | null, next: any, op: BooleanOp): any {
-  if (!current || op === 'new') return next
-  switch (op) {
-    case 'add':
-      return current.fuse(next)
-    case 'cut':
-      return current.cut(next)
-    case 'intersect':
-      return current.intersect(next)
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Catalogue parts
-// ---------------------------------------------------------------------------
-
 function boardOutlineDrawing(part: CataloguePart): Drawing | null {
   const g = part.geometry
   if (g.kind !== 'board') return null
   if (g.outline.shape === 'rect') {
     const { w, h, cornerRadius } = g.outline
     const base = cornerRadius ? drawRoundedRectangle(w, h, cornerRadius) : drawRectangle(w, h)
-    // Catalogue parts are dimensioned from their lower-left corner, replicad
-    // draws rectangles about their centre.
     return base.translate(w / 2, h / 2)
   }
   const pts = g.outline.points
@@ -186,10 +166,6 @@ function boardOutlineDrawing(part: CataloguePart): Drawing | null {
   return pen.close()
 }
 
-/**
- * Build a catalogue part in its own local frame (origin at the lower-left of
- * its footprint, Z up).
- */
 export function buildPartLocal(part: CataloguePart, overrides?: Record<string, number>): any {
   const g = part.geometry
   switch (g.kind) {
@@ -217,9 +193,7 @@ export function buildPartLocal(part: CataloguePart, overrides?: Record<string, n
       const length = overrides?.length ?? g.length
       const slot = 6
       const inner = 11
-      // Profile drawn in the YZ plane so the bar runs along X.
       let profile: Drawing = drawRectangle(s, s).translate(s / 2, s / 2)
-      // Four T-slots, one per face.
       for (let i = 0; i < (g.slots ?? 4); i++) {
         const mouth = drawRectangle(slot, 6).translate(s / 2, s - 3)
         const throat = drawRectangle(inner, 5).translate(s / 2, s - 8.5)
@@ -298,9 +272,6 @@ export function buildPartLocal(part: CataloguePart, overrides?: Record<string, n
     }
 
     case 'connector': {
-      // Body sits behind the panel, running back along +y; anything that pokes
-      // out the front is drawn in the shape of the cutout so the part reads as
-      // the socket it is.
       const { bodyWidth: w, bodyHeight: h, bodyDepth: d, protrusion } = g
       let solid: any = makeBox([0, 0, 0], [w, d, h])
       if (protrusion > 0) {
@@ -325,74 +296,77 @@ export function buildPartLocal(part: CataloguePart, overrides?: Record<string, n
   }
 }
 
-/** Build a placed catalogue part in world space. */
-export function buildPlacement(placement: Placement): any | null {
-  const part = getPart(placement.partId)
-  if (!part) return null
-  let solid = buildPartLocal(part, placement.overrides)
-  if (!solid) return null
-  if (placement.flipped) solid = solid.rotate(180, [0, 0, 0], [1, 0, 0])
-  if (placement.rotation) solid = solid.rotate(placement.rotation, [0, 0, 0], [0, 0, 1])
-  return solid.translate(placement.position)
+export interface PlacedPart {
+  part: CataloguePart | undefined
+  matrix: Matrix4
 }
 
-// ---------------------------------------------------------------------------
-// Hole and standoff positions
-// ---------------------------------------------------------------------------
-
-/**
- * Where a hole feature's holes actually are, in the coordinates of its own
- * plane. Placement-sourced holes are recomputed here on every rebuild, which
- * is what makes moving a board drag its mounting holes along with it.
- */
-export function resolvePositions(
-  source: HoleFeature['source'] | StandoffFeature['source'],
-  frame: Frame,
+export function placedPart(
   doc: OkcDocument,
-): Vec2[] {
-  if (source.kind === 'explicit') return source.positions
-  const placement = doc.placements.find((p) => p.id === source.placementId)
-  if (!placement) return []
-  const part = getPart(placement.partId)
-  if (!part?.mountingHoles) return []
-  const wanted = source.holeIds?.length
-    ? part.mountingHoles.filter((h) => source.holeIds!.includes(h.id))
-    : part.mountingHoles
-  return wanted.map((h) => {
-    const world = placementToWorld(placement, [h.x, h.y, 0])
-    return frameToLocal(frame, world)
+  occurrencePath: string[],
+  contextPath: string[],
+): PlacedPart | null {
+  if (!occurrencePath.length) return null
+  const partMatrix = pathMatrix(doc, occurrencePath)
+  const contextMatrix = pathMatrix(doc, contextPath)
+  const componentId = pathComponent(doc, occurrencePath)
+  const component = componentId ? findComponent(doc, componentId) : undefined
+  if (!partMatrix || !contextMatrix || component?.source.kind !== 'catalogue') return null
+  return {
+    part: getPart(component.source.partId),
+    matrix: multiplyMatrices(invertRigidMatrix(contextMatrix), partMatrix),
+  }
+}
+
+function occurrenceInputs(
+  feature: Feature,
+): Array<{ occurrencePath: string[]; contextPath: string[] }> {
+  if (
+    (feature.kind === 'hole' || feature.kind === 'standoff') &&
+    feature.source.kind === 'occurrence'
+  )
+    return [feature.source]
+  if (feature.kind === 'portCutout') return [feature]
+  return []
+}
+
+export function externalInputs(doc: OkcDocument, feature: Feature): unknown[] {
+  return occurrenceInputs(feature).map(({ occurrencePath, contextPath }) => {
+    const componentId = pathComponent(doc, occurrencePath)
+    const component = componentId ? findComponent(doc, componentId) : undefined
+    const source = component?.source ?? null
+    return {
+      occurrence: pathMatrix(doc, occurrencePath),
+      context: pathMatrix(doc, contextPath),
+      componentId,
+      source,
+      part: source?.kind === 'catalogue' ? (getPart(source.partId) ?? null) : null,
+    }
   })
 }
 
-// ---------------------------------------------------------------------------
-// Feature evaluation
-// ---------------------------------------------------------------------------
-
-interface EvalContext {
-  doc: OkcDocument
-  /** Bodies already built this pass, for face references. */
-  shapes: Map<string, any>
-  /**
-   * The solid as it stood just before each hollowing, keyed by shell feature.
-   * A lid needs the *outer* cross-section, and once a body has been hollowed
-   * all that is left at the opening is a ring of wall.
-   */
-  preShell: Map<string, { shape: any; frame: Frame }>
+function resolvePositions(source: PositionSource, frame: Frame, doc: OkcDocument): Vec2[] | null {
+  if (source.kind === 'explicit') return source.positions
+  const placed = placedPart(doc, source.occurrencePath, source.contextPath)
+  if (!placed) return null
+  const holes = placed.part?.mountingHoles
+  if (!holes) return []
+  const wanted = source.holeIds?.length
+    ? holes.filter((h) => source.holeIds!.includes(h.id))
+    : holes
+  return wanted.map((h) => frameToLocal(frame, transformPoint(placed.matrix, [h.x, h.y, 0])))
 }
 
 function buildHoleCutter(feature: HoleFeature, frame: Frame, positions: Vec2[]): any | null {
   const depth = feature.depth === 'through' ? THROUGH_LENGTH : feature.depth
   let cutter: any = null
-
   for (const [u, v] of positions) {
-    // Drill into the material, i.e. against the plane normal.
     const shaft = sketchOn(
       drawCircle(feature.diameter / 2).translate(u, v),
       frame,
       CUT_MARGIN,
     ).extrude(-(depth + CUT_MARGIN))
     let piece: any = shaft
-
     if (feature.style === 'counterbore' && feature.counterboreDiameter) {
       const cb = sketchOn(
         drawCircle(feature.counterboreDiameter / 2).translate(u, v),
@@ -401,17 +375,14 @@ function buildHoleCutter(feature: HoleFeature, frame: Frame, positions: Vec2[]):
       ).extrude(-((feature.counterboreDepth ?? 3) + CUT_MARGIN))
       piece = piece.fuse(cb)
     }
-
     if (feature.style === 'countersink') {
       const angle = ((feature.countersinkAngle ?? 90) * Math.PI) / 180
       const headRadius = (feature.counterboreDiameter ?? feature.diameter * 2) / 2
-      // Depth a cone of this included angle needs to reach the head diameter.
       const coneDepth = (headRadius - feature.diameter / 2) / Math.tan(angle / 2)
       const top = sketchOn(drawCircle(headRadius).translate(u, v), frame, 0)
       const bottom = sketchOn(drawCircle(feature.diameter / 2).translate(u, v), frame, -coneDepth)
       piece = piece.fuse(top.loftWith(bottom))
     }
-
     cutter = cutter ? cutter.fuse(piece) : piece
   }
   return cutter
@@ -424,13 +395,11 @@ function buildStandoffs(
 ): { solid: any | null; bores: any | null } {
   let solid: any = null
   let bores: any = null
-
   for (const [u, v] of positions) {
     const pillar = sketchOn(drawCircle(feature.outerDiameter / 2).translate(u, v), frame).extrude(
       feature.height,
     )
     solid = solid ? solid.fuse(pillar) : pillar
-
     const bore = sketchOn(
       drawCircle(feature.boreDiameter / 2).translate(u, v),
       frame,
@@ -442,22 +411,19 @@ function buildStandoffs(
 }
 
 function buildPortCutters(
-  placement: Placement,
+  placed: PlacedPart,
   connectorIds: string[],
   tolerance: number,
 ): any | null {
-  const part = getPart(placement.partId)
+  const part = placed.part
   if (!part?.connectors?.length) return null
   const wanted = connectorIds.length
     ? part.connectors.filter((c) => connectorIds.includes(c.id))
     : part.connectors
-
   let cutter: any = null
-  const REACH = 60 // far enough to punch through any sane wall
-
+  const REACH = 60
   for (const c of wanted) {
     const along = c.protrusion + REACH
-    // Which way the opening faces, in the part's own frame.
     const dir: Vec3 =
       c.side === '+x'
         ? [1, 0, 0]
@@ -466,19 +432,13 @@ function buildPortCutters(
           : c.side === '+y'
             ? [0, 1, 0]
             : [0, -1, 0]
-
     let piece: any
     if (c.shape === 'circle') {
-      // A round port cut as a rectangle is a ruined panel, and round ports -
-      // barrel jacks, audio sockets, LED bezels - are exactly what a beginner
-      // reaches for first. For these, `z` is the centre of the hole.
       const radius = (c.diameter ?? c.width) / 2 + tolerance
       const start: Vec3 = [c.x - dir[0] * 2, c.y - dir[1] * 2, c.z]
       piece = makeCylinder(radius, along + 2, start, dir)
     } else {
       const halfW = c.width / 2 + tolerance
-      // For rectangular openings `z` is the base, matching how datasheets
-      // dimension a socket sitting on a board.
       const zLo = c.z - tolerance
       const zHi = c.z + c.height + tolerance
       let lo: Vec3
@@ -506,33 +466,12 @@ function buildPortCutters(
         .sketchOnPlane('XY', lo[2])
         .extrude(hi[2] - lo[2])
     }
-
-    if (placement.flipped) piece = piece.rotate(180, [0, 0, 0], [1, 0, 0])
-    if (placement.rotation) piece = piece.rotate(placement.rotation, [0, 0, 0], [0, 0, 1])
-    piece = piece.translate(placement.position)
-
     cutter = cutter ? cutter.fuse(piece) : piece
   }
-  return cutter
+  return cutter ? transformShape(cutter, placed.matrix) : null
 }
-
-/** How far a lid slice reaches sideways before being trimmed to the solid. */
-const LID_REACH = 4000
-
-/**
- * A grid of holes across a face, kept clear of its edges.
- *
- * Hexagons sit on the usual staggered grid: rows offset by half a pitch and
- * spaced pitch*sqrt(3)/2 apart, which is what makes the webs between them the
- * same width in every direction rather than pinching on the diagonal.
- */
-function buildVentCutter(
-  feature: Extract<Feature, { kind: 'vent' }>,
-  frame: Frame,
-  target: any,
-): any | null {
+function buildVentCutter(feature: VentFeature, frame: Frame, target: any): any | null {
   const [min, max] = target.boundingBox.bounds
-  // How far the face runs in the plane's own axes, from the solid's corners.
   let uMin = Infinity
   let uMax = -Infinity
   let vMin = Infinity
@@ -552,7 +491,6 @@ function buildVentCutter(
   const size = Math.max(feature.size, 0.2)
   const pitch = size + Math.max(feature.spacing, 0.2)
   const rowStep = feature.shape === 'hex' ? (pitch * Math.sqrt(3)) / 2 : pitch
-  // Keep a whole hole plus the border clear of the edge.
   const inset = feature.margin + size / 2
   const u0 = uMin + inset
   const u1 = uMax - inset
@@ -582,26 +520,16 @@ function buildVentCutter(
       case 'square':
         return drawRectangle(size, size)
       case 'diamond':
-        // A square stood on its corner. Measured point to point, so that the
-        // number the user types is the span they can see.
         return drawPolysides(size / 2, 4).rotate(45)
       case 'triangle':
-        // Alternate rows point the other way, which is what closes the gaps
-        // that a grid of same-way triangles leaves between them.
         return drawPolysides(size / Math.sqrt(3), 3).rotate(row % 2 === 0 ? 0 : 180)
       case 'cross': {
-        // Two overlapping bars. The arm is a third of the span, which keeps the
-        // web between neighbouring crosses no thinner than the spacing asked
-        // for even at the diagonal, where they come closest.
         const arm = size / 3
         return drawRectangle(size, arm).fuse(drawRectangle(arm, size))
       }
       case 'slot':
-        // A louvre. Rounded ends because a square-ended slot concentrates
-        // stress in exactly the corner a printed part splits at.
         return drawRoundedRectangle(size, Math.min(size, pitch) / 2, Math.min(size, pitch) / 4)
       default:
-        // Measured across the flats, so the circumradius is size / sqrt(3).
         return drawPolysides(size / Math.sqrt(3), 6)
     }
   }
@@ -610,8 +538,6 @@ function buildVentCutter(
   if (feature.shape === 'gyroid') {
     merged = gyroidHoles(u0, u1, v0, v1, size, Math.max(feature.spacing, 0.2))
   } else {
-    // Rows are numbered from the middle outwards so that alternating shapes
-    // stay in step across the centre line.
     for (const [u, v] of centres) {
       const row = Math.round((v - midV) / rowStep)
       const piece = outline(((row % 2) + 2) % 2).translate(u, v)
@@ -622,24 +548,6 @@ function buildVentCutter(
   return sketchOn(merged, frame, CUT_MARGIN).extrude(-(depth + CUT_MARGIN))
 }
 
-/**
- * The gyroid, sliced.
- *
- * A gyroid is a three-dimensional surface, so what a flat panel can carry is a
- * slice through one: taking z = pi/4 leaves
- *
- *     f(u, v) = sin u cos v + (sin v + cos u) / sqrt 2
- *
- * and cutting away everything where f is above a threshold gives the woven
- * pattern people recognise. It is drawn by marching squares over that field
- * rather than by tiling a shape, because there is no repeating hole to tile -
- * the pattern is one continuous channel that wanders across the whole panel.
- *
- * The web comes out close to the spacing asked for rather than exactly at it:
- * the threshold that produces a given web width depends on how steeply the
- * field is changing, which varies over the pattern. The mean slope along the
- * contour is used, so it is right on average and a little uneven in places.
- */
 function gyroidHoles(
   u0: number,
   u1: number,
@@ -653,9 +561,6 @@ function gyroidHoles(
   const f = (u: number, v: number) =>
     Math.sin(k * u) * Math.cos(k * v) + s * (Math.sin(k * v) + Math.cos(k * u))
 
-  // The mean gradient of f along its zero contour, used to turn a web width in
-  // millimetres into a threshold on f. Sampled rather than derived because the
-  // closed form is not worth the trouble for a number this approximate.
   let gradSum = 0
   let gradN = 0
   for (let i = 0; i < 24; i++) {
@@ -674,16 +579,12 @@ function gyroidHoles(
   const grad = gradN > 0 ? gradSum / gradN : k
   const threshold = (web / 2) * grad
 
-  // Fine enough that the curve reads as a curve. Capped so a big panel with a
-  // small cell does not take a minute to contour.
   const step = Math.max(Math.min(cell / 10, 1.2), 0.25)
   const nu = Math.min(Math.ceil((u1 - u0) / step) + 1, 400)
   const nv = Math.min(Math.ceil((v1 - v0) / step) + 1, 400)
   const du = (u1 - u0) / (nu - 1)
   const dv = (v1 - v0) / (nv - 1)
 
-  // Sampled with the border forced negative, so every contour closes inside the
-  // panel instead of running off the edge as an open curve.
   const grid: number[][] = []
   for (let i = 0; i < nu; i++) {
     grid[i] = []
@@ -703,8 +604,6 @@ function gyroidHoles(
     try {
       piece = pen.close()
     } catch {
-      // A degenerate loop - a contour that grazes a grid corner - is skipped
-      // rather than aborting the whole pattern.
       continue
     }
     merged = merged ? merged.fuse(piece) : piece
@@ -712,14 +611,6 @@ function gyroidHoles(
   return merged
 }
 
-/**
- * Trace the zero contours of a scalar grid as closed loops.
- *
- * Standard marching squares, with the four-way ambiguous cases resolved by the
- * value at the cell centre. Segments are then chained end to end by matching
- * their endpoints, which works here because every contour closes: the grid
- * border is forced negative by the caller.
- */
 function marchingSquares(
   grid: number[][],
   u0: number,
@@ -730,7 +621,6 @@ function marchingSquares(
   const nu = grid.length
   const nv = grid[0].length
   const segments: Array<[Vec2, Vec2]> = []
-  /** Where along an edge the field crosses zero. */
   const lerp = (a: number, b: number): number => {
     const d = a - b
     return Math.abs(d) < 1e-12 ? 0.5 : a / d
@@ -776,8 +666,6 @@ function marchingSquares(
         case 8:
           push(left, top)
           break
-        // The two saddles, where the corners alternate in sign and the contour
-        // could join either pair. The centre value says which.
         case 5: {
           if ((a + b + c + d) / 4 > 0) {
             push(left, top)
@@ -803,9 +691,6 @@ function marchingSquares(
   }
   if (segments.length === 0) return []
 
-  // Chain the segments into loops. Endpoints are matched on a grid rounded far
-  // finer than the sampling, so two segments that meet at a shared crossing
-  // agree exactly.
   const key = (p: Vec2) => `${Math.round(p[0] * 1e6)},${Math.round(p[1] * 1e6)}`
   const bins = new Map<string, Array<[Vec2, Vec2]>>()
   for (const seg of segments) {
@@ -823,7 +708,6 @@ function marchingSquares(
     used.add(start as unknown as Array<Vec2>)
     const loop: Vec2[] = [start[0], start[1]]
     let head = start[1]
-    // Bounded so a malformed chain cannot spin forever.
     for (let guard = 0; guard < segments.length + 4; guard++) {
       const options = bins.get(key(head)) ?? []
       const next = options.find((seg) => !used.has(seg as unknown as Array<Vec2>))
@@ -839,26 +723,10 @@ function marchingSquares(
   return loops
 }
 
-/**
- * A slab spanning [from, to] measured along a frame's normal, wide enough to
- * swallow anything this app builds. Used to take a horizontal slice out of a
- * solid at a given depth below a face.
- */
 function frameSlab(frame: Frame, from: number, to: number): any {
   return sketchOn(drawRectangle(LID_REACH, LID_REACH), frame, from).extrude(to - from)
 }
 
-/**
- * The solid shrunk inward by `d` on every side except the open face.
- *
- * replicad has no offset for a solid, so this hollows the solid with walls `d`
- * thick and keeps the void instead of the walls. The void of a shell is exactly
- * the original inset by the wall thickness, which is the offset wanted - and
- * being a real offset rather than a scale, it stays right on rounded corners
- * and awkward outlines where scaling toward a centre would not.
- *
- * Every part of a lid and its seat is some difference of two of these.
- */
 function insetSolid(solid: any, d: number, frame: Frame): any {
   if (d <= 1e-9) return solid.clone()
   const walls = solid
@@ -867,15 +735,6 @@ function insetSolid(solid: any, d: number, frame: Frame): any {
   return solid.clone().cut(walls)
 }
 
-/**
- * Proportions for the parts of a lid that the user is not asked about.
- *
- * Three numbers in a dialog is already at the limit for someone printing their
- * first enclosure, so the skirt and bead are derived from the wall and lid
- * thickness rather than typed in. The skirt is deliberately thinner than the
- * wall: it is the part that has to bend for the lid to click in, and a skirt as
- * thick as the wall it presses against simply will not.
- */
 function lidProportions(wall: number, thickness: number) {
   const skirt = Math.max(Math.min(wall * 0.6, wall - 0.4), 0.8)
   const depth = Math.max(3, thickness * 2)
@@ -883,447 +742,64 @@ function lidProportions(wall: number, thickness: number) {
   const bandHeight = Math.min(1, depth * 0.3)
   const bandCentre = thickness + depth * 0.6
   return {
-    /** Ledge width: half the wall, so equal material either side of the join. */
     ledge: wall / 2,
     skirt,
     depth,
     bead,
-    /** Band the bead occupies, as depths below the face. */
     bandLo: bandCentre + bandHeight / 2,
     bandHi: bandCentre - bandHeight / 2,
   }
 }
 
-/** The wall thickness of the hollowing a lid belongs to. */
 function wallOfShell(doc: OkcDocument, shellFeatureId: string): number | null {
-  for (const body of doc.bodies) {
-    for (const f of body.features) {
-      if (f.id === shellFeatureId && f.kind === 'shell') return Math.abs(f.thickness)
-    }
-  }
-  return null
+  const shell = doc.timeline.find((f) => f.id === shellFeatureId)
+  return shell?.kind === 'shell' ? Math.abs(shell.thickness) : null
 }
 
-/** The lid feature a seat belongs to. */
-function findLidFeature(doc: OkcDocument, id: string): LidFeature | null {
-  for (const body of doc.bodies) {
-    for (const f of body.features) {
-      if (f.id === id && f.kind === 'lid') return f
-    }
+function seatCutter(lid: LidFeature, source: PreShell, wall: number): any | null {
+  const fit = lid.fit ?? 'friction'
+  if (fit === 'friction') return null
+  const t = Math.abs(lid.thickness)
+  const c = lid.clearance ?? 0
+  const prop = lidProportions(wall, t)
+  if (fit === 'ledge') {
+    return insetSolid(source.shape, wall - prop.ledge, source.frame).intersect(
+      frameSlab(source.frame, -t, 0),
+    )
   }
-  return null
+  return insetSolid(source.shape, wall - prop.bead, source.frame).intersect(
+    frameSlab(source.frame, -(prop.bandLo + c), -(prop.bandHi - c)),
+  )
 }
 
-/** Evaluate one body's feature history into a single solid. */
-export function evaluateBody(
-  body: Body,
-  ctx: EvalContext,
-): { shape: any | null; errors: BuildError[] } {
-  const errors: BuildError[] = []
-  const sketches = new Map<string, SketchFeature>()
-  let shape: any = null
-
-  for (const feature of body.features) {
-    if (feature.suppressed) continue
-    try {
-      switch (feature.kind) {
-        case 'sketch': {
-          sketches.set(feature.id, feature)
-          break
-        }
-
-        case 'extrude':
-        case 'revolve': {
-          const sketchFeature = sketches.get(feature.sketchId)
-          if (!sketchFeature) {
-            errors.push({
-              featureId: feature.id,
-              message: 'The sketch this was built from is missing.',
-              hint: 'It may have been deleted. Delete this step or point it at another sketch.',
-            })
-            break
-          }
-          const profile = sketchToProfile(sketchFeature.sketch)
-          if (!profile.drawing) {
-            errors.push({
-              featureId: feature.id,
-              message: 'That sketch does not enclose an area yet.',
-              hint:
-                profile.openChains > 0
-                  ? `${profile.openChains} line(s) do not join up into a closed shape. Zoom in on the corners and drag the loose ends together.`
-                  : 'Draw a closed shape - a rectangle or circle - before extruding.',
-            })
-            break
-          }
-          const frame = frameFromPlaneRef(sketchFeature.plane, ctx.shapes)
-
-          if (feature.kind === 'extrude') {
-            const distance = feature.reverse ? -feature.distance : feature.distance
-            const offset = feature.symmetric ? -Math.abs(distance) / 2 : 0
-            const length = feature.symmetric ? Math.abs(distance) : distance
-            const solid = sketchOn(profile.drawing, frame, offset).extrude(length)
-            shape = combine(shape, solid, feature.operation)
-          } else {
-            const axis: Vec3 = feature.axis === 'x' ? frame.xDir : frame.yDir
-            const solid = sketchOn(profile.drawing, frame).revolve(axis, {
-              origin: frame.origin,
-            })
-            shape = combine(shape, solid, feature.operation)
-          }
-          break
-        }
-
-        case 'move': {
-          if (!shape) {
-            errors.push({
-              featureId: feature.id,
-              message: 'There is nothing here to move yet.',
-              hint: 'Make a shape first, then move it.',
-            })
-            break
-          }
-          // Turn about the body's own centre, not the world origin, because
-          // that is what the ring under your cursor looks like it will do.
-          // Measured before any of the turns so the three axes stay
-          // independent - otherwise turning about X would shift the centre
-          // that the following turn about Y uses.
-          const [bmin, bmax] = shape.boundingBox.bounds
-          const centre: Vec3 = [
-            (bmin[0] + bmax[0]) / 2,
-            (bmin[1] + bmax[1]) / 2,
-            (bmin[2] + bmax[2]) / 2,
-          ]
-          const [rx, ry, rz] = feature.rotation
-          if (rx) shape = shape.rotate(rx, centre, [1, 0, 0])
-          if (ry) shape = shape.rotate(ry, centre, [0, 1, 0])
-          if (rz) shape = shape.rotate(rz, centre, [0, 0, 1])
-          const [dx, dy, dz] = feature.offset
-          if (dx || dy || dz) shape = shape.translate([dx, dy, dz])
-          break
-        }
-
-        case 'box': {
-          const frame = frameFromPlaneRef(feature.plane, ctx.shapes)
-          const base = feature.cornerRadius
-            ? drawRoundedRectangle(feature.width, feature.depth, feature.cornerRadius)
-            : drawRectangle(feature.width, feature.depth)
-          const solid = sketchOn(
-            base.translate(
-              feature.origin[0] + feature.width / 2,
-              feature.origin[1] + feature.depth / 2,
-            ),
-            frame,
-          ).extrude(feature.height)
-          shape = combine(shape, solid, feature.operation)
-          break
-        }
-
-        case 'cylinder': {
-          const frame = frameFromPlaneRef(feature.plane, ctx.shapes)
-          const solid = sketchOn(
-            drawCircle(feature.radius).translate(feature.centre[0], feature.centre[1]),
-            frame,
-          ).extrude(feature.height)
-          shape = combine(shape, solid, feature.operation)
-          break
-        }
-
-        case 'fillet':
-        case 'chamfer': {
-          if (!shape) {
-            errors.push({
-              featureId: feature.id,
-              message: 'There is nothing to round or bevel yet.',
-              hint: 'Add a solid shape before this step.',
-            })
-            break
-          }
-          const size = feature.kind === 'fillet' ? feature.radius : feature.distance
-          const match = edgeMatcher(feature.edges)
-          const config = (edge: any) => (match(edge) ? size : null)
-          shape = feature.kind === 'fillet' ? shape.fillet(config) : shape.chamfer(config)
-          break
-        }
-
-        case 'shell': {
-          if (!shape) {
-            errors.push({
-              featureId: feature.id,
-              message: 'There is nothing to hollow out yet.',
-              hint: 'Make a solid shape first.',
-            })
-            break
-          }
-          const open = feature.openFaces[0]
-          if (!open) {
-            errors.push({
-              featureId: feature.id,
-              message: 'No face was chosen to leave open.',
-              hint: 'Right-click the face you want the opening on and hollow it out from there.',
-            })
-            break
-          }
-          // The finder chain ANDs its filters, so more than one opening would
-          // ask for a face lying in two planes at once. One is the common case
-          // - the underside of an enclosure - and is what this supports.
-          const solid = shape
-          const resolved = resolveFace(solid, open)
-          const normal = resolved?.normal ?? open.normal
-          const centre = resolved?.centre ?? open.anchor
-          ctx.preShell.set(feature.id, {
-            shape: solid.clone(),
-            frame: makeFrame(centre, normal),
-          })
-          // Positive thickness hollows inward, leaving the outside size alone.
-          // The opposite sign grows the part outward instead, which turns a
-          // 60 mm box into a 65 mm one and is never what "hollow it out" means.
-          shape = solid.shell(Math.abs(feature.thickness), (f: any) =>
-            f.inPlane(new Plane(centre, null, normal)),
-          )
-          break
-        }
-
-        case 'hole': {
-          if (!shape) {
-            errors.push({
-              featureId: feature.id,
-              message: 'There is nothing to drill into yet.',
-              hint: 'Make a plate or a box first, then add holes.',
-            })
-            break
-          }
-          const frame = frameFromPlaneRef(feature.plane, ctx.shapes)
-          const positions = resolvePositions(feature.source, frame, ctx.doc)
-          if (positions.length === 0) break
-          const cutter = buildHoleCutter(feature, frame, positions)
-          if (cutter) shape = shape.cut(cutter)
-          break
-        }
-
-        case 'standoff': {
-          const frame = frameFromPlaneRef(feature.plane, ctx.shapes)
-          const positions = resolvePositions(feature.source, frame, ctx.doc)
-          if (positions.length === 0) break
-          const { solid, bores } = buildStandoffs(feature, frame, positions)
-          if (solid) shape = shape ? shape.fuse(solid) : solid
-          if (bores && shape) shape = shape.cut(bores)
-          break
-        }
-
-        case 'sphere': {
-          const frame = frameFromPlaneRef(feature.plane, ctx.shapes)
-          const world = frameToWorld(frame, feature.centre)
-          let ball: any = makeSphere(feature.radius).translate(world)
-          if (feature.half) {
-            // Slice off everything below the plane, leaving it flat side down.
-            // The cutter has to be centred on the ball, not on the plane's
-            // origin: a rectangle drawn at the origin misses a ball placed
-            // anywhere else entirely, and the "dome" comes out a full sphere.
-            const r = feature.radius
-            const cutter = sketchOn(
-              drawRectangle(r * 4, r * 4).translate(feature.centre[0], feature.centre[1]),
-              frame,
-              -r * 2,
-            ).extrude(r * 2)
-            ball = ball.cut(cutter)
-          }
-          shape = combine(shape, ball, feature.operation)
-          break
-        }
-
-        case 'vent': {
-          if (!shape) {
-            errors.push({
-              featureId: feature.id,
-              message: 'There is nothing to put vent holes in yet.',
-              hint: 'Make a panel or a lid first.',
-            })
-            break
-          }
-          const frame = frameFromPlaneRef(feature.plane, ctx.shapes)
-          const cutter = buildVentCutter(feature, frame, shape)
-          if (!cutter) {
-            errors.push({
-              featureId: feature.id,
-              message: 'No holes fitted inside the border you asked for.',
-              hint: 'Try a smaller hole, tighter spacing, or a thinner edge border.',
-            })
-            break
-          }
-          shape = shape.cut(cutter)
-          break
-        }
-
-        case 'lid': {
-          const source = ctx.preShell.get(feature.shellFeatureId)
-          if (!source) {
-            errors.push({
-              featureId: feature.id,
-              message: 'The hollowing this lid belongs to is gone.',
-              hint: 'It may have been deleted or turned off. Delete this lid, or hollow the part out again.',
-            })
-            break
-          }
-          const t = Math.abs(feature.thickness)
-          const c = feature.clearance ?? 0
-          // Falls back to the lid's own thickness for documents saved before
-          // the two were told apart; the menu has always set them equal.
-          const wall = wallOfShell(ctx.doc, feature.shellFeatureId) ?? t
-          const fit = feature.fit ?? 'friction'
-          const prop = lidProportions(wall, t)
-
-          try {
-            // The plug: the part that fills the opening, flush with the outside.
-            // A ledge lid is wider, because it laps over the step cut into the
-            // wall rather than passing between the walls.
-            const plugInset = fit === 'ledge' ? wall - prop.ledge + c : wall + c
-            let cap = insetSolid(source.shape, plugInset, source.frame).intersect(
-              frameSlab(source.frame, -t, 0),
-            )
-
-            if (fit === 'snap') {
-              // A thin wall hanging down inside the box. This is the part that
-              // flexes, so it is cut from between two insets rather than being
-              // the full thickness of the opening.
-              const outer = insetSolid(source.shape, wall + c, source.frame)
-              const inner = insetSolid(source.shape, wall + c + prop.skirt, source.frame)
-              const skirt = outer
-                .clone()
-                .cut(inner.clone())
-                .intersect(frameSlab(source.frame, -(t + prop.depth), -t))
-              cap = cap.fuse(skirt)
-
-              // And the bead: a ridge running round the outside of the skirt,
-              // standing proud of it by a little, which is what actually clicks
-              // into the groove and holds the lid down.
-              const proud = insetSolid(source.shape, wall + c - prop.bead, source.frame)
-              const ring = proud
-                .cut(inner)
-                .intersect(frameSlab(source.frame, -prop.bandLo, -prop.bandHi))
-              cap = cap.fuse(ring)
-            }
-
-            // Finally trim against the box as actually built, which is belt and
-            // braces: whatever else has been done to it, the lid cannot end up
-            // occupying the same space.
-            const walls = ctx.shapes.get(feature.sourceBodyId)
-            if (walls) cap = cap.cut(walls.clone())
-
-            shape = combine(shape, cap, 'add')
-          } catch (e) {
-            errors.push({
-              featureId: feature.id,
-              message: `Could not build the lid: ${(e as Error).message}`,
-              hint: 'A thinner wall, a smaller gap, or a plain drop-in fit will usually go through.',
-            })
-          }
-          break
-        }
-
-        case 'lidSocket': {
-          if (!shape) break
-          const lid = findLidFeature(ctx.doc, feature.lidFeatureId)
-          if (!lid) {
-            errors.push({
-              featureId: feature.id,
-              message: 'The lid this seat was cut for is gone.',
-              hint: 'Delete this step, or make the lid again.',
-            })
-            break
-          }
-          const source = ctx.preShell.get(lid.shellFeatureId)
-          if (!source) break
-          const fit = lid.fit ?? 'friction'
-          // A plain drop-in lid needs nothing cut for it.
-          if (fit === 'friction') break
-
-          const t = Math.abs(lid.thickness)
-          const c = lid.clearance ?? 0
-          const wall = wallOfShell(ctx.doc, lid.shellFeatureId) ?? t
-          const prop = lidProportions(wall, t)
-
-          try {
-            if (fit === 'ledge') {
-              // Take the inner part of the wall away down to the lid's depth.
-              // What is left below is the step the lid comes to rest on.
-              shape = shape.cut(
-                insetSolid(source.shape, wall - prop.ledge, source.frame).intersect(
-                  frameSlab(source.frame, -t, 0),
-                ),
-              )
-            } else {
-              // A groove round the inside of the wall for the bead to sit in,
-              // with the gap added top and bottom as well as sideways - a bead
-              // that has to be squeezed in vertically will not click.
-              shape = shape.cut(
-                insetSolid(source.shape, wall - prop.bead, source.frame).intersect(
-                  frameSlab(source.frame, -(prop.bandLo + c), -(prop.bandHi - c)),
-                ),
-              )
-            }
-          } catch (e) {
-            errors.push({
-              featureId: feature.id,
-              message: `Could not cut the seat for the lid: ${(e as Error).message}`,
-              hint: 'The wall may be too thin for this kind of fit. Try a thicker wall or a plain drop-in lid.',
-            })
-          }
-          break
-        }
-
-        case 'combine': {
-          if (!shape) {
-            errors.push({
-              featureId: feature.id,
-              message: 'There is nothing here yet to combine with.',
-              hint: 'Add a shape to this part first.',
-            })
-            break
-          }
-          const other = ctx.shapes.get(feature.otherBodyId)
-          if (!other) {
-            errors.push({
-              featureId: feature.id,
-              message: 'That other part has not been built yet.',
-              hint: 'Parts are built top to bottom, so the one you are combining with has to sit above this one in the list.',
-            })
-            break
-          }
-          // Clone: the tool body may still be drawn, and may be combined into
-          // more than one thing.
-          shape = combine(shape, other.clone(), feature.operation)
-          break
-        }
-
-        case 'portCutout': {
-          if (!shape) break
-          const placement = ctx.doc.placements.find((p) => p.id === feature.placementId)
-          if (!placement) {
-            errors.push({
-              featureId: feature.id,
-              message: 'The part these openings were made for is gone.',
-              hint: 'Delete this step, or place the part again.',
-            })
-            break
-          }
-          const cutter = buildPortCutters(placement, feature.connectorIds, feature.tolerance)
-          if (cutter) shape = shape.cut(cutter)
-          break
-        }
-      }
-    } catch (e) {
-      errors.push({
-        featureId: feature.id,
-        message: (e as Error)?.message || 'This step could not be built.',
-        hint: hintForFailure(feature, (e as Error)?.message ?? ''),
-      })
-    }
+function buildLid(lid: LidFeature, source: PreShell, wall: number, walls: any | null): any {
+  const t = Math.abs(lid.thickness)
+  const c = lid.clearance ?? 0
+  const fit = lid.fit ?? 'friction'
+  const prop = lidProportions(wall, t)
+  const plugInset = fit === 'ledge' ? wall - prop.ledge + c : wall + c
+  let cap = insetSolid(source.shape, plugInset, source.frame).intersect(
+    frameSlab(source.frame, -t, 0),
+  )
+  if (fit === 'snap') {
+    const outer = insetSolid(source.shape, wall + c, source.frame)
+    const inner = insetSolid(source.shape, wall + c + prop.skirt, source.frame)
+    const skirt = outer
+      .clone()
+      .cut(inner.clone())
+      .intersect(frameSlab(source.frame, -(t + prop.depth), -t))
+    cap = cap.fuse(skirt)
+    const proud = insetSolid(source.shape, wall + c - prop.bead, source.frame)
+    const ring = proud.cut(inner).intersect(frameSlab(source.frame, -prop.bandLo, -prop.bandHi))
+    cap = cap.fuse(ring)
   }
-
-  return { shape, errors }
+  if (walls) {
+    const seat = seatCutter(lid, source, wall)
+    cap = cap.cut(seat ? walls.cut(seat) : walls)
+  }
+  return cap
 }
 
-/** Translate kernel failures into something a beginner can act on. */
 function hintForFailure(feature: Feature, message: string): string | undefined {
   const m = message.toLowerCase()
   if (feature.kind === 'fillet' || feature.kind === 'chamfer') {
@@ -1332,8 +808,436 @@ function hintForFailure(feature: Feature, message: string): string | undefined {
   if (feature.kind === 'shell') {
     return 'Hollowing fails when the wall is thicker than the smallest detail on the shape. Try a thinner wall.'
   }
+  if (feature.kind === 'lid') {
+    return 'A thinner wall, a smaller gap, or a plain drop-in fit will usually go through.'
+  }
+  if (feature.kind === 'lidSocket') {
+    return 'The wall may be too thin for this kind of fit. Try a thicker wall or a plain drop-in lid.'
+  }
   if (m.includes('null') || m.includes('undefined')) {
-    return 'Something this step depends on is missing. Check the steps above it.'
+    return 'Something this step depends on is missing. Check the steps before it.'
   }
   return undefined
+}
+export interface Snapshot {
+  key: string
+  bodies: ReadonlyMap<string, BodyState>
+  sketches: ReadonlyMap<string, SketchFeature>
+  preShell: ReadonlyMap<string, PreShell>
+  errors: readonly KernelError[]
+  failed: ReadonlySet<string>
+}
+
+export function emptySnapshot(key: string): Snapshot {
+  return {
+    key,
+    bodies: new Map(),
+    sketches: new Map(),
+    preShell: new Map(),
+    errors: [],
+    failed: new Set(),
+  }
+}
+
+export interface FeatureContext {
+  doc: OkcDocument
+  available: (featureId: string) => boolean
+}
+
+interface Stage {
+  bodies: Map<string, BodyState>
+  sketches: Map<string, SketchFeature>
+  preShell: Map<string, PreShell>
+  report: (
+    severity: KernelError['severity'],
+    message: string,
+    hint?: string,
+    bodyId?: string,
+  ) => void
+}
+
+export function evaluateFeature(
+  ctx: FeatureContext,
+  feature: Feature,
+  key: string,
+  prev: Snapshot,
+): Snapshot {
+  const errors: KernelError[] = []
+  let failed = false
+  const report: Stage['report'] = (severity, message, hint, bodyId) => {
+    const error: KernelError = { featureId: feature.id, severity, message }
+    if (hint) error.hint = hint
+    if (bodyId) error.bodyId = bodyId
+    errors.push(error)
+    if (severity === 'error') failed = true
+  }
+  const stage: Stage = {
+    bodies: new Map(prev.bodies),
+    sketches: new Map(prev.sketches),
+    preShell: new Map(prev.preShell),
+    report,
+  }
+
+  const dependency = featureDependencies(ctx.doc, feature).find((id) => prev.failed.has(id))
+  if (dependency) {
+    const name = ctx.doc.timeline.find((f) => f.id === dependency)?.name ?? dependency
+    report(
+      'error',
+      `Depends on ${name}, which failed.`,
+      'Fix that step first and this one will build again.',
+    )
+  } else {
+    try {
+      runFeature(ctx, feature, key, stage)
+    } catch (e) {
+      const message = (e as Error)?.message || 'This step could not be built.'
+      const prefix =
+        feature.kind === 'lid'
+          ? 'Could not build the lid: '
+          : feature.kind === 'lidSocket'
+            ? 'Could not cut the seat for the lid: '
+            : ''
+      report('error', prefix + message, hintForFailure(feature, message))
+    }
+  }
+
+  return {
+    key,
+    bodies: failed ? prev.bodies : stage.bodies,
+    sketches: failed ? prev.sketches : stage.sketches,
+    preShell: failed ? prev.preShell : stage.preShell,
+    errors: errors.length ? [...prev.errors, ...errors] : prev.errors,
+    failed: failed ? new Set([...prev.failed, feature.id]) : prev.failed,
+  }
+}
+
+function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: Stage): void {
+  const { doc } = ctx
+  const bodyName = (id: string) => findBody(doc, id)?.body.name ?? id
+  const need = (id: string): BodyState | null => {
+    const state = stage.bodies.get(id)
+    if (!state) {
+      stage.report(
+        'error',
+        `${bodyName(id)} does not exist at this point in the timeline.`,
+        'The step that creates it may be suppressed, rolled back or deleted.',
+        id,
+      )
+    }
+    return state ?? null
+  }
+  const set = (id: string, shape: any) =>
+    stage.bodies.set(id, { shape, key, featureId: feature.id })
+  const apply = (result: BodyOperation, solid: any) => {
+    if (result.kind === 'newBody') {
+      set(result.bodyId, solid)
+      return
+    }
+    if (result.kind === 'join') {
+      const target = need(result.bodyId)
+      if (target) set(result.bodyId, target.shape.fuse(solid))
+      return
+    }
+    const targets = result.bodyIds.map((id) => [id, need(id)] as const)
+    if (targets.some(([, target]) => !target)) return
+    const shapes = targets.map(([id, target]) => [
+      id,
+      result.kind === 'cut' ? target!.shape.cut(solid) : target!.shape.intersect(solid),
+    ])
+    for (const [id, shape] of shapes) set(id, shape)
+  }
+
+  switch (feature.kind) {
+    case 'sketch': {
+      stage.sketches.set(feature.id, feature)
+      return
+    }
+
+    case 'extrude':
+    case 'revolve': {
+      const sketchFeature = stage.sketches.get(feature.sketchId)
+      if (!sketchFeature) {
+        stage.report(
+          'error',
+          'The sketch this was built from is missing.',
+          'It may have been deleted, suppressed or rolled back. Delete this step or point it at another sketch.',
+        )
+        return
+      }
+      const profile = sketchToProfile(sketchFeature.sketch)
+      if (!profile.drawing) {
+        stage.report(
+          'error',
+          'That sketch does not enclose an area yet.',
+          profile.openChains > 0
+            ? `${profile.openChains} line(s) do not join up into a closed shape. Zoom in on the corners and drag the loose ends together.`
+            : 'Draw a closed shape - a rectangle or circle - before extruding.',
+        )
+        return
+      }
+      const frame = frameFromPlaneRef(sketchFeature.plane, stage.bodies)
+      if (feature.kind === 'extrude') {
+        const distance = feature.reverse ? -feature.distance : feature.distance
+        const offset = feature.symmetric ? -Math.abs(distance) / 2 : 0
+        const length = feature.symmetric ? Math.abs(distance) : distance
+        apply(feature.result, sketchOn(profile.drawing, frame, offset).extrude(length))
+      } else {
+        const axis: Vec3 = feature.axis === 'x' ? frame.xDir : frame.yDir
+        apply(
+          feature.result,
+          sketchOn(profile.drawing, frame).revolve(axis, { origin: frame.origin }),
+        )
+      }
+      return
+    }
+
+    case 'move': {
+      const states = feature.bodyIds.map((id) => [id, need(id)] as const)
+      if (!states.length || states.some(([, state]) => !state)) return
+      const [rx, ry, rz] = feature.rotation
+      const [dx, dy, dz] = feature.offset
+      if (!rx && !ry && !rz && !dx && !dy && !dz) return
+      const lo: Vec3 = [Infinity, Infinity, Infinity]
+      const hi: Vec3 = [-Infinity, -Infinity, -Infinity]
+      for (const [, state] of states) {
+        const [bmin, bmax] = state!.shape.boundingBox.bounds
+        for (let i = 0; i < 3; i++) {
+          lo[i] = Math.min(lo[i], bmin[i])
+          hi[i] = Math.max(hi[i], bmax[i])
+        }
+      }
+      const centre: Vec3 = [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2]
+      const moved = states.map(([id, state]) => {
+        let shape = state!.shape.clone()
+        if (rx) shape = shape.rotate(rx, centre, [1, 0, 0])
+        if (ry) shape = shape.rotate(ry, centre, [0, 1, 0])
+        if (rz) shape = shape.rotate(rz, centre, [0, 0, 1])
+        if (dx || dy || dz) shape = shape.translate([dx, dy, dz])
+        return [id, shape] as const
+      })
+      for (const [id, shape] of moved) set(id, shape)
+      return
+    }
+
+    case 'box': {
+      const frame = frameFromPlaneRef(feature.plane, stage.bodies)
+      const base = feature.cornerRadius
+        ? drawRoundedRectangle(feature.width, feature.depth, feature.cornerRadius)
+        : drawRectangle(feature.width, feature.depth)
+      const solid = sketchOn(
+        base.translate(
+          feature.origin[0] + feature.width / 2,
+          feature.origin[1] + feature.depth / 2,
+        ),
+        frame,
+      ).extrude(feature.height)
+      apply(feature.result, solid)
+      return
+    }
+
+    case 'cylinder': {
+      const frame = frameFromPlaneRef(feature.plane, stage.bodies)
+      const solid = sketchOn(
+        drawCircle(feature.radius).translate(feature.centre[0], feature.centre[1]),
+        frame,
+      ).extrude(feature.height)
+      apply(feature.result, solid)
+      return
+    }
+
+    case 'sphere': {
+      const frame = frameFromPlaneRef(feature.plane, stage.bodies)
+      const world = frameToWorld(frame, feature.centre)
+      let ball: any = makeSphere(feature.radius).translate(world)
+      if (feature.half) {
+        const r = feature.radius
+        const cutter = sketchOn(
+          drawRectangle(r * 4, r * 4).translate(feature.centre[0], feature.centre[1]),
+          frame,
+          -r * 2,
+        ).extrude(r * 2)
+        ball = ball.cut(cutter)
+      }
+      apply(feature.result, ball)
+      return
+    }
+
+    case 'fillet':
+    case 'chamfer': {
+      const target = need(feature.bodyId)
+      if (!target) return
+      const size = feature.kind === 'fillet' ? feature.radius : feature.distance
+      const match = edgeMatcher(feature.edges)
+      const config = (edge: any) => (match(edge) ? size : null)
+      set(
+        feature.bodyId,
+        feature.kind === 'fillet' ? target.shape.fillet(config) : target.shape.chamfer(config),
+      )
+      return
+    }
+
+    case 'shell': {
+      const target = need(feature.bodyId)
+      if (!target) return
+      const open = feature.openFaces[0]
+      if (!open) {
+        stage.report(
+          'error',
+          'No face was chosen to leave open.',
+          'Right-click the face you want the opening on and hollow it out from there.',
+        )
+        return
+      }
+      const resolved = resolveFace(target.shape, open)
+      const normal = resolved?.normal ?? open.normal
+      const centre = resolved?.centre ?? open.anchor
+      stage.preShell.set(feature.id, {
+        shape: target.shape.clone(),
+        frame: makeFrame(centre, normal),
+      })
+      set(
+        feature.bodyId,
+        target.shape.shell(Math.abs(feature.thickness), (f: any) =>
+          f.inPlane(new Plane(centre, null, normal)),
+        ),
+      )
+      return
+    }
+
+    case 'hole': {
+      const target = need(feature.bodyId)
+      if (!target) return
+      const frame = frameFromPlaneRef(feature.plane, stage.bodies)
+      const positions = resolvePositions(feature.source, frame, doc)
+      if (!positions) {
+        stage.report(
+          'error',
+          'The part these holes were placed from is gone.',
+          'Delete this step, or place the part again.',
+        )
+        return
+      }
+      if (positions.length === 0) return
+      const cutter = buildHoleCutter(feature, frame, positions)
+      if (cutter) set(feature.bodyId, target.shape.cut(cutter))
+      return
+    }
+
+    case 'standoff': {
+      const frame = frameFromPlaneRef(feature.plane, stage.bodies)
+      const positions = resolvePositions(feature.source, frame, doc)
+      if (!positions) {
+        stage.report(
+          'error',
+          'The part these standoffs were placed from is gone.',
+          'Delete this step, or place the part again.',
+        )
+        return
+      }
+      if (positions.length === 0) return
+      const { solid, bores } = buildStandoffs(feature, frame, positions)
+      if (!solid) return
+      if (feature.result.kind === 'newBody') {
+        set(feature.result.bodyId, bores ? solid.cut(bores) : solid)
+        return
+      }
+      const target = need(feature.result.bodyId)
+      if (!target) return
+      const joined = target.shape.fuse(solid)
+      set(feature.result.bodyId, bores ? joined.cut(bores) : joined)
+      return
+    }
+
+    case 'vent': {
+      const target = need(feature.bodyId)
+      if (!target) return
+      const frame = frameFromPlaneRef(feature.plane, stage.bodies)
+      const cutter = buildVentCutter(feature, frame, target.shape)
+      if (!cutter) {
+        stage.report(
+          'warning',
+          'No holes fitted inside the border you asked for.',
+          'Try a smaller hole, tighter spacing, or a thinner edge border.',
+        )
+        return
+      }
+      set(feature.bodyId, target.shape.cut(cutter))
+      return
+    }
+
+    case 'lid': {
+      const source = stage.preShell.get(feature.shellFeatureId)
+      if (!source) {
+        stage.report(
+          'error',
+          'The hollowing this lid belongs to is gone.',
+          'It may have been deleted or turned off. Delete this lid, or hollow the part out again.',
+        )
+        return
+      }
+      const wall = wallOfShell(doc, feature.shellFeatureId) ?? Math.abs(feature.thickness)
+      const walls = stage.bodies.get(feature.sourceBodyId)?.shape ?? null
+      apply(feature.result, buildLid(feature, source, wall, walls))
+      return
+    }
+
+    case 'lidSocket': {
+      const target = need(feature.bodyId)
+      if (!target) return
+      const lid = doc.timeline.find((f) => f.id === feature.lidFeatureId)
+      if (!lid || lid.kind !== 'lid' || !ctx.available(lid.id)) {
+        stage.report(
+          'error',
+          'The lid this seat was cut for is gone.',
+          'Delete this step, or make the lid again.',
+        )
+        return
+      }
+      const source = stage.preShell.get(lid.shellFeatureId)
+      if (!source) return
+      const wall = wallOfShell(doc, lid.shellFeatureId) ?? Math.abs(lid.thickness)
+      const cutter = seatCutter(lid, source, wall)
+      if (cutter) set(feature.bodyId, target.shape.cut(cutter))
+      return
+    }
+
+    case 'combine': {
+      const target = need(feature.bodyId)
+      if (!target) return
+      const tools = feature.toolBodyIds
+        .filter((id) => id !== feature.bodyId)
+        .map((id) => [id, need(id)] as const)
+      if (tools.some(([, tool]) => !tool)) return
+      let shape = target.shape
+      for (const [, tool] of tools) {
+        const other = tool!.shape.clone()
+        shape =
+          feature.operation === 'join'
+            ? shape.fuse(other)
+            : feature.operation === 'cut'
+              ? shape.cut(other)
+              : shape.intersect(other)
+      }
+      set(feature.bodyId, shape)
+      if (!feature.keepTools) for (const [id] of tools) stage.bodies.delete(id)
+      return
+    }
+
+    case 'portCutout': {
+      const target = need(feature.bodyId)
+      if (!target) return
+      const placed = placedPart(doc, feature.occurrencePath, feature.contextPath)
+      if (!placed) {
+        stage.report(
+          'error',
+          'The part these openings were made for is gone.',
+          'Delete this step, or place the part again.',
+        )
+        return
+      }
+      const cutter = buildPortCutters(placed, feature.connectorIds, feature.tolerance)
+      if (cutter) set(feature.bodyId, target.shape.cut(cutter))
+      return
+    }
+  }
 }

@@ -1,14 +1,17 @@
-/**
- * End-to-end kernel test.
- *
- * Builds the exact vertical slice the app is for - sketch a plate, extrude it,
- * drop a Raspberry Pi on it, generate its mounting holes - and checks the
- * resulting solid against numbers worked out by hand. Runs against the real
- * OpenCascade worker, so it catches anything the pure-maths tests cannot.
- */
 import * as Comlink from 'comlink'
-import type { KernelApi } from '../kernel/worker'
-import type { Body, OkcDocument, Placement } from '../doc/types'
+import type {
+  Body,
+  Component,
+  Feature,
+  LidFit,
+  Matrix4,
+  Occurrence,
+  OkcDocument,
+  PlaneRef,
+} from '../doc/types'
+import { emptyDocument } from '../doc/types'
+import { identityMatrix, multiplyMatrices, rotationMatrix, translationMatrix } from '../doc/model'
+import type { BodyMesh, EvaluateResult, KernelApi } from '../kernel/types'
 import { applySolve, solveSketch } from '../sketch/solver'
 import { emptySketch, type Sketch2D } from '../sketch/types'
 import type { TestResult } from './selftest'
@@ -16,8 +19,8 @@ import type { TestResult } from './selftest'
 const PLATE_W = 100
 const PLATE_D = 70
 const PLATE_T = 3
+const XY: PlaneRef = { kind: 'named', name: 'XY', offset: 0 }
 
-/** A fully constrained rectangle, solved, ready to extrude. */
 function platePlan(): Sketch2D {
   const s = emptySketch()
   const pt = (id: string, x: number, y: number) => {
@@ -47,75 +50,146 @@ function platePlan(): Sketch2D {
   return s
 }
 
-function makeDoc(piPosition: [number, number, number], withStandoffs: boolean): OkcDocument {
-  const placement: Placement = {
-    id: 'pi',
-    partId: 'raspberry-pi-4b',
-    name: 'Raspberry Pi 4 Model B',
-    position: piPosition,
-    rotation: 0,
-    flipped: false,
-    visible: true,
-  }
+function body(id: string, name = id, extra: Partial<Body> = {}): Body {
+  return { id, name, visible: true, colour: '#cccccc', ...extra }
+}
 
-  const body: Body = {
-    id: 'plate',
-    name: 'Base plate',
-    visible: true,
-    colour: '#c8cdd3',
-    features: [
-      {
-        id: 'f-sketch',
-        name: 'Plate outline',
-        kind: 'sketch',
-        plane: { kind: 'named', name: 'XY', offset: 0 },
-        sketch: platePlan(),
-      },
-      {
-        id: 'f-extrude',
-        name: 'Extrude plate',
-        kind: 'extrude',
-        sketchId: 'f-sketch',
-        distance: PLATE_T,
-        symmetric: false,
-        reverse: false,
-        operation: 'new',
-      },
-      {
-        id: 'f-holes',
-        name: 'Pi mounting holes',
-        kind: 'hole',
-        plane: { kind: 'named', name: 'XY', offset: PLATE_T },
-        source: { kind: 'placement', placementId: 'pi' },
-        style: 'simple',
-        diameter: 2.8,
-        depth: 'through',
-      },
-    ],
-  }
+function design(id: string, bodies: Body[]): Component {
+  return { id, name: id, source: { kind: 'design' }, bodies }
+}
 
+function occurrence(
+  id: string,
+  parentComponentId: string,
+  componentId: string,
+  transform: Matrix4,
+  extra: Partial<Occurrence> = {},
+): Occurrence {
+  return {
+    id,
+    parentComponentId,
+    componentId,
+    name: id,
+    transform,
+    visible: true,
+    grounded: false,
+    ...extra,
+  }
+}
+
+function makeDocument(
+  name: string,
+  bodies: Body[],
+  timeline: Feature[],
+  extra: { components?: Component[]; occurrences?: Occurrence[]; marker?: number | null } = {},
+): OkcDocument {
+  const doc = emptyDocument(name)
+  doc.components[0].bodies = bodies
+  doc.components.push(...(extra.components ?? []))
+  doc.occurrences = extra.occurrences ?? []
+  doc.timeline = timeline
+  doc.marker = extra.marker ?? null
+  return doc
+}
+
+function boxFeature(
+  id: string,
+  bodyId: string,
+  origin: [number, number],
+  size: [number, number, number],
+  extra: { componentId?: string; plane?: PlaneRef; name?: string } = {},
+): Feature {
+  return {
+    id,
+    name: extra.name ?? id,
+    componentId: extra.componentId ?? 'root',
+    kind: 'box',
+    plane: extra.plane ?? XY,
+    origin,
+    width: size[0],
+    depth: size[1],
+    height: size[2],
+    result: { kind: 'newBody', bodyId },
+  }
+}
+
+const PI_COMPONENT: Component = {
+  id: 'pi-part',
+  name: 'Raspberry Pi 4 Model B',
+  source: { kind: 'catalogue', partId: 'raspberry-pi-4b' },
+  bodies: [],
+}
+
+function piPlateDoc(piTransform: Matrix4, withStandoffs: boolean): OkcDocument {
+  const timeline: Feature[] = [
+    {
+      id: 'f-sketch',
+      name: 'Plate outline',
+      componentId: 'root',
+      kind: 'sketch',
+      plane: XY,
+      sketch: platePlan(),
+      visible: true,
+    },
+    {
+      id: 'f-extrude',
+      name: 'Extrude plate',
+      componentId: 'root',
+      kind: 'extrude',
+      sketchId: 'f-sketch',
+      distance: PLATE_T,
+      symmetric: false,
+      reverse: false,
+      result: { kind: 'newBody', bodyId: 'plate' },
+    },
+    {
+      id: 'f-holes',
+      name: 'Pi mounting holes',
+      componentId: 'root',
+      kind: 'hole',
+      bodyId: 'plate',
+      plane: { kind: 'named', name: 'XY', offset: PLATE_T },
+      source: { kind: 'occurrence', occurrencePath: ['pi'], contextPath: [] },
+      style: 'simple',
+      diameter: 2.8,
+      depth: 'through',
+    },
+  ]
   if (withStandoffs) {
-    body.features.push({
+    timeline.push({
       id: 'f-standoffs',
       name: 'Standoffs',
+      componentId: 'root',
       kind: 'standoff',
       plane: { kind: 'named', name: 'XY', offset: PLATE_T },
-      source: { kind: 'placement', placementId: 'pi' },
+      source: { kind: 'occurrence', occurrencePath: ['pi'], contextPath: [] },
       height: 6,
       outerDiameter: 6,
       boreDiameter: 2.1,
       boreDepth: 5,
+      result: { kind: 'join', bodyId: 'plate' },
     })
   }
+  return makeDocument(
+    'Kernel test',
+    [body('plate', 'Base plate', { colour: '#c8cdd3' })],
+    timeline,
+    {
+      components: [PI_COMPONENT],
+      occurrences: [
+        occurrence('pi', 'root', 'pi-part', piTransform, { name: 'Raspberry Pi 4 Model B' }),
+      ],
+    },
+  )
+}
 
-  return {
-    version: 1,
-    name: 'Kernel test',
-    units: 'mm',
-    parameters: [],
-    bodies: [body],
-    placements: [placement],
-  }
+function meshFor(result: EvaluateResult, instanceId: string): BodyMesh | undefined {
+  const instance = result.instances.find((candidate) => candidate.id === instanceId)
+  return instance ? result.meshes.find((mesh) => mesh.key === instance.meshKey) : undefined
+}
+
+function errorText(result: EvaluateResult): string {
+  return result.errors.map((e) => `${e.featureId}: ${e.message}`).join('; ')
 }
 
 export async function runKernelTest(): Promise<TestResult[]> {
@@ -126,34 +200,30 @@ export async function runKernelTest(): Promise<TestResult[]> {
     type: 'module',
   })
   const kernel = Comlink.wrap<KernelApi>(worker)
-  // Exposed so the kernel can be poked at from the browser console.
   ;(window as any).__okc_kernel = kernel
+  const evaluate = (doc: OkcDocument, known: string[] = []) => kernel.evaluate(doc, known)
 
   try {
     const t0 = performance.now()
     await kernel.ready()
     add('kernel boots', true, `OpenCascade ready in ${Math.round(performance.now() - t0)} ms`)
-
-    // --- the full slice -----------------------------------------------------
-    const onPlate = await kernel.evaluate(makeDoc([8, 7, PLATE_T], true))
+    const onPlate = await evaluate(piPlateDoc(translationMatrix([8, 7, PLATE_T]), true))
     add(
       'vertical slice builds without errors',
       onPlate.errors.length === 0,
-      onPlate.errors.length
-        ? onPlate.errors.map((e) => e.message).join('; ')
-        : `built in ${onPlate.elapsedMs} ms`,
+      onPlate.errors.length ? errorText(onPlate) : `built in ${onPlate.elapsedMs} ms`,
     )
     add(
       'produces both the plate and the board',
-      onPlate.shapes.length === 2,
-      `${onPlate.shapes.length} shape(s): ${onPlate.shapes.map((s) => s.name).join(', ')}`,
+      onPlate.instances.length === 2 &&
+        onPlate.instances.some((i) => i.id === 'root|plate' && i.kind === 'body') &&
+        onPlate.instances.some((i) => i.id === 'pi|pi-part' && i.kind === 'catalogue'),
+      `${onPlate.instances.length} instance(s): ${onPlate.instances.map((i) => i.id).join(', ')}`,
     )
 
-    const plate = onPlate.shapes.find((s) => s.id === 'plate')
+    const plate = meshFor(onPlate, 'root|plate')
     if (plate) {
       const [x0, y0, z0, x1, y1, z1] = plate.bounds
-      // OpenCascade's bounding box deliberately includes a small gap, so this
-      // is checked to a couple of hundredths rather than exactly.
       const BBOX_GAP = 0.02
       const okXY =
         Math.abs(x0) < BBOX_GAP &&
@@ -165,7 +235,6 @@ export async function runKernelTest(): Promise<TestResult[]> {
         okXY,
         `bounds x ${x0.toFixed(3)}..${x1.toFixed(3)}, y ${y0.toFixed(3)}..${y1.toFixed(3)} (expected 0..${PLATE_W}, 0..${PLATE_D})`,
       )
-      // 3 mm plate plus 6 mm standoffs standing on top of it.
       add(
         'standoffs stand on top of the plate',
         Math.abs(z0) < 0.02 && Math.abs(z1 - (PLATE_T + 6)) < 0.02,
@@ -178,24 +247,19 @@ export async function runKernelTest(): Promise<TestResult[]> {
         `${plate.mesh.triangles.length / 3} triangles, ${plate.edges.lines.length / 6} edge segments`,
       )
     } else {
-      add('plate was built', false, 'no shape with id "plate" came back')
+      add('plate was built', false, 'no instance "root|plate" with a mesh came back')
     }
 
-    // --- the parametric link ------------------------------------------------
-    // Holes are derived from the placement, so sliding the board off the plate
-    // must leave the plate solid. This is the whole promise of the app.
-    const holesOnly = await kernel.evaluate(makeDoc([8, 7, PLATE_T], false))
-    const holesAway = await kernel.evaluate(makeDoc([400, 400, PLATE_T], false))
-    const drilled = holesOnly.shapes.find((s) => s.id === 'plate')?.volume ?? 0
-    const solid = holesAway.shapes.find((s) => s.id === 'plate')?.volume ?? 0
+    const holesOnly = await evaluate(piPlateDoc(translationMatrix([8, 7, PLATE_T]), false))
+    const holesAway = await evaluate(piPlateDoc(translationMatrix([400, 400, PLATE_T]), false))
+    const drilled = meshFor(holesOnly, 'root|plate')?.volume ?? 0
+    const solid = meshFor(holesAway, 'root|plate')?.volume ?? 0
     const nominal = PLATE_W * PLATE_D * PLATE_T
-
     add(
       'an undrilled plate is exactly its nominal volume',
       Math.abs(solid - nominal) < 0.5,
       `${solid.toFixed(1)} mm3 (expected ${nominal})`,
     )
-    // Four 2.8 mm holes through 3 mm of plate.
     const expectedRemoved = 4 * Math.PI * 1.4 * 1.4 * PLATE_T
     const removed = solid - drilled
     add(
@@ -204,137 +268,67 @@ export async function runKernelTest(): Promise<TestResult[]> {
       `removed ${removed.toFixed(2)} mm3, expected ${expectedRemoved.toFixed(2)} mm3 for four 2.8 mm holes`,
     )
 
-    // --- combining bodies ---------------------------------------------------
     {
       const V = 40 * 40 * 20
       const OVERLAP = 20 * 40 * 20
-      const combineDoc = (op: 'add' | 'cut' | 'intersect' | null): OkcDocument => ({
-        version: 1,
-        name: 'combine',
-        units: 'mm',
-        parameters: [],
-        placements: [],
-        bodies: [
-          {
-            id: 'tool',
-            name: 'Tool',
-            visible: true,
-            colour: '#888',
-            features: [
-              {
-                id: 't',
-                name: 'Tool',
-                kind: 'box',
-                plane: { kind: 'named', name: 'XY', offset: 0 },
-                origin: [20, 0],
-                width: 40,
-                depth: 40,
-                height: 20,
-                operation: 'new',
-              },
-            ],
-          },
-          {
-            id: 'main',
-            name: 'Main',
-            visible: true,
-            colour: '#ccc',
-            features: [
-              {
-                id: 'm',
-                name: 'Main',
-                kind: 'box',
-                plane: { kind: 'named', name: 'XY', offset: 0 },
-                origin: [0, 0],
-                width: 40,
-                depth: 40,
-                height: 20,
-                operation: 'new',
-              },
-              ...(op
-                ? [
-                    {
-                      id: 'c',
-                      name: 'Combine',
-                      kind: 'combine' as const,
-                      otherBodyId: 'tool',
-                      operation: op,
-                      keepOther: false,
-                    },
-                  ]
-                : []),
-            ],
-          },
-        ],
-      })
-
+      const combineDoc = (op: 'join' | 'cut' | 'intersect'): OkcDocument =>
+        makeDocument(
+          'combine',
+          [body('tool', 'Tool'), body('main', 'Main')],
+          [
+            boxFeature('t', 'tool', [20, 0], [40, 40, 20]),
+            boxFeature('m', 'main', [0, 0], [40, 40, 20]),
+            {
+              id: 'c',
+              name: 'Combine',
+              componentId: 'root',
+              kind: 'combine',
+              bodyId: 'main',
+              toolBodyIds: ['tool'],
+              operation: op,
+              keepTools: false,
+            },
+          ],
+        )
       for (const [op, expected] of [
-        ['add', 2 * V - OVERLAP],
+        ['join', 2 * V - OVERLAP],
         ['cut', V - OVERLAP],
         ['intersect', OVERLAP],
       ] as const) {
-        const r = await kernel.evaluate(combineDoc(op))
-        const main = r.shapes.find((s) => s.id === 'main')
+        const r = await evaluate(combineDoc(op))
+        const main = meshFor(r, 'root|main')
         add(
           `combining two bodies with "${op}"`,
           !!main && Math.abs(main.volume - expected) < 1 && r.errors.length === 0,
           `${main?.volume.toFixed(0) ?? 'nothing'} mm3, expected ${expected}` +
             (r.errors.length ? ` (${r.errors[0].message})` : ''),
         )
-        // The tool body is merged in, so it stops being a thing of its own.
         add(
           `the body merged in by "${op}" is no longer drawn separately`,
-          r.shapes.length === 1,
-          `${r.shapes.length} shape(s) left`,
+          r.instances.length === 1,
+          `${r.instances.length} instance(s) left`,
         )
       }
     }
 
-    // --- a sketch plane tipped over -----------------------------------------
     {
-      const r = await kernel.evaluate({
-        version: 1,
-        name: 'tilt',
-        units: 'mm',
-        parameters: [],
-        placements: [],
-        bodies: [
-          {
-            id: 'b',
-            name: 'Tilted',
-            visible: true,
-            colour: '#ccc',
-            features: [
-              {
-                id: 'bx',
-                name: 'Slab',
-                kind: 'box',
-                plane: {
-                  kind: 'angled',
-                  name: 'XY',
-                  tiltAxis: 'x',
-                  angle: 30,
-                  offset: 0,
-                },
-                origin: [0, 0],
-                width: 40,
-                depth: 20,
-                height: 5,
-                operation: 'new',
-              },
-            ],
-          },
-        ],
-      })
-      const slab = r.shapes[0]
+      const r = await evaluate(
+        makeDocument(
+          'tilt',
+          [body('b', 'Tilted')],
+          [
+            boxFeature('bx', 'b', [0, 0], [40, 20, 5], {
+              plane: { kind: 'angled', name: 'XY', tiltAxis: 'x', angle: 30, offset: 0 },
+            }),
+          ],
+        ),
+      )
+      const slab = meshFor(r, 'root|b')
       add(
         'a solid built on a tilted plane has the right volume',
         !!slab && Math.abs(slab.volume - 40 * 20 * 5) < 1,
         `${slab?.volume.toFixed(0) ?? 'nothing'} mm3, expected 4000`,
       )
-      // Tipped 30 degrees, the 20 mm depth projects to 20*cos30 and the 5 mm
-      // thickness adds 5*sin30 on top of it. Forgetting the second term is an
-      // easy way to write a test that fails against correct geometry.
       const expectedSpan = 20 * Math.cos(Math.PI / 6) + 5 * Math.sin(Math.PI / 6)
       add(
         'and is genuinely tilted, not flat',
@@ -343,95 +337,54 @@ export async function runKernelTest(): Promise<TestResult[]> {
       )
     }
 
-    // --- moving and turning a body ------------------------------------------
     {
-      const box = (extra: unknown[]): OkcDocument => ({
-        version: 1,
-        name: 'move',
-        units: 'mm',
-        parameters: [],
-        placements: [],
-        bodies: [
-          {
-            id: 'b',
-            name: 'Slab',
-            visible: true,
-            colour: '#ccc',
-            features: [
-              {
-                id: 'bx',
-                name: 'Slab',
-                kind: 'box',
-                plane: { kind: 'named', name: 'XY', offset: 0 },
-                origin: [0, 0],
-                width: 40,
-                depth: 20,
-                height: 10,
-                operation: 'new',
-              },
-              ...extra,
-            ] as Body['features'],
-          },
-        ],
-      })
-
-      // A move step that has not been dragged yet must leave the part exactly
-      // where it was. The gizmo creates one the moment you ask to move
-      // something, so if this were not true, asking would move it.
-      const still = (
-        await kernel.evaluate(
-          box([{ id: 'mv', name: 'Move', kind: 'move', offset: [0, 0, 0], rotation: [0, 0, 0] }]),
+      const moved = async (offset: [number, number, number], rotation: [number, number, number]) =>
+        meshFor(
+          await evaluate(
+            makeDocument(
+              'move',
+              [body('b', 'Slab')],
+              [
+                boxFeature('bx', 'b', [0, 0], [40, 20, 10]),
+                {
+                  id: 'mv',
+                  name: 'Move',
+                  componentId: 'root',
+                  kind: 'move',
+                  bodyIds: ['b'],
+                  offset,
+                  rotation,
+                },
+              ],
+            ),
+          ),
+          'root|b',
         )
-      ).shapes[0]
+      const still = await moved([0, 0, 0], [0, 0, 0])
       add(
         'a move step with nothing set leaves the part alone',
         !!still && still.bounds.every((v, i) => Math.abs(v - [0, 0, 0, 40, 20, 10][i]) < 1e-6),
         `bounds ${still?.bounds.map((v) => v.toFixed(2)).join(', ')}`,
       )
-
-      const shifted = (
-        await kernel.evaluate(
-          box([
-            { id: 'mv', name: 'Move', kind: 'move', offset: [100, 5, -3], rotation: [0, 0, 0] },
-          ]),
-        )
-      ).shapes[0]
+      const shifted = await moved([100, 5, -3], [0, 0, 0])
       add(
         'moving a body shifts it by exactly that much',
         !!shifted &&
           shifted.bounds.every((v, i) => Math.abs(v - [100, 5, -3, 140, 25, 7][i]) < 1e-6),
         `bounds ${shifted?.bounds.map((v) => v.toFixed(2)).join(', ')}`,
       )
-
-      // Turned about its own centre, not the world origin. A 40 x 20 footprint
-      // centred at (20, 10) becomes 20 x 40 about the same point; if this
-      // rotated about the origin instead, the part would swing off to one side.
-      const turned = (
-        await kernel.evaluate(
-          box([{ id: 'mv', name: 'Move', kind: 'move', offset: [0, 0, 0], rotation: [0, 0, 90] }]),
-        )
-      ).shapes[0]
+      const turned = await moved([0, 0, 0], [0, 0, 90])
       add(
         'turning a body pivots about its own centre',
         !!turned && turned.bounds.every((v, i) => Math.abs(v - [10, -10, 0, 30, 30, 10][i]) < 1e-6),
         `bounds ${turned?.bounds.map((v) => v.toFixed(2)).join(', ')}`,
       )
-
-      // Volume is the real check that a rotation is a rotation: scaling or
-      // shearing would still move the bounding box about convincingly.
       add(
         'and does not distort it',
         !!turned && Math.abs(turned.volume - 40 * 20 * 10) < 1e-3,
         `${turned?.volume.toFixed(2)} mm3, expected 8000`,
       )
-
-      // Off-axis, where an error in the pivot shows up plainly: at 45 degrees a
-      // 40 x 20 rectangle spans (40 + 20) * cos45 = 42.43 mm each way.
-      const diagonal = (
-        await kernel.evaluate(
-          box([{ id: 'mv', name: 'Move', kind: 'move', offset: [0, 0, 0], rotation: [0, 0, 45] }]),
-        )
-      ).shapes[0]
+      const diagonal = await moved([0, 0, 0], [0, 0, 45])
       const span = 60 * Math.cos(Math.PI / 4)
       add(
         'a 45 degree turn spans the diagonal, still centred',
@@ -441,60 +394,33 @@ export async function runKernelTest(): Promise<TestResult[]> {
         `spans ${(diagonal ? diagonal.bounds[3] - diagonal.bounds[0] : 0).toFixed(3)} mm, expected ${span.toFixed(3)}`,
       )
     }
-
-    // --- ready-made shapes, positive and negative ---------------------------
     {
       const sphereV = (4 / 3) * Math.PI * 15 ** 3
-      const shapes = await kernel.evaluate({
-        version: 1,
-        name: 'shapes',
-        units: 'mm',
-        parameters: [],
-        placements: [],
-        bodies: [
-          {
-            id: 'ball',
-            name: 'Ball',
-            visible: true,
-            colour: '#ccc',
-            features: [
-              {
-                id: 's',
-                name: 'Ball',
-                kind: 'sphere',
-                plane: { kind: 'named', name: 'XY', offset: 0 },
-                centre: [0, 0],
-                radius: 15,
-                half: false,
-                operation: 'new',
-              },
-            ],
-          },
-          {
-            // Deliberately away from the origin: a dome built with a cutter
-            // centred on the plane instead of on the ball comes out a whole
-            // sphere, and only shows it once it is moved off centre.
-            id: 'dome',
-            name: 'Dome',
-            visible: true,
-            colour: '#ccc',
-            features: [
-              {
-                id: 'd',
-                name: 'Dome',
-                kind: 'sphere',
-                plane: { kind: 'named', name: 'XY', offset: 0 },
-                centre: [60, 0],
-                radius: 15,
-                half: true,
-                operation: 'new',
-              },
-            ],
-          },
-        ],
+      const sphere = (
+        id: string,
+        bodyId: string,
+        centre: [number, number],
+        half: boolean,
+      ): Feature => ({
+        id,
+        name: id,
+        componentId: 'root',
+        kind: 'sphere',
+        plane: XY,
+        centre,
+        radius: 15,
+        half,
+        result: { kind: 'newBody', bodyId },
       })
-      const ball = shapes.shapes.find((x) => x.id === 'ball')
-      const dome = shapes.shapes.find((x) => x.id === 'dome')
+      const shapes = await evaluate(
+        makeDocument(
+          'shapes',
+          [body('ball', 'Ball'), body('dome', 'Dome')],
+          [sphere('s', 'ball', [0, 0], false), sphere('d', 'dome', [60, 0], true)],
+        ),
+      )
+      const ball = meshFor(shapes, 'root|ball')
+      const dome = meshFor(shapes, 'root|dome')
       add(
         'a ball has the volume of a sphere',
         !!ball && Math.abs(ball.volume - sphereV) < 20,
@@ -506,98 +432,63 @@ export async function runKernelTest(): Promise<TestResult[]> {
         `${dome?.volume.toFixed(0) ?? 'nothing'} mm3 (expected ${(sphereV / 2).toFixed(0)}), base at z ${dome?.bounds[2].toFixed(2)}`,
       )
 
-      const carved = await kernel.evaluate({
-        version: 1,
-        name: 'carve',
-        units: 'mm',
-        parameters: [],
-        placements: [],
-        bodies: [
-          {
-            id: 'b',
-            name: 'B',
-            visible: true,
-            colour: '#ccc',
-            features: [
-              {
-                id: 'bx',
-                name: 'Box',
-                kind: 'box',
-                plane: { kind: 'named', name: 'XY', offset: 0 },
-                origin: [-20, -20],
-                width: 40,
-                depth: 40,
-                height: 40,
-                operation: 'new',
-              },
-              {
-                id: 'sp',
-                name: 'Scoop',
-                kind: 'sphere',
-                plane: { kind: 'named', name: 'XY', offset: 20 },
-                centre: [0, 0],
-                radius: 10,
-                half: false,
-                operation: 'cut',
-              },
-            ],
-          },
-        ],
-      })
+      const carved = await evaluate(
+        makeDocument(
+          'carve',
+          [body('b', 'B')],
+          [
+            boxFeature('bx', 'b', [-20, -20], [40, 40, 40]),
+            {
+              id: 'sp',
+              name: 'Scoop',
+              componentId: 'root',
+              kind: 'sphere',
+              plane: { kind: 'named', name: 'XY', offset: 20 },
+              centre: [0, 0],
+              radius: 10,
+              half: false,
+              result: { kind: 'cut', bodyIds: ['b'] },
+            },
+          ],
+        ),
+      )
       const expected = 40 ** 3 - (4 / 3) * Math.PI * 10 ** 3
+      const scooped = meshFor(carved, 'root|b')
       add(
         'a shape used as a negative scoops material out',
-        Math.abs((carved.shapes[0]?.volume ?? 0) - expected) < 10,
-        `${carved.shapes[0]?.volume.toFixed(0) ?? 'nothing'} mm3, expected ${expected.toFixed(0)}`,
+        Math.abs((scooped?.volume ?? 0) - expected) < 10,
+        `${scooped?.volume.toFixed(0) ?? 'nothing'} mm3, expected ${expected.toFixed(0)}`,
       )
     }
 
-    // --- vent grid and its border -------------------------------------------
     {
       const PANEL = 60
       const T = 3
       const SIZE = 6
       const MARGIN = 4
-      const vented = await kernel.evaluate({
-        version: 1,
-        name: 'vent',
-        units: 'mm',
-        parameters: [],
-        placements: [],
-        bodies: [
-          {
-            id: 'p',
-            name: 'Panel',
-            visible: true,
-            colour: '#ccc',
-            features: [
-              {
-                id: 'pl',
-                name: 'Panel',
-                kind: 'box',
-                plane: { kind: 'named', name: 'XY', offset: 0 },
-                origin: [-PANEL / 2, -PANEL / 2],
-                width: PANEL,
-                depth: PANEL,
-                height: T,
-                operation: 'new',
-              },
-              {
-                id: 'v',
-                name: 'Vent',
-                kind: 'vent',
-                plane: { kind: 'named', name: 'XY', offset: T },
-                shape: 'hex',
-                size: SIZE,
-                spacing: 2,
-                margin: MARGIN,
-                depth: 'through',
-              },
-            ],
-          },
-        ],
-      })
-      const panel = vented.shapes[0]
+      const vented = await evaluate(
+        makeDocument(
+          'vent',
+          [body('p', 'Panel')],
+          [
+            boxFeature('pl', 'p', [-PANEL / 2, -PANEL / 2], [PANEL, PANEL, T]),
+            {
+              id: 'v',
+              name: 'Vent',
+              componentId: 'root',
+              kind: 'vent',
+              bodyId: 'p',
+              plane: { kind: 'named', name: 'XY', offset: T },
+              shape: 'hex',
+              size: SIZE,
+              spacing: 2,
+              margin: MARGIN,
+              depth: 'through',
+            },
+          ],
+        ),
+      )
+      const panel = meshFor(vented, 'root|p')
       const solidV = PANEL * PANEL * T
       const hexArea = (Math.sqrt(3) / 2) * SIZE * SIZE
       const holes = (solidV - (panel?.volume ?? solidV)) / (hexArea * T)
@@ -607,8 +498,6 @@ export async function runKernelTest(): Promise<TestResult[]> {
         `${holes.toFixed(2)} hexagons' worth removed` +
           (vented.errors.length ? ` (${vented.errors[0].message})` : ''),
       )
-      // Partial holes at the edge would eat into the outline; a kept border
-      // means the panel is still exactly its original size.
       add(
         'and leaves the edge border intact',
         !!panel &&
@@ -618,66 +507,56 @@ export async function runKernelTest(): Promise<TestResult[]> {
       )
     }
 
-    // --- hollow, and turn the open side into a lid --------------------------
     {
       const W = 50
       const D = 40
       const H = 30
       const WALL = 2
-      const withLid = await kernel.evaluate({
-        version: 1,
-        name: 'lid',
-        units: 'mm',
-        parameters: [],
-        placements: [],
-        bodies: [
-          {
-            id: 'box',
-            name: 'Box',
-            visible: true,
-            colour: '#ccc',
-            features: [
-              {
-                id: 'bx',
-                name: 'Box',
-                kind: 'box',
-                plane: { kind: 'named', name: 'XY', offset: 0 },
-                origin: [0, 0],
-                width: W,
-                depth: D,
-                height: H,
-                operation: 'new',
-              },
-              {
-                id: 'sh',
-                name: 'Hollow',
-                kind: 'shell',
-                thickness: WALL,
-                openFaces: [{ bodyId: 'box', anchor: [W / 2, D / 2, H], normal: [0, 0, 1] }],
-              },
-            ],
-          },
-          {
-            id: 'lid',
-            name: 'Lid',
-            visible: true,
-            colour: '#bbb',
-            features: [
-              {
-                id: 'ld',
-                name: 'Lid',
-                kind: 'lid',
-                sourceBodyId: 'box',
-                shellFeatureId: 'sh',
-                thickness: WALL,
-              },
-            ],
-          },
-        ],
-      })
-      const lid = withLid.shapes.find((x) => x.id === 'lid')
-      // The lid fills the opening rather than capping it from outside, so it is
-      // the size of the hole - the outer profile less a wall on each side.
+      const GAP = 0.3
+      const lidDoc = (clearance: number, fit: LidFit, seat: boolean): OkcDocument =>
+        makeDocument(
+          `lid-${fit}`,
+          [body('box', 'Box'), body('lid', 'Lid', { colour: '#bbbbbb' })],
+          [
+            boxFeature('bx', 'box', [0, 0], [W, D, H]),
+            {
+              id: 'sh',
+              name: 'Hollow',
+              componentId: 'root',
+              kind: 'shell',
+              bodyId: 'box',
+              thickness: WALL,
+              openFaces: [{ bodyId: 'box', anchor: [W / 2, D / 2, H], normal: [0, 0, 1] }],
+            },
+            {
+              id: 'ld',
+              name: 'Lid',
+              componentId: 'root',
+              kind: 'lid',
+              sourceBodyId: 'box',
+              shellFeatureId: 'sh',
+              thickness: WALL,
+              clearance,
+              fit,
+              result: { kind: 'newBody', bodyId: 'lid' },
+            },
+            ...(seat
+              ? [
+                  {
+                    id: 'seat',
+                    name: 'Seat',
+                    componentId: 'root',
+                    kind: 'lidSocket' as const,
+                    bodyId: 'box',
+                    lidFeatureId: 'ld',
+                  },
+                ]
+              : []),
+          ],
+        )
+
+      const withLid = await evaluate(lidDoc(0, 'friction', false))
+      const lid = meshFor(withLid, 'root|lid')
       const lidVolume = (W - 2 * WALL) * (D - 2 * WALL) * WALL
       add(
         'the lid is the size of the opening it fills',
@@ -689,10 +568,7 @@ export async function runKernelTest(): Promise<TestResult[]> {
         !!lid && Math.abs(lid.bounds[2] - (H - WALL)) < 0.05 && Math.abs(lid.bounds[5] - H) < 0.05,
         `z ${lid?.bounds[2].toFixed(1)}..${lid?.bounds[5].toFixed(1)}, expected ${H - WALL}..${H}`,
       )
-      // It must not foul the walls it drops between, or it would not go in.
-      const walls = withLid.shapes.find((x) => x.id === 'box')
-      // The hollowed box with nothing cut for the lid, which the fits below are
-      // measured against.
+      const walls = meshFor(withLid, 'root|box')
       const hollowVolume = walls?.volume
       add(
         'and clears the walls rather than overlapping them',
@@ -700,144 +576,16 @@ export async function runKernelTest(): Promise<TestResult[]> {
         `lid starts at x ${lid?.bounds[0].toFixed(2)}, inner wall face at ${((walls?.bounds[0] ?? 0) + WALL).toFixed(2)}`,
       )
 
-      // With a gap asked for, the lid has to come in by that much on every
-      // side - and by exactly that much, since the whole point is a number the
-      // user can dial in against their own printer.
-      const GAP = 0.3
-      const gapped = await kernel.evaluate({
-        version: 1,
-        name: 'lid-gap',
-        units: 'mm',
-        parameters: [],
-        placements: [],
-        bodies: [
-          {
-            id: 'box',
-            name: 'Box',
-            visible: true,
-            colour: '#ccc',
-            features: [
-              {
-                id: 'bx',
-                name: 'Box',
-                kind: 'box',
-                plane: { kind: 'named', name: 'XY', offset: 0 },
-                origin: [0, 0],
-                width: W,
-                depth: D,
-                height: H,
-                operation: 'new',
-              },
-              {
-                id: 'sh',
-                name: 'Hollow',
-                kind: 'shell',
-                thickness: WALL,
-                openFaces: [{ bodyId: 'box', anchor: [W / 2, D / 2, H], normal: [0, 0, 1] }],
-              },
-            ],
-          },
-          {
-            id: 'lid',
-            name: 'Lid',
-            visible: true,
-            colour: '#bbb',
-            features: [
-              {
-                id: 'ld',
-                name: 'Lid',
-                kind: 'lid',
-                sourceBodyId: 'box',
-                shellFeatureId: 'sh',
-                thickness: WALL,
-                clearance: GAP,
-              },
-            ],
-          },
-        ],
-      })
-      // --- the three ways a lid can be held on -----------------------------
-      // Each is checked against numbers worked out by hand, because the parts
-      // are built from differences of insets and an error in one of them makes
-      // a lid that looks plausible on screen and does not go on.
-      const fitted = async (fit: 'friction' | 'ledge' | 'snap') => {
-        const seat =
-          fit === 'friction'
-            ? []
-            : [
-                {
-                  id: 'seat',
-                  name: 'Seat',
-                  kind: 'lidSocket',
-                  lidBodyId: 'lid',
-                  lidFeatureId: 'ld',
-                },
-              ]
-        const r = await kernel.evaluate({
-          version: 1,
-          name: `lid-${fit}`,
-          units: 'mm',
-          parameters: [],
-          placements: [],
-          bodies: [
-            {
-              id: 'box',
-              name: 'Box',
-              visible: true,
-              colour: '#ccc',
-              features: [
-                {
-                  id: 'bx',
-                  name: 'Box',
-                  kind: 'box',
-                  plane: { kind: 'named', name: 'XY', offset: 0 },
-                  origin: [0, 0],
-                  width: W,
-                  depth: D,
-                  height: H,
-                  operation: 'new',
-                },
-                {
-                  id: 'sh',
-                  name: 'Hollow',
-                  kind: 'shell',
-                  thickness: WALL,
-                  openFaces: [{ bodyId: 'box', anchor: [W / 2, D / 2, H], normal: [0, 0, 1] }],
-                },
-                ...seat,
-              ],
-            },
-            {
-              id: 'lid',
-              name: 'Lid',
-              visible: true,
-              colour: '#bbb',
-              features: [
-                {
-                  id: 'ld',
-                  name: 'Lid',
-                  kind: 'lid',
-                  sourceBodyId: 'box',
-                  shellFeatureId: 'sh',
-                  thickness: WALL,
-                  clearance: GAP,
-                  fit,
-                },
-              ],
-            },
-          ],
-        } as never)
+      const fitted = async (fit: LidFit) => {
+        const r = await evaluate(lidDoc(GAP, fit, fit !== 'friction'))
         return {
-          box: r.shapes.find((x) => x.id === 'box'),
-          lid: r.shapes.find((x) => x.id === 'lid'),
+          box: meshFor(r, 'root|box'),
+          lid: meshFor(r, 'root|lid'),
           errors: r.errors.length,
         }
       }
 
       {
-        // A ledge lid laps over a step half the wall wide, so it is wider than
-        // the opening rather than narrower - the whole point being that it
-        // cannot drop through.
         const { box: ledgeBox, lid: ledgeLid, errors: ledgeErrors } = await fitted('ledge')
         const ledge = WALL / 2
         const span = W - 2 * (WALL - ledge + GAP)
@@ -846,38 +594,32 @@ export async function runKernelTest(): Promise<TestResult[]> {
           !!ledgeLid && Math.abs(ledgeLid.bounds[3] - ledgeLid.bounds[0] - span) < 1e-3,
           `${(ledgeLid ? ledgeLid.bounds[3] - ledgeLid.bounds[0] : 0).toFixed(3)} mm across, expected ${span.toFixed(3)}`,
         )
-        // The step costs the box the inner part of its wall over the lid depth.
-        const removed =
+        const removedStep =
           (W - 2 * (WALL - ledge)) * (D - 2 * (WALL - ledge)) * WALL -
           (W - 2 * WALL) * (D - 2 * WALL) * WALL
         add(
           'and the box loses exactly the step that was cut for it',
-          !!ledgeBox && Math.abs((hollowVolume ?? 0) - ledgeBox.volume - removed) < 1e-3,
-          `${((hollowVolume ?? 0) - (ledgeBox?.volume ?? 0)).toFixed(2)} mm3 removed, expected ${removed.toFixed(2)}`,
+          !!ledgeBox && Math.abs((hollowVolume ?? 0) - ledgeBox.volume - removedStep) < 1e-3,
+          `${((hollowVolume ?? 0) - (ledgeBox?.volume ?? 0)).toFixed(2)} mm3 removed, expected ${removedStep.toFixed(2)}`,
         )
         add('and builds without complaint', ledgeErrors === 0, `${ledgeErrors} error(s)`)
       }
 
       {
         const { box: snapBox, lid: snapLid, errors: snapErrors } = await fitted('snap')
-        const skirt = Math.max(Math.min(WALL * 0.6, WALL - 0.4), 0.8)
         const depth = Math.max(3, WALL * 2)
         const BEAD = 0.4
-        // The skirt hangs below the plug, so the lid is deeper than it is thick.
         add(
           'a snap lid hangs a skirt below the plug',
           !!snapLid && Math.abs(snapLid.bounds[5] - snapLid.bounds[2] - (WALL + depth)) < 1e-3,
           `${(snapLid ? snapLid.bounds[5] - snapLid.bounds[2] : 0).toFixed(3)} mm deep, expected ${(WALL + depth).toFixed(3)}`,
         )
-        // The bead is the widest part of it, standing proud of the skirt.
         const beadSpan = W - 2 * (WALL + GAP - BEAD)
         add(
           'with a bead round it as the widest part',
           !!snapLid && Math.abs(snapLid.bounds[3] - snapLid.bounds[0] - beadSpan) < 1e-3,
           `${(snapLid ? snapLid.bounds[3] - snapLid.bounds[0] : 0).toFixed(3)} mm across, expected ${beadSpan.toFixed(3)}`,
         )
-        // And it must actually interfere with the wall, or nothing snaps: the
-        // bead has to reach past the inner face of the wall.
         add(
           'that reaches into the wall, so it has something to click past',
           WALL + GAP - BEAD < WALL,
@@ -892,7 +634,6 @@ export async function runKernelTest(): Promise<TestResult[]> {
       }
 
       {
-        // A plain drop-in lid must leave the box exactly as hollowing left it.
         const { box: plainBox } = await fitted('friction')
         add(
           'a drop-in lid cuts nothing into the box',
@@ -901,7 +642,8 @@ export async function runKernelTest(): Promise<TestResult[]> {
         )
       }
 
-      const loose = gapped.shapes.find((x) => x.id === 'lid')
+      const gapped = await evaluate(lidDoc(GAP, 'friction', false))
+      const loose = meshFor(gapped, 'root|lid')
       const expectedSpan = W - 2 * WALL - 2 * GAP
       add(
         'a gap makes the lid smaller by exactly that much all round',
@@ -914,13 +656,9 @@ export async function runKernelTest(): Promise<TestResult[]> {
         `top at z ${loose?.bounds[5].toFixed(3)}, expected ${H}`,
       )
     }
-
-    // --- export path --------------------------------------------------------
-    // Rebuild the plate: the checks above replaced what the kernel is holding,
-    // and exporting works from the last thing built.
-    await kernel.evaluate(makeDoc([8, 7, PLATE_T], true))
+    await evaluate(piPlateDoc(translationMatrix([8, 7, PLATE_T]), true))
     try {
-      const step = await kernel.exportStep(['plate'], 'plate')
+      const step = await kernel.exportStep(['root|plate'], 'plate')
       const head = new TextDecoder().decode(new Uint8Array(step.slice(0, 13)))
       add(
         'STEP export produces a real STEP file',
@@ -931,11 +669,28 @@ export async function runKernelTest(): Promise<TestResult[]> {
       add('STEP export produces a real STEP file', false, (e as Error).message)
     }
 
+    const circlesAt = async (instance: string, expected: number[][]) => {
+      const proj = await kernel.project(instance, 'XY')
+      const matched = expected.filter((e) =>
+        proj.circles.some((c) => Math.hypot(c.cx - e[0], c.cy - e[1]) < 0.02),
+      )
+      return {
+        proj,
+        matched: matched.length,
+        detail: `${matched.length}/${expected.length} matched; got ${proj.circles
+          .map((c) => `(${c.cx.toFixed(2)}, ${c.cy.toFixed(2)})`)
+          .join(' ')}`,
+      }
+    }
+
     try {
-      // Rebuild with the board back on the plate: the previous evaluation
-      // deliberately moved it away, so the plate has no holes to project.
-      await kernel.evaluate(makeDoc([8, 7, PLATE_T], false))
-      const proj = await kernel.project('plate', 'XY')
+      await evaluate(piPlateDoc(translationMatrix([8, 7, PLATE_T]), false))
+      const { proj, matched, detail } = await circlesAt('root|plate', [
+        [11.5, 10.5],
+        [69.5, 10.5],
+        [11.5, 59.5],
+        [69.5, 59.5],
+      ])
       add(
         'projection finds the four holes as true circles',
         proj.circles.length === 4 && proj.circles.every((c) => Math.abs(c.r - 1.4) < 0.01),
@@ -943,32 +698,420 @@ export async function runKernelTest(): Promise<TestResult[]> {
           .map((c) => c.r.toFixed(3))
           .join(', ')} (expected four at 1.400)`,
       )
-      // SVG measures Y downward. If this comes back negative, every DXF panel
-      // the app exports would be a mirror image of the real part.
       add(
         'projection is not mirrored',
         Math.abs(proj.bounds[1]) < 0.01 && Math.abs(proj.bounds[3] - PLATE_D) < 0.01,
         `y spans ${proj.bounds[1].toFixed(2)}..${proj.bounds[3].toFixed(2)} (expected 0..${PLATE_D})`,
       )
-      // Hole centres must land exactly under the board's mounting holes.
-      const expected = [
-        [11.5, 10.5],
-        [69.5, 10.5],
-        [11.5, 59.5],
-        [69.5, 59.5],
-      ]
-      const matched = expected.filter((e) =>
-        proj.circles.some((c) => Math.hypot(c.cx - e[0], c.cy - e[1]) < 0.02),
-      )
-      add(
-        'hole centres land exactly under the board',
-        matched.length === 4,
-        `${matched.length}/4 matched; got ${proj.circles
-          .map((c) => `(${c.cx.toFixed(2)}, ${c.cy.toFixed(2)})`)
-          .join(' ')}`,
-      )
+      add('hole centres land exactly under the board', matched === 4, detail)
     } catch (e) {
       add('projection finds the four holes as true circles', false, (e as Error).message)
+    }
+
+    try {
+      const shiftedDoc = piPlateDoc(translationMatrix([20, 10, PLATE_T]), false)
+      const shifted = await evaluate(shiftedDoc)
+      const moved = await circlesAt('root|plate', [
+        [23.5, 13.5],
+        [81.5, 13.5],
+        [23.5, 62.5],
+        [81.5, 62.5],
+      ])
+      add(
+        'a Pi occurrence moved on the plate drags its mounting holes along',
+        shifted.errors.length === 0 && moved.matched === 4,
+        moved.detail,
+      )
+      const turned = await evaluate(
+        piPlateDoc(
+          multiplyMatrices(translationMatrix([70, 5, PLATE_T]), rotationMatrix('z', 90)),
+          false,
+        ),
+      )
+      const rotated = await circlesAt('root|plate', [
+        [66.5, 8.5],
+        [66.5, 66.5],
+        [17.5, 8.5],
+        [17.5, 66.5],
+      ])
+      add(
+        'and turning the occurrence turns the hole pattern with it',
+        turned.errors.length === 0 && rotated.matched === 4,
+        rotated.detail,
+      )
+      const away = await evaluate(piPlateDoc(translationMatrix([400, 400, PLATE_T]), false))
+      const awayMesh = meshFor(away, 'root|plate')
+      add(
+        'and the plate returns to nominal volume when the Pi moves off it',
+        !!awayMesh &&
+          Math.abs(awayMesh.volume - nominal) < 0.5 &&
+          awayMesh.key !== meshFor(turned, 'root|plate')?.key,
+        `${awayMesh?.volume.toFixed(1) ?? 'nothing'} mm3 (expected ${nominal})`,
+      )
+    } catch (e) {
+      add('a Pi occurrence moved on the plate drags its mounting holes along', false, String(e))
+    }
+
+    const linked = makeDocument(
+      'linked',
+      [],
+      [boxFeature('bkx', 'bk', [0, 0], [20, 10, 5], { componentId: 'bracket' })],
+      {
+        components: [design('bracket', [body('bk', 'Bracket')])],
+        occurrences: [
+          occurrence('c1', 'root', 'bracket', identityMatrix()),
+          occurrence('c2', 'root', 'bracket', translationMatrix([100, 0, 0])),
+        ],
+      },
+    )
+    {
+      const r = await evaluate(linked)
+      const a = r.instances.find((i) => i.id === 'c1|bk')
+      const b = r.instances.find((i) => i.id === 'c2|bk')
+      add(
+        'two occurrences of one component share a mesh key at different matrices',
+        !!a &&
+          !!b &&
+          a.meshKey === b.meshKey &&
+          a.matrix[12] === 0 &&
+          b.matrix[12] === 100 &&
+          r.meshes.filter((m) => m.key === a.meshKey).length === 1,
+        `${r.instances.map((i) => `${i.id} ${i.meshKey} x=${i.matrix[12]}`).join(', ')}; ${r.meshes.length} mesh(es)`,
+      )
+      const gap = await kernel.distanceBetween('c1|bk', 'c2|bk')
+      add(
+        'and measuring between them works in world space',
+        gap !== null && Math.abs(gap - 80) < 1e-6,
+        `${gap?.toFixed(3) ?? 'nothing'} mm apart, expected 80`,
+      )
+    }
+
+    {
+      const nested = makeDocument(
+        'nested',
+        [],
+        [
+          boxFeature('cpx', 'cp', [0, 0], [PLATE_W, PLATE_D, PLATE_T], { componentId: 'case' }),
+          {
+            id: 'cph',
+            name: 'Holes from the nested Pi',
+            componentId: 'case',
+            kind: 'hole',
+            bodyId: 'cp',
+            plane: { kind: 'named', name: 'XY', offset: PLATE_T },
+            source: { kind: 'occurrence', occurrencePath: ['k1', 'kp'], contextPath: ['k1'] },
+            style: 'simple',
+            diameter: 2.8,
+            depth: 'through',
+          },
+          boxFeature('ibx', 'ib', [0, 0], [10, 10, 10], { componentId: 'inner' }),
+        ],
+        {
+          components: [
+            design('case', [body('cp', 'Case plate')]),
+            design('inner', [body('ib', 'Inner block')]),
+            PI_COMPONENT,
+          ],
+          occurrences: [
+            occurrence('k1', 'root', 'case', translationMatrix([50, 0, 0])),
+            occurrence('kp', 'case', 'pi-part', translationMatrix([8, 7, PLATE_T])),
+            occurrence('i1', 'case', 'inner', translationMatrix([0, 20, 0])),
+          ],
+        },
+      )
+      const r = await evaluate(nested)
+      const block = r.instances.find((i) => i.id === 'k1/i1|ib')
+      const pi = r.instances.find((i) => i.id === 'k1/kp|pi-part')
+      const world = await kernel.meshOf('k1/i1|ib')
+      let minX = Infinity
+      let minY = Infinity
+      for (let i = 0; i < world.vertices.length; i += 3) {
+        minX = Math.min(minX, world.vertices[i])
+        minY = Math.min(minY, world.vertices[i + 1])
+      }
+      add(
+        'nested occurrences compose their placements',
+        r.errors.length === 0 &&
+          !!block &&
+          block.matrix[12] === 50 &&
+          block.matrix[13] === 20 &&
+          !!pi &&
+          pi.matrix[12] === 58 &&
+          Math.abs(minX - 50) < 1e-6 &&
+          Math.abs(minY - 20) < 1e-6,
+        `block at ${block?.matrix.slice(12, 15).join(', ')}, Pi at ${pi?.matrix.slice(12, 15).join(', ')}, world mesh from ${minX.toFixed(2)}, ${minY.toFixed(2)}` +
+          (r.errors.length ? ` (${errorText(r)})` : ''),
+      )
+      const holes = await circlesAt('k1|cp', [
+        [61.5, 10.5],
+        [119.5, 10.5],
+        [61.5, 59.5],
+        [119.5, 59.5],
+      ])
+      add(
+        'holes from a nested part are measured in their own component',
+        holes.matched === 4,
+        holes.detail,
+      )
+    }
+
+    const negativeDoc = (negative: boolean) =>
+      makeDocument(
+        'negative',
+        [body('a', 'A'), body('b', 'B')],
+        [
+          boxFeature('ax', 'a', [0, 0], [40, 40, 20]),
+          boxFeature('bx', 'b', [200, 0], [40, 40, 20]),
+          boxFeature('cx', 'cb', [0, 0], [10, 10, 40], { componentId: 'cutter' }),
+        ],
+        {
+          components: [design('cutter', [body('cb', 'Cutter')])],
+          occurrences: [
+            occurrence('neg', 'root', 'cutter', translationMatrix([15, 15, -10]), { negative }),
+          ],
+        },
+      )
+    {
+      const plain = await evaluate(negativeDoc(false))
+      const cut = await evaluate(negativeDoc(true))
+      const aPlain = plain.instances.find((i) => i.id === 'root|a')
+      const aCut = cut.instances.find((i) => i.id === 'root|a')
+      const bPlain = plain.instances.find((i) => i.id === 'root|b')
+      const bCut = cut.instances.find((i) => i.id === 'root|b')
+      const cutVolume = meshFor(cut, 'root|a')?.volume ?? 0
+      add(
+        'a negative occurrence cuts the body it overlaps',
+        !!aPlain &&
+          !!aCut &&
+          aCut.meshKey !== aPlain.meshKey &&
+          Math.abs(cutVolume - (16000 * 2 - 2000)) < 1 &&
+          cut.instances.some((i) => i.id === 'neg|cb' && i.negative),
+        `${cutVolume.toFixed(1)} mm3, expected ${16000 * 2 - 2000}` +
+          (cut.errors.length ? ` (${errorText(cut)})` : ''),
+      )
+      add(
+        'while a body it does not overlap keeps its shared mesh key',
+        !!bPlain && !!bCut && bCut.meshKey === bPlain.meshKey,
+        `${bPlain?.meshKey} then ${bCut?.meshKey}`,
+      )
+
+      const keys = [...new Set(cut.instances.map((i) => i.meshKey))]
+      const again = await evaluate(negativeDoc(true), keys)
+      const partial = await evaluate(negativeDoc(true), keys.slice(1))
+      add(
+        'known mesh keys suppress meshes the main thread already holds',
+        again.meshes.length === 0 &&
+          again.instances.length === cut.instances.length &&
+          again.instances.every((i) => keys.includes(i.meshKey)) &&
+          partial.meshes.length === 1 &&
+          partial.meshes[0].key === keys[0] &&
+          partial.meshes[0].mesh.vertices.length > 0,
+        `${keys.length} key(s); ${again.meshes.length} mesh(es) with all known, ${partial.meshes.length} with one missing`,
+      )
+    }
+
+    {
+      const cacheDoc = (radius: number) =>
+        makeDocument(
+          'cache',
+          [body('cc', 'Cached')],
+          [
+            boxFeature('ccx', 'cc', [0, 0], [33, 27, 11]),
+            {
+              id: 'ccf',
+              name: 'Cached fillet',
+              componentId: 'root',
+              kind: 'fillet',
+              bodyId: 'cc',
+              radius,
+              edges: [],
+            },
+          ],
+        )
+      await evaluate(cacheDoc(1))
+      const twice = await evaluate(cacheDoc(1))
+      add(
+        'evaluating the same document twice is all cache hits',
+        twice.cache.misses === 0 && twice.cache.hits === 2,
+        `hits ${twice.cache.hits}, misses ${twice.cache.misses}, entries ${twice.cache.entries}`,
+      )
+      const edited = await evaluate(cacheDoc(1.5))
+      add(
+        'changing only the last feature is exactly one miss',
+        edited.cache.misses === 1 && edited.cache.hits === 1,
+        `hits ${edited.cache.hits}, misses ${edited.cache.misses}, entries ${edited.cache.entries}`,
+      )
+    }
+
+    {
+      const markerDoc = (marker: number | null) =>
+        makeDocument(
+          'marker',
+          [body('m', 'Marked'), body('late', 'Late')],
+          [
+            boxFeature('mb', 'm', [0, 0], [20, 20, 20]),
+            {
+              id: 'mf',
+              name: 'Rolled back fillet',
+              componentId: 'root',
+              kind: 'fillet',
+              bodyId: 'm',
+              radius: 2,
+              edges: [],
+            },
+            boxFeature('lb', 'late', [40, 0], [5, 5, 5]),
+          ],
+          { marker },
+        )
+      const full = await evaluate(markerDoc(null))
+      const rolled = await evaluate(markerDoc(1))
+      const fullVolume = meshFor(full, 'root|m')?.volume ?? 0
+      const rolledVolume = meshFor(rolled, 'root|m')?.volume ?? 0
+      add(
+        'the marker excludes the features after it',
+        full.instances.length === 2 &&
+          fullVolume < 8000 - 1 &&
+          rolled.instances.length === 1 &&
+          Math.abs(rolledVolume - 8000) < 0.01 &&
+          rolled.errors.length === 0,
+        `${full.instances.length} then ${rolled.instances.length} instance(s); ${fullVolume.toFixed(1)} then ${rolledVolume.toFixed(1)} mm3`,
+      )
+    }
+
+    {
+      const base = makeDocument(
+        'preview',
+        [body('pv', 'Previewed')],
+        [boxFeature('pb', 'pv', [0, 0], [24, 24, 12])],
+      )
+      const pendingFillet = (id: string, radius: number): Feature => ({
+        id,
+        name: 'Pending fillet',
+        componentId: 'root',
+        kind: 'fillet',
+        bodyId: 'pv',
+        radius,
+        edges: [],
+      })
+      const before = await evaluate(base)
+      const pending = await kernel.preview(
+        { doc: base, features: [pendingFillet('pf', 2)], insertAt: base.timeline.length },
+        [],
+      )
+      const after = await evaluate(base)
+      const beforeVolume = meshFor(before, 'root|pv')?.volume ?? 0
+      const pendingVolume = meshFor(pending, 'root|pv')?.volume ?? 0
+      const afterMesh = meshFor(after, 'root|pv')
+      add(
+        'a preview of a pending fillet differs from the evaluated design',
+        pending.errors.length === 0 &&
+          pendingVolume < beforeVolume - 1 &&
+          pending.instances.length === 1 &&
+          pending.instances.every((i) => i.preview === true),
+        `${pendingVolume.toFixed(1)} mm3 previewed against ${beforeVolume.toFixed(1)} mm3`,
+      )
+      add(
+        'and the next evaluate is unchanged by it',
+        !!afterMesh &&
+          Math.abs(afterMesh.volume - beforeVolume) < 1e-9 &&
+          after.instances[0]?.meshKey === before.instances[0]?.meshKey &&
+          after.instances.every((i) => !i.preview),
+        `${afterMesh?.volume.toFixed(1) ?? 'nothing'} mm3 after, ${beforeVolume.toFixed(1)} before`,
+      )
+
+      const edited = makeDocument(
+        'preview-edit',
+        [body('pv', 'Previewed')],
+        [
+          boxFeature('pb', 'pv', [0, 0], [24, 24, 12]),
+          pendingFillet('pf', 1),
+          boxFeature('later', 'extra', [60, 0], [5, 5, 5]),
+        ],
+      )
+      edited.components[0].bodies.push(body('extra', 'Later body'))
+      const replaced = await kernel.preview(
+        { doc: edited, features: [pendingFillet('pf', 3)], insertAt: 1, replaceFeatureId: 'pf' },
+        [],
+      )
+      const committed = await evaluate(edited)
+      const replacedVolume = meshFor(replaced, 'root|pv')?.volume ?? 0
+      const committedVolume = meshFor(committed, 'root|pv')?.volume ?? 0
+      add(
+        'editing a feature previews the replacement and nothing after it',
+        replacedVolume < committedVolume - 1 &&
+          replaced.instances.length === 1 &&
+          committed.instances.length === 2,
+        `${replacedVolume.toFixed(1)} mm3 previewed, ${committedVolume.toFixed(1)} mm3 evaluated; ${replaced.instances.length} previewed instance(s)`,
+      )
+    }
+
+    {
+      const failing = makeDocument(
+        'failure',
+        [body('fb', 'Broken'), body('ok', 'Fine')],
+        [
+          {
+            id: 'fs',
+            name: 'Empty sketch',
+            componentId: 'root',
+            kind: 'sketch',
+            plane: XY,
+            sketch: emptySketch(),
+            visible: true,
+          },
+          {
+            id: 'fe',
+            name: 'Extrude nothing',
+            componentId: 'root',
+            kind: 'extrude',
+            sketchId: 'fs',
+            distance: 5,
+            symmetric: false,
+            reverse: false,
+            result: { kind: 'newBody', bodyId: 'fb' },
+          },
+          {
+            id: 'ff',
+            name: 'Round nothing',
+            componentId: 'root',
+            kind: 'fillet',
+            bodyId: 'fb',
+            radius: 1,
+            edges: [],
+          },
+          boxFeature('ob', 'ok', [0, 0], [20, 20, 20]),
+          {
+            id: 'big',
+            name: 'Fillet on a lost edge',
+            componentId: 'root',
+            kind: 'fillet',
+            bodyId: 'ok',
+            radius: 2,
+            edges: [{ bodyId: 'ok', anchor: [500, 500, 500], length: 20 }],
+          },
+        ],
+      )
+      const r = await evaluate(failing)
+      const failed = r.errors.find((e) => e.featureId === 'fe')
+      const dependent = r.errors.find((e) => e.featureId === 'ff')
+      add(
+        'a failing feature reports its feature id',
+        !!failed && failed.severity === 'error' && !r.instances.some((i) => i.bodyId === 'fb'),
+        errorText(r),
+      )
+      add(
+        'and its dependents report what they depend on',
+        dependent?.message === 'Depends on Extrude nothing, which failed.' &&
+          dependent.severity === 'error',
+        dependent?.message ?? 'no error for the dependent fillet',
+      )
+      const thrown = r.errors.find((e) => e.featureId === 'big')
+      const intact = meshFor(r, 'root|ok')?.volume ?? 0
+      add(
+        'a feature that throws leaves its body as it was',
+        !!thrown && !!thrown.hint && Math.abs(intact - 8000) < 0.01,
+        `${thrown?.message ?? 'no error'}; body ${intact.toFixed(1)} mm3`,
+      )
     }
   } catch (e) {
     add('kernel test ran', false, `${(e as Error).message}\n${(e as Error).stack ?? ''}`)

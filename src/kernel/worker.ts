@@ -1,14 +1,3 @@
-/**
- * The geometry kernel worker.
- *
- * OpenCascade is an ~11 MB WASM module and every boolean or fillet it performs
- * is synchronous and can take hundreds of milliseconds. Running it on the main
- * thread would stutter the viewport on every edit, so the whole kernel lives
- * here and the UI talks to it over Comlink.
- *
- * The worker owns all B-rep shapes. Nothing that crosses back to the main
- * thread is anything but plain numbers.
- */
 import * as Comlink from 'comlink'
 import initOpenCascade from 'replicad-opencascadejs/src/replicad_single.js'
 import wasmUrl from 'replicad-opencascadejs/src/replicad_single.wasm?url'
@@ -19,27 +8,46 @@ import {
   measureDistanceBetween,
   measureVolume,
   setOC,
-  type ProjectionPlane,
 } from 'replicad'
-import type { OkcDocument } from '../doc/types'
+import type { Component, Matrix4, OkcDocument } from '../doc/types'
+import {
+  activeFeatures,
+  expandInstances,
+  findComponent,
+  findOccurrence,
+  instanceId,
+  invertRigidMatrix,
+  transformPoint,
+} from '../doc/model'
 import { resolveParameters } from '../doc/parameters'
-import { CATEGORY_COLOUR, getPart, setCustomParts } from '../catalogue'
-import { buildPlacement, evaluateBody } from './build'
+import { CATEGORY_COLOUR, getPart, setCustomParts, type CataloguePart } from '../catalogue'
+import {
+  buildPartLocal,
+  emptySnapshot,
+  evaluateFeature,
+  externalInputs,
+  transformShape,
+  type Snapshot,
+} from './build'
 import { flattenSvgPaths } from '../export/svgpath'
 import type {
+  BodyMesh,
   Clash,
   EdgeData,
   EvaluateResult,
+  Instance,
+  KernelApi,
   KernelError,
   MeshData,
+  PreviewRequest,
+  PrintOptions,
   PrintWarning,
+  ProjectionPlane,
   ProjectionResult,
-  ShapeResult,
 } from './types'
 
 let ocReady: Promise<void> | null = null
 
-/** Boot OpenCascade exactly once, no matter how many calls race for it. */
 function ensureOC(): Promise<void> {
   if (!ocReady) {
     ocReady = initOpenCascade({ locateFile: () => wasmUrl }).then((OC) => {
@@ -49,29 +57,152 @@ function ensureOC(): Promise<void> {
   return ocReady
 }
 
-/** Fine enough that a 3 mm hole still looks round. */
 const MESH_TOLERANCE = 0.02
 const MESH_ANGULAR_TOLERANCE = 12
+const NEGATIVE_COLOUR = '#4a5560'
+const SNAPSHOT_CAP = 128
+const TESSELLATION_CAP = 256
+const PART_CAP = 64
+const CUT_CAP = 128
 
-/**
- * Shapes from the last successful evaluation, kept alive so exporters and
- * measurement tools can work without rebuilding the whole document.
- */
-const liveShapes = new Map<string, any>()
+function hashText(text: string): string {
+  let h1 = 0xdeadbeef
+  let h2 = 0x41c6ce57
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i)
+    h1 = Math.imul(h1 ^ c, 2654435761)
+    h2 = Math.imul(h2 ^ c, 1597334677)
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909)
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909)
+  return (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0')
+}
 
-function tessellate(
-  shape: any,
-  id: string,
-  kind: ShapeResult['kind'],
-  name: string,
-  colour: string,
-): ShapeResult {
-  const raw = shape.mesh({
-    tolerance: MESH_TOLERANCE,
-    angularTolerance: MESH_ANGULAR_TOLERANCE,
-  })
+function hash(...parts: string[]): string {
+  return hashText(parts.join('␞'))
+}
+
+function canonicalJson(value: unknown): string {
+  if (value === null || value === undefined) return 'null'
+  if (typeof value !== 'object') return JSON.stringify(value) ?? 'null'
+  if (Array.isArray(value)) return `[${value.map((item) => canonicalJson(item)).join(',')}]`
+  const record = value as Record<string, unknown>
+  const keys = Object.keys(record)
+    .filter((key) => record[key] !== undefined)
+    .sort()
+  return `{${keys.map((key) => `${JSON.stringify(key)}:${canonicalJson(record[key])}`).join(',')}}`
+}
+
+class Lru<V> {
+  private map = new Map<string, V>()
+  constructor(private cap: number) {}
+  has(key: string): boolean {
+    return this.map.has(key)
+  }
+  get(key: string): V | undefined {
+    const value = this.map.get(key)
+    if (value !== undefined) {
+      this.map.delete(key)
+      this.map.set(key, value)
+    }
+    return value
+  }
+  set(key: string, value: V): void {
+    this.map.delete(key)
+    this.map.set(key, value)
+  }
+  evict(): V[] {
+    const out: V[] = []
+    while (this.map.size > this.cap) {
+      const key = this.map.keys().next().value as string
+      out.push(this.map.get(key)!)
+      this.map.delete(key)
+    }
+    return out
+  }
+  values(): IterableIterator<V> {
+    return this.map.values()
+  }
+  get size(): number {
+    return this.map.size
+  }
+}
+
+type Bounds = [number, number, number, number, number, number]
+
+interface Tessellation {
+  mesh: MeshData
+  edges: EdgeData
+  volume: number
+  bounds: Bounds
+}
+
+interface PartSolid {
+  shape: any | null
+  error?: string
+}
+
+interface CutEntry {
+  world: any
+  local: any
+  failures: string[]
+}
+
+interface LiveInstance {
+  instance: Instance
+  label: string
+  name: string
+  colour: string
+  featureId: string
+  ancestorsVisible: boolean
+  local: any
+  world: any | null
+}
+
+const snapshots = new Lru<Snapshot>(SNAPSHOT_CAP)
+const tessellations = new Lru<Tessellation>(TESSELLATION_CAP)
+const partSolids = new Lru<PartSolid>(PART_CAP)
+const cuts = new Lru<CutEntry>(CUT_CAP)
+let live = new Map<string, LiveInstance>()
+let liveSnapshot: Snapshot | null = null
+const localBounds = new WeakMap<object, Bounds>()
+
+function snapshotShapes(snapshot: Snapshot): any[] {
+  return [
+    ...[...snapshot.bodies.values()].map((body) => body.shape),
+    ...[...snapshot.preShell.values()].map((entry) => entry.shape),
+  ]
+}
+
+function liveShapes(instances: Map<string, LiveInstance>): any[] {
+  return [...instances.values()].flatMap((entry) => [entry.local, entry.world])
+}
+
+function release(candidates: any[]): void {
+  if (!candidates.length) return
+  const held = new Set<any>()
+  for (const snapshot of snapshots.values())
+    for (const shape of snapshotShapes(snapshot)) held.add(shape)
+  if (liveSnapshot) for (const shape of snapshotShapes(liveSnapshot)) held.add(shape)
+  for (const shape of liveShapes(live)) held.add(shape)
+  for (const solid of partSolids.values()) held.add(solid.shape)
+  for (const cut of cuts.values()) {
+    held.add(cut.world)
+    held.add(cut.local)
+  }
+  for (const shape of new Set(candidates)) {
+    if (!shape || held.has(shape)) continue
+    try {
+      shape.delete()
+    } catch {
+      continue
+    }
+  }
+}
+
+function tessellate(shape: any): Tessellation {
+  const raw = shape.mesh({ tolerance: MESH_TOLERANCE, angularTolerance: MESH_ANGULAR_TOLERANCE })
   const rawEdges = shape.meshEdges({ keepMesh: true })
-
   const mesh: MeshData = {
     vertices: new Float32Array(raw.vertices),
     triangles: new Uint32Array(raw.triangles),
@@ -90,432 +221,392 @@ function tessellate(
       edgeId: g.edgeId,
     })),
   }
-
-  const [bmin, bmax] = shape.boundingBox.bounds
   let volume = 0
   try {
     volume = measureVolume(shape)
   } catch {
     volume = 0
   }
+  return { mesh, edges, volume, bounds: boundsOf(shape) }
+}
+
+function boundsOf(shape: any): Bounds {
+  const cached = localBounds.get(shape)
+  if (cached) return cached
+  const [min, max] = shape.boundingBox.bounds
+  const bounds: Bounds = [min[0], min[1], min[2], max[0], max[1], max[2]]
+  localBounds.set(shape, bounds)
+  return bounds
+}
+
+function worldBounds(shape: any, matrix: Matrix4): Bounds {
+  const [x0, y0, z0, x1, y1, z1] = boundsOf(shape)
+  const out: Bounds = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity]
+  for (const x of [x0, x1]) {
+    for (const y of [y0, y1]) {
+      for (const z of [z0, z1]) {
+        const p = transformPoint(matrix, [x, y, z])
+        for (let i = 0; i < 3; i++) {
+          out[i] = Math.min(out[i], p[i])
+          out[i + 3] = Math.max(out[i + 3], p[i])
+        }
+      }
+    }
+  }
+  return out
+}
+
+function boundsOverlap(a: Bounds, b: Bounds): boolean {
+  return (
+    a[0] <= b[3] && b[0] <= a[3] && a[1] <= b[4] && b[1] <= a[4] && a[2] <= b[5] && b[2] <= a[5]
+  )
+}
+
+function worldOf(entry: LiveInstance): any {
+  if (!entry.world) entry.world = transformShape(entry.local, entry.instance.matrix)
+  return entry.world
+}
+
+function catalogueSolid(
+  component: Component,
+  errors: KernelError[],
+): { shape: any; key: string; part: CataloguePart } | null {
+  if (component.source.kind !== 'catalogue') return null
+  const { partId, overrides } = component.source
+  const part = getPart(partId)
+  if (!part) return null
+  const key = hash('part', partId, canonicalJson(overrides ?? null), canonicalJson(part))
+  let entry = partSolids.get(key)
+  if (!entry) {
+    try {
+      entry = { shape: buildPartLocal(part, overrides) ?? null }
+    } catch (e) {
+      entry = { shape: null, error: (e as Error)?.message ?? 'unknown failure' }
+    }
+    partSolids.set(key, entry)
+  }
+  if (entry.error) {
+    errors.push({
+      featureId: component.id,
+      bodyId: component.id,
+      severity: 'error',
+      message: `Could not build "${component.name}": ${entry.error}`,
+      hint: 'This is a problem with the catalogue part, not with your design.',
+    })
+  }
+  return entry.shape ? { shape: entry.shape, key, part } : null
+}
+
+interface Pipeline {
+  result: EvaluateResult
+  transfer: Transferable[]
+  live: Map<string, LiveInstance>
+  snapshot: Snapshot
+  evicted: any[]
+}
+
+function run(doc: OkcDocument, knownMeshKeys: string[], preview: boolean): Pipeline {
+  const t0 = performance.now()
+  setCustomParts(doc.customParts ?? [])
+
+  const features = activeFeatures(doc)
+  const position = new Map(features.map((feature, i) => [feature.id, i]))
+  const rootKey = hash('openkitcad', canonicalJson(doc.customParts ?? []))
+  const keys: string[] = []
+  let chain = rootKey
+  for (const feature of features) {
+    chain = hash(chain, canonicalJson(feature), canonicalJson(externalInputs(doc, feature)))
+    keys.push(chain)
+  }
+
+  let start = -1
+  for (let i = keys.length - 1; i >= 0; i--) {
+    if (snapshots.has(keys[i])) {
+      start = i
+      break
+    }
+  }
+  let snapshot = start >= 0 ? snapshots.get(keys[start])! : emptySnapshot(rootKey)
+  let misses = 0
+  for (let i = start + 1; i < features.length; i++) {
+    const index = i
+    snapshot = evaluateFeature(
+      { doc, available: (id) => (position.get(id) ?? Infinity) < index },
+      features[i],
+      keys[i],
+      snapshot,
+    )
+    snapshots.set(keys[i], snapshot)
+    misses++
+  }
+
+  const errors: KernelError[] = [...snapshot.errors]
+  const built = new Map<string, LiveInstance>()
+
+  for (const node of expandInstances(doc)) {
+    const component = findComponent(doc, node.componentId)
+    if (!component) continue
+    const occurrenceName = node.path.length
+      ? findOccurrence(doc, node.path[node.path.length - 1])?.name
+      : undefined
+    if (component.source.kind === 'catalogue') {
+      const solid = catalogueSolid(component, errors)
+      if (!solid) continue
+      const id = instanceId(node.path, component.id)
+      built.set(id, {
+        instance: {
+          id,
+          kind: 'catalogue',
+          path: node.path,
+          componentId: component.id,
+          bodyId: component.id,
+          meshKey: solid.key,
+          matrix: node.matrix,
+          visible: node.visible,
+          negative: node.negative,
+        },
+        label: occurrenceName ?? component.name,
+        name: component.name,
+        colour: CATEGORY_COLOUR[solid.part.category] ?? '#7f878f',
+        featureId: component.id,
+        ancestorsVisible: node.visible,
+        local: solid.shape,
+        world: null,
+      })
+      continue
+    }
+    for (const body of component.bodies) {
+      const state = snapshot.bodies.get(body.id)
+      if (!state) continue
+      const id = instanceId(node.path, body.id)
+      built.set(id, {
+        instance: {
+          id,
+          kind: 'body',
+          path: node.path,
+          componentId: component.id,
+          bodyId: body.id,
+          meshKey: hash(state.key, body.id),
+          matrix: node.matrix,
+          visible: node.visible && body.visible,
+          negative: node.negative || !!body.negative,
+        },
+        label: occurrenceName ? `${occurrenceName} / ${body.name}` : body.name,
+        name: body.name,
+        colour: body.negative ? NEGATIVE_COLOUR : body.colour,
+        featureId: state.featureId,
+        ancestorsVisible: node.visible,
+        local: state.shape,
+        world: null,
+      })
+    }
+  }
+
+  const cutters = [...built.values()].filter(
+    (entry) => entry.instance.negative && entry.ancestorsVisible,
+  )
+  if (cutters.length) {
+    const cutterBounds = cutters.map((entry) => worldBounds(entry.local, entry.instance.matrix))
+    for (const target of built.values()) {
+      if (target.instance.negative || target.instance.kind !== 'body') continue
+      const box = worldBounds(target.local, target.instance.matrix)
+      const hits = cutters.filter((_, i) => boundsOverlap(box, cutterBounds[i]))
+      if (!hits.length) continue
+      const cutKey = hash(
+        'cut',
+        target.instance.meshKey,
+        canonicalJson(target.instance.matrix),
+        ...hits.map((c) => `${c.instance.meshKey}@${canonicalJson(c.instance.matrix)}`),
+      )
+      let entry = cuts.get(cutKey)
+      if (!entry) {
+        let world = transformShape(target.local, target.instance.matrix)
+        const failures: string[] = []
+        for (const cutter of hits) {
+          try {
+            world = world.cut(worldOf(cutter))
+          } catch (e) {
+            failures.push((e as Error)?.message ?? 'unknown failure')
+          }
+        }
+        entry = {
+          world,
+          local: transformShape(world, invertRigidMatrix(target.instance.matrix)),
+          failures,
+        }
+        cuts.set(cutKey, entry)
+      }
+      for (const failure of entry.failures) {
+        errors.push({
+          featureId: target.featureId,
+          bodyId: target.instance.bodyId,
+          severity: 'error',
+          message: `Could not cut a hole out of "${target.name}": ${failure}`,
+          hint: 'The hole may not overlap this part, or may cut it clean in two.',
+        })
+      }
+      target.instance.meshKey = cutKey
+      target.local = entry.local
+      target.world = entry.world
+    }
+  }
+
+  const known = new Set(knownMeshKeys)
+  const sent = new Set<string>()
+  const broken = new Set<string>()
+  const meshes: BodyMesh[] = []
+  const transfer: Transferable[] = []
+  for (const entry of built.values()) {
+    const key = entry.instance.meshKey
+    if (known.has(key) || sent.has(key) || broken.has(key)) continue
+    let tessellation = tessellations.get(key)
+    if (!tessellation) {
+      try {
+        tessellation = tessellate(entry.local)
+        tessellations.set(key, tessellation)
+      } catch (e) {
+        broken.add(key)
+        errors.push({
+          featureId: entry.featureId,
+          bodyId: entry.instance.bodyId,
+          severity: 'error',
+          message: `Built, but could not be displayed: ${(e as Error)?.message}`,
+        })
+        continue
+      }
+    }
+    sent.add(key)
+    const mesh: MeshData = {
+      vertices: tessellation.mesh.vertices.slice(),
+      triangles: tessellation.mesh.triangles.slice(),
+      normals: tessellation.mesh.normals.slice(),
+      faceGroups: tessellation.mesh.faceGroups.map((group) => ({ ...group })),
+    }
+    const edges: EdgeData = {
+      lines: tessellation.edges.lines.slice(),
+      edgeGroups: tessellation.edges.edgeGroups.map((group) => ({ ...group })),
+    }
+    transfer.push(
+      mesh.vertices.buffer,
+      mesh.triangles.buffer,
+      mesh.normals.buffer,
+      edges.lines.buffer,
+    )
+    meshes.push({
+      key,
+      bodyId: entry.instance.bodyId,
+      componentId: entry.instance.componentId,
+      name: entry.name,
+      colour: entry.colour,
+      mesh,
+      edges,
+      volume: tessellation.volume,
+      bounds: [...tessellation.bounds],
+    })
+  }
+
+  const instances: Instance[] = []
+  for (const [id, entry] of built) {
+    if (broken.has(entry.instance.meshKey)) {
+      built.delete(id)
+      continue
+    }
+    instances.push(preview ? { ...entry.instance, preview: true } : { ...entry.instance })
+  }
+
+  const evicted = [
+    ...snapshots.evict().flatMap(snapshotShapes),
+    ...partSolids.evict().map((solid) => solid.shape),
+    ...cuts.evict().flatMap((cut) => [cut.world, cut.local]),
+  ]
+  tessellations.evict()
 
   return {
-    id,
-    kind,
-    name,
-    colour,
-    mesh,
-    edges,
-    volume,
-    bounds: [bmin[0], bmin[1], bmin[2], bmax[0], bmax[1], bmax[2]],
+    result: {
+      meshes,
+      instances,
+      errors,
+      elapsedMs: Math.round(performance.now() - t0),
+      cache: { hits: start + 1, misses, entries: snapshots.size },
+    },
+    transfer,
+    live: built,
+    snapshot,
+    evicted,
+  }
+}
+function requireWorld(id: string): any {
+  const entry = live.get(id)
+  if (!entry) throw new Error('That shape is not built.')
+  return worldOf(entry)
+}
+
+function overlapOf(a: any, b: any): { volume: number; at: [number, number, number] } | null {
+  try {
+    const common = a.clone().intersect(b.clone())
+    const volume = measureVolume(common)
+    if (!(volume > 0.5)) return null
+    const [min, max] = common.boundingBox.bounds
+    return {
+      volume,
+      at: [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2],
+    }
+  } catch {
+    return null
   }
 }
 
-/** Cool and dim, so a hole does not look like another part sitting there. */
-const NEGATIVE_COLOUR = '#4a5560'
+function projectedPaths(shape: any, plane: ProjectionPlane): string[] {
+  const paths = drawProjection(shape, plane).visible.toSVGPaths()
+  return Array.isArray(paths[0]) ? (paths as string[][]).flat() : (paths as string[])
+}
 
-const api = {
-  /** Resolves once the kernel can accept work. The UI shows a splash until then. */
+const api: KernelApi = {
   async ready(): Promise<boolean> {
     await ensureOC()
     return true
   },
 
-  /**
-   * Rebuild the whole document. Simple and predictable: for models of the size
-   * this app targets a full rebuild is a few tens of milliseconds, which is far
-   * cheaper than the bugs a partial-invalidation cache would introduce.
-   */
-  async evaluate(doc: OkcDocument): Promise<EvaluateResult> {
-    doc = structuredClone(doc)
-    resolveParameters(doc)
+  async evaluate(doc: OkcDocument, knownMeshKeys: string[]): Promise<EvaluateResult> {
     await ensureOC()
-    setCustomParts(doc.customParts ?? [])
-    const t0 = performance.now()
-    const shapes: ShapeResult[] = []
-    const errors: KernelError[] = []
-    liveShapes.clear()
-
-    // Placements first: bodies may reference their faces and hole patterns.
-    for (const placement of doc.placements) {
-      if (!placement.visible) continue
-      const part = getPart(placement.partId)
-      try {
-        const solid = buildPlacement(placement)
-        if (!solid) continue
-        liveShapes.set(placement.id, solid)
-        shapes.push(
-          tessellate(
-            solid,
-            placement.id,
-            'placement',
-            placement.name,
-            placement.negative
-              ? NEGATIVE_COLOUR
-              : part
-                ? CATEGORY_COLOUR[part.category]
-                : '#7f878f',
-          ),
-        )
-      } catch (e) {
-        errors.push({
-          featureId: placement.id,
-          bodyId: placement.id,
-          message: `Could not build "${placement.name}": ${(e as Error).message}`,
-          hint: 'This is a problem with the catalogue part, not with your design.',
-        })
-      }
-    }
-
-    const built = new Map<string, any>()
-    const preShell = new Map<string, { shape: any; frame: any }>()
-    // A body merged into another is no longer a thing of its own, unless the
-    // user asked to keep it.
-    const consumed = new Set<string>()
-    for (const body of doc.bodies) {
-      for (const f of body.features) {
-        if (f.kind === 'combine' && !f.keepOther && !f.suppressed) {
-          consumed.add(f.otherBodyId)
-        }
-      }
-    }
-    for (const body of doc.bodies) {
-      const { shape, errors: bodyErrors } = evaluateBody(body, {
-        doc,
-        shapes: built,
-        preShell,
-      })
-      for (const e of bodyErrors) errors.push({ ...e, bodyId: body.id })
-      if (!shape) continue
-      built.set(body.id, shape)
-      liveShapes.set(body.id, shape)
-    }
-
-    // Anything marked as a hole is collected first and taken out of everything
-    // else afterwards. Two passes rather than one, because a hole is not
-    // required to sit above the parts it cuts in the list - "this block is a
-    // hole" is a statement about the block, and having to reorder the tree to
-    // make it work would be a rule with no reason a beginner could see.
-    const cutters: any[] = []
-    for (const body of doc.bodies) {
-      if (body.negative && built.has(body.id)) cutters.push(built.get(body.id))
-    }
-    for (const placement of doc.placements) {
-      if (placement.negative && placement.visible && liveShapes.has(placement.id)) {
-        cutters.push(liveShapes.get(placement.id))
-      }
-    }
-
-    for (const body of doc.bodies) {
-      let shape = built.get(body.id)
-      if (!shape) continue
-      if (!body.negative && cutters.length > 0) {
-        for (const cutter of cutters) {
-          try {
-            shape = shape.cut(cutter.clone())
-          } catch (e) {
-            errors.push({
-              featureId: body.id,
-              bodyId: body.id,
-              message: `Could not cut a hole out of "${body.name}": ${(e as Error).message}`,
-              hint: 'The hole may not overlap this part, or may cut it clean in two.',
-            })
-          }
-        }
-        // Export works from what is on screen, so it has to be the cut version.
-        liveShapes.set(body.id, shape)
-      }
-      if (!body.visible || consumed.has(body.id)) continue
-      try {
-        shapes.push(
-          tessellate(
-            shape,
-            body.id,
-            'body',
-            body.name,
-            // Holes are drawn cool and dim so they read as absence of material
-            // rather than as another part sitting there.
-            body.negative ? NEGATIVE_COLOUR : body.colour,
-          ),
-        )
-      } catch (e) {
-        errors.push({
-          featureId: body.features.at(-1)?.id ?? body.id,
-          bodyId: body.id,
-          message: `Built, but could not be displayed: ${(e as Error).message}`,
-        })
-      }
-    }
-
-    return { shapes, errors, elapsedMs: Math.round(performance.now() - t0) }
+    const resolved = structuredClone(doc)
+    resolveParameters(resolved)
+    const out = run(resolved, knownMeshKeys, false)
+    const previous = live
+    live = out.live
+    liveSnapshot = out.snapshot
+    release([...out.evicted, ...liveShapes(previous)])
+    return Comlink.transfer(out.result, out.transfer)
   },
 
-  /** STEP export of the named shapes, as raw bytes for the main thread to save. */
-  async exportStep(ids: string[], name: string): Promise<ArrayBuffer> {
+  async preview(request: PreviewRequest, knownMeshKeys: string[]): Promise<EvaluateResult> {
     await ensureOC()
-    const configs = ids
-      .filter((id) => liveShapes.has(id))
-      .map((id) => ({ shape: liveShapes.get(id), name: `${name}-${id}` }))
+    const doc = structuredClone(request.doc)
+    const insertAt = Math.max(0, Math.min(request.insertAt, doc.timeline.length))
+    const prefix = doc.timeline
+      .slice(0, insertAt)
+      .filter((feature) => feature.id !== request.replaceFeatureId)
+    doc.timeline = [...prefix, ...structuredClone(request.features)]
+    doc.marker = null
+    doc.groups = []
+    resolveParameters(doc, true)
+    const out = run(doc, knownMeshKeys, true)
+    release([...out.evicted, ...liveShapes(out.live)])
+    return Comlink.transfer(out.result, out.transfer)
+  },
+
+  async exportStep(instanceIds: string[], name: string): Promise<ArrayBuffer> {
+    await ensureOC()
+    const configs = instanceIds
+      .filter((id) => live.has(id))
+      .map((id) => ({ shape: requireWorld(id), name: `${name}-${live.get(id)!.label}` }))
     if (configs.length === 0) throw new Error('Nothing to export.')
-    const blob = exportSTEP(configs as never)
-    return blob.arrayBuffer()
+    return exportSTEP(configs as never).arrayBuffer()
   },
 
-  /**
-   * Flatten a shape to 2D for the laser-cutting and drill-template exporters.
-   * Uses a true hidden-line projection so the result is the real outline, not
-   * a silhouette of the triangle mesh.
-   */
-  async project(id: string, plane: ProjectionPlane = 'XY'): Promise<ProjectionResult> {
+  async meshOf(instanceId: string): Promise<MeshData> {
     await ensureOC()
-    const shape = liveShapes.get(id)
-    if (!shape) throw new Error('That shape is not built.')
-    const { visible } = drawProjection(shape, plane)
-    const paths = visible.toSVGPaths()
-    const flat = flattenSvgPaths(
-      Array.isArray(paths[0]) ? (paths as string[][]).flat() : (paths as string[]),
-    )
-    return flat
-  },
-
-  /**
-   * Find parts that physically overlap something they should not.
-   *
-   * Uses real boolean intersections rather than comparing bounding boxes: a
-   * bounding-box check on an L-bracket reports clashes that are not there,
-   * which trains people to ignore the warning entirely.
-   */
-  async clearance(doc: OkcDocument): Promise<Clash[]> {
-    await ensureOC()
-    const clashes: Clash[] = []
-
-    // Keepout volumes declared by catalogue parts, in world space.
-    const keepouts: Array<{ label: string; solid: any }> = []
-    for (const placement of doc.placements) {
-      if (!placement.visible) continue
-      const part = getPart(placement.partId)
-      for (const k of part?.keepouts ?? []) {
-        try {
-          let box: any = drawRectangle(k.w, k.h)
-            .translate(k.x + k.w / 2, k.y + k.h / 2)
-            .sketchOnPlane('XY', k.z)
-            .extrude(k.height)
-          if (placement.flipped) box = box.rotate(180, [0, 0, 0], [1, 0, 0])
-          if (placement.rotation) box = box.rotate(placement.rotation, [0, 0, 0], [0, 0, 1])
-          keepouts.push({
-            label: `${placement.name} - ${k.label}`,
-            solid: box.translate(placement.position),
-          })
-        } catch {
-          // A malformed keepout must not take the whole check down.
-        }
-      }
-    }
-
-    const bodies = doc.bodies
-      .filter((b) => liveShapes.has(b.id))
-      .map((b) => ({ label: b.name, solid: liveShapes.get(b.id) }))
-
-    const overlap = (a: any, b: any) => {
-      try {
-        const common = a.clone().intersect(b.clone())
-        const volume = measureVolume(common)
-        if (!(volume > 0.5)) return null
-        const [min, max] = common.boundingBox.bounds
-        return {
-          volume,
-          at: [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2] as [
-            number,
-            number,
-            number,
-          ],
-        }
-      } catch {
-        return null
-      }
-    }
-
-    for (const k of keepouts) {
-      for (const body of bodies) {
-        const hit = overlap(k.solid, body.solid)
-        if (hit) {
-          clashes.push({
-            aLabel: k.label,
-            bLabel: body.label,
-            overlap: Math.cbrt(hit.volume),
-            at: hit.at,
-          })
-        }
-      }
-    }
-
-    // Placed parts colliding with each other.
-    const solids = doc.placements
-      .filter((p) => p.visible && liveShapes.has(p.id))
-      .map((p) => ({ label: p.name, solid: liveShapes.get(p.id) }))
-    for (let i = 0; i < solids.length; i++) {
-      for (let j = i + 1; j < solids.length; j++) {
-        const hit = overlap(solids[i].solid, solids[j].solid)
-        if (hit) {
-          clashes.push({
-            aLabel: solids[i].label,
-            bLabel: solids[j].label,
-            overlap: Math.cbrt(hit.volume),
-            at: hit.at,
-          })
-        }
-      }
-    }
-
-    return clashes
-  },
-
-  /**
-   * Checks worth running before sending a part to a printer.
-   *
-   * The wall-thickness figure is an estimate from the volume-to-area ratio, not
-   * a true medial-axis measurement, and is labelled as such in the UI. An
-   * honest estimate people can calibrate against beats a precise-looking number
-   * that is wrong on anything but a flat slab.
-   */
-  async printPrep(
-    ids: string[],
-    options: { nozzle: number; bed: [number, number, number] },
-  ): Promise<PrintWarning[]> {
-    await ensureOC()
-    const out: PrintWarning[] = []
-
-    for (const id of ids) {
-      const shape = liveShapes.get(id)
-      if (!shape) continue
-      const name = id
-      const [min, max] = shape.boundingBox.bounds
-      const size = [max[0] - min[0], max[1] - min[1], max[2] - min[2]]
-
-      const fitsFlat = size[0] <= options.bed[0] && size[1] <= options.bed[1]
-      const fitsTurned = size[1] <= options.bed[0] && size[0] <= options.bed[1]
-      if (!fitsFlat && !fitsTurned) {
-        out.push({
-          shapeId: id,
-          shapeName: name,
-          severity: 'error',
-          message: `Too big for the print bed: ${size[0].toFixed(0)} x ${size[1].toFixed(0)} mm against a ${options.bed[0]} x ${options.bed[1]} mm bed.`,
-          hint: 'Split it into pieces, or set a larger bed size.',
-        })
-      } else if (!fitsFlat) {
-        out.push({
-          shapeId: id,
-          shapeName: name,
-          severity: 'info',
-          message: 'Only fits if you rotate it 90 degrees on the bed.',
-        })
-      }
-      if (size[2] > options.bed[2]) {
-        out.push({
-          shapeId: id,
-          shapeName: name,
-          severity: 'error',
-          message: `Taller than the printer allows: ${size[2].toFixed(0)} mm against ${options.bed[2]} mm.`,
-        })
-      }
-
-      // Overhangs, measured off the triangles rather than guessed.
-      const raw = shape.mesh({ tolerance: 0.05, angularTolerance: 20 })
-      let downwardArea = 0
-      let totalArea = 0
-      let flatBottomArea = 0
-      const v = raw.vertices
-      for (let t = 0; t < raw.triangles.length; t += 3) {
-        const a = raw.triangles[t] * 3
-        const b = raw.triangles[t + 1] * 3
-        const c = raw.triangles[t + 2] * 3
-        const ux = v[b] - v[a],
-          uy = v[b + 1] - v[a + 1],
-          uz = v[b + 2] - v[a + 2]
-        const wx = v[c] - v[a],
-          wy = v[c + 1] - v[a + 1],
-          wz = v[c + 2] - v[a + 2]
-        const nx = uy * wz - uz * wy
-        const ny = uz * wx - ux * wz
-        const nz = ux * wy - uy * wx
-        const len = Math.hypot(nx, ny, nz)
-        if (len < 1e-9) continue
-        const area = len / 2
-        totalArea += area
-        const cosDown = -nz / len
-        // Steeper than 45 degrees from vertical needs support.
-        if (cosDown > 0.7071) {
-          const lowest = Math.min(v[a + 2], v[b + 2], v[c + 2])
-          if (lowest - min[2] < 0.05) flatBottomArea += area
-          else downwardArea += area
-        }
-      }
-
-      if (totalArea > 0 && downwardArea / totalArea > 0.06) {
-        out.push({
-          shapeId: id,
-          shapeName: name,
-          severity: 'warning',
-          message: `About ${Math.round((downwardArea / totalArea) * 100)}% of the surface overhangs and would need supports.`,
-          hint: 'Turning the part over, or adding a chamfer instead of an overhang, often removes the need entirely.',
-        })
-      }
-      if (flatBottomArea < 1) {
-        out.push({
-          shapeId: id,
-          shapeName: name,
-          severity: 'warning',
-          message: 'Nothing flat is touching the bed.',
-          hint: 'Parts print far better with a flat face down. Try a different orientation.',
-        })
-      }
-
-      const volume = measureVolume(shape)
-      if (totalArea > 0 && volume > 0) {
-        const estimated = (2 * volume) / totalArea
-        if (estimated < options.nozzle * 2) {
-          out.push({
-            shapeId: id,
-            shapeName: name,
-            severity: 'warning',
-            message: `Average wall works out around ${estimated.toFixed(1)} mm, which is thin for a ${options.nozzle} mm nozzle.`,
-            hint: 'This is an estimate from volume against surface area, so check the thinnest wall yourself. Aim for at least two nozzle widths.',
-          })
-        }
-      }
-    }
-
-    return out
-  },
-
-  /** Straight-line distance between two built shapes, in mm. */
-  async distanceBetween(a: string, b: string): Promise<number | null> {
-    await ensureOC()
-    const shapeA = liveShapes.get(a)
-    const shapeB = liveShapes.get(b)
-    if (!shapeA || !shapeB) return null
-    try {
-      return measureDistanceBetween(shapeA, shapeB)
-    } catch {
-      return null
-    }
-  },
-
-  /** Raw projected path strings. Used when triaging an export that looks wrong. */
-  async debugProjectPaths(id: string, plane: ProjectionPlane = 'XY'): Promise<string[]> {
-    await ensureOC()
-    const shape = liveShapes.get(id)
-    if (!shape) throw new Error('That shape is not built.')
-    const paths = drawProjection(shape, plane).visible.toSVGPaths()
-    return Array.isArray(paths[0]) ? (paths as string[][]).flat() : (paths as string[])
-  },
-
-  /** Triangles of one built shape, used by the STL and 3MF exporters. */
-  async meshOf(id: string): Promise<MeshData> {
-    await ensureOC()
-    const shape = liveShapes.get(id)
-    if (!shape) throw new Error('That shape is not built.')
-    const raw = shape.mesh({
+    const raw = requireWorld(instanceId).mesh({
       tolerance: MESH_TOLERANCE / 2,
       angularTolerance: MESH_ANGULAR_TOLERANCE / 2,
     })
@@ -527,19 +618,188 @@ const api = {
     }
   },
 
-  /** Smoke test, also handy when triaging a bug report from a strange browser. */
+  async project(instanceId: string, plane: ProjectionPlane = 'XY'): Promise<ProjectionResult> {
+    await ensureOC()
+    return flattenSvgPaths(projectedPaths(requireWorld(instanceId), plane))
+  },
+
+  async debugProjectPaths(instanceId: string, plane: ProjectionPlane = 'XY'): Promise<string[]> {
+    await ensureOC()
+    return projectedPaths(requireWorld(instanceId), plane)
+  },
+
+  async clearance(doc: OkcDocument): Promise<Clash[]> {
+    await ensureOC()
+    const clashes: Clash[] = []
+    const push = (aLabel: string, bLabel: string, hit: ReturnType<typeof overlapOf>) => {
+      if (hit) clashes.push({ aLabel, bLabel, overlap: Math.cbrt(hit.volume), at: hit.at })
+    }
+
+    const keepouts: Array<{ label: string; solid: any }> = []
+    for (const node of expandInstances(doc)) {
+      if (!node.visible) continue
+      const component = findComponent(doc, node.componentId)
+      if (component?.source.kind !== 'catalogue') continue
+      const part = getPart(component.source.partId)
+      const owner = node.path.length
+        ? (findOccurrence(doc, node.path[node.path.length - 1])?.name ?? component.name)
+        : component.name
+      for (const k of part?.keepouts ?? []) {
+        try {
+          const box = drawRectangle(k.w, k.h)
+            .translate(k.x + k.w / 2, k.y + k.h / 2)
+            .sketchOnPlane('XY', k.z)
+            .extrude(k.height)
+          keepouts.push({ label: `${owner} - ${k.label}`, solid: transformShape(box, node.matrix) })
+        } catch {
+          continue
+        }
+      }
+    }
+
+    const entries = [...live.values()]
+    const bodies = entries.filter((entry) => entry.instance.kind === 'body')
+    for (const keepout of keepouts) {
+      for (const body of bodies)
+        push(keepout.label, body.label, overlapOf(keepout.solid, worldOf(body)))
+    }
+
+    const pairs = (list: LiveInstance[], skip: (a: LiveInstance, b: LiveInstance) => boolean) => {
+      const boxes = list.map((entry) => worldBounds(entry.local, entry.instance.matrix))
+      for (let i = 0; i < list.length; i++) {
+        for (let j = i + 1; j < list.length; j++) {
+          if (skip(list[i], list[j]) || !boundsOverlap(boxes[i], boxes[j])) continue
+          push(list[i].label, list[j].label, overlapOf(worldOf(list[i]), worldOf(list[j])))
+        }
+      }
+    }
+    pairs(
+      entries.filter((entry) => entry.instance.kind === 'catalogue' && entry.instance.visible),
+      () => false,
+    )
+    pairs(
+      bodies.filter((entry) => entry.instance.visible && !entry.instance.negative),
+      (a, b) => a.instance.path.join('/') === b.instance.path.join('/'),
+    )
+    return clashes
+  },
+
+  async printPrep(instanceIds: string[], options: PrintOptions): Promise<PrintWarning[]> {
+    await ensureOC()
+    const out: PrintWarning[] = []
+    for (const id of instanceIds) {
+      const entry = live.get(id)
+      if (!entry) continue
+      const shape = worldOf(entry)
+      const name = entry.label
+      const warn = (severity: PrintWarning['severity'], message: string, hint?: string) =>
+        out.push(
+          hint
+            ? { instanceId: id, name, severity, message, hint }
+            : { instanceId: id, name, severity, message },
+        )
+      const [min, max] = shape.boundingBox.bounds
+      const size = [max[0] - min[0], max[1] - min[1], max[2] - min[2]]
+
+      const fitsFlat = size[0] <= options.bed[0] && size[1] <= options.bed[1]
+      const fitsTurned = size[1] <= options.bed[0] && size[0] <= options.bed[1]
+      if (!fitsFlat && !fitsTurned) {
+        warn(
+          'error',
+          `Too big for the print bed: ${size[0].toFixed(0)} x ${size[1].toFixed(0)} mm against a ${options.bed[0]} x ${options.bed[1]} mm bed.`,
+          'Split it into pieces, or set a larger bed size.',
+        )
+      } else if (!fitsFlat) {
+        warn('info', 'Only fits if you rotate it 90 degrees on the bed.')
+      }
+      if (size[2] > options.bed[2]) {
+        warn(
+          'error',
+          `Taller than the printer allows: ${size[2].toFixed(0)} mm against ${options.bed[2]} mm.`,
+        )
+      }
+
+      const raw = shape.mesh({ tolerance: 0.05, angularTolerance: 20 })
+      let downwardArea = 0
+      let totalArea = 0
+      let flatBottomArea = 0
+      const v = raw.vertices
+      for (let t = 0; t < raw.triangles.length; t += 3) {
+        const a = raw.triangles[t] * 3
+        const b = raw.triangles[t + 1] * 3
+        const c = raw.triangles[t + 2] * 3
+        const ux = v[b] - v[a]
+        const uy = v[b + 1] - v[a + 1]
+        const uz = v[b + 2] - v[a + 2]
+        const wx = v[c] - v[a]
+        const wy = v[c + 1] - v[a + 1]
+        const wz = v[c + 2] - v[a + 2]
+        const nx = uy * wz - uz * wy
+        const ny = uz * wx - ux * wz
+        const nz = ux * wy - uy * wx
+        const len = Math.hypot(nx, ny, nz)
+        if (len < 1e-9) continue
+        const area = len / 2
+        totalArea += area
+        if (-nz / len > 0.7071) {
+          const lowest = Math.min(v[a + 2], v[b + 2], v[c + 2])
+          if (lowest - min[2] < 0.05) flatBottomArea += area
+          else downwardArea += area
+        }
+      }
+
+      if (totalArea > 0 && downwardArea / totalArea > 0.06) {
+        warn(
+          'warning',
+          `About ${Math.round((downwardArea / totalArea) * 100)}% of the surface overhangs and would need supports.`,
+          'Turning the part over, or adding a chamfer instead of an overhang, often removes the need entirely.',
+        )
+      }
+      if (flatBottomArea < 1) {
+        warn(
+          'warning',
+          'Nothing flat is touching the bed.',
+          'Parts print far better with a flat face down. Try a different orientation.',
+        )
+      }
+
+      const volume = measureVolume(shape)
+      if (totalArea > 0 && volume > 0) {
+        const estimated = (2 * volume) / totalArea
+        if (estimated < options.nozzle * 2) {
+          warn(
+            'warning',
+            `Average wall works out around ${estimated.toFixed(1)} mm, which is thin for a ${options.nozzle} mm nozzle.`,
+            'This is an estimate from volume against surface area, so check the thinnest wall yourself. Aim for at least two nozzle widths.',
+          )
+        }
+      }
+    }
+    return out
+  },
+
+  async distanceBetween(a: string, b: string): Promise<number | null> {
+    await ensureOC()
+    const first = live.get(a)
+    const second = live.get(b)
+    if (!first || !second) return null
+    try {
+      return measureDistanceBetween(worldOf(first), worldOf(second))
+    } catch {
+      return null
+    }
+  },
+
   async selfTest(): Promise<{ triangles: number; volume: number; faces: number }> {
     await ensureOC()
     const solid = drawRectangle(40, 30).sketchOnPlane('XY').extrude(10)
-    const r = tessellate(solid, 'selftest', 'body', 'test', '#fff')
+    const result = tessellate(solid)
     return {
-      triangles: r.mesh.triangles.length / 3,
-      volume: r.volume,
-      faces: r.mesh.faceGroups.length,
+      triangles: result.mesh.triangles.length / 3,
+      volume: result.volume,
+      faces: result.mesh.faceGroups.length,
     }
   },
 }
-
-export type KernelApi = typeof api
 
 Comlink.expose(api)

@@ -1,15 +1,6 @@
-/**
- * Main-thread client for the kernel worker.
- *
- * Rebuilds are coalesced: while the user drags a dimension slider we may be
- * asked to rebuild sixty times a second, but OpenCascade can only manage a
- * handful. Requests that arrive during a build replace each other, so the
- * kernel always works on the newest document and never queues up stale ones.
- */
 import * as Comlink from 'comlink'
-import type { KernelApi } from './worker'
 import type { OkcDocument } from '../doc/types'
-import type { EvaluateResult } from './types'
+import type { EvaluateResult, KernelApi, PreviewRequest } from './types'
 
 let worker: Worker | null = null
 let proxy: Comlink.Remote<KernelApi> | null = null
@@ -22,44 +13,89 @@ export function kernel(): Comlink.Remote<KernelApi> {
   return proxy
 }
 
-let building = false
-let pending: { doc: OkcDocument; resolve: (r: EvaluateResult) => void } | null = null
+export type KnownMeshKeys = string[] | (() => string[])
 
-/**
- * Ask for a rebuild. If one is already running the request is held and only the
- * most recent is honoured once the kernel frees up.
- */
-export function requestBuild(doc: OkcDocument): Promise<EvaluateResult> {
+interface BuildJob {
+  kind: 'build'
+  doc: OkcDocument
+  known: KnownMeshKeys
+  resolve: (result: EvaluateResult) => void
+}
+
+interface PreviewJob {
+  kind: 'preview'
+  request: PreviewRequest
+  known: KnownMeshKeys
+  resolve: (result: EvaluateResult) => void
+}
+
+let building = false
+let pendingBuild: BuildJob | null = null
+let pendingPreview: PreviewJob | null = null
+
+export function requestBuild(
+  doc: OkcDocument,
+  knownMeshKeys: KnownMeshKeys,
+): Promise<EvaluateResult> {
   return new Promise((resolve) => {
-    pending = { doc, resolve }
+    pendingBuild = { kind: 'build', doc, known: knownMeshKeys, resolve }
     pump()
   })
 }
 
+export function requestPreview(
+  request: PreviewRequest,
+  knownMeshKeys: KnownMeshKeys,
+): Promise<EvaluateResult> {
+  return new Promise((resolve) => {
+    pendingPreview = { kind: 'preview', request, known: knownMeshKeys, resolve }
+    pump()
+  })
+}
+
+export function cancelPreview(): void {
+  pendingPreview = null
+}
+
+function keysOf(known: KnownMeshKeys): string[] {
+  return typeof known === 'function' ? known() : known
+}
+
+export function failedResult(error: unknown): EvaluateResult {
+  return {
+    meshes: [],
+    instances: [],
+    errors: [
+      {
+        featureId: '',
+        severity: 'error',
+        message: (error as Error)?.message ?? 'The geometry kernel stopped responding.',
+        hint: 'Reloading the page usually clears this. Your work is saved automatically.',
+      },
+    ],
+    elapsedMs: 0,
+    cache: { hits: 0, misses: 0, entries: 0 },
+  }
+}
+
 async function pump() {
-  if (building || !pending) return
-  const job = pending
-  pending = null
+  if (building) return
+  const job: BuildJob | PreviewJob | null = pendingBuild ?? pendingPreview
+  if (!job) return
+  if (job.kind === 'build') pendingBuild = null
+  else pendingPreview = null
   building = true
   try {
-    const result = await kernel().evaluate(job.doc)
+    const result =
+      job.kind === 'build'
+        ? await kernel().evaluate(job.doc, keysOf(job.known))
+        : await kernel().preview(job.request, keysOf(job.known))
     job.resolve(result)
   } catch (e) {
-    job.resolve({
-      shapes: [],
-      errors: [
-        {
-          featureId: '',
-          bodyId: '',
-          message: (e as Error)?.message ?? 'The geometry kernel stopped responding.',
-          hint: 'Reloading the page usually clears this. Your work is saved automatically.',
-        },
-      ],
-      elapsedMs: 0,
-    })
+    job.resolve(failedResult(e))
   } finally {
     building = false
-    if (pending) pump()
+    if (pendingBuild || pendingPreview) pump()
   }
 }
 
