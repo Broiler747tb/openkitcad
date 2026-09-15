@@ -1,0 +1,29 @@
+{
+  "id": "control-encoder-pec11r",
+  "name": "Bourns PEC11R rotary encoder", 
+  "category": "control",
+  "manufacturer": "Bourns",
+  "summary": "Robust 12 mm incremental encoder with detents and push switch; its M7 threaded bushing needs a 7.2 mm panel hole.",
+  "confidence": "datasheet",
+  "source": "Bourns PEC11R datasheet: 12.5 mm package width, 13.4 mm body height, M7 × 0.75 threaded bushing and 6.0 mm shaft. The 7.2 mm cutout includes 0.2 mm assembly clearance; choose the exact shaft length and switch option when ordering.",
+  "links": [
+    { "label": "Bourns PEC11R datasheet", "url": "https://bourns.com/docs/product-datasheets/pec11r.pdf" }
+  ],
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 12.5,
+    "bodyHeight": 13.4,
+    "bodyDepth": 14,
+    "protrusion": 20,
+    "cutout": { "shape": "circle", "d": 7.2 },
+    "panelThickness": 3
+  },
+  "connectors": [
+    { "id": "opening", "label": "PEC11R bushing hole", "side": "+y", "shape": "circle", "x": 6.25, "y": 14, "z": 6.7, "width": 7.2, "height": 7.2, "diameter": 7.2, "protrusion": 20 }
+  ],
+  "keepouts": [
+    { "id": "k-knob", "label": "Space for knob", "x": -5, "y": 14, "w": 22.5, "h": 23.4, "z": -5, "height": 23.4 },
+    { "id": "k-body", "label": "Encoder body behind panel", "x": 0, "y": 0, "w": 12.5, "h": 14, "z": 0, "height": 13.4 }
+  ],
+  "tags": ["encoder", "pec11r", "bourns", "rotary", "incremental", "quadrature", "push", "panel"]
+}

@@ -109,6 +109,7 @@ export function groupedCatalogue(
     'extrusion',
     'motor',
     'motion',
+    'control',
   ]
   return order
     .filter((c) => groups.has(c))

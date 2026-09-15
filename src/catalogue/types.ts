@@ -38,6 +38,7 @@ export type PartCategory =
   | 'extrusion'
   | 'motor'
   | 'motion'
+  | 'control'
 
 /** A hole the app can project into whatever the part is mounted on. */
 export interface MountingHole {
@@ -279,6 +280,7 @@ export const CATEGORY_COLOUR: Record<PartCategory, string> = {
   extrusion: '#8d949c',
   motor: '#3a3f45',
   motion: '#7f878f',
+  control: '#8a5a24',
 }
 
 export const CATEGORY_LABEL: Record<PartCategory, string> = {
@@ -292,6 +294,7 @@ export const CATEGORY_LABEL: Record<PartCategory, string> = {
   extrusion: 'Extrusion & framing',
   motor: 'Motors & servos',
   motion: 'Bearings & linear motion',
+  control: 'Knobs, potentiometers & encoders',
 }
 
 /** One line under each category heading, for people who do not know the jargon. */
@@ -306,6 +309,7 @@ export const CATEGORY_BLURB: Record<PartCategory, string> = {
   extrusion: 'Aluminium profile for building frames.',
   motor: 'Steppers, servos and gearmotors.',
   motion: 'Bearings, rods and everything that slides or spins.',
+  control: 'Panel controls: potentiometers, rotary encoders and their cutouts.',
 }
 
 /** Bounding footprint of a part in its own XY plane, in mm. */

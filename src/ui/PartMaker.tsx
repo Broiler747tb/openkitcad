@@ -26,6 +26,7 @@ const CATEGORIES: PartCategory[] = [
   'extrusion',
   'motor',
   'motion',
+  'control',
 ]
 
 /**

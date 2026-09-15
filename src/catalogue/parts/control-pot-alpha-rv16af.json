@@ -1,0 +1,29 @@
+{
+  "id": "control-pot-alpha-rv16af",
+  "name": "Alpha RV16AF 16 mm potentiometer", 
+  "category": "control",
+  "manufacturer": "Taiwan Alpha",
+  "summary": "The familiar full-size 16 mm single-gang panel potentiometer used for volume, synth and guitar controls; use a 7.2 mm bushing hole.",
+  "confidence": "approximate",
+  "source": "Taiwan Alpha RV16AF series documentation identifies this as the 16 mm metal-shaft family with metal-bushing options and several terminal orientations. The envelope and 7.2 mm clearance hole here cover the common RV16AF panel-mount version, but the exact bushing and anti-rotation tab differ by suffix. Verify the selected manufacturer's drawing before cutting.",
+  "links": [
+    { "label": "Taiwan Alpha RV16AF series", "url": "https://www.taiwanalpha.com/downloads?id=95&target=products" }
+  ],
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 17,
+    "bodyHeight": 16,
+    "bodyDepth": 25,
+    "protrusion": 20,
+    "cutout": { "shape": "circle", "d": 7.2 },
+    "panelThickness": 3
+  },
+  "connectors": [
+    { "id": "opening", "label": "RV16AF bushing hole", "side": "+y", "shape": "circle", "x": 8.5, "y": 25, "z": 8, "width": 7.2, "height": 7.2, "diameter": 7.2, "protrusion": 20 }
+  ],
+  "keepouts": [
+    { "id": "k-knob", "label": "Space for knob", "x": -7, "y": 25, "w": 31, "h": 30, "z": -7, "height": 30 },
+    { "id": "k-body", "label": "Potentiometer body and terminals behind panel", "x": 0, "y": 0, "w": 17, "h": 25, "z": 0, "height": 16 }
+  ],
+  "tags": ["potentiometer", "pot", "rv16af", "alpha", "rotary", "volume", "audio", "guitar", "synth", "panel", "16mm"]
+}
