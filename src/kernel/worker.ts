@@ -127,7 +127,7 @@ const api = {
    * cheaper than the bugs a partial-invalidation cache would introduce.
    */
   async evaluate(doc: OkcDocument): Promise<EvaluateResult> {
-    doc=structuredClone(doc)
+    doc = structuredClone(doc)
     resolveParameters(doc)
     await ensureOC()
     setCustomParts(doc.customParts ?? [])
@@ -272,7 +272,9 @@ const api = {
     if (!shape) throw new Error('That shape is not built.')
     const { visible } = drawProjection(shape, plane)
     const paths = visible.toSVGPaths()
-    const flat = flattenSvgPaths(Array.isArray(paths[0]) ? (paths as string[][]).flat() : (paths as string[]))
+    const flat = flattenSvgPaths(
+      Array.isArray(paths[0]) ? (paths as string[][]).flat() : (paths as string[]),
+    )
     return flat
   },
 
@@ -322,11 +324,11 @@ const api = {
         const [min, max] = common.boundingBox.bounds
         return {
           volume,
-          at: [
-            (min[0] + max[0]) / 2,
-            (min[1] + max[1]) / 2,
-            (min[2] + max[2]) / 2,
-          ] as [number, number, number],
+          at: [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2] as [
+            number,
+            number,
+            number,
+          ],
         }
       } catch {
         return null
@@ -427,8 +429,12 @@ const api = {
         const a = raw.triangles[t] * 3
         const b = raw.triangles[t + 1] * 3
         const c = raw.triangles[t + 2] * 3
-        const ux = v[b] - v[a], uy = v[b + 1] - v[a + 1], uz = v[b + 2] - v[a + 2]
-        const wx = v[c] - v[a], wy = v[c + 1] - v[a + 1], wz = v[c + 2] - v[a + 2]
+        const ux = v[b] - v[a],
+          uy = v[b + 1] - v[a + 1],
+          uz = v[b + 2] - v[a + 2]
+        const wx = v[c] - v[a],
+          wy = v[c + 1] - v[a + 1],
+          wz = v[c + 2] - v[a + 2]
         const nx = uy * wz - uz * wy
         const ny = uz * wx - ux * wz
         const nz = ux * wy - uy * wx

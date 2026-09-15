@@ -10,7 +10,7 @@ export const emptyDraft = (): Draft => ({ anchors: [], anchorIds: [] })
 
 /** Use the solved endpoint, not the old cursor position, for the next segment. */
 export function continueLine(sketch: Sketch2D, endpointId: string): Draft {
-  const p = sketch.points.find(p => p.id === endpointId)
+  const p = sketch.points.find((p) => p.id === endpointId)
   return p ? { anchors: [[p.x, p.y]], anchorIds: [p.id] } : emptyDraft()
 }
 

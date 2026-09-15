@@ -119,9 +119,13 @@ export class ViewportEngine {
     this.controls.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN }
 
     // Capture before OrbitControls: its PAN handler swaps to orbit on Shift.
-    this.renderer.domElement.addEventListener('pointerdown', (event) => {
-      if (event.button === 1) this.controls.enableRotate = event.shiftKey
-    }, { capture: true })
+    this.renderer.domElement.addEventListener(
+      'pointerdown',
+      (event) => {
+        if (event.button === 1) this.controls.enableRotate = event.shiftKey
+      },
+      { capture: true },
+    )
 
     this.scene.add(
       this.solidGroup,
@@ -175,31 +179,68 @@ export class ViewportEngine {
     this.gridGroup.add(axes)
   }
 
-  setGridPreferences(p:Preferences, frame:Frame|null) {
-    for(const child of [...this.gridGroup.children]) {
+  setGridPreferences(p: Preferences, frame: Frame | null) {
+    for (const child of [...this.gridGroup.children]) {
       this.gridGroup.remove(child)
-      child.traverse(obj=>{const mesh=obj as THREE.LineSegments;if(mesh.geometry)mesh.geometry.dispose();if(mesh.material){for(const m of Array.isArray(mesh.material)?mesh.material:[mesh.material])m.dispose()}})
+      child.traverse((obj) => {
+        const mesh = obj as THREE.LineSegments
+        if (mesh.geometry) mesh.geometry.dispose()
+        if (mesh.material) {
+          for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material])
+            m.dispose()
+        }
+      })
     }
-    this.gridGroup.position.set(0,0,0);this.gridGroup.quaternion.identity()
-    if(frame) {
+    this.gridGroup.position.set(0, 0, 0)
+    this.gridGroup.quaternion.identity()
+    if (frame) {
       this.gridGroup.position.set(...frame.origin)
-      this.gridGroup.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(...frame.xDir),new THREE.Vector3(...frame.yDir),new THREE.Vector3(...frame.normal)))
+      this.gridGroup.quaternion.setFromRotationMatrix(
+        new THREE.Matrix4().makeBasis(
+          new THREE.Vector3(...frame.xDir),
+          new THREE.Vector3(...frame.yDir),
+          new THREE.Vector3(...frame.normal),
+        ),
+      )
     }
-    const add=(positions:number[],colour:number,opacity:number)=>{
-      const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3))
-      this.gridGroup.add(new THREE.LineSegments(geometry,new THREE.LineBasicMaterial({color:colour,transparent:true,opacity,depthWrite:false})))
+    const add = (positions: number[], colour: number, opacity: number) => {
+      const geometry = new THREE.BufferGeometry()
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+      this.gridGroup.add(
+        new THREE.LineSegments(
+          geometry,
+          new THREE.LineBasicMaterial({
+            color: colour,
+            transparent: true,
+            opacity,
+            depthWrite: false,
+          }),
+        ),
+      )
     }
-    if(p.gridVisible) {
+    if (p.gridVisible) {
       // Decimate visual lines at extreme settings, never change the snapping interval.
-      const stride=Math.max(1,Math.ceil(p.gridExtent/p.gridStep/400))
-      const step=p.gridStep*stride, n=Math.floor(p.gridExtent/step/2), half=n*step
-      const minor:number[]=[],major:number[]=[]
-      for(let i=-n;i<=n;i++){const at=i*step;const lines=(i*stride)%p.majorEvery===0?major:minor;lines.push(at,-half,0,at,half,0,-half,at,0,half,at,0)}
-      add(minor,0xa9b4bf,p.gridOpacity);add(major,0x738597,Math.min(1,p.gridOpacity+0.2))
+      const stride = Math.max(1, Math.ceil(p.gridExtent / p.gridStep / 400))
+      const step = p.gridStep * stride,
+        n = Math.floor(p.gridExtent / step / 2),
+        half = n * step
+      const minor: number[] = [],
+        major: number[] = []
+      for (let i = -n; i <= n; i++) {
+        const at = i * step
+        const lines = (i * stride) % p.majorEvery === 0 ? major : minor
+        lines.push(at, -half, 0, at, half, 0, -half, at, 0, half, at, 0)
+      }
+      add(minor, 0xa9b4bf, p.gridOpacity)
+      add(major, 0x738597, Math.min(1, p.gridOpacity + 0.2))
     }
-    if(p.axesVisible){const size=p.gridExtent/2;add([-size,0,0,size,0,0],0xc34d44,0.8);add([0,-size,0,0,size,0],0x598d46,0.8)}
-    this.transform?.setTranslationSnap(p.moveSnap||null)
-    this.transform?.setRotationSnap(p.angleSnap?THREE.MathUtils.degToRad(p.angleSnap):null)
+    if (p.axesVisible) {
+      const size = p.gridExtent / 2
+      add([-size, 0, 0, size, 0, 0], 0xc34d44, 0.8)
+      add([0, -size, 0, 0, size, 0], 0x598d46, 0.8)
+    }
+    this.transform?.setTranslationSnap(p.moveSnap || null)
+    this.transform?.setRotationSnap(p.angleSnap ? THREE.MathUtils.degToRad(p.angleSnap) : null)
   }
 
   // -------------------------------------------------------------------------
@@ -243,10 +284,7 @@ export class ViewportEngine {
       ;(mesh.material as THREE.MeshStandardMaterial).color.set(shape.colour)
 
       const outline = this.outlines.get(shape.id)!
-      outline.geometry.setAttribute(
-        'position',
-        new THREE.BufferAttribute(shape.edges.lines, 3),
-      )
+      outline.geometry.setAttribute('position', new THREE.BufferAttribute(shape.edges.lines, 3))
       outline.geometry.computeBoundingSphere()
 
       this.groups.set(shape.id, {
@@ -502,9 +540,7 @@ export class ViewportEngine {
    * is replaced mid-drag; a proxy survives that.
    */
   private gizmoProxy = new THREE.Object3D()
-  onGizmoChange:
-    | ((position: Vec3, rotationDeg: number, rotationXyz: Vec3) => void)
-    | null = null
+  onGizmoChange: ((position: Vec3, rotationDeg: number, rotationXyz: Vec3) => void) | null = null
   onGizmoRelease: (() => void) | null = null
 
   private ensureTransform(): TransformControls {
@@ -512,9 +548,11 @@ export class ViewportEngine {
     const tc = new TransformControls(this.camera, this.renderer.domElement)
     tc.setSize(0.9)
     // Snap to whole millimetres and 15 degrees. Hold shift for fine control.
-    const preferences=usePreferences.getState().values
-    tc.setTranslationSnap(preferences.moveSnap||null)
-    tc.setRotationSnap(preferences.angleSnap?THREE.MathUtils.degToRad(preferences.angleSnap):null)
+    const preferences = usePreferences.getState().values
+    tc.setTranslationSnap(preferences.moveSnap || null)
+    tc.setRotationSnap(
+      preferences.angleSnap ? THREE.MathUtils.degToRad(preferences.angleSnap) : null,
+    )
 
     tc.addEventListener('dragging-changed', (event) => {
       const dragging = (event as unknown as { value: boolean }).value
@@ -576,7 +614,6 @@ export class ViewportEngine {
     tc.showZ = true
   }
 
-
   // ---------------------------------------------------------------------------
   // Fastener ghosts
   // ---------------------------------------------------------------------------
@@ -621,11 +658,7 @@ export class ViewportEngine {
 
       const place = (mesh: THREE.Mesh, along: number) => {
         mesh.quaternion.copy(turn)
-        mesh.position.set(
-          g.at[0] + up.x * along,
-          g.at[1] + up.y * along,
-          g.at[2] + up.z * along,
-        )
+        mesh.position.set(g.at[0] + up.x * along, g.at[1] + up.y * along, g.at[2] + up.z * along)
         mesh.renderOrder = 3
         this.ghostGroup.add(mesh)
       }
@@ -689,7 +722,10 @@ export class ViewportEngine {
     const hit = hits[0]
     if (!hit) return null
     const normal = hit.face
-      ? hit.face.normal.clone().applyMatrix3(new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld)).normalize()
+      ? hit.face.normal
+          .clone()
+          .applyMatrix3(new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld))
+          .normalize()
       : new THREE.Vector3(0, 0, 1)
     return {
       id: hit.object.userData.id,
@@ -711,10 +747,7 @@ export class ViewportEngine {
     const point = new THREE.Vector3()
     if (!this.raycaster.ray.intersectPlane(plane, point)) return null
     const d = point.clone().sub(new THREE.Vector3(...frame.origin))
-    return [
-      d.dot(new THREE.Vector3(...frame.xDir)),
-      d.dot(new THREE.Vector3(...frame.yDir)),
-    ]
+    return [d.dot(new THREE.Vector3(...frame.xDir)), d.dot(new THREE.Vector3(...frame.yDir))]
   }
 
   /**
@@ -747,11 +780,7 @@ export class ViewportEngine {
     for (const [id, groups] of this.groups) {
       const seen = new Set<string>()
       for (let i = 0; i < groups.lines.length; i += 3) {
-        const v = new THREE.Vector3(
-          groups.lines[i],
-          groups.lines[i + 1],
-          groups.lines[i + 2],
-        )
+        const v = new THREE.Vector3(groups.lines[i], groups.lines[i + 1], groups.lines[i + 2])
         const key = `${v.x.toFixed(4)},${v.y.toFixed(4)},${v.z.toFixed(4)}`
         if (seen.has(key)) continue
         seen.add(key)
@@ -810,9 +839,7 @@ export class ViewportEngine {
 
     // --- faces --------------------------------------------------------------
     const triangle = (hit.faceIndex ?? 0) * 3
-    const group = data.faceGroups.find(
-      (g) => triangle >= g.start && triangle < g.start + g.count,
-    )
+    const group = data.faceGroups.find((g) => triangle >= g.start && triangle < g.start + g.count)
     const normal = hit.face
       ? hit.face.normal
           .clone()
@@ -891,9 +918,8 @@ export class ViewportEngine {
 
     const alreadySelected = (p: SubPick) =>
       picks.some((s) => s.bodyId === p.bodyId && s.id === p.id)
-    const all = this.hoverPick && !alreadySelected(this.hoverPick)
-      ? [...picks, this.hoverPick]
-      : picks
+    const all =
+      this.hoverPick && !alreadySelected(this.hoverPick) ? [...picks, this.hoverPick] : picks
 
     for (const pick of all) {
       const isHover = pick === this.hoverPick && !alreadySelected(pick)
@@ -921,27 +947,27 @@ export class ViewportEngine {
     }
 
     const drawFaces = (coords: number[], opacity: number) => {
-    if (coords.length) {
-      const geometry = new THREE.BufferGeometry()
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(coords, 3))
-      geometry.computeVertexNormals()
-      const mesh = new THREE.Mesh(
-        geometry,
-        new THREE.MeshBasicMaterial({
-          color: ACCENT,
-          transparent: true,
-          opacity,
-          side: THREE.DoubleSide,
-          depthWrite: false,
-          // Lift it off the surface it covers, or the two z-fight.
-          polygonOffset: true,
-          polygonOffsetFactor: -2,
-          polygonOffsetUnits: -2,
-        }),
-      )
-      mesh.renderOrder = 5
-      this.highlightGroup.add(mesh)
-    }
+      if (coords.length) {
+        const geometry = new THREE.BufferGeometry()
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(coords, 3))
+        geometry.computeVertexNormals()
+        const mesh = new THREE.Mesh(
+          geometry,
+          new THREE.MeshBasicMaterial({
+            color: ACCENT,
+            transparent: true,
+            opacity,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+            // Lift it off the surface it covers, or the two z-fight.
+            polygonOffset: true,
+            polygonOffsetFactor: -2,
+            polygonOffsetUnits: -2,
+          }),
+        )
+        mesh.renderOrder = 5
+        this.highlightGroup.add(mesh)
+      }
     }
 
     const drawEdges = (coords: number[], colour: number) => {
@@ -1009,10 +1035,7 @@ export class ViewportEngine {
 
     const centre = box.getCenter(new THREE.Vector3())
     const radius = Math.max(box.getSize(new THREE.Vector3()).length() / 2, 10)
-    const direction = this.camera.position
-      .clone()
-      .sub(this.controls.target)
-      .normalize()
+    const direction = this.camera.position.clone().sub(this.controls.target).normalize()
     this.controls.target.copy(centre)
     this.camera.position.copy(centre).addScaledVector(direction, radius * 3.1)
     this.camera.near = Math.max(radius / 500, 0.05)
@@ -1028,9 +1051,7 @@ export class ViewportEngine {
     const distance = this.camera.position.distanceTo(this.controls.target)
     const centre = new THREE.Vector3(...frame.origin)
     this.controls.target.copy(centre)
-    this.camera.position
-      .copy(centre)
-      .addScaledVector(new THREE.Vector3(...frame.normal), distance)
+    this.camera.position.copy(centre).addScaledVector(new THREE.Vector3(...frame.normal), distance)
     // Sketch x points up the screen rather than across it, which turns the
     // drawing a quarter turn anticlockwise to match the 3D view's home angle.
     this.camera.up.set(...frame.xDir)
@@ -1041,15 +1062,29 @@ export class ViewportEngine {
     const target = this.controls.target.clone()
     const distance = this.camera.position.distanceTo(target) || 400
     const dirs: Record<string, [Vec3, Vec3]> = {
-      top: [[0, 0, 1], [0, 1, 0]],
-      front: [[0, -1, 0], [0, 0, 1]],
-      right: [[1, 0, 0], [0, 0, 1]],
+      top: [
+        [0, 0, 1],
+        [0, 1, 0],
+      ],
+      front: [
+        [0, -1, 0],
+        [0, 0, 1],
+      ],
+      right: [
+        [1, 0, 0],
+        [0, 0, 1],
+      ],
       // Matches HOME_CAMERA, so pressing 3D returns to the view you started at.
-      iso: [[-0.72, -0.6, 0.55], [0, 0, 1]],
+      iso: [
+        [-0.72, -0.6, 0.55],
+        [0, 0, 1],
+      ],
     }
     const [dir, up] = dirs[view]
     this.camera.up.set(...up)
-    this.camera.position.copy(target).addScaledVector(new THREE.Vector3(...dir).normalize(), distance)
+    this.camera.position
+      .copy(target)
+      .addScaledVector(new THREE.Vector3(...dir).normalize(), distance)
     this.camera.lookAt(target)
   }
 
@@ -1102,7 +1137,12 @@ export class ViewportEngine {
       // Only push when something actually moved, to avoid a React render storm.
       if (
         next.length !== this.labels.length ||
-        next.some((l, i) => Math.abs(l.x - this.labels[i].x) > 0.5 || Math.abs(l.y - this.labels[i].y) > 0.5 || l.text !== this.labels[i].text)
+        next.some(
+          (l, i) =>
+            Math.abs(l.x - this.labels[i].x) > 0.5 ||
+            Math.abs(l.y - this.labels[i].y) > 0.5 ||
+            l.text !== this.labels[i].text,
+        )
       ) {
         this.labels = next
         this.onLabels(next)

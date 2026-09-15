@@ -15,12 +15,7 @@ import {
   type SketchPoint,
 } from '../sketch/types'
 import { applySolve, solveSketch } from '../sketch/solver'
-import {
-  chamferCorner,
-  filletBetween,
-  filletCorner,
-  findCorner,
-} from '../sketch/corner'
+import { chamferCorner, filletBetween, filletCorner, findCorner } from '../sketch/corner'
 import {
   addPolygon,
   addSlot,
@@ -241,10 +236,7 @@ export function runSelfTest(): TestResult[] {
     b.con({ kind: 'distance', a, b: p2, value: 25 })
     b.con({ kind: 'equal', a: l1, b: l2 })
     const r = solveSketch(b.sketch)
-    const len2 = Math.hypot(
-      r.points[p4].x - r.points[p3].x,
-      r.points[p4].y - r.points[p3].y,
-    )
+    const len2 = Math.hypot(r.points[p4].x - r.points[p3].x, r.points[p4].y - r.points[p3].y)
     near(len2, 25, 'second line length')
   })
 
@@ -388,10 +380,7 @@ export function runSelfTest(): TestResult[] {
     // The cut runs from 8 mm short of the corner on each edge, so the new edge
     // spans a right triangle with 8 mm legs.
     const newEdge = b.sketch.entities[b.sketch.entities.length - 1] as any
-    const len = Math.hypot(
-      P[newEdge.p1].x - P[newEdge.p2].x,
-      P[newEdge.p1].y - P[newEdge.p2].y,
-    )
+    const len = Math.hypot(P[newEdge.p1].x - P[newEdge.p2].x, P[newEdge.p1].y - P[newEdge.p2].y)
     near(len, Math.SQRT2 * 8, 'chamfer edge length', 1e-3)
   })
 
@@ -414,12 +403,7 @@ export function runSelfTest(): TestResult[] {
     const arc = b.sketch.entities.find((e) => e.kind === 'arc') as any
     check(!!arc, 'an arc was created')
     const P = Object.fromEntries(b.sketch.points.map((p) => [p.id, p]))
-    near(
-      Math.hypot(P[arc.p1].x - P[arc.c].x, P[arc.p1].y - P[arc.c].y),
-      5,
-      'arc radius',
-      1e-3,
-    )
+    near(Math.hypot(P[arc.p1].x - P[arc.c].x, P[arc.p1].y - P[arc.c].y), 5, 'arc radius', 1e-3)
   })
 
   test('a corner where a line meets an arc can be rounded too', () => {
@@ -499,10 +483,7 @@ export function runSelfTest(): TestResult[] {
     b.line(p2, p3)
     const result = filletCorner(b.sketch, p2, 500, nid)
     check(!result.ok, 'refused')
-    check(
-      !!result.message && /too big/i.test(result.message),
-      `explains why: "${result.message}"`,
-    )
+    check(!!result.message && /too big/i.test(result.message), `explains why: "${result.message}"`)
     // And nothing was half-applied.
     check(
       b.sketch.entities.every((e) => e.kind === 'line'),
@@ -583,10 +564,7 @@ export function runSelfTest(): TestResult[] {
     check(trimmed.ok, `circle trimmed (${trimmed.message ?? 'no error'})`)
     const arc = b.sketch.entities.find((e) => e.kind === 'arc') as any
     check(!!arc, 'the circle became an arc')
-    check(
-      !b.sketch.entities.some((e) => e.kind === 'circle'),
-      'and is no longer a full circle',
-    )
+    check(!b.sketch.entities.some((e) => e.kind === 'circle'), 'and is no longer a full circle')
 
     // Its ends now sit where the line crossed, at the left and right of the
     // circle... so trim the line back to the arc and the two meet.
@@ -604,12 +582,7 @@ export function runSelfTest(): TestResult[] {
     const pts2 = Object.fromEntries(b.sketch.points.map((p) => [p.id, p]))
     const l = b.sketch.entities.find((e) => e.id === line) as any
     const leftEnd = [pts2[l.p1], pts2[l.p2]].sort((p, q) => p.x - q.x)[0]
-    near(
-      Math.hypot(leftEnd.x, leftEnd.y),
-      20,
-      'the chord now stops on the circle',
-      1e-4,
-    )
+    near(Math.hypot(leftEnd.x, leftEnd.y), 20, 'the chord now stops on the circle', 1e-4)
     const joined = findCorner(b.sketch, leftEnd.id)
     check(!!joined, 'and the two now form a corner that can be rounded')
   })
@@ -648,12 +621,7 @@ export function runSelfTest(): TestResult[] {
     const P = Object.fromEntries(b.sketch.points.map((p) => [p.id, p]))
     const fillet = arcs.find((e) => e.id !== circleArc) as any
     const fc = P[fillet.c]
-    near(
-      Math.hypot(P[fillet.p1].x - fc.x, P[fillet.p1].y - fc.y),
-      4,
-      'fillet radius',
-      1e-3,
-    )
+    near(Math.hypot(P[fillet.p1].x - fc.x, P[fillet.p1].y - fc.y), 4, 'fillet radius', 1e-3)
     // Tangent to the vertical line at x = 14 means the centre sits 4 mm off it.
     near(Math.abs(fc.x - 14), 4, 'centre is one radius off the straight edge', 1e-3)
     // The click at (18, -18) is outside the 20 mm circle, so the corner being
@@ -683,7 +651,9 @@ export function runSelfTest(): TestResult[] {
     check(result.ok, `rounded (${result.message ?? 'no error'})`)
     applySolve(b.sketch, solveSketch(b.sketch))
     const P = Object.fromEntries(b.sketch.points.map((p) => [p.id, p]))
-    const fillet = b.sketch.entities.filter((e) => e.kind === 'arc').find((e) => e.id !== circleArc) as any
+    const fillet = b.sketch.entities
+      .filter((e) => e.kind === 'arc')
+      .find((e) => e.id !== circleArc) as any
     const fc = P[fillet.c]
     near(Math.hypot(fc.x, fc.y), 16, 'now nested inside the circle, 20 - 4 apart', 1e-3)
   })
@@ -739,7 +709,10 @@ export function runSelfTest(): TestResult[] {
     const circle = c.circle(centre, 10)
     c.con({ kind: 'radius', e: circle, value: 10 })
     const bad = resizeSketch(c.sketch, 2, 1)
-    check(!bad.ok, bad.ok ? 'a circle was stretched into an oval' : `refused: ${bad.reason.slice(0, 46)}...`)
+    check(
+      !bad.ok,
+      bad.ok ? 'a circle was stretched into an oval' : `refused: ${bad.reason.slice(0, 46)}...`,
+    )
 
     // Evenly is fine, and the radius has to come with it.
     const good = resizeSketch(c.sketch, 2, 2)
@@ -777,12 +750,20 @@ export function runSelfTest(): TestResult[] {
       const s = SCREWS[t]
       return !(s.tapping < s.major && s.major < s.clearance && s.headDiameter > s.major)
     })
-    check(wrong.length === 0, wrong.length ? `out of order: ${wrong.join(', ')}` : 'every size tapping < major < clearance')
+    check(
+      wrong.length === 0,
+      wrong.length ? `out of order: ${wrong.join(', ')}` : 'every size tapping < major < clearance',
+    )
 
     // An insert has to melt into a hole smaller than itself, or it just drops
     // through and takes the print with it.
     const loose = THREAD_SIZES.filter((t) => INSERTS[t].pilot >= INSERTS[t].outerDiameter)
-    check(loose.length === 0, loose.length ? `pilot too big: ${loose.join(', ')}` : 'every insert pilot is under its outside diameter')
+    check(
+      loose.length === 0,
+      loose.length
+        ? `pilot too big: ${loose.join(', ')}`
+        : 'every insert pilot is under its outside diameter',
+    )
 
     // A counterbore has to clear the head it is hiding, and a screw has to pass
     // through the shaft of its own counterbore.
@@ -855,7 +836,10 @@ export function runSelfTest(): TestResult[] {
     near(bored[0].at[2], 5, 'head sits at the surface')
     near(bored[0].shaftDiameter, 3, 'shaft is the thread size, not the clearance hole')
     near(bored[0].headSink, 3.2, 'head is sunk by the counterbore')
-    check(bored[0].shaftLength > 5, `shaft ${bored[0].shaftLength} mm reaches through 5 mm of plate`)
+    check(
+      bored[0].shaftLength > 5,
+      `shaft ${bored[0].shaftLength} mm reaches through 5 mm of plate`,
+    )
     check(bored[0].metal === 'steel', 'a screw is drawn as steel')
 
     // An insert is the insert, not the hole it melts into.
@@ -873,7 +857,11 @@ export function runSelfTest(): TestResult[] {
       }) as never,
       shapes as never,
     )
-    near(inserted[0].shaftDiameter, INSERTS.M3.outerDiameter, 'insert ghost is the insert, not its hole')
+    near(
+      inserted[0].shaftDiameter,
+      INSERTS.M3.outerDiameter,
+      'insert ghost is the insert, not its hole',
+    )
     check(inserted[0].metal === 'brass', 'an insert is drawn as brass')
 
     // A pillar puts the screw in at the top of the pillar, not on the plate.
@@ -952,9 +940,10 @@ export function runSelfTest(): TestResult[] {
         },
       ],
     }
-    const fromBoard = fastenerGhosts(withBoard as never, [
-      { id: 'p', bounds: [0, 0, 0, 120, 100, 3] },
-    ] as never)
+    const fromBoard = fastenerGhosts(
+      withBoard as never,
+      [{ id: 'p', bounds: [0, 0, 0, 120, 100, 3] }] as never,
+    )
     check(fromBoard.length === 4, `a Pi's four mounting holes give ${fromBoard.length} ghosts`)
     near(fromBoard[0].shaftDiameter, SCREWS['M2.5'].major, "sized M2.5 from the Pi's own hole data")
     near(fromBoard[0].headDiameter, SCREWS['M2.5'].headDiameter, 'with the M2.5 head')
@@ -982,7 +971,12 @@ export function runSelfTest(): TestResult[] {
     // A pillar too short for its insert is reported rather than bored short,
     // which would leave the insert standing proud and holding the board off.
     const short = planPillar('insert', 'M5', 4)
-    check(!!short.warning, short.warning ? `warns: ${short.warning.slice(0, 52)}...` : 'no warning on a 4 mm pillar for a 9.5 mm insert')
+    check(
+      !!short.warning,
+      short.warning
+        ? `warns: ${short.warning.slice(0, 52)}...`
+        : 'no warning on a 4 mm pillar for a 9.5 mm insert',
+    )
     near(short.boreDepth, INSERTS.M5.length + 0.5, 'and still bores the full insert depth')
     check(!planPillar('insert', 'M5', 20).warning, 'a tall enough pillar says nothing')
 
@@ -1009,7 +1003,10 @@ export function runSelfTest(): TestResult[] {
 
     // A circle is what someone draws when they mean "hole here", so its centre
     // counts as a position too.
-    check(ids([{ kind: 'entity', id: circle }]).length === 7, 'a picked circle offers them at its centre')
+    check(
+      ids([{ kind: 'entity', id: circle }]).length === 7,
+      'a picked circle offers them at its centre',
+    )
     // And with nothing picked, where the right-click landed.
     check(ids([], [5, 5]).length === 7, 'nothing picked falls back to the cursor')
     check(ids([]).length === 0, 'with neither, nothing is offered rather than a hole at the origin')
@@ -1028,9 +1025,21 @@ export function runSelfTest(): TestResult[] {
     // quietly fall through into "Other".
     const selections: Array<[string, Parameters<typeof sketchActions>[1]]> = [
       ['one line', [{ kind: 'entity', id: l1 }]],
-      ['two lines', [{ kind: 'entity', id: l1 }, { kind: 'entity', id: l2 }]],
+      [
+        'two lines',
+        [
+          { kind: 'entity', id: l1 },
+          { kind: 'entity', id: l2 },
+        ],
+      ],
       ['a corner', [{ kind: 'point', id: p2 }]],
-      ['two corners', [{ kind: 'point', id: a }, { kind: 'point', id: p3 }]],
+      [
+        'two corners',
+        [
+          { kind: 'point', id: a },
+          { kind: 'point', id: p3 },
+        ],
+      ],
       ['nothing', []],
     ]
 
@@ -1052,7 +1061,10 @@ export function runSelfTest(): TestResult[] {
     // And the sections actually split things up rather than being one bucket.
     const twoLines = sketchActions(
       b.sketch,
-      [{ kind: 'entity', id: l1 }, { kind: 'entity', id: l2 }],
+      [
+        { kind: 'entity', id: l1 },
+        { kind: 'entity', id: l2 },
+      ],
       [20, 10],
     )
     const groups = groupActions(twoLines)
@@ -1160,9 +1172,7 @@ export function runSelfTest(): TestResult[] {
     const mirrored = centres.find((p) => p.x < 0)!
     near(mirrored.x, -20, 'reflected across the upright axis')
     near(mirrored.y, 10, 'and kept its height')
-    const radii = b.sketch.entities
-      .filter((e) => e.kind === 'circle')
-      .map((e: any) => e.r)
+    const radii = b.sketch.entities.filter((e) => e.kind === 'circle').map((e: any) => e.r)
     check(
       radii.every((r) => Math.abs(r - 4) < 1e-6),
       `both are still 4 mm (${radii.map((r) => r.toFixed(3)).join(', ')})`,
@@ -1191,14 +1201,19 @@ export function runSelfTest(): TestResult[] {
     check(solved.dof === 0, `still fully defined (dof ${solved.dof})`)
 
     const P = Object.fromEntries(b.sketch.points.map((p) => [p.id, p]))
-    const copy = b.sketch.entities.filter((e) => e.kind === 'line').find((e) => e.id !== line) as any
+    const copy = b.sketch.entities
+      .filter((e) => e.kind === 'line')
+      .find((e) => e.id !== line) as any
     near(Math.abs(P[copy.p1].y), 5, 'the parallel line sits 5 mm off')
     near(
       Math.hypot(P[copy.p1].x - P[copy.p2].x, P[copy.p1].y - P[copy.p2].y),
       50,
       'and is the same length',
     )
-    const rings = b.sketch.entities.filter((e) => e.kind === 'circle').map((e: any) => e.r).sort()
+    const rings = b.sketch.entities
+      .filter((e) => e.kind === 'circle')
+      .map((e: any) => e.r)
+      .sort()
     check(
       Math.abs(rings[0] - 12) < 1e-6 && Math.abs(rings[1] - 17) < 1e-6,
       `the circle gained a concentric ring at 17 mm (${rings.map((r) => r.toFixed(2)).join(', ')})`,
@@ -1215,10 +1230,7 @@ export function runSelfTest(): TestResult[] {
 
     const result = linearPattern(b.sketch, [circ], { count: 5, dx: 20, dy: 0 }, nid)
     check(result.ok, `patterned (${result.message ?? 'no error'})`)
-    check(
-      b.sketch.entities.filter((e) => e.kind === 'circle').length === 5,
-      'five holes in total',
-    )
+    check(b.sketch.entities.filter((e) => e.kind === 'circle').length === 5, 'five holes in total')
 
     const solved = solveSketch(b.sketch)
     applySolve(b.sketch, solved)
@@ -1281,10 +1293,7 @@ export function runSelfTest(): TestResult[] {
     const r = solveSketch(b.sketch)
     check(!r.ok, `solver reports failure (ok=${r.ok})`)
     check(r.failing.length > 0, `flagged ${r.failing.length} conflicting constraint(s)`)
-    check(
-      r.failing.includes(bad) || r.failing.length > 0,
-      'conflicting dimension identified',
-    )
+    check(r.failing.includes(bad) || r.failing.length > 0, 'conflicting dimension identified')
   })
 
   return results

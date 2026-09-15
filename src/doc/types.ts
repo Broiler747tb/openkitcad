@@ -244,14 +244,7 @@ export interface SphereFeature extends FeatureBase {
  * loose threads.
  */
 export type VentShape =
-  | 'hex'
-  | 'round'
-  | 'square'
-  | 'triangle'
-  | 'diamond'
-  | 'slot'
-  | 'cross'
-  | 'gyroid'
+  'hex' | 'round' | 'square' | 'triangle' | 'diamond' | 'slot' | 'cross' | 'gyroid'
 
 export interface VentFeature extends FeatureBase {
   kind: 'vent'
@@ -403,7 +396,7 @@ export interface Placement {
 }
 
 export interface OkcDocument {
-  bindings?: Array<{bodyId:string;featureId:string;field:string;expression:string}>
+  bindings?: Array<{ bodyId: string; featureId: string; field: string; expression: string }>
   version: 1
   name: string
   units: 'mm'

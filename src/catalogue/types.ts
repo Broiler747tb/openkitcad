@@ -227,9 +227,7 @@ export type PartGeometry =
     }
 
 export type VisualSpec =
-  | { kind: 'generated' }
-  | { kind: 'glb'; src: string }
-  | { kind: 'step'; src: string }
+  { kind: 'generated' } | { kind: 'glb'; src: string } | { kind: 'step'; src: string }
 
 export interface CataloguePart {
   id: string

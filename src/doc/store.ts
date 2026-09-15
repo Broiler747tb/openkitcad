@@ -19,22 +19,12 @@ import {
   type PlaneRef,
   type SketchFeature,
 } from './types'
-import {
-  emptySketch,
-  type Constraint,
-  type NewConstraint,
-  type Sketch2D,
-} from '../sketch/types'
+import { emptySketch, type Constraint, type NewConstraint, type Sketch2D } from '../sketch/types'
 import { applySolve, solveSketch, type SolveResult } from '../sketch/solver'
 import type { SketchTarget } from '../sketch/inference'
 import type { SubPick } from '../viewport/engine'
 import type { ActionResult } from '../sketch/actions'
-import {
-  chamferCorner,
-  filletBetween,
-  filletCorner,
-  type CornerResult,
-} from '../sketch/corner'
+import { chamferCorner, filletBetween, filletCorner, type CornerResult } from '../sketch/corner'
 import {
   addPolygon,
   addSlot,
@@ -57,14 +47,7 @@ export function newId(prefix: string): string {
 }
 
 export type ToolId =
-  | 'select'
-  | 'line'
-  | 'rectangle'
-  | 'circle'
-  | 'arc'
-  | 'dimension'
-  | 'trim'
-  | 'measure'
+  'select' | 'line' | 'rectangle' | 'circle' | 'arc' | 'dimension' | 'trim' | 'measure'
 
 export interface Selection {
   kind: 'none' | 'body' | 'placement' | 'feature' | 'face' | 'edge'
@@ -156,11 +139,7 @@ interface AppState {
   moveFeature: (bodyId: string, featureId: string, delta: number) => void
 
   addPlacement: (partId: string, position?: [number, number, number]) => string
-  updatePlacement: (
-    id: string,
-    patch: Partial<Placement>,
-    opts?: { transient?: boolean },
-  ) => void
+  updatePlacement: (id: string, patch: Partial<Placement>, opts?: { transient?: boolean }) => void
   removePlacement: (id: string) => void
 
   /**
@@ -229,7 +208,7 @@ export const useStore = create<AppState>((set, get) => ({
   statusMessage: null,
 
   setDoc(doc, resetHistory = true) {
-    doc=clone(doc)
+    doc = clone(doc)
     resolveParameters(doc)
     set(
       resetHistory
@@ -250,7 +229,7 @@ export const useStore = create<AppState>((set, get) => ({
     const state = get()
     const next = clone(state.doc)
     fn(next)
-    resolveParameters(next,true)
+    resolveParameters(next, true)
 
     // Typing "12.5" into a box fires an edit per keystroke. Without merging,
     // undo walks back through "12.", "12", "1" one press at a time, which is
@@ -281,10 +260,25 @@ export const useStore = create<AppState>((set, get) => ({
     if (past.length === 0) return
     const previous = past[past.length - 1]
     const active = get().activeSketch
-    const activeSketch = active && previous.bodies.some((b) => b.id === active.bodyId && b.features.some((f) => f.id === active.featureId)) ? active : null
-    set({ doc: previous, past: past.slice(0, -1), future: [doc, ...future].slice(0, HISTORY_LIMIT),
-      selection: { kind: 'none' }, subSelection: [], sketchSelection: [], hovered: null,
-      activeSketch, tool: activeSketch ? get().tool : 'select', sketchStatus: null })
+    const activeSketch =
+      active &&
+      previous.bodies.some(
+        (b) => b.id === active.bodyId && b.features.some((f) => f.id === active.featureId),
+      )
+        ? active
+        : null
+    set({
+      doc: previous,
+      past: past.slice(0, -1),
+      future: [doc, ...future].slice(0, HISTORY_LIMIT),
+      selection: { kind: 'none' },
+      subSelection: [],
+      sketchSelection: [],
+      hovered: null,
+      activeSketch,
+      tool: activeSketch ? get().tool : 'select',
+      sketchStatus: null,
+    })
     get().rebuild()
   },
 
@@ -293,10 +287,25 @@ export const useStore = create<AppState>((set, get) => ({
     const { future, doc, past } = get()
     if (future.length === 0) return
     const active = get().activeSketch
-    const activeSketch = active && future[0].bodies.some((b) => b.id === active.bodyId && b.features.some((f) => f.id === active.featureId)) ? active : null
-    set({ doc: future[0], future: future.slice(1), past: [...past, doc].slice(-HISTORY_LIMIT),
-      selection: { kind: 'none' }, subSelection: [], sketchSelection: [], hovered: null,
-      activeSketch, tool: activeSketch ? get().tool : 'select', sketchStatus: null })
+    const activeSketch =
+      active &&
+      future[0].bodies.some(
+        (b) => b.id === active.bodyId && b.features.some((f) => f.id === active.featureId),
+      )
+        ? active
+        : null
+    set({
+      doc: future[0],
+      future: future.slice(1),
+      past: [...past, doc].slice(-HISTORY_LIMIT),
+      selection: { kind: 'none' },
+      subSelection: [],
+      sketchSelection: [],
+      hovered: null,
+      activeSketch,
+      tool: activeSketch ? get().tool : 'select',
+      sketchStatus: null,
+    })
     get().rebuild()
   },
 
@@ -353,9 +362,11 @@ export const useStore = create<AppState>((set, get) => ({
     const current = get().measure
     // Third click starts a fresh measurement rather than extending the old one.
     const next =
-      current.a && current.b ? { a: point, b: null } : current.a
-        ? { a: current.a, b: point }
-        : { a: point, b: null }
+      current.a && current.b
+        ? { a: point, b: null }
+        : current.a
+          ? { a: current.a, b: point }
+          : { a: point, b: null }
     set({ measure: next })
     if (next.a && next.b) {
       const dx = next.b[0] - next.a[0]
@@ -426,7 +437,14 @@ export const useStore = create<AppState>((set, get) => ({
         const index = body?.features.findIndex((f) => f.id === featureId) ?? -1
         if (body && index >= 0) {
           // Explicit numeric editing detaches that field's formula; Undo restores both.
-          d.bindings=d.bindings?.filter(link=>!(link.bodyId===bodyId&&link.featureId===featureId&&typeof (patch as Record<string,unknown>)[link.field]==='number'))
+          d.bindings = d.bindings?.filter(
+            (link) =>
+              !(
+                link.bodyId === bodyId &&
+                link.featureId === featureId &&
+                typeof (patch as Record<string, unknown>)[link.field] === 'number'
+              ),
+          )
           body.features[index] = { ...body.features[index], ...patch } as Feature
         }
       },
@@ -536,7 +554,14 @@ export const useStore = create<AppState>((set, get) => ({
       sketch: emptySketch(),
     }
     get().commit((doc) => {
-      if (!bodyId) doc.bodies.push({ id: targetBody, name: `Part ${doc.bodies.length + 1}`, visible: true, colour: '#b9c0c7', features: [] })
+      if (!bodyId)
+        doc.bodies.push({
+          id: targetBody,
+          name: `Part ${doc.bodies.length + 1}`,
+          visible: true,
+          colour: '#b9c0c7',
+          features: [],
+        })
       doc.bodies.find((body) => body.id === targetBody)?.features.push(feature)
     })
     set({
@@ -556,8 +581,15 @@ export const useStore = create<AppState>((set, get) => ({
 
   closeSketch() {
     const active = get().activeSketch
-    set({ activeSketch: null, tool: 'select', sketchStatus: null, sketchSelection: [],
-      ...(active ? { selection: { kind: 'feature' as const, bodyId: active.bodyId, id: active.featureId } } : {}) })
+    set({
+      activeSketch: null,
+      tool: 'select',
+      sketchStatus: null,
+      sketchSelection: [],
+      ...(active
+        ? { selection: { kind: 'feature' as const, bodyId: active.bodyId, id: active.featureId } }
+        : {}),
+    })
   },
 
   editSketch(fn, opts) {
@@ -704,13 +736,7 @@ export const useStore = create<AppState>((set, get) => ({
               outcome = offsetEntities(sketch, result.entityIds, result.distance, newId)
               break
             case 'addPolygon':
-              outcome = addPolygon(
-                sketch,
-                result.centre,
-                result.sides,
-                result.radius,
-                newId,
-              )
+              outcome = addPolygon(sketch, result.centre, result.sides, result.radius, newId)
               break
             case 'addSlot':
               outcome = addSlot(sketch, result.centre, result.length, result.width, newId)

@@ -315,11 +315,7 @@ function buildRows(
         } else if (A.kind !== 'line' && B.kind !== 'line') {
           const ra = radiusOf(A),
             rb = radiusOf(B)
-          b.push(
-            c.id,
-            ra.v - rb.v,
-            [...ra.g, ...rb.g.map(([i, g]) => [i, -g] as [number, number])],
-          )
+          b.push(c.id, ra.v - rb.v, [...ra.g, ...rb.g.map(([i, g]) => [i, -g] as [number, number])])
         }
         break
       }

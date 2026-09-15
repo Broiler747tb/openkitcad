@@ -19,7 +19,9 @@ import { isAndroidApp } from './platform/android'
 export function App() {
   const [showExport, setShowExport] = useState(false)
   const [leftTab, setLeftTab] = useState<'design' | 'catalogue'>('design')
-  const [inspectorTab, setInspectorTab] = useState<'properties' | 'actions' | 'checks'>('properties')
+  const [inspectorTab, setInspectorTab] = useState<'properties' | 'actions' | 'checks'>(
+    'properties',
+  )
   /** Which side panel is pulled over the model, on a screen too narrow for both. */
   const [sheet, setSheet] = useState<'left' | 'right' | null>(null)
   const [showTutorial, setShowTutorial] = useState(false)
@@ -56,17 +58,26 @@ export function App() {
 
   useEffect(() => {
     // Slow mobile WASM startup must not overwrite the previous autosave with an empty document.
-    if(kernelReady)scheduleAutosave(doc)
-  }, [doc,kernelReady])
+    if (kernelReady) scheduleAutosave(doc)
+  }, [doc, kernelReady])
 
-  useEffect(()=>{
-    const save=()=>{const s=useStore.getState();if(s.kernelReady)saveAutosaveNow(s.doc)}
-    const hidden=()=>{if(document.visibilityState==='hidden')save()}
-    window.addEventListener('okc:background',save)
-    window.addEventListener('pagehide',save)
-    document.addEventListener('visibilitychange',hidden)
-    return()=>{window.removeEventListener('okc:background',save);window.removeEventListener('pagehide',save);document.removeEventListener('visibilitychange',hidden)}
-  },[])
+  useEffect(() => {
+    const save = () => {
+      const s = useStore.getState()
+      if (s.kernelReady) saveAutosaveNow(s.doc)
+    }
+    const hidden = () => {
+      if (document.visibilityState === 'hidden') save()
+    }
+    window.addEventListener('okc:background', save)
+    window.addEventListener('pagehide', save)
+    document.addEventListener('visibilitychange', hidden)
+    return () => {
+      window.removeEventListener('okc:background', save)
+      window.removeEventListener('pagehide', save)
+      document.removeEventListener('visibilitychange', hidden)
+    }
+  }, [])
 
   /*
    * Which panel is pulled over the model, written as a custom property on the
@@ -85,10 +96,21 @@ export function App() {
   }, [sheet])
 
   return (
-    <div className={`app ${activeSketch ? 'sketching' : ''} ${selection.kind === 'none' && !activeSketch && inspectorTab === 'properties' ? 'inspector-empty' : ''} ${sheet ? `sheet-${sheet}` : ''}`}>
-      <Toolbar onExport={() => setShowExport(true)} onTutorial={() => setShowTutorial(true)}
-        onCatalogue={() => { setLeftTab('catalogue'); if (isAndroidApp || innerWidth <= 900) setSheet('left') }}
-        onInspect={() => { setInspectorTab('checks'); if (isAndroidApp || innerWidth <= 900) setSheet('right') }} />
+    <div
+      className={`app ${activeSketch ? 'sketching' : ''} ${selection.kind === 'none' && !activeSketch && inspectorTab === 'properties' ? 'inspector-empty' : ''} ${sheet ? `sheet-${sheet}` : ''}`}
+    >
+      <Toolbar
+        onExport={() => setShowExport(true)}
+        onTutorial={() => setShowTutorial(true)}
+        onCatalogue={() => {
+          setLeftTab('catalogue')
+          if (isAndroidApp || innerWidth <= 900) setSheet('left')
+        }}
+        onInspect={() => {
+          setInspectorTab('checks')
+          if (isAndroidApp || innerWidth <= 900) setSheet('right')
+        }}
+      />
       <LeftPanel tab={leftTab} onTab={setLeftTab} />
       <div className="viewport-wrap" style={{ display: 'contents' }}>
         <Viewport />
@@ -114,8 +136,21 @@ export function App() {
       </div>
       <Inspector tab={inspectorTab} onTab={setInspectorTab} />
       <NavigationBar />
-      <PenBar onComponents={()=>{setLeftTab('catalogue');setSheet('left')}} onDetails={()=>setSheet(sheet==='right'?null:'right')} onClosePanel={()=>setSheet(null)} panelOpen={!!sheet}/>
-      <Timeline onEdit={() => { setInspectorTab('properties'); if (innerWidth <= 900) setSheet('right') }} />
+      <PenBar
+        onComponents={() => {
+          setLeftTab('catalogue')
+          setSheet('left')
+        }}
+        onDetails={() => setSheet(sheet === 'right' ? null : 'right')}
+        onClosePanel={() => setSheet(null)}
+        panelOpen={!!sheet}
+      />
+      <Timeline
+        onEdit={() => {
+          setInspectorTab('properties')
+          if (innerWidth <= 900) setSheet('right')
+        }}
+      />
       <ActionDialogHost />
       <StatusBar />
 
@@ -176,7 +211,9 @@ function StatusBar() {
 
   return (
     <div className="statusbar">
-      <span className="engine-state" title={`Last rebuild: ${buildMs} ms`}>{building ? 'Updating geometry…' : '● Ready'}</span>
+      <span className="engine-state" title={`Last rebuild: ${buildMs} ms`}>
+        {building ? 'Updating geometry…' : '● Ready'}
+      </span>
       <span>
         {shapes.length} shape{shapes.length === 1 ? '' : 's'}
       </span>

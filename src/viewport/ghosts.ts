@@ -37,7 +37,6 @@ export interface FastenerGhost {
   headSink: number
 }
 
-
 /**
  * Where a feature's holes actually are, in its own plane.
  *

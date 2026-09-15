@@ -54,18 +54,13 @@ export function frameFromPlaneRefLocal(ref: PlaneRef): Frame {
   if (ref.kind === 'angled') {
     return tiltedFrame(ref.name, ref.tiltAxis, ref.angle, ref.offset)
   }
-  return makeFrame(
-    v3.add(ref.face.anchor, v3.scale(ref.face.normal, ref.offset)),
-    ref.face.normal,
-  )
+  return makeFrame(v3.add(ref.face.anchor, v3.scale(ref.face.normal, ref.offset)), ref.face.normal)
 }
 
 export function planeLabel(ref: PlaneRef): string {
   const names = { XY: 'Top', XZ: 'Front', YZ: 'Right' } as const
   if (ref.kind === 'named') {
-    return ref.offset
-      ? `${names[ref.name]} plane, ${ref.offset} mm up`
-      : `${names[ref.name]} plane`
+    return ref.offset ? `${names[ref.name]} plane, ${ref.offset} mm up` : `${names[ref.name]} plane`
   }
   if (ref.kind === 'angled') {
     return `${names[ref.name]} plane tipped ${ref.angle}°`

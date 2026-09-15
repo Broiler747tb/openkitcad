@@ -88,13 +88,8 @@ export function hitTestSketch(
 }
 
 /** Add or remove a target from a selection, for shift-clicking. */
-export function toggleSelection(
-  selection: SketchTarget[],
-  target: SketchTarget,
-): SketchTarget[] {
-  const existing = selection.findIndex(
-    (s) => s.kind === target.kind && s.id === target.id,
-  )
+export function toggleSelection(selection: SketchTarget[], target: SketchTarget): SketchTarget[] {
+  const existing = selection.findIndex((s) => s.kind === target.kind && s.id === target.id)
   if (existing >= 0) return selection.filter((_, i) => i !== existing)
   // Three is the most any constraint here needs (mirror: two points + an axis).
   return [...selection, target].slice(-3)
@@ -110,11 +105,7 @@ function distanceToSegment(p: Vec2, a: Vec2, b: Vec2): { d: number; t: number } 
   return { d: v2.dist(p, proj), t }
 }
 
-export function findSnap(
-  sketch: Sketch2D,
-  cursor: Vec2,
-  options: SnapOptions,
-): SnapResult {
+export function findSnap(sketch: Sketch2D, cursor: Vec2, options: SnapOptions): SnapResult {
   const { tolerance, from, exclude = [] } = options
   const pts = new Map<string, Vec2>()
   for (const p of sketch.points) pts.set(p.id, [p.x, p.y])
@@ -199,15 +190,25 @@ export function findSnap(
 
   // 4. Straight across or straight up from where the segment started.
   const step = options.gridStep ?? 1
-  const roundGrid = (v:number) => step > 0 ? Math.round(v / step) * step : v
+  const roundGrid = (v: number) => (step > 0 ? Math.round(v / step) * step : v)
   if (from && options.alignment !== false) {
     const dx = cursor[0] - from[0]
     const dy = cursor[1] - from[1]
     if (Math.abs(dy) < tolerance && Math.abs(dx) > tolerance) {
-      return { ...result, point: [roundGrid(cursor[0]), from[1]], align: 'horizontal', hint: 'horizontal' }
+      return {
+        ...result,
+        point: [roundGrid(cursor[0]), from[1]],
+        align: 'horizontal',
+        hint: 'horizontal',
+      }
     }
     if (Math.abs(dx) < tolerance && Math.abs(dy) > tolerance) {
-      return { ...result, point: [from[0], roundGrid(cursor[1])], align: 'vertical', hint: 'vertical' }
+      return {
+        ...result,
+        point: [from[0], roundGrid(cursor[1])],
+        align: 'vertical',
+        hint: 'vertical',
+      }
     }
   }
 

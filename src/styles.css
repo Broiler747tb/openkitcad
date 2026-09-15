@@ -1236,7 +1236,9 @@ input[type='checkbox'] {
     /* Slid on `left`/`right` rather than a transform: the panels sit in a grid
        area on the desktop layout, and a transform on a grid item was being
        dropped somewhere between the two. Position is not contested. */
-    transition: left 0.18s ease-out, right 0.18s ease-out;
+    transition:
+      left 0.18s ease-out,
+      right 0.18s ease-out;
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.55);
   }
 

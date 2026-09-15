@@ -61,10 +61,7 @@ const THROUGH_LENGTH = 1000
 // Planes
 // ---------------------------------------------------------------------------
 
-export function frameFromPlaneRef(
-  ref: PlaneRef,
-  shapes: Map<string, any>,
-): Frame {
+export function frameFromPlaneRef(ref: PlaneRef, shapes: Map<string, any>): Frame {
   // Named and tilted planes need no geometry, so they come from the shared
   // helper the viewport uses. Keeping one implementation is what stops a sketch
   // landing in a different place on screen than it does in the kernel.
@@ -178,9 +175,7 @@ function boardOutlineDrawing(part: CataloguePart): Drawing | null {
   if (g.kind !== 'board') return null
   if (g.outline.shape === 'rect') {
     const { w, h, cornerRadius } = g.outline
-    const base = cornerRadius
-      ? drawRoundedRectangle(w, h, cornerRadius)
-      : drawRectangle(w, h)
+    const base = cornerRadius ? drawRoundedRectangle(w, h, cornerRadius) : drawRectangle(w, h)
     // Catalogue parts are dimensioned from their lower-left corner, replicad
     // draws rectangles about their centre.
     return base.translate(w / 2, h / 2)
@@ -240,8 +235,9 @@ export function buildPartLocal(part: CataloguePart, overrides?: Record<string, n
       const r = g.headDiameter / 2
       let solid: any = makeCylinder(g.diameter / 2, g.length, [r, r, 0], [0, 0, 1])
       if (g.head === 'countersunk') {
-        const cone = sketchCircle(g.headDiameter / 2, { origin: [r, r, g.length] })
-          .loftWith(sketchCircle(g.diameter / 2, { origin: [r, r, g.length - g.headHeight] }))
+        const cone = sketchCircle(g.headDiameter / 2, { origin: [r, r, g.length] }).loftWith(
+          sketchCircle(g.diameter / 2, { origin: [r, r, g.length - g.headHeight] }),
+        )
         solid = solid.fuse(cone)
       } else {
         solid = solid.fuse(
@@ -318,15 +314,11 @@ export function buildPartLocal(part: CataloguePart, overrides?: Record<string, n
             ),
           )
         } else {
-          solid = solid.fuse(
-            makeCylinder(g.cutout.d / 2, protrusion, [w / 2, d, h / 2], [0, 1, 0]),
-          )
+          solid = solid.fuse(makeCylinder(g.cutout.d / 2, protrusion, [w / 2, d, h / 2], [0, 1, 0]))
         }
       }
       for (const hole of part.mountingHoles ?? []) {
-        solid = solid.cut(
-          makeCylinder(hole.diameter / 2, d + 2, [hole.x, -1, hole.y], [0, 1, 0]),
-        )
+        solid = solid.cut(makeCylinder(hole.diameter / 2, d + 2, [hole.x, -1, hole.y], [0, 1, 0]))
       }
       return solid
     }
@@ -388,11 +380,7 @@ interface EvalContext {
   preShell: Map<string, { shape: any; frame: Frame }>
 }
 
-function buildHoleCutter(
-  feature: HoleFeature,
-  frame: Frame,
-  positions: Vec2[],
-): any | null {
+function buildHoleCutter(feature: HoleFeature, frame: Frame, positions: Vec2[]): any | null {
   const depth = feature.depth === 'through' ? THROUGH_LENGTH : feature.depth
   let cutter: any = null
 
@@ -420,11 +408,7 @@ function buildHoleCutter(
       // Depth a cone of this included angle needs to reach the head diameter.
       const coneDepth = (headRadius - feature.diameter / 2) / Math.tan(angle / 2)
       const top = sketchOn(drawCircle(headRadius).translate(u, v), frame, 0)
-      const bottom = sketchOn(
-        drawCircle(feature.diameter / 2).translate(u, v),
-        frame,
-        -coneDepth,
-      )
+      const bottom = sketchOn(drawCircle(feature.diameter / 2).translate(u, v), frame, -coneDepth)
       piece = piece.fuse(top.loftWith(bottom))
     }
 
@@ -442,10 +426,9 @@ function buildStandoffs(
   let bores: any = null
 
   for (const [u, v] of positions) {
-    const pillar = sketchOn(
-      drawCircle(feature.outerDiameter / 2).translate(u, v),
-      frame,
-    ).extrude(feature.height)
+    const pillar = sketchOn(drawCircle(feature.outerDiameter / 2).translate(u, v), frame).extrude(
+      feature.height,
+    )
     solid = solid ? solid.fuse(pillar) : pillar
 
     const bore = sketchOn(
@@ -856,7 +839,6 @@ function marchingSquares(
   return loops
 }
 
-
 /**
  * A slab spanning [from, to] measured along a frame's normal, wide enough to
  * swallow anything this app builds. Used to take a horizontal slice out of a
@@ -1059,8 +1041,7 @@ export function evaluateBody(
           const size = feature.kind === 'fillet' ? feature.radius : feature.distance
           const match = edgeMatcher(feature.edges)
           const config = (edge: any) => (match(edge) ? size : null)
-          shape =
-            feature.kind === 'fillet' ? shape.fillet(config) : shape.chamfer(config)
+          shape = feature.kind === 'fillet' ? shape.fillet(config) : shape.chamfer(config)
           break
         }
 
@@ -1325,11 +1306,7 @@ export function evaluateBody(
             })
             break
           }
-          const cutter = buildPortCutters(
-            placement,
-            feature.connectorIds,
-            feature.tolerance,
-          )
+          const cutter = buildPortCutters(placement, feature.connectorIds, feature.tolerance)
           if (cutter) shape = shape.cut(cutter)
           break
         }

@@ -56,10 +56,7 @@ export function projectionToDrillTemplatePDF(
   const offsetY = (pageH - partH) / 2 - minY
   const fits = partW <= pageW - margin * 2 && partH <= pageH - margin * 2
 
-  const to = (x: number, y: number): [number, number] => [
-    (x + offsetX) * PT,
-    (y + offsetY) * PT,
-  ]
+  const to = (x: number, y: number): [number, number] => [(x + offsetX) * PT, (y + offsetY) * PT]
 
   const ops: string[] = []
   ops.push('0.4 w', '0 0 0 RG')
@@ -101,7 +98,14 @@ export function projectionToDrillTemplatePDF(
   const text = (x: number, y: number, size: number, s: string) =>
     `BT /F1 ${size} Tf ${f(x)} ${f(y)} Td (${s.replace(/[()\\]/g, '\\$&')}) Tj ET`
 
-  ops.push(text(rulerX, rulerY - 9, 8, 'This line is exactly 100 mm. Print at 100% - do not scale to fit.'))
+  ops.push(
+    text(
+      rulerX,
+      rulerY - 9,
+      8,
+      'This line is exactly 100 mm. Print at 100% - do not scale to fit.',
+    ),
+  )
   ops.push(text(margin * PT, (pageH - margin) * PT, 12, options.title))
   ops.push(
     text(

@@ -8,9 +8,15 @@ export function SelectionActions() {
   if (state.activeSketch || state.selection.kind === 'none') return null
   const actions = selectedObjectActions()
   const extrude = extrusionAction()
-  return <div className="selection-actions section">
-    <span className="eyebrow">ACTIONS FOR SELECTION</span>
-    {extrude && <button className="primary-button" onClick={() => chooseAction(extrude)}>Extrude sketch</button>}
-    <FlyoutMenu actions={actions} onPick={chooseAction} />
-  </div>
+  return (
+    <div className="selection-actions section">
+      <span className="eyebrow">ACTIONS FOR SELECTION</span>
+      {extrude && (
+        <button className="primary-button" onClick={() => chooseAction(extrude)}>
+          Extrude sketch
+        </button>
+      )}
+      <FlyoutMenu actions={actions} onPick={chooseAction} />
+    </div>
+  )
 }

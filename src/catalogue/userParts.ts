@@ -152,7 +152,8 @@ export function draftProblems(draft: PartDraft): { blocking: string[]; warnings:
   const warnings: string[] = []
 
   if (!draft.name.trim()) blocking.push('Give it a name. The name becomes its filename.')
-  if (draft.width <= 0 || draft.depth <= 0) blocking.push('Width and depth have to be more than zero.')
+  if (draft.width <= 0 || draft.depth <= 0)
+    blocking.push('Width and depth have to be more than zero.')
   if (draft.thickness <= 0) blocking.push('Thickness has to be more than zero.')
 
   if (!draft.holes.length) {

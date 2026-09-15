@@ -3,17 +3,20 @@ import { useStore } from '../doc/store'
 import { FEATURE_ICON, FEATURE_LABEL, type Body, type Feature } from '../doc/types'
 import { PartMaker } from './PartMaker'
 import type { PartCategory } from '../catalogue'
-import {
-  groupedCatalogue,
-  searchParts,
-  CATEGORY_BLURB,
-  CONFIDENCE_LABEL,
-} from '../catalogue'
+import { groupedCatalogue, searchParts, CATEGORY_BLURB, CONFIDENCE_LABEL } from '../catalogue'
 
-export function LeftPanel({ tab, onTab: setTab }: { tab: 'design' | 'catalogue'; onTab: (tab: 'design' | 'catalogue') => void }) {
+export function LeftPanel({
+  tab,
+  onTab: setTab,
+}: {
+  tab: 'design' | 'catalogue'
+  onTab: (tab: 'design' | 'catalogue') => void
+}) {
   return (
     <div className="panel-left">
-      <div className="panel-caption">BROWSER <span>▾</span></div>
+      <div className="panel-caption">
+        BROWSER <span>▾</span>
+      </div>
       <div className="tabs">
         <button className={tab === 'design' ? 'active' : ''} onClick={() => setTab('design')}>
           Design
@@ -33,10 +36,7 @@ function DesignTree() {
   const errors = useStore((s) => s.errors)
   const store = useStore.getState()
 
-  const errorFeatures = useMemo(
-    () => new Set(errors.map((e) => e.featureId)),
-    [errors],
-  )
+  const errorFeatures = useMemo(() => new Set(errors.map((e) => e.featureId)), [errors])
 
   if (doc.bodies.length === 0 && doc.placements.length === 0) {
     return (
@@ -44,23 +44,28 @@ function DesignTree() {
         Untitled design
         <br />
         <br />
-        Create Sketch → choose a plane → draw a profile → Finish Sketch → Extrude (E). Insert hardware from the toolbar to build around a component.
+        Create Sketch → choose a plane → draw a profile → Finish Sketch → Extrude (E). Insert
+        hardware from the toolbar to build around a component.
       </div>
     )
   }
 
   return (
     <div className="tree">
-      <div className="browser-document">◈ {doc.name} <small>mm</small></div>
-      <details className="origin-planes"><summary>▱ Origin</summary>{(['XY','XZ','YZ'] as const).map(name=><button key={name} onClick={()=>store.startSketch({kind:'named',name,offset:0})}>▧ {name} plane · Create sketch</button>)}</details>
+      <div className="browser-document">
+        ◈ {doc.name} <small>mm</small>
+      </div>
+      <details className="origin-planes">
+        <summary>▱ Origin</summary>
+        {(['XY', 'XZ', 'YZ'] as const).map((name) => (
+          <button key={name} onClick={() => store.startSketch({ kind: 'named', name, offset: 0 })}>
+            ▧ {name} plane · Create sketch
+          </button>
+        ))}
+      </details>
       <div className="browser-folder">▾ Bodies ({doc.bodies.length})</div>
       {doc.bodies.map((body) => (
-        <BodyBranch
-          key={body.id}
-          body={body}
-          selection={selection}
-          errorFeatures={errorFeatures}
-        />
+        <BodyBranch key={body.id} body={body} selection={selection} errorFeatures={errorFeatures} />
       ))}
 
       {doc.placements.length > 0 && (
@@ -154,17 +159,22 @@ function BodyBranch({
         </button>
       </div>
 
-      <details className="feature-history" open={selection.kind === 'feature' && selection.bodyId === body.id ? true : undefined}>
-      <summary>{body.features.length} modelling step{body.features.length === 1 ? '' : 's'}</summary>
-      {body.features.map((feature) => (
-        <FeatureRow
-          key={feature.id}
-          bodyId={body.id}
-          feature={feature}
-          selected={selection.id === feature.id}
-          failed={errorFeatures.has(feature.id)}
-        />
-      ))}
+      <details
+        className="feature-history"
+        open={selection.kind === 'feature' && selection.bodyId === body.id ? true : undefined}
+      >
+        <summary>
+          {body.features.length} modelling step{body.features.length === 1 ? '' : 's'}
+        </summary>
+        {body.features.map((feature) => (
+          <FeatureRow
+            key={feature.id}
+            bodyId={body.id}
+            feature={feature}
+            selected={selection.id === feature.id}
+            failed={errorFeatures.has(feature.id)}
+          />
+        ))}
       </details>
     </>
   )
@@ -195,7 +205,18 @@ function FeatureRow({
       <span className="name" style={{ opacity: feature.suppressed ? 0.45 : 1 }}>
         {feature.name || FEATURE_LABEL[feature.kind]}
       </span>
-      {feature.kind === 'sketch' && <button className="act" title="Edit sketch" onClick={(e) => { e.stopPropagation(); store.openSketch(bodyId, feature.id) }}>✎</button>}
+      {feature.kind === 'sketch' && (
+        <button
+          className="act"
+          title="Edit sketch"
+          onClick={(e) => {
+            e.stopPropagation()
+            store.openSketch(bodyId, feature.id)
+          }}
+        >
+          ✎
+        </button>
+      )}
       <button
         className="act"
         title="Move earlier"
@@ -296,8 +317,8 @@ function Catalogue() {
             Nothing matches that.
             <br />
             <br />
-            The catalogue is open source, and if a part you use is missing you can measure
-            it yourself in a couple of minutes.
+            The catalogue is open source, and if a part you use is missing you can measure it
+            yourself in a couple of minutes.
             <br />
             <br />
             <button className="btn" onClick={() => setMaking(true)}>
@@ -314,10 +335,21 @@ function Catalogue() {
                 key={part.id}
                 className="cat-item"
                 title={`${CONFIDENCE_LABEL[part.confidence]}\n\n${part.source}`}
-                onClick={() => { useStore.getState().addPlacement(part.id); useStore.getState().setStatus(`${part.name} added. Drag the arrows or enter its position in Properties.`); window.dispatchEvent(new CustomEvent('okc:fit')) }}
+                onClick={() => {
+                  useStore.getState().addPlacement(part.id)
+                  useStore
+                    .getState()
+                    .setStatus(
+                      `${part.name} added. Drag the arrows or enter its position in Properties.`,
+                    )
+                  window.dispatchEvent(new CustomEvent('okc:fit'))
+                }}
               >
                 <strong>
-                  {part.name}<span className="add-indicator" aria-hidden="true">＋</span>
+                  {part.name}
+                  <span className="add-indicator" aria-hidden="true">
+                    ＋
+                  </span>
                   {part.confidence === 'approximate' && (
                     <span style={{ color: 'var(--warn)', marginLeft: 6, fontSize: 10 }}>
                       approx

@@ -52,9 +52,7 @@ const STEPS: Step[] = [
     title: 'Let it do the tedious bit',
     body: 'Select the board, open ASSEMBLE and choose mounting holes. Pick the target body and press OK. Moving the board also moves its hole pattern.',
     done: (s) =>
-      s.doc.bodies.some((b) =>
-        b.features.some((f) => f.kind === 'hole' || f.kind === 'standoff'),
-      ),
+      s.doc.bodies.some((b) => b.features.some((f) => f.kind === 'hole' || f.kind === 'standoff')),
   },
   {
     title: 'Take it away',

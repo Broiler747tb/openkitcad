@@ -182,15 +182,11 @@ export function projectionToSVG(projection: ProjectionResult, margin = 5): strin
 
   const body: string[] = []
   for (const poly of projection.polylines) {
-    const d = poly
-      .map((p, i) => `${i === 0 ? 'M' : 'L'} ${round(p[0])} ${round(-p[1])}`)
-      .join(' ')
+    const d = poly.map((p, i) => `${i === 0 ? 'M' : 'L'} ${round(p[0])} ${round(-p[1])}`).join(' ')
     body.push(`<path d="${d}"/>`)
   }
   for (const c of projection.circles) {
-    body.push(
-      `<circle cx="${round(c.cx)}" cy="${round(-c.cy)}" r="${round(c.r)}"/>`,
-    )
+    body.push(`<circle cx="${round(c.cx)}" cy="${round(-c.cy)}" r="${round(c.r)}"/>`)
   }
 
   // The group flips Y back, because SVG measures downward and the model does not.
@@ -209,7 +205,8 @@ function round(n: number): number {
 }
 
 function escapeXml(s: string): string {
-  return s.replace(/[<>&'"]/g, (c) =>
-    ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[c]!,
+  return s.replace(
+    /[<>&'"]/g,
+    (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[c]!,
   )
 }

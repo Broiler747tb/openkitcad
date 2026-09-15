@@ -41,12 +41,60 @@ export interface ScrewSpec {
  * than typical.
  */
 export const SCREWS: Record<ThreadSize, ScrewSpec> = {
-  M2: { thread: 'M2', major: 2, clearance: 2.4, tapping: 1.6, headDiameter: 3.8, headHeight: 2, countersunkDiameter: 3.8 },
-  'M2.5': { thread: 'M2.5', major: 2.5, clearance: 2.9, tapping: 2.05, headDiameter: 4.5, headHeight: 2.5, countersunkDiameter: 4.7 },
-  M3: { thread: 'M3', major: 3, clearance: 3.4, tapping: 2.5, headDiameter: 5.5, headHeight: 3, countersunkDiameter: 6.72 },
-  M4: { thread: 'M4', major: 4, clearance: 4.5, tapping: 3.3, headDiameter: 7, headHeight: 4, countersunkDiameter: 8.96 },
-  M5: { thread: 'M5', major: 5, clearance: 5.5, tapping: 4.2, headDiameter: 8.5, headHeight: 5, countersunkDiameter: 11.2 },
-  M6: { thread: 'M6', major: 6, clearance: 6.6, tapping: 5, headDiameter: 10, headHeight: 6, countersunkDiameter: 13.44 },
+  M2: {
+    thread: 'M2',
+    major: 2,
+    clearance: 2.4,
+    tapping: 1.6,
+    headDiameter: 3.8,
+    headHeight: 2,
+    countersunkDiameter: 3.8,
+  },
+  'M2.5': {
+    thread: 'M2.5',
+    major: 2.5,
+    clearance: 2.9,
+    tapping: 2.05,
+    headDiameter: 4.5,
+    headHeight: 2.5,
+    countersunkDiameter: 4.7,
+  },
+  M3: {
+    thread: 'M3',
+    major: 3,
+    clearance: 3.4,
+    tapping: 2.5,
+    headDiameter: 5.5,
+    headHeight: 3,
+    countersunkDiameter: 6.72,
+  },
+  M4: {
+    thread: 'M4',
+    major: 4,
+    clearance: 4.5,
+    tapping: 3.3,
+    headDiameter: 7,
+    headHeight: 4,
+    countersunkDiameter: 8.96,
+  },
+  M5: {
+    thread: 'M5',
+    major: 5,
+    clearance: 5.5,
+    tapping: 4.2,
+    headDiameter: 8.5,
+    headHeight: 5,
+    countersunkDiameter: 11.2,
+  },
+  M6: {
+    thread: 'M6',
+    major: 6,
+    clearance: 6.6,
+    tapping: 5,
+    headDiameter: 10,
+    headHeight: 6,
+    countersunkDiameter: 13.44,
+  },
 }
 
 export interface InsertSpec {

@@ -24,13 +24,7 @@
  * three separate formulas.
  */
 import { v2, type Vec2 } from '../core/math'
-import type {
-  ArcEntity,
-  LineEntity,
-  NewConstraint,
-  Sketch2D,
-  SketchEntity,
-} from './types'
+import type { ArcEntity, LineEntity, NewConstraint, Sketch2D, SketchEntity } from './types'
 
 /** Ends this close together are the same corner, in mm. */
 const WELD = 1e-6
@@ -162,8 +156,7 @@ export function maxChamferDistance(corner: CornerInfo): number {
 // ---------------------------------------------------------------------------
 
 type Offset =
-  | { kind: 'line'; point: Vec2; dir: Vec2 }
-  | { kind: 'circle'; centre: Vec2; radius: number }
+  { kind: 'line'; point: Vec2; dir: Vec2 } | { kind: 'circle'; centre: Vec2; radius: number }
 
 /** Where the fillet centre may sit, given one edge and a radius. */
 function offsetOf(leg: CornerLeg, corner: Vec2, bisector: Vec2, r: number): Offset {
@@ -262,12 +255,9 @@ function pruneDuplicates(sketch: Sketch2D, ids: string[]): void {
   for (const id of ids) {
     const usedByEntity = sketch.entities.some(
       (e) =>
-        (e.kind !== 'circle' && (e.p1 === id || e.p2 === id)) ||
-        (e.kind !== 'line' && e.c === id),
+        (e.kind !== 'circle' && (e.p1 === id || e.p2 === id)) || (e.kind !== 'line' && e.c === id),
     )
-    const usedByConstraint = sketch.constraints.some((c) =>
-      Object.values(c).includes(id),
-    )
+    const usedByConstraint = sketch.constraints.some((c) => Object.values(c).includes(id))
     if (!usedByEntity && !usedByConstraint) {
       sketch.points = sketch.points.filter((p) => p.id !== id)
     }
@@ -275,11 +265,7 @@ function pruneDuplicates(sketch: Sketch2D, ids: string[]): void {
 }
 
 /** Hold the old corner on this edge's extension, so it stays a virtual sharp. */
-function pinVirtualSharp(
-  leg: CornerLeg,
-  pointId: string,
-  add: (c: NewConstraint) => void,
-): void {
+function pinVirtualSharp(leg: CornerLeg, pointId: string, add: (c: NewConstraint) => void): void {
   if (leg.arc) add({ kind: 'pointOnCircle', p: pointId, e: leg.entity.id })
   else add({ kind: 'pointOnLine', p: pointId, e: leg.entity.id })
 }
@@ -357,8 +343,7 @@ export function filletCorner(
 
   const pts = new Map<string, Vec2>()
   for (const p of sketch.points) pts.set(p.id, [p.x, p.y])
-  const add = (c: NewConstraint) =>
-    sketch.constraints.push({ ...c, id: nextId('c') } as never)
+  const add = (c: NewConstraint) => sketch.constraints.push({ ...c, id: nextId('c') } as never)
 
   add({ kind: 'radius', e: arcId, value: radius })
   for (const leg of corner.legs) {
@@ -406,10 +391,7 @@ export function chamferCorner(
   const along = (leg: CornerLeg): Vec2 => {
     if (!leg.arc) return v2.add(corner.corner, v2.scale(leg.dir, distance))
     const { centre, radius } = leg.arc
-    const start = Math.atan2(
-      corner.corner[1] - centre[1],
-      corner.corner[0] - centre[0],
-    )
+    const start = Math.atan2(corner.corner[1] - centre[1], corner.corner[0] - centre[0])
     const forward = perp(v2.norm(v2.sub(corner.corner, centre)))
     const sign = v2.dot(forward, leg.dir) >= 0 ? 1 : -1
     const a = start + (sign * distance) / radius
@@ -433,8 +415,7 @@ export function chamferCorner(
     construction: false,
   })
 
-  const add = (c: NewConstraint) =>
-    sketch.constraints.push({ ...c, id: nextId('c') } as never)
+  const add = (c: NewConstraint) => sketch.constraints.push({ ...c, id: nextId('c') } as never)
   pinVirtualSharp(legA, pointId, add)
   pinVirtualSharp(legB, pointId, add)
   add({ kind: 'distance', a: pointId, b: t1Id, value: v2.dist(corner.corner, t1) })
@@ -547,9 +528,7 @@ export function filletBetween(
   if (crossings.length === 0) {
     return { ok: false, message: 'These two never meet, even extended, so there is no corner.' }
   }
-  const at = crossings.reduce((best, c) =>
-    v2.dist(c, cursor) < v2.dist(best, cursor) ? c : best,
-  )
+  const at = crossings.reduce((best, c) => (v2.dist(c, cursor) < v2.dist(best, cursor) ? c : best))
 
   // Pick the quadrant the user clicked in.
   const toward = v2.norm(v2.sub(cursor, at))
@@ -633,8 +612,7 @@ export function filletBetween(
 
   const after = new Map<string, Vec2>()
   for (const p of sketch.points) after.set(p.id, [p.x, p.y])
-  const add = (c: NewConstraint) =>
-    sketch.constraints.push({ ...c, id: nextId('c') } as never)
+  const add = (c: NewConstraint) => sketch.constraints.push({ ...c, id: nextId('c') } as never)
 
   add({ kind: 'radius', e: arcId, value: radius })
   for (const leg of [legA, legB]) {

@@ -30,14 +30,11 @@ export function scheduleAutosave(doc: OkcDocument): void {
 
 export function saveAutosaveNow(doc: OkcDocument): void {
   clearTimeout(autosaveTimer)
-    try {
-      localStorage.setItem(
-        AUTOSAVE_KEY,
-        JSON.stringify({ savedAt: new Date().toISOString(), doc }),
-      )
-    } catch {
-      // A full or disabled storage must never break editing.
-    }
+  try {
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({ savedAt: new Date().toISOString(), doc }))
+  } catch {
+    // A full or disabled storage must never break editing.
+  }
 }
 
 export function loadAutosave(): { doc: OkcDocument; savedAt: string } | null {
@@ -146,7 +143,7 @@ function sanitiseFilename(name: string): string {
 
 /** Trigger a browser download. The universal fallback. */
 export function downloadBlob(blob: Blob, filename: string): void {
-  if(androidDownload(blob,filename))return
+  if (androidDownload(blob, filename)) return
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url

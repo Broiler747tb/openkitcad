@@ -5,7 +5,9 @@ import type { ExportFormat } from '../kernel/types'
 
 export function ExportDialog({ onClose }: { onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null)
-  useEffect(() => { dialog.current?.showModal() }, [])
+  useEffect(() => {
+    dialog.current?.showModal()
+  }, [])
   const shapes = useStore((s) => s.shapes)
   const selection = useStore((s) => s.selection)
   const bodies = shapes.filter((s) => s.kind === 'body')
@@ -18,7 +20,13 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
   const chosen = bodies.find((b) => b.id === target)
 
   return (
-    <dialog ref={dialog} className="action-dialog" onCancel={onClose} onKeyDown={(e) => e.stopPropagation()} aria-label="Export design">
+    <dialog
+      ref={dialog}
+      className="action-dialog"
+      onCancel={onClose}
+      onKeyDown={(e) => e.stopPropagation()}
+      aria-label="Export design"
+    >
       <div>
         <h2>Export</h2>
         <p className="sub">Everything happens in your browser. Nothing is uploaded.</p>

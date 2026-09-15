@@ -1,0 +1,9 @@
+node_modules
+dist
+release
+release-portable
+release-android
+android
+package-lock.json
+*.md
+src/catalogue/parts

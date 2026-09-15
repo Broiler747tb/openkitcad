@@ -44,8 +44,7 @@ function crossings(sketch: Sketch2D, line: LineEntity, pts: Map<string, Vec2>): 
 
     // Circle or arc: solve |a + t*d - centre| = r.
     const centre = pts.get(other.c)!
-    const radius =
-      other.kind === 'circle' ? other.r : v2.dist(centre, pts.get(other.p1)!)
+    const radius = other.kind === 'circle' ? other.r : v2.dist(centre, pts.get(other.p1)!)
     const m = v2.sub(a, centre)
     const qa = v2.dot(d, d)
     const qb = 2 * v2.dot(m, d)
@@ -71,9 +70,7 @@ export function trimLine(
   at: Vec2,
   nextId: (prefix: string) => string,
 ): EditResult {
-  const line = sketch.entities.find(
-    (e): e is LineEntity => e.id === entityId && e.kind === 'line',
-  )
+  const line = sketch.entities.find((e): e is LineEntity => e.id === entityId && e.kind === 'line')
   if (!line) {
     return { ok: false, message: 'Trim only works on straight lines for now.' }
   }
@@ -166,8 +163,7 @@ function crossingAngles(
   pts: Map<string, Vec2>,
 ): number[] {
   const centre = pts.get(target.c)!
-  const R =
-    target.kind === 'circle' ? target.r : v2.dist(centre, pts.get(target.p1)!)
+  const R = target.kind === 'circle' ? target.r : v2.dist(centre, pts.get(target.p1)!)
   const out: number[] = []
   const record = (p: Vec2) => out.push(norm(Math.atan2(p[1] - centre[1], p[0] - centre[0])))
 
@@ -247,9 +243,7 @@ export function trimRound(
   }
   const drop = () => {
     sketch.entities = sketch.entities.filter((e) => e.id !== entityId)
-    sketch.constraints = sketch.constraints.filter(
-      (c) => !Object.values(c).includes(entityId),
-    )
+    sketch.constraints = sketch.constraints.filter((c) => !Object.values(c).includes(entityId))
   }
 
   if (cuts.length === 0) {
@@ -279,9 +273,7 @@ export function trimRound(
     const startId = pointAt(to)
     const endId = pointAt(from)
     sketch.entities = sketch.entities.filter((e) => e.id !== entityId)
-    sketch.constraints = sketch.constraints.filter(
-      (c) => !Object.values(c).includes(entityId),
-    )
+    sketch.constraints = sketch.constraints.filter((c) => !Object.values(c).includes(entityId))
     sketch.entities.push({
       id: nextId('e'),
       kind: 'arc',
@@ -295,12 +287,19 @@ export function trimRound(
   }
 
   // An arc: work in its own sweep, then shorten or split.
-  const a1 = norm(Math.atan2(pts.get(entity.p1)![1] - centre[1], pts.get(entity.p1)![0] - centre[0]))
-  const a2 = norm(Math.atan2(pts.get(entity.p2)![1] - centre[1], pts.get(entity.p2)![0] - centre[0]))
+  const a1 = norm(
+    Math.atan2(pts.get(entity.p1)![1] - centre[1], pts.get(entity.p1)![0] - centre[0]),
+  )
+  const a2 = norm(
+    Math.atan2(pts.get(entity.p2)![1] - centre[1], pts.get(entity.p2)![0] - centre[0]),
+  )
   const sweep = entity.ccw ? norm(a2 - a1) : norm(a1 - a2)
   const along = (angle: number) => (entity.ccw ? norm(angle - a1) : norm(a1 - angle))
 
-  const inside = cuts.map(along).filter((t) => t > 1e-6 && t < sweep - 1e-6).sort((p, q) => p - q)
+  const inside = cuts
+    .map(along)
+    .filter((t) => t > 1e-6 && t < sweep - 1e-6)
+    .sort((p, q) => p - q)
   const clickT = along(clickAngle)
   if (inside.length === 0 || clickT > sweep) {
     drop()
@@ -366,8 +365,7 @@ export function addPolygon(
 
   const centreId = nextId('p')
   sketch.points.push({ id: centreId, x: centre[0], y: centre[1] })
-  const add = (c: NewConstraint) =>
-    sketch.constraints.push({ ...c, id: nextId('c') } as never)
+  const add = (c: NewConstraint) => sketch.constraints.push({ ...c, id: nextId('c') } as never)
 
   const corners: string[] = []
   for (let i = 0; i < n; i++) {
@@ -430,8 +428,7 @@ export function addSlot(
   const bottomRight = point(half, -radius)
   const bottomLeft = point(-half, -radius)
 
-  const add = (c: NewConstraint) =>
-    sketch.constraints.push({ ...c, id: nextId('c') } as never)
+  const add = (c: NewConstraint) => sketch.constraints.push({ ...c, id: nextId('c') } as never)
   const top = nextId('e')
   const bottom = nextId('e')
   sketch.entities.push(
@@ -547,11 +544,7 @@ function copyGeometry(
  * their radius is derived from their centre and endpoints, which are already
  * positioned.
  */
-function tieRadii(
-  sketch: Sketch2D,
-  plan: CopyPlan,
-  add: (c: NewConstraint) => void,
-): void {
+function tieRadii(sketch: Sketch2D, plan: CopyPlan, add: (c: NewConstraint) => void): void {
   for (const [originalId, copyId] of plan.entities) {
     const original = sketch.entities.find((e) => e.id === originalId)
     if (original?.kind === 'circle') {
@@ -579,19 +572,16 @@ export function linearPattern(
     return { ok: false, message: 'Choose a count between 2 and 200.' }
   }
   if (Math.abs(dx) < 1e-9 && Math.abs(dy) < 1e-9) {
-    return { ok: false, message: 'The spacing cannot be zero, or the copies land on top of each other.' }
+    return {
+      ok: false,
+      message: 'The spacing cannot be zero, or the copies land on top of each other.',
+    }
   }
 
-  const add = (c: NewConstraint) =>
-    sketch.constraints.push({ ...c, id: nextId('c') } as never)
+  const add = (c: NewConstraint) => sketch.constraints.push({ ...c, id: nextId('c') } as never)
 
   for (let k = 1; k < count; k++) {
-    const plan = copyGeometry(
-      sketch,
-      entityIds,
-      (p) => [p[0] + dx * k, p[1] + dy * k],
-      nextId,
-    )
+    const plan = copyGeometry(sketch, entityIds, (p) => [p[0] + dx * k, p[1] + dy * k], nextId)
     for (const [original, copy] of plan.points) {
       add({ kind: 'distanceX', a: original, b: copy, value: dx * k })
       add({ kind: 'distanceY', a: original, b: copy, value: dy * k })
@@ -616,11 +606,9 @@ export function mirrorEntities(
 ): EditResult {
   if (!entityIds.length) return { ok: false, message: 'Pick something to mirror first.' }
 
-  const reflect = (p: Vec2): Vec2 =>
-    axis === 'vertical' ? [-p[0], p[1]] : [p[0], -p[1]]
+  const reflect = (p: Vec2): Vec2 => (axis === 'vertical' ? [-p[0], p[1]] : [p[0], -p[1]])
 
-  const add = (c: NewConstraint) =>
-    sketch.constraints.push({ ...c, id: nextId('c') } as never)
+  const add = (c: NewConstraint) => sketch.constraints.push({ ...c, id: nextId('c') } as never)
 
   const before = new Map<string, Vec2>()
   for (const p of sketch.points) before.set(p.id, [p.x, p.y])
@@ -658,8 +646,7 @@ export function offsetEntities(
 
   const pts = new Map<string, Vec2>()
   for (const p of sketch.points) pts.set(p.id, [p.x, p.y])
-  const add = (c: NewConstraint) =>
-    sketch.constraints.push({ ...c, id: nextId('c') } as never)
+  const add = (c: NewConstraint) => sketch.constraints.push({ ...c, id: nextId('c') } as never)
 
   let made = 0
   for (const id of entityIds) {
@@ -769,8 +756,7 @@ export function circularPattern(
     return { ok: false, message: 'Choose a count between 2 and 200.' }
   }
 
-  const add = (c: NewConstraint) =>
-    sketch.constraints.push({ ...c, id: nextId('c') } as never)
+  const add = (c: NewConstraint) => sketch.constraints.push({ ...c, id: nextId('c') } as never)
 
   // A full turn puts the last copy back on the first, so share the circle
   // between all of them; a partial sweep spans the copies end to end.

@@ -80,9 +80,7 @@ export function searchParts(query: string): CataloguePart[] {
   if (!q) return allParts()
   const terms = q.split(/\s+/)
   return allParts().filter((p) => {
-    const hay = [p.name, p.summary, p.manufacturer ?? '', ...(p.tags ?? [])]
-      .join(' ')
-      .toLowerCase()
+    const hay = [p.name, p.summary, p.manufacturer ?? '', ...(p.tags ?? [])].join(' ').toLowerCase()
     return terms.every((t) => hay.includes(t))
   })
 }

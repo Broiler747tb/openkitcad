@@ -110,12 +110,7 @@ function arc(
   }
 
   const theta1 = angleOf(1, 0, (x1p - cxp) / rx, (y1p - cyp) / ry)
-  let delta = angleOf(
-    (x1p - cxp) / rx,
-    (y1p - cyp) / ry,
-    (-x1p - cxp) / rx,
-    (-y1p - cyp) / ry,
-  )
+  let delta = angleOf((x1p - cxp) / rx, (y1p - cyp) / ry, (-x1p - cxp) / rx, (-y1p - cyp) / ry)
   if (!sweep && delta > 0) delta -= 2 * Math.PI
   if (sweep && delta < 0) delta += 2 * Math.PI
 
@@ -124,10 +119,7 @@ function arc(
     const t = theta1 + (delta * i) / steps
     const ct = Math.cos(t)
     const st = Math.sin(t)
-    out.push([
-      cx + rx * ct * cosPhi - ry * st * sinPhi,
-      cy + rx * ct * sinPhi + ry * st * cosPhi,
-    ])
+    out.push([cx + rx * ct * cosPhi - ry * st * sinPhi, cy + rx * ct * sinPhi + ry * st * cosPhi])
   }
 }
 
@@ -275,8 +267,14 @@ function asCircle(points: Pt[]): { cx: number; cy: number; r: number } | null {
   const n = pts.length
 
   // Fit x^2 + y^2 = 2ax + 2by + c, so the centre is (a, b).
-  let sxx = 0, sxy = 0, syy = 0, sx = 0, sy = 0
-  let sxz = 0, syz = 0, sz = 0
+  let sxx = 0,
+    sxy = 0,
+    syy = 0,
+    sx = 0,
+    sy = 0
+  let sxz = 0,
+    syz = 0,
+    sz = 0
   for (const [x, y] of pts) {
     const z = x * x + y * y
     sxx += x * x
@@ -356,7 +354,8 @@ export function flattenSvgPaths(paths: string[], flipY = true): ProjectionResult
       if (poly.length < 2) continue
       // asCircle needs the closing point back to recognise a closed loop.
       const closed: Pt[] =
-        Math.hypot(poly[0][0] - poly[poly.length - 1][0], poly[0][1] - poly[poly.length - 1][1]) < 1e-9
+        Math.hypot(poly[0][0] - poly[poly.length - 1][0], poly[0][1] - poly[poly.length - 1][1]) <
+        1e-9
           ? poly
           : [...poly, poly[0]]
       const circle = asCircle(closed)

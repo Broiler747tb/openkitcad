@@ -52,7 +52,6 @@ export interface ObjectAction {
   run: (value: number, value2?: number, value3?: number, choice?: string) => void
 }
 
-
 /**
  * Menu headings, keyed off the action id.
  *
@@ -188,20 +187,31 @@ export function objectActions(
   return buildObjectActions(selection, picked, targetBodyId).map((a) => ({
     ...a,
     group: objectGroupOf(a.id),
-    ...(a.id.startsWith('add-') ? { run: (v: number, v2?: number, v3?: number, choice?: string) => {
-      a.run(v, v2, v3, choice)
-      const store = useStore.getState()
-      const body = store.doc.bodies.at(-1)
-      if (body) store.select({ kind: 'body', id: body.id })
-      window.dispatchEvent(new CustomEvent('okc:fit'))
-    } } : {}),
-    ...(['holes', 'standoffs', 'ports'].includes(a.id) ? {
-      choice: { label: 'Target body', initial: targetBodyId ?? useStore.getState().doc.bodies[0]?.id ?? '',
-        options: useStore.getState().doc.bodies.map((b) => ({ value: b.id, label: b.name })) },
-      run: (v: number, v2?: number, v3?: number, target?: string) => {
-        buildObjectActions(selection, picked, target).find((item) => item.id === a.id)?.run(v, v2, v3)
-      },
-    } : {}),
+    ...(a.id.startsWith('add-')
+      ? {
+          run: (v: number, v2?: number, v3?: number, choice?: string) => {
+            a.run(v, v2, v3, choice)
+            const store = useStore.getState()
+            const body = store.doc.bodies.at(-1)
+            if (body) store.select({ kind: 'body', id: body.id })
+            window.dispatchEvent(new CustomEvent('okc:fit'))
+          },
+        }
+      : {}),
+    ...(['holes', 'standoffs', 'ports'].includes(a.id)
+      ? {
+          choice: {
+            label: 'Target body',
+            initial: targetBodyId ?? useStore.getState().doc.bodies[0]?.id ?? '',
+            options: useStore.getState().doc.bodies.map((b) => ({ value: b.id, label: b.name })),
+          },
+          run: (v: number, v2?: number, v3?: number, target?: string) => {
+            buildObjectActions(selection, picked, target)
+              .find((item) => item.id === a.id)
+              ?.run(v, v2, v3)
+          },
+        }
+      : {}),
   }))
 }
 
@@ -262,9 +272,7 @@ function buildObjectActions(
     // "Change its size" covers whichever way the part was made: typed-in
     // shapes carry their sides directly, drawn ones have to have the outline
     // stretched underneath them.
-    const solid = body.features.find(
-      (f) => f.kind === 'box' || f.kind === 'cylinder',
-    )
+    const solid = body.features.find((f) => f.kind === 'box' || f.kind === 'cylinder')
     if (solid?.kind === 'box') {
       out.push({
         id: 'size',
@@ -413,9 +421,7 @@ function buildObjectActions(
     // Anything picked with shift takes priority over the blanket versions,
     // because "round these three edges" is nearly always what was meant when
     // the user went to the trouble of selecting them.
-    const pickedEdges = store.subSelection.filter(
-      (s) => s.bodyId === bodyId && s.kind === 'edge',
-    )
+    const pickedEdges = store.subSelection.filter((s) => s.bodyId === bodyId && s.kind === 'edge')
     if (pickedEdges.length > 0) {
       const refs = pickedEdges.map((s) => ({
         bodyId,
@@ -483,13 +489,34 @@ function buildObjectActions(
             depth: 'through',
           }),
       })
-      out.push(ventOn('hex', 'Hexagons', 'The classic honeycomb. Webs the same width in every direction', 6))
+      out.push(
+        ventOn(
+          'hex',
+          'Hexagons',
+          'The classic honeycomb. Webs the same width in every direction',
+          6,
+        ),
+      )
       out.push(ventOn('round', 'Round holes', 'Plain and quiet. Prints cleanly at any size', 4))
       out.push(ventOn('square', 'Square holes', 'A grille. Reads as deliberate on a flat panel', 4))
       out.push(ventOn('triangle', 'Triangles', 'Alternating rows, so the webs stay even', 6))
       out.push(ventOn('diamond', 'Diamonds', 'Squares on their corner. No flat overhang to sag', 6))
-      out.push(ventOn('slot', 'Slots', 'Louvre bars with rounded ends, which is where a printed panel splits first', 12))
-      out.push(ventOn('cross', 'Crosses', 'Decorative. Arms a third of the span, so the webs stay even', 7))
+      out.push(
+        ventOn(
+          'slot',
+          'Slots',
+          'Louvre bars with rounded ends, which is where a printed panel splits first',
+          12,
+        ),
+      )
+      out.push(
+        ventOn(
+          'cross',
+          'Crosses',
+          'Decorative. Arms a third of the span, so the webs stay even',
+          7,
+        ),
+      )
       out.push(
         ventOn(
           'gyroid',
@@ -546,9 +573,7 @@ function buildObjectActions(
     const positionOf = (id: string) => doc.bodies.findIndex((x) => x.id === id)
     for (const other of others) {
       const later = positionOf(other.id) > positionOf(bodyId)
-      const note = later
-        ? ` (will move "${other.name}" above this one first)`
-        : ''
+      const note = later ? ` (will move "${other.name}" above this one first)` : ''
       const withOrdering = (op: 'add' | 'cut' | 'intersect') => () => {
         // Bodies build top to bottom, so the tool has to come first.
         if (later) store.moveBodyBefore(other.id, bodyId)
@@ -856,7 +881,10 @@ function buildObjectActions(
       out.push({
         id: 'ports',
         label: 'Cut its port openings',
-        hint: part.connectors.map((c) => c.label).slice(0, 3).join(', '),
+        hint: part.connectors
+          .map((c) => c.label)
+          .slice(0, 3)
+          .join(', '),
         run: () =>
           store.addFeature(targetBody, {
             id: newId('ports'),
@@ -893,9 +921,28 @@ function buildObjectActions(
   return raw
 }
 
-export function ObjectMenu({ x, y, actions, onClose }: {
-  x: number; y: number; actions: ObjectAction[]; onClose: () => void
+export function ObjectMenu({
+  x,
+  y,
+  actions,
+  onClose,
+}: {
+  x: number
+  y: number
+  actions: ObjectAction[]
+  onClose: () => void
 }) {
-  return <ContextMenu x={x} y={y} actions={actions} order={OBJECT_GROUP_ORDER}
-    onClose={onClose} onPick={(action) => { onClose(); chooseAction(action) }} />
+  return (
+    <ContextMenu
+      x={x}
+      y={y}
+      actions={actions}
+      order={OBJECT_GROUP_ORDER}
+      onClose={onClose}
+      onPick={(action) => {
+        onClose()
+        chooseAction(action)
+      }}
+    />
+  )
 }

@@ -17,18 +17,28 @@ if (new URLSearchParams(location.search).has('selftest')) {
     'font:13px/1.55 ui-monospace,monospace;color:#e8e2d8;background:#16181b;' +
     'padding:24px;min-height:100vh;box-sizing:border-box;white-space:pre'
   mount.textContent = 'running…'
-  Promise.all([import('./dev/selftest'), import('./dev/kerneltest'), import('./dev/workflowtest'), import('./dev/precisiontest'), import('./dev/powertest'),import('./dev/parametertest')]).then(
-    async ([selftest, kerneltest, workflowtest, precisiontest, powertest,parametertest]) => {
-      const results = [...selftest.runSelfTest(), ...workflowtest.runWorkflowTest(), ...precisiontest.runPrecisionTest(), ...powertest.runPowerTest(), ...(await parametertest.runParameterTest()), ...(await kerneltest.runKernelTest())]
-      ;(window as any).__okc_tests = results
-      const failed = results.filter((r) => !r.pass)
-      mount.textContent =
-        `${failed.length ? 'FAIL' : 'PASS'}  ${results.length - failed.length}/${results.length}\n\n` +
-        results
-          .map((r) => `${r.pass ? ' ok ' : 'FAIL'}  ${r.name}\n        ${r.detail}`)
-          .join('\n')
-    },
-  )
+  Promise.all([
+    import('./dev/selftest'),
+    import('./dev/kerneltest'),
+    import('./dev/workflowtest'),
+    import('./dev/precisiontest'),
+    import('./dev/powertest'),
+    import('./dev/parametertest'),
+  ]).then(async ([selftest, kerneltest, workflowtest, precisiontest, powertest, parametertest]) => {
+    const results = [
+      ...selftest.runSelfTest(),
+      ...workflowtest.runWorkflowTest(),
+      ...precisiontest.runPrecisionTest(),
+      ...powertest.runPowerTest(),
+      ...(await parametertest.runParameterTest()),
+      ...(await kerneltest.runKernelTest()),
+    ]
+    ;(window as any).__okc_tests = results
+    const failed = results.filter((r) => !r.pass)
+    mount.textContent =
+      `${failed.length ? 'FAIL' : 'PASS'}  ${results.length - failed.length}/${results.length}\n\n` +
+      results.map((r) => `${r.pass ? ' ok ' : 'FAIL'}  ${r.name}\n        ${r.detail}`).join('\n')
+  })
 } else {
   if (import.meta.env.DEV) {
     // Handy for poking at state from the console during development.

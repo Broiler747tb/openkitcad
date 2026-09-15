@@ -35,7 +35,6 @@ interface DimensionPrompt {
   apply: (value: number) => void
 }
 
-
 /**
  * What Ctrl+C put aside, kept in memory rather than the system clipboard.
  *
@@ -157,7 +156,7 @@ function pasteClipboard(): boolean {
 }
 
 export function Viewport() {
-  const preferences = usePreferences(s=>s.values)
+  const preferences = usePreferences((s) => s.values)
   const mountRef = useRef<HTMLDivElement>(null)
   const engineRef = useRef<ViewportEngine | null>(null)
   const draftRef = useRef<Draft>({ anchors: [], anchorIds: [] })
@@ -183,7 +182,9 @@ export function Viewport() {
   const [prompt, setPrompt] = useState<DimensionPrompt | null>(null)
   useEffect(() => {
     if (!prompt) return
-    chooseAction({ id: 'dimension-value', label: 'Set dimension',
+    chooseAction({
+      id: 'dimension-value',
+      label: 'Set dimension',
       prompt: { label: 'Value', initial: Number(prompt.value), unit: 'mm' },
       run: (value) => prompt.apply(value),
     })
@@ -197,7 +198,7 @@ export function Viewport() {
   const selection = useStore((s) => s.selection)
   const section = useStore((s) => s.section)
   const tool = useStore((s) => s.tool)
-  const fingerMode = usePenMode(s=>s.fingerMode)
+  const fingerMode = usePenMode((s) => s.fingerMode)
   const activeSketch = useStore((s) => s.activeSketch)
   const doc = useStore((s) => s.doc)
   const gizmoMode = useStore((s) => s.gizmoMode)
@@ -267,13 +268,9 @@ export function Viewport() {
       store.updatePlacement(
         store.selection.id,
         {
-          position: [
-            round(position[0]),
-            round(position[1]),
-            round(position[2]),
-          ],
+          position: [round(position[0]), round(position[1]), round(position[2])],
           // Keep it in 0-360 so the number in the panel reads sensibly.
-          rotation: ((Math.round(rotationDeg * 10) / 10) % 360 + 360) % 360,
+          rotation: (((Math.round(rotationDeg * 10) / 10) % 360) + 360) % 360,
         },
         { transient: true },
       )
@@ -282,8 +279,7 @@ export function Viewport() {
     const observer = new ResizeObserver(() => engine.resize())
     observer.observe(mountRef.current)
 
-    const onView = (e: Event) =>
-      engine.setStandardView((e as CustomEvent).detail)
+    const onView = (e: Event) => engine.setStandardView((e as CustomEvent).detail)
     const onFit = () => engine.frameAll()
     window.addEventListener('okc:view', onView)
     window.addEventListener('okc:fit', onFit)
@@ -303,9 +299,7 @@ export function Viewport() {
     if (!engine) return
     // Hidden while sketching: the whole point of being in a sketch is to see
     // the outline, and a row of screws standing on it is in the way.
-    engine.setFastenerGhosts(
-      showFasteners && !activeSketch ? fastenerGhosts(doc, shapes) : [],
-    )
+    engine.setFastenerGhosts(showFasteners && !activeSketch ? fastenerGhosts(doc, shapes) : [])
   }, [doc, shapes, showFasteners, activeSketch])
 
   // Show the move / turn gizmo on whatever is selected.
@@ -340,16 +334,11 @@ export function Viewport() {
     }
     gizmoBase.current = null
     const placement =
-      selection.kind === 'placement'
-        ? doc.placements.find((p) => p.id === selection.id)
-        : undefined
+      selection.kind === 'placement' ? doc.placements.find((p) => p.id === selection.id) : undefined
     if (!placement) {
       engine.setGizmo(null, gizmoMode)
     } else {
-      engine.setGizmo(
-        { position: placement.position, rotation: placement.rotation },
-        gizmoMode,
-      )
+      engine.setGizmo({ position: placement.position, rotation: placement.rotation }, gizmoMode)
     }
   }, [selection, doc, shapes, gizmoMode, activeSketch])
 
@@ -377,12 +366,7 @@ export function Viewport() {
   }, [subSelection, activeSketch, shapes])
 
   useEffect(() => {
-    engineRef.current?.setSection(
-      section.enabled,
-      section.axis,
-      section.position,
-      section.flipped,
-    )
+    engineRef.current?.setSection(section.enabled, section.axis, section.position, section.flipped)
   }, [section])
 
   useEffect(() => {
@@ -404,23 +388,25 @@ export function Viewport() {
     engineRef.current?.setControlsEnabled(true)
   }, [tool, activeSketch?.bodyId, activeSketch?.featureId])
 
-  useEffect(()=>{
-    if(isAndroidApp)engineRef.current?.setFingerNavigation(!activeSketch && fingerMode==='orbit')
-  },[fingerMode,activeSketch])
+  useEffect(() => {
+    if (isAndroidApp)
+      engineRef.current?.setFingerNavigation(!activeSketch && fingerMode === 'orbit')
+  }, [fingerMode, activeSketch])
 
-  useEffect(()=>{
-    const cancel=()=>{
-      draftRef.current=emptyDraft()
-      draggingRef.current=null
+  useEffect(() => {
+    const cancel = () => {
+      draftRef.current = emptyDraft()
+      draggingRef.current = null
       cancelHold()
       engineRef.current?.setControlsEnabled(true)
       useStore.getState().setTool('select')
-      setMenu(null);setObjectMenu(null)
-      forceRender(n=>n+1)
+      setMenu(null)
+      setObjectMenu(null)
+      forceRender((n) => n + 1)
     }
-    window.addEventListener('okc:cancel',cancel)
-    return()=>window.removeEventListener('okc:cancel',cancel)
-  },[])
+    window.addEventListener('okc:cancel', cancel)
+    return () => window.removeEventListener('okc:cancel', cancel)
+  }, [])
 
   // Redraw the sketch whenever it changes.
   useEffect(() => {
@@ -437,7 +423,9 @@ export function Viewport() {
     engine.setLabels(sketchLabels(sketchFeature.sketch, frame))
   }, [doc, sketchFeature, frame, sketchSelection, sketchStatus, tool])
 
-  useEffect(()=>{engineRef.current?.setGridPreferences(preferences,frame)},[preferences,frame])
+  useEffect(() => {
+    engineRef.current?.setGridPreferences(preferences, frame)
+  }, [preferences, frame])
 
   // --- helpers -------------------------------------------------------------
 
@@ -455,7 +443,7 @@ export function Viewport() {
 
   /** Reuse a snapped point, or add a new one. */
   function ensurePoint(sketch: Sketch2D, pos: Vec2, snapId: string | null): string {
-    if (snapId && sketch.points.some(p => p.id === snapId)) return snapId
+    if (snapId && sketch.points.some((p) => p.id === snapId)) return snapId
     const id = newId('p')
     sketch.points.push({ id, x: pos[0], y: pos[1] })
     return id
@@ -465,21 +453,22 @@ export function Viewport() {
     sketch.constraints.push({ ...c, id: newId('c') } as Constraint)
   }
 
-  useEffect(()=>{
-    const input=(event:Event)=>{
-      if(!['line','rectangle','circle','arc'].includes(tool)||!activeSketch)return
-      const {x,y,relative}=(event as CustomEvent<{x:number;y:number;relative:boolean}>).detail
-      if(!Number.isFinite(x)||!Number.isFinite(y))return
-      const base=relative?draftRef.current.anchors.at(-1):null
-      commitClick([x+(base?.[0]??0),y+(base?.[1]??0)],true)
+  useEffect(() => {
+    const input = (event: Event) => {
+      if (!['line', 'rectangle', 'circle', 'arc'].includes(tool) || !activeSketch) return
+      const { x, y, relative } = (event as CustomEvent<{ x: number; y: number; relative: boolean }>)
+        .detail
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return
+      const base = relative ? draftRef.current.anchors.at(-1) : null
+      commitClick([x + (base?.[0] ?? 0), y + (base?.[1] ?? 0)], true)
     }
-    window.addEventListener('okc:coordinate',input)
-    return()=>window.removeEventListener('okc:coordinate',input)
-  },[tool,activeSketch,frame])
+    window.addEventListener('okc:coordinate', input)
+    return () => window.removeEventListener('okc:coordinate', input)
+  }, [tool, activeSketch, frame])
 
   // --- sketch drawing ------------------------------------------------------
 
-  function commitClick(raw: Vec2, bypass=false) {
+  function commitClick(raw: Vec2, bypass = false) {
     if (!['line', 'rectangle', 'circle', 'arc'].includes(tool)) return
     const store = useStore.getState()
     const draft = draftRef.current
@@ -487,7 +476,7 @@ export function Viewport() {
     if (!sketch) return
 
     const snap = findSnap(sketch, raw, {
-      ...snapOptions(toleranceAt(),bypass),
+      ...snapOptions(toleranceAt(), bypass),
       from: draft.anchors.length ? draft.anchors[draft.anchors.length - 1] : undefined,
     })
 
@@ -574,7 +563,7 @@ export function Viewport() {
         const p2 = ensurePoint(s, [c[0] + dir[0] * r, c[1] + dir[1] * r], draft.anchorIds[2])
         const a1 = Math.atan2(start[1] - c[1], start[0] - c[0])
         const a2 = Math.atan2(end[1] - c[1], end[0] - c[0])
-        const ccw = ((a2 - a1 + Math.PI * 2) % (Math.PI * 2)) < Math.PI
+        const ccw = (a2 - a1 + Math.PI * 2) % (Math.PI * 2) < Math.PI
         s.entities.push({
           id: newId('e'),
           kind: 'arc',
@@ -601,15 +590,7 @@ export function Viewport() {
       case 'line':
         return [[draft.anchors[draft.anchors.length - 1], cursor]]
       case 'rectangle':
-        return [
-          [
-            a,
-            [cursor[0], a[1]],
-            cursor,
-            [a[0], cursor[1]],
-            a,
-          ],
-        ]
+        return [[a, [cursor[0], a[1]], cursor, [a[0], cursor[1]], a]]
       case 'circle': {
         const r = v2.dist(a, cursor)
         const ring: Vec2[] = []
@@ -667,7 +648,12 @@ export function Viewport() {
           draggingRef.current.moved = true
           store.beginTransient()
         }
-        const dragged = findSnap(sketch,cursor,{...snapOptions(toleranceAt(),e.altKey),exclude:[draggingRef.current.pointId],edges:false,midpoints:false})
+        const dragged = findSnap(sketch, cursor, {
+          ...snapOptions(toleranceAt(), e.altKey),
+          exclude: [draggingRef.current.pointId],
+          edges: false,
+          midpoints: false,
+        })
         store.solveActiveSketch({
           point: draggingRef.current.pointId,
           x: dragged.point[0],
@@ -679,28 +665,26 @@ export function Viewport() {
       if (tool === 'trim') {
         const hit = hitTestSketch(sketch, cursor, toleranceAt(), false)
         setCursorHint({ x: e.clientX, y: e.clientY, text: 'Trim: click to remove · Esc to finish' })
-        engine.setSketch(sketch, frame, null, selectionHighlight(hit ? [hit] : []), looseGeometry(sketch, store.sketchStatus))
+        engine.setSketch(
+          sketch,
+          frame,
+          null,
+          selectionHighlight(hit ? [hit] : []),
+          looseGeometry(sketch, store.sketchStatus),
+        )
         return
       }
 
       const snap = findSnap(sketch, cursor, {
-        ...snapOptions(toleranceAt(),e.altKey),
+        ...snapOptions(toleranceAt(), e.altKey),
         from: draftRef.current.anchors.at(-1),
       })
-      setCursorHint(
-        snap.hint ? { x: e.clientX, y: e.clientY, text: snap.hint } : null,
-      )
+      setCursorHint(snap.hint ? { x: e.clientX, y: e.clientY, text: snap.hint } : null)
       const preview = tool === 'select' ? null : previewFor(snap.point)
       const highlight = selectionHighlight(store.sketchSelection)
       if (snap.snapToPointId) highlight.points.push(snap.snapToPointId)
       if (snap.onEntityId) highlight.entities.push(snap.onEntityId)
-      engine.setSketch(
-        sketch,
-        frame,
-        preview,
-        highlight,
-        looseGeometry(sketch, store.sketchStatus),
-      )
+      engine.setSketch(sketch, frame, preview, highlight, looseGeometry(sketch, store.sketchStatus))
       return
     }
 
@@ -743,11 +727,7 @@ export function Viewport() {
         // right-click menu has something to work with. Shift adds to it.
         const hit = hitTestSketch(sketch, cursor, toleranceAt())
         store.setSketchSelection(
-          hit
-            ? e.shiftKey
-              ? toggleSelection(store.sketchSelection, hit)
-              : [hit]
-            : [],
+          hit ? (e.shiftKey ? toggleSelection(store.sketchSelection, hit) : [hit]) : [],
         )
         return
       }
@@ -760,7 +740,7 @@ export function Viewport() {
       if (tool === 'trim') {
         // Ignore point hits: Trim operates on the edge portion under the cursor.
         const hit = hitTestSketch(sketch, cursor, toleranceAt(), false)
-        const action = hit && sketchActions(sketch, [hit], cursor).find(a => a.id === 'trim')
+        const action = hit && sketchActions(sketch, [hit], cursor).find((a) => a.id === 'trim')
         if (action) {
           store.setSketchSelection([])
           store.applySketchAction(action.build(0))
@@ -769,7 +749,7 @@ export function Viewport() {
       }
 
       engine.setControlsEnabled(false)
-      commitClick(cursor,e.altKey)
+      commitClick(cursor, e.altKey)
       return
     }
 
@@ -845,11 +825,7 @@ export function Viewport() {
     const current = store.subSelection
     const at = current.findIndex((s) => s.bodyId === sub.bodyId && s.id === sub.id)
     store.setSubSelection(
-      e.shiftKey
-        ? at >= 0
-          ? current.filter((_, i) => i !== at)
-          : [...current, sub]
-        : [sub],
+      e.shiftKey ? (at >= 0 ? current.filter((_, i) => i !== at) : [...current, sub]) : [sub],
     )
   }
 
@@ -901,7 +877,12 @@ export function Viewport() {
   // --- keyboard ------------------------------------------------------------
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || e.repeat || (e.target instanceof Element && e.target.closest('dialog'))) return
+      if (
+        e.defaultPrevented ||
+        e.repeat ||
+        (e.target instanceof Element && e.target.closest('dialog'))
+      )
+        return
       // Never take a key off a field somebody is typing in. Ctrl+C in a text
       // box has to copy text, and Delete has to delete a character.
       const target = e.target
@@ -1002,17 +983,25 @@ export function Viewport() {
       <div
         ref={mountRef}
         className="viewport-canvas"
-        onPointerDownCapture={e=>{
-          if(!isAndroidApp)return
-          if(e.pointerType==='pen')penContactRef.current=true
-          if(e.pointerType==='touch'&&penContactRef.current){e.preventDefault();e.stopPropagation()}
+        onPointerDownCapture={(e) => {
+          if (!isAndroidApp) return
+          if (e.pointerType === 'pen') penContactRef.current = true
+          if (e.pointerType === 'touch' && penContactRef.current) {
+            e.preventDefault()
+            e.stopPropagation()
+          }
         }}
-        onPointerMoveCapture={e=>{
-          if(isAndroidApp&&e.pointerType==='touch'&&penContactRef.current){e.preventDefault();e.stopPropagation()}
+        onPointerMoveCapture={(e) => {
+          if (isAndroidApp && e.pointerType === 'touch' && penContactRef.current) {
+            e.preventDefault()
+            e.stopPropagation()
+          }
         }}
-        onPointerUpCapture={e=>{if(e.pointerType==='pen')penContactRef.current=false}}
+        onPointerUpCapture={(e) => {
+          if (e.pointerType === 'pen') penContactRef.current = false
+        }}
         onPointerMove={(e) => {
-          if(isAndroidApp && e.pointerType==='touch')return
+          if (isAndroidApp && e.pointerType === 'touch') return
           // Any real movement means a drag, not a press-and-hold.
           if (
             holdRef.current !== null &&
@@ -1026,11 +1015,14 @@ export function Viewport() {
         onPointerDown={(e) => {
           // Finger gestures only navigate; they never create points or drag sketch geometry.
           // OrbitControls receives these events directly on its canvas.
-          if(isAndroidApp && e.pointerType==='touch')return
+          if (isAndroidApp && e.pointerType === 'touch') return
           // A mouse already has a right button. The S Pen has a barrel button
           // and raises contextmenu itself, so this is for finger and for a pen
           // held down without it.
-          if ((e.pointerType === 'touch' || e.pointerType === 'pen') && (!activeSketch || tool==='select')) {
+          if (
+            (e.pointerType === 'touch' || e.pointerType === 'pen') &&
+            (!activeSketch || tool === 'select')
+          ) {
             const { clientX, clientY } = e
             const target = e.currentTarget
             cancelHold()
@@ -1047,15 +1039,15 @@ export function Viewport() {
           onPointerDown(e)
         }}
         onPointerUp={(e) => {
-          if(isAndroidApp && e.pointerType==='touch')return
+          if (isAndroidApp && e.pointerType === 'touch') return
           cancelHold()
           onPointerUp(e)
         }}
-        onPointerCancel={()=>{
-          penContactRef.current=false
+        onPointerCancel={() => {
+          penContactRef.current = false
           cancelHold()
-          if(draggingRef.current?.moved)useStore.getState().endTransient()
-          draggingRef.current=null
+          if (draggingRef.current?.moved) useStore.getState().endTransient()
+          draggingRef.current = null
           engineRef.current?.setControlsEnabled(true)
         }}
         onPointerLeave={cancelHold}
@@ -1112,9 +1104,7 @@ export function Viewport() {
           className={`vp-label vp-label-${label.kind}`}
           style={{ left: label.x, top: label.y }}
           title={
-            label.kind === 'constraint'
-              ? 'Click to remove this rule'
-              : 'Click to change this size'
+            label.kind === 'constraint' ? 'Click to remove this rule' : 'Click to change this size'
           }
           onPointerDown={(e) => {
             if (!activeSketch) return
@@ -1145,21 +1135,13 @@ export function Viewport() {
       ))}
 
       {cursorHint && (
-        <div
-          className="vp-snap-hint"
-          style={{ left: cursorHint.x + 14, top: cursorHint.y + 14 }}
-        >
+        <div className="vp-snap-hint" style={{ left: cursorHint.x + 14, top: cursorHint.y + 14 }}>
           {cursorHint.text}
         </div>
       )}
 
       {menu && activeSketch && (
-        <SketchMenu
-          x={menu.x}
-          y={menu.y}
-          cursor={menu.cursor}
-          onClose={() => setMenu(null)}
-        />
+        <SketchMenu x={menu.x} y={menu.y} cursor={menu.cursor} onClose={() => setMenu(null)} />
       )}
 
       {objectMenu && !activeSketch && (
@@ -1330,9 +1312,7 @@ function ViewCube() {
       {(['top', 'front', 'right', 'iso'] as const).map((view) => (
         <button
           key={view}
-          title={
-            view === 'iso' ? 'Three-quarter view' : `Look straight at the ${view}`
-          }
+          title={view === 'iso' ? 'Three-quarter view' : `Look straight at the ${view}`}
           onClick={() => window.dispatchEvent(new CustomEvent('okc:view', { detail: view }))}
         >
           {view === 'iso' ? '3D' : view[0].toUpperCase() + view.slice(1)}

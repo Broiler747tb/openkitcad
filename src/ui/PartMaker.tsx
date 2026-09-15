@@ -79,7 +79,9 @@ export function PartMaker({ onClose }: { onClose: () => void }) {
     upsertUserPart(part)
     refreshUserParts()
     setSaved(true)
-    useStore.getState().setStatus(`"${part.name}" is in your catalogue now, under ${CATEGORY_LABEL[part.category]}.`)
+    useStore
+      .getState()
+      .setStatus(`"${part.name}" is in your catalogue now, under ${CATEGORY_LABEL[part.category]}.`)
   }
 
   return (
@@ -87,9 +89,9 @@ export function PartMaker({ onClose }: { onClose: () => void }) {
       <div className="modal wide" onPointerDown={(e) => e.stopPropagation()}>
         <h2>Add a part that isn't here yet</h2>
         <p className="hint">
-          Measure the board in front of you and it becomes usable straight away, holes and
-          standoffs and all. If you want to send it in afterwards so nobody else has to
-          measure the same board, there's a button for that at the bottom.
+          Measure the board in front of you and it becomes usable straight away, holes and standoffs
+          and all. If you want to send it in afterwards so nobody else has to measure the same
+          board, there's a button for that at the bottom.
         </p>
 
         <div className="section">
@@ -180,9 +182,9 @@ export function PartMaker({ onClose }: { onClose: () => void }) {
         <div className="section">
           <h3>Mounting holes</h3>
           <p className="hint">
-            Measured from the bottom-left corner of the board, which is how datasheets
-            dimension them, so the numbers copy straight across. This is the part that earns
-            its keep: it is what generates holes and standoffs later.
+            Measured from the bottom-left corner of the board, which is how datasheets dimension
+            them, so the numbers copy straight across. This is the part that earns its keep: it is
+            what generates holes and standoffs later.
           </p>
           {draft.holes.map((hole, i) => (
             <div className="row hole-row" key={i}>
@@ -234,9 +236,9 @@ export function PartMaker({ onClose }: { onClose: () => void }) {
         <div className="section">
           <h3>How sure are you</h3>
           <p className="hint">
-            This is shown to anyone who uses the part. A catalogue that mixes datasheet
-            figures with someone's best guess quietly is worse than no catalogue, so it is
-            asked outright rather than assumed.
+            This is shown to anyone who uses the part. A catalogue that mixes datasheet figures with
+            someone's best guess quietly is worse than no catalogue, so it is asked outright rather
+            than assumed.
           </p>
           <div className="row">
             <label>These numbers</label>
@@ -334,8 +336,8 @@ export function PartMaker({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <p className="hint">
-          The catalogue is CC0, so a part you contribute belongs to everybody, including
-          people who never use this app. That is the point of it.
+          The catalogue is CC0, so a part you contribute belongs to everybody, including people who
+          never use this app. That is the point of it.
         </p>
       </div>
     </div>

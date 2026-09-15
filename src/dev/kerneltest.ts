@@ -64,7 +64,13 @@ function makeDoc(piPosition: [number, number, number], withStandoffs: boolean): 
     visible: true,
     colour: '#c8cdd3',
     features: [
-      { id: 'f-sketch', name: 'Plate outline', kind: 'sketch', plane: { kind: 'named', name: 'XY', offset: 0 }, sketch: platePlan() },
+      {
+        id: 'f-sketch',
+        name: 'Plate outline',
+        kind: 'sketch',
+        plane: { kind: 'named', name: 'XY', offset: 0 },
+        sketch: platePlan(),
+      },
       {
         id: 'f-extrude',
         name: 'Extrude plate',
@@ -114,8 +120,7 @@ function makeDoc(piPosition: [number, number, number], withStandoffs: boolean): 
 
 export async function runKernelTest(): Promise<TestResult[]> {
   const out: TestResult[] = []
-  const add = (name: string, pass: boolean, detail: string) =>
-    out.push({ name, pass, detail })
+  const add = (name: string, pass: boolean, detail: string) => out.push({ name, pass, detail })
 
   const worker = new Worker(new URL('../kernel/worker.ts', import.meta.url), {
     type: 'module',
@@ -375,9 +380,7 @@ export async function runKernelTest(): Promise<TestResult[]> {
       // something, so if this were not true, asking would move it.
       const still = (
         await kernel.evaluate(
-          box([
-            { id: 'mv', name: 'Move', kind: 'move', offset: [0, 0, 0], rotation: [0, 0, 0] },
-          ]),
+          box([{ id: 'mv', name: 'Move', kind: 'move', offset: [0, 0, 0], rotation: [0, 0, 0] }]),
         )
       ).shapes[0]
       add(
@@ -405,15 +408,12 @@ export async function runKernelTest(): Promise<TestResult[]> {
       // rotated about the origin instead, the part would swing off to one side.
       const turned = (
         await kernel.evaluate(
-          box([
-            { id: 'mv', name: 'Move', kind: 'move', offset: [0, 0, 0], rotation: [0, 0, 90] },
-          ]),
+          box([{ id: 'mv', name: 'Move', kind: 'move', offset: [0, 0, 0], rotation: [0, 0, 90] }]),
         )
       ).shapes[0]
       add(
         'turning a body pivots about its own centre',
-        !!turned &&
-          turned.bounds.every((v, i) => Math.abs(v - [10, -10, 0, 30, 30, 10][i]) < 1e-6),
+        !!turned && turned.bounds.every((v, i) => Math.abs(v - [10, -10, 0, 30, 30, 10][i]) < 1e-6),
         `bounds ${turned?.bounds.map((v) => v.toFixed(2)).join(', ')}`,
       )
 
@@ -429,9 +429,7 @@ export async function runKernelTest(): Promise<TestResult[]> {
       // 40 x 20 rectangle spans (40 + 20) * cos45 = 42.43 mm each way.
       const diagonal = (
         await kernel.evaluate(
-          box([
-            { id: 'mv', name: 'Move', kind: 'move', offset: [0, 0, 0], rotation: [0, 0, 45] },
-          ]),
+          box([{ id: 'mv', name: 'Move', kind: 'move', offset: [0, 0, 0], rotation: [0, 0, 45] }]),
         )
       ).shapes[0]
       const span = 60 * Math.cos(Math.PI / 4)

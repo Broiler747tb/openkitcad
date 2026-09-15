@@ -107,7 +107,6 @@ export interface SketchAction {
   build: (value: number, value2?: number, value3?: number, choice?: string) => ActionResult
 }
 
-
 /**
  * Which heading each action belongs under.
  *
@@ -139,7 +138,10 @@ const SKETCH_GROUPS: Array<[string, string[]]> = [
     'Change the shape',
     ['fillet-corner', 'chamfer-corner', 'fillet-between', 'trim', 'construction', 'delete'],
   ],
-  ['Repeat or copy', ['linear-pattern', 'circular-pattern', 'mirror-vertical', 'mirror-horizontal', 'offset']],
+  [
+    'Repeat or copy',
+    ['linear-pattern', 'circular-pattern', 'mirror-vertical', 'mirror-horizontal', 'offset'],
+  ],
   ['Add a shape', ['add-polygon', 'add-slot']],
   [
     'Screws and pillars',
@@ -219,9 +221,7 @@ export function sketchActions(
   const fastenerAt: Vec2[] = pointIds.length
     ? pointIds.map((id) => pts.get(id)).filter((p): p is Vec2 => !!p)
     : curved.length
-      ? curved
-          .map((e) => pts.get(e.kind === 'circle' ? e.c : e.c))
-          .filter((p): p is Vec2 => !!p)
+      ? curved.map((e) => pts.get(e.kind === 'circle' ? e.c : e.c)).filter((p): p is Vec2 => !!p)
       : cursor
         ? [cursor]
         : []
@@ -410,9 +410,7 @@ export function sketchActions(
     })
     const d1 = v2.sub(pts.get(l1.p2)!, pts.get(l1.p1)!)
     const d2 = v2.sub(pts.get(l2.p2)!, pts.get(l2.p1)!)
-    const current = Math.abs(
-      (Math.atan2(v2.cross(d1, d2), v2.dot(d1, d2)) * 180) / Math.PI,
-    )
+    const current = Math.abs((Math.atan2(v2.cross(d1, d2), v2.dot(d1, d2)) * 180) / Math.PI)
     push({
       id: 'angle',
       label: 'Set the angle between them',
@@ -721,8 +719,7 @@ export function sketchActions(
       id: 'symmetric',
       label: 'Mirror about this line',
       hint: 'Keep the two corners opposite each other',
-      build: () =>
-        constraint({ kind: 'symmetric', a: pointIds[0], b: pointIds[1], line: line.id }),
+      build: () => constraint({ kind: 'symmetric', a: pointIds[0], b: pointIds[1], line: line.id }),
     })
   }
 
