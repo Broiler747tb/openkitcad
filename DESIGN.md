@@ -23,6 +23,12 @@ not "Fillet"; "2 things can still move", not "underconstrained"; "Make solid", n
 
 ## 2. Locked decisions
 
+**Partly superseded on 15 September 2026.** OpenKitCAD is now being taken as close to Fusion 360
+as the bundled kernel allows: Fusion vocabulary, light and dark themes, components and joints in
+one design, one global timeline. `docs/FOUNDATIONS.md` §1 lists the new decisions and wins
+wherever it disagrees with the table below. The catalogue, local-first storage, share links and
+the licences are unchanged.
+
 | Decision | Choice | Why |
 |---|---|---|
 | Platform | Browser, static site | Zero install, instant catalogue updates, a share link needs no host. Works offline once cached. |
