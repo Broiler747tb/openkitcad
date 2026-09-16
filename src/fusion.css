@@ -260,8 +260,8 @@ button.workspace-tab {
   right: 0;
 }
 .finish-sketch {
-  margin: 6px 12px;
-  padding: 0 17px;
+  margin: 6px 0 6px 8px;
+  padding: 0 14px;
   background: var(--okc-surface-sunken);
   color: var(--okc-success);
   border: 1px solid var(--okc-line);

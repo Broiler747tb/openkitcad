@@ -1,4 +1,12 @@
-import { useEffect, type ComponentType, type SVGProps } from 'react'
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ComponentType,
+  type SVGProps,
+} from 'react'
+import type { MenuRect } from './ContextMenu'
 
 export interface MarkingItem {
   id: string
@@ -26,12 +34,16 @@ export function MarkingRing({
   y,
   items,
   onClose,
+  onBounds,
 }: {
   x: number
   y: number
   items: ReadonlyArray<MarkingItem | null>
   onClose: () => void
+  onBounds?: (rect: MenuRect) => void
 }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [shift, setShift] = useState({ x: 0, y: 0 })
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose()
@@ -40,11 +52,46 @@ export function MarkingRing({
     return () => window.removeEventListener('keydown', key)
   }, [onClose])
 
-  const left = Math.max(RADIUS + 70, Math.min(x, innerWidth - RADIUS - 70))
-  const top = Math.max(RADIUS + 20, Math.min(y, innerHeight - RADIUS - 20))
+  const left = Math.max(RADIUS + 70, Math.min(x, innerWidth - RADIUS - 70)) + shift.x
+  const top = Math.max(RADIUS + 20, Math.min(y, innerHeight - RADIUS - 20)) + shift.y
+
+  useLayoutEffect(() => {
+    const element = ref.current
+    if (!element) return
+    const rects = [...element.children].map((child) => child.getBoundingClientRect())
+    if (!rects.length) return
+    const rect: MenuRect = {
+      left: Math.min(...rects.map((r) => r.left)),
+      top: Math.min(...rects.map((r) => r.top)),
+      right: Math.max(...rects.map((r) => r.right)),
+      bottom: Math.max(...rects.map((r) => r.bottom)),
+    }
+    const margin = 8
+    const fitsWide = rect.right - rect.left <= innerWidth - 2 * margin
+    const fitsTall = rect.bottom - rect.top <= innerHeight - 2 * margin
+    const dx = !fitsWide
+      ? 0
+      : rect.left < margin
+        ? margin - rect.left
+        : rect.right > innerWidth - margin
+          ? innerWidth - margin - rect.right
+          : 0
+    const dy = !fitsTall
+      ? 0
+      : rect.top < margin
+        ? margin - rect.top
+        : rect.bottom > innerHeight - margin
+          ? innerHeight - margin - rect.bottom
+          : 0
+    if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+      setShift((current) => ({ x: current.x + dx, y: current.y + dy }))
+      return
+    }
+    onBounds?.(rect)
+  })
 
   return (
-    <div className="marking-ring" style={{ left, top }} aria-label="Marking menu">
+    <div ref={ref} className="marking-ring" style={{ left, top }} aria-label="Marking menu">
       <div className="marking-hub" />
       {items.map((item, index) => {
         if (!item) return null

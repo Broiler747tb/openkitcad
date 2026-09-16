@@ -10,6 +10,7 @@ import {
 import { resolveHandles, type ActiveHandle } from './handles'
 import { ViewCube } from './ViewCube'
 import { MarkingRing, recentCommand, rememberCommand, type MarkingItem } from '../ui/MarkingMenu'
+import { sameRect, type MenuRect } from '../ui/ContextMenu'
 import { startCommand } from '../ui/command/commands'
 import { createSketchAction, resolveCommand } from '../ui/fusionCommands'
 import { HoleIcon } from '../ui/icons/solid'
@@ -366,6 +367,11 @@ export function Viewport() {
   const committedMeshes = useStore((s) => s.meshes)
   const commandPreview = useCommand((s) => s.preview)
   const commandSession = useCommand((s) => s.session)
+  const [ringBounds, setRingBounds] = useState<MenuRect | null>(null)
+  const onRingBounds = useCallback(
+    (rect: MenuRect) => setRingBounds((current) => (sameRect(current, rect) ? current : rect)),
+    [],
+  )
   const pickingSketchPlane = useStore((s) => s.pickingSketchPlane)
   const planesWanted =
     !useStore.getState().activeSketch &&
@@ -2043,6 +2049,7 @@ export function Viewport() {
         onContextMenu={(e) => {
           e.preventDefault()
           if (engineRef.current?.consumeRightDrag()) return
+          setRingBounds(null)
           if (!activeSketch) {
             const engine = engineRef.current
             if (!engine) return
@@ -2269,15 +2276,18 @@ export function Viewport() {
       {menu && activeSketch && (
         <>
           <MarkingRing
+            key={`${menu.x},${menu.y}`}
             x={menu.x}
             y={menu.y}
             items={sketchMarkingItems()}
             onClose={() => setMenu(null)}
+            onBounds={onRingBounds}
           />
           <SketchMenu
             x={menu.x - 110}
             y={menu.y + 96}
             cursor={menu.cursor}
+            avoid={ringBounds}
             onClose={() => setMenu(null)}
           />
         </>
@@ -2286,15 +2296,18 @@ export function Viewport() {
       {objectMenu && !activeSketch && (
         <>
           <MarkingRing
+            key={`${objectMenu.x},${objectMenu.y}`}
             x={objectMenu.x}
             y={objectMenu.y}
             items={solidMarkingItems()}
             onClose={() => setObjectMenu(null)}
+            onBounds={onRingBounds}
           />
           <ObjectMenu
             x={objectMenu.x - 110}
             y={objectMenu.y + 96}
             actions={objectActions(selection, objectMenu.picked)}
+            avoid={ringBounds}
             onClose={() => setObjectMenu(null)}
           />
         </>

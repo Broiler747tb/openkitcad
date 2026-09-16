@@ -26,7 +26,7 @@ export const SHORTCUTS = [
   ['Ctrl+Z / Y', 'Undo / Redo'],
   ['Ctrl+C / X / V', 'Copy / Cut / Paste'],
   ['Ctrl+Alt+B', 'Show / hide Browser'],
-  ['Esc', 'Cancel tool / clear selection'],
+  ['Esc', 'Select tool: stop the current tool or command'],
   ['Home', 'Fit view (OpenKitCAD extension)'],
   ['Middle drag', 'Pan'],
   ['Shift+Middle drag', 'Orbit'],

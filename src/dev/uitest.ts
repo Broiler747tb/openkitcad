@@ -1,6 +1,7 @@
 import { LIGHT_PALETTE, readPalette } from '../theme/palette'
 import { applyThemePreference, resolveTheme } from '../theme/theme'
 import { MOUSE_SCHEMES, resolveDrag, resolveWheel, BUTTON_BIT } from '../ui/mouse/schemes'
+import { placeAround, type MenuRect } from '../ui/ContextMenu'
 import type { TestResult } from './selftest'
 
 export function runUiTest(): TestResult[] {
@@ -61,5 +62,27 @@ export function runUiTest(): TestResult[] {
     resolveTheme('system', true) === 'dark' && resolveTheme('system', false) === 'light',
     `${resolveTheme('system', true)} ${resolveTheme('system', false)}`,
   )
+  const screen = { width: 1280, height: 800 }
+  const clear = (ring: MenuRect, width: number, height: number) => {
+    const placed = placeAround(ring.left, ring.bottom, width, height, ring, screen)
+    const bottom = placed.top + Math.min(height, placed.maxHeight ?? height)
+    const right = placed.left + width
+    const overlaps =
+      placed.left < ring.right && right > ring.left && placed.top < ring.bottom && bottom > ring.top
+    const inside =
+      placed.left >= 0 && placed.top >= 0 && right <= screen.width && bottom <= screen.height
+    return { placed, ok: !overlaps && inside }
+  }
+  const cases: Array<[string, MenuRect, number, number]> = [
+    ['in the middle', { left: 440, top: 300, right: 840, bottom: 460 }, 240, 260],
+    ['near the bottom', { left: 440, top: 620, right: 840, bottom: 784 }, 240, 360],
+    ['near the bottom right', { left: 872, top: 620, right: 1272, bottom: 784 }, 240, 520],
+    ['with a very long list', { left: 440, top: 320, right: 840, bottom: 480 }, 240, 1200],
+  ]
+  for (const [where, ring, width, height] of cases) {
+    const { placed, ok } = clear(ring, width, height)
+    check(`the right-click list never covers the marking ring ${where}`, ok, JSON.stringify(placed))
+  }
+
   return results
 }

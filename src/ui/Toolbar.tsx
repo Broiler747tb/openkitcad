@@ -11,6 +11,7 @@ import { createSketchAction, resolveCommand, SHORTCUTS, toggleVisibility } from 
 import { powerActions } from './PowerTools'
 import { ParametersDialog } from './ParametersDialog'
 import { startCommand } from './command/commands'
+import { useCommand } from './command/session'
 import { SKETCH_TOOL_MENUS, SKETCH_TOOLS } from '../sketch/tools/specs'
 import { CONSTRAINT_TOOLS } from '../sketch/constraintTools'
 import { startConstraintTool } from './sketchConstraints'
@@ -192,6 +193,7 @@ export function Toolbar({
     [menu, setMenu] = useState<string | null>(null)
   const [variants, setVariants] = useState<Record<string, ToolId>>({})
   const [workspace, setWorkspace] = useState<(typeof WORKSPACES)[number]>('solid')
+  const commanding = useCommand((s) => !!s.session)
   const themeState = useTheme()
   const root = useRef<HTMLElement>(null)
   const sketch = activeSketchFeature(state)
@@ -540,14 +542,92 @@ export function Toolbar({
       'I',
     ),
   )
-  const selectGroup = (
-    <div className="fusion-group standalone">
-      {tool('Select', <SelectIcon className="okc-icon okc-icon-2d" />, () => {
-        setPending(null)
-        state.setTool('select')
-        state.select({ kind: 'none' })
-      })}
-    </div>
+  const selecting = state.tool === 'select' && !commanding && !state.pickingSketchPlane && !pending
+  const selectMode = () => {
+    setPending(null)
+    setMenu(null)
+    useCommand.getState().cancel()
+    const store = useStore.getState()
+    store.setPickingSketchPlane(false)
+    window.dispatchEvent(new Event('okc:cancel'))
+    store.setStatus('')
+  }
+  const selectActions: ObjectAction[] = [
+    {
+      id: 'select-tool',
+      label: 'Select',
+      hint: 'Stops the current tool or command and goes back to picking. Esc does the same.',
+      group: 'Select',
+      run: selectMode,
+    },
+    ...(sketch
+      ? [
+          {
+            id: 'select-all',
+            label: 'Select All',
+            hint: 'Every curve and point in the sketch. Ctrl A.',
+            group: 'Select',
+            run: () =>
+              state.setSketchSelection(
+                sketch.sketch.entities.map((entity) => ({
+                  kind: 'entity' as const,
+                  id: entity.id,
+                })),
+              ),
+          },
+          {
+            id: 'select-invert',
+            label: 'Invert Selection',
+            hint: 'Selects what is not selected, and the other way round. Ctrl Shift I.',
+            group: 'Select',
+            run: () => {
+              const ids = new Set(
+                state.sketchSelection
+                  .filter((target) => target.kind === 'entity')
+                  .map((target) => target.id),
+              )
+              state.setSketchSelection(
+                sketch.sketch.entities
+                  .filter((entity) => !ids.has(entity.id))
+                  .map((entity) => ({ kind: 'entity' as const, id: entity.id })),
+              )
+            },
+          },
+          {
+            id: 'select-none',
+            label: 'Clear Selection',
+            hint: 'Nothing in the sketch stays selected.',
+            group: 'Select',
+            run: () => state.setSketchSelection([]),
+          },
+        ]
+      : [
+          {
+            id: 'select-none',
+            label: 'Clear Selection',
+            hint: 'Nothing in the design stays selected.',
+            group: 'Select',
+            run: () => {
+              state.select({ kind: 'none' })
+              state.setSubSelection([])
+            },
+          },
+        ]),
+  ]
+  const selectGroup = group(
+    'SELECT',
+    selectActions,
+    <button
+      className={'ribbon-tool ' + (selecting ? 'active' : '')}
+      title="Select (Esc)"
+      aria-pressed={selecting}
+      onClick={selectMode}
+    >
+      <span className="tool-symbol" aria-hidden="true">
+        <SelectIcon className="okc-icon okc-icon-2d" />
+      </span>
+      <span>Select</span>
+    </button>,
   )
   return (
     <header className="workspace-header" ref={root}>
@@ -803,6 +883,7 @@ export function Toolbar({
                 </div>
               </>,
             )}
+            {selectGroup}
             <span className="spacer" />
             <button
               className="finish-sketch"
@@ -1080,13 +1161,7 @@ export function Toolbar({
               [{ id: 'hardware', label: 'Insert hardware', run: onCatalogue }],
               tool('Insert', <HardwareIcon className="okc-icon" />, onCatalogue),
             )}
-            <div className="fusion-group standalone">
-              {tool('Select', <SelectIcon className="okc-icon okc-icon-2d" />, () => {
-                setPending(null)
-                state.setTool('select')
-                state.select({ kind: 'none' })
-              })}
-            </div>
+            {selectGroup}
           </>
         )}
       </div>

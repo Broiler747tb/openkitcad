@@ -29,7 +29,7 @@ import {
 import { poseOf, withPose } from '../doc/placement'
 import { resizeSketch } from '../sketch/edit'
 import { getPart } from '../catalogue'
-import { ContextMenu } from './ContextMenu'
+import { ContextMenu, type MenuRect } from './ContextMenu'
 import { chooseAction } from './ActionDialog'
 import { editFeature, startCommand } from './command/commands'
 import { setGrounded, updateJoint } from './command/specs/assemble'
@@ -846,16 +846,19 @@ export function ObjectMenu({
   y,
   actions,
   onClose,
+  avoid,
 }: {
   x: number
   y: number
   actions: ObjectAction[]
   onClose: () => void
+  avoid?: MenuRect | null
 }) {
   return (
     <ContextMenu
       x={x}
       y={y}
+      avoid={avoid}
       actions={actions}
       order={OBJECT_GROUP_ORDER}
       onClose={onClose}
