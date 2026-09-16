@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { editFeature } from './command/commands'
-import { bodyPick, offerPick, sketchPick } from './command/picks'
+import { bodyPick, featurePick, occurrencePick, offerPick, sketchPick } from './command/picks'
+import { setGrounded } from './command/specs/assemble'
 import { useStore } from '../doc/store'
 import {
   FEATURE_ICON,
@@ -127,6 +128,13 @@ function ComponentContents({
   const children = childOccurrences(doc, component.id).filter(
     (occurrence) => !lineage.includes(occurrence.componentId),
   )
+  const joints = doc.timeline.filter(
+    (feature) =>
+      (feature.kind === 'joint' ||
+        feature.kind === 'rigidGroup' ||
+        feature.kind === 'motionLink') &&
+      feature.componentId === component.id,
+  )
 
   return (
     <>
@@ -142,6 +150,19 @@ function ComponentContents({
         <details className="browser-folder">
           <summary>Sketches ({sketches.length})</summary>
           {sketches.map((feature) => (
+            <FeatureRow
+              key={feature.id}
+              feature={feature}
+              selected={selection.kind === 'feature' && selection.id === feature.id}
+              failed={failed.has(feature.id)}
+            />
+          ))}
+        </details>
+      )}
+      {joints.length > 0 && (
+        <details className="browser-folder" open>
+          <summary>Joints ({joints.length})</summary>
+          {joints.map((feature) => (
             <FeatureRow
               key={feature.id}
               feature={feature}
@@ -186,7 +207,10 @@ function OccurrenceBranch({
     <div className="browser-occurrence">
       <div
         className={`tree-item tree-body ${selected ? 'selected' : ''}`}
-        onClick={() => store.select({ kind: 'occurrence', id: occurrence.id })}
+        onClick={() => {
+          if (offerPick(occurrencePick(store.doc, occurrence.id))) return
+          store.select({ kind: 'occurrence', id: occurrence.id })
+        }}
         onMouseEnter={() => store.setHovered(occurrence.id)}
         onMouseLeave={() => store.setHovered(null)}
       >
@@ -205,6 +229,22 @@ function OccurrenceBranch({
         <span className="name" style={{ opacity: occurrence.visible ? 1 : 0.45 }}>
           {occurrence.name}
         </span>
+        <button
+          className="act"
+          title={
+            occurrence.grounded
+              ? 'Grounded: joints move the other components. Click to unground.'
+              : 'Ground: pin it in place so joints move the other components'
+          }
+          aria-pressed={occurrence.grounded}
+          style={{ opacity: occurrence.grounded ? 1 : 0.4 }}
+          onClick={(e) => {
+            e.stopPropagation()
+            setGrounded(occurrence.id, !occurrence.grounded)
+          }}
+        >
+          ⏚
+        </button>
         <button
           className="act"
           title="Linked copy: shares this component's design"
@@ -339,7 +379,8 @@ function FeatureRow({
     <div
       className={`tree-item tree-feature ${selected ? 'selected' : ''} ${failed ? 'error' : ''}`}
       onClick={() => {
-        if (offerPick(sketchPick(doc, feature.id))) return
+        if (offerPick(sketchPick(doc, feature.id)) || offerPick(featurePick(doc, feature.id)))
+          return
         store.select({ kind: 'feature', id: feature.id })
       }}
       onDoubleClick={() => {

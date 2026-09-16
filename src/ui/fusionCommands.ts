@@ -10,6 +10,7 @@ export const SHORTCUTS = [
   ['F', 'Fillet'],
   ['H', 'Hole'],
   ['M', 'Move'],
+  ['J / Shift+J', 'Joint / As-built Joint'],
   ['I', 'Measure'],
   ['V', 'Visibility'],
   ['A', 'Body appearance'],

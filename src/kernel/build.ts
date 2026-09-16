@@ -1021,6 +1021,11 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
   }
 
   switch (feature.kind) {
+    case 'joint':
+    case 'rigidGroup':
+    case 'motionLink':
+      return
+
     case 'sketch': {
       stage.sketches.set(feature.id, feature)
       stage.planes.set(feature.id, frameFromPlaneRef(feature.plane, stage.bodies))

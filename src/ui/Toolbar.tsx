@@ -20,6 +20,7 @@ import type { ReactNode } from 'react'
 import { BrandMark } from './BrandMark'
 import { rememberCommand } from './MarkingMenu'
 import { ExtrudeIcon, HoleIcon, RevolveIcon } from './icons/solid'
+import { AsBuiltJointIcon, JointIcon, RigidGroupIcon } from './icons/assemble'
 import { FilletIcon, MoveCopyIcon as SolidMoveIcon, ShellIcon } from './icons/modify'
 import {
   BreakIcon,
@@ -58,6 +59,11 @@ const labels: Record<string, string> = {
   offset: 'Offset',
   construction: 'Construction',
   trim: 'Trim',
+  joint: 'Joint',
+  asBuiltJoint: 'As-built Joint',
+  rigidGroup: 'Rigid Group',
+  motionLink: 'Motion Link',
+  driveJoints: 'Drive Joints',
 }
 export function Toolbar({
   onExport,
@@ -191,7 +197,19 @@ export function Toolbar({
         createSketchAction(),
         ...creations,
         ...(state.selection.kind === 'none' ? [] : selected),
-        ...['extrude', 'revolve', 'fillet', 'move', 'hole', 'appearance'].map(cmd),
+        ...[
+          'extrude',
+          'revolve',
+          'fillet',
+          'move',
+          'hole',
+          'appearance',
+          'joint',
+          'asBuiltJoint',
+          'rigidGroup',
+          'driveJoints',
+          'motionLink',
+        ].map(cmd),
       ]
   function invoke(id: string) {
     setMenu(null)
@@ -305,6 +323,11 @@ export function Toolbar({
         }
         return
       }
+      if (e.shiftKey && !mod && !e.altKey && k === 'j' && !useStore.getState().activeSketch) {
+        e.preventDefault()
+        invoke('asBuiltJoint')
+        return
+      }
       if (mod || e.altKey || e.shiftKey) return
       const s = useStore.getState()
       if (k === 's') {
@@ -350,13 +373,13 @@ export function Toolbar({
       }
       const map: Record<string, string> = s.activeSketch
         ? { e: 'extrude', o: 'offset', x: 'construction', t: 'trim' }
-        : { e: 'extrude', f: 'fillet', m: 'move', h: 'hole', a: 'appearance' }
+        : { e: 'extrude', f: 'fillet', m: 'move', h: 'hole', a: 'appearance', j: 'joint' }
       if (map[k]) {
         e.preventDefault()
         invoke(map[k])
         return
       }
-      if (['q', 'j', 'p'].includes(k)) {
+      if (['q', 'p'].includes(k)) {
         e.preventDefault()
         s.setStatus(
           'This Fusion operation is not implemented in the current CAD kernel. Use S for available commands.',
@@ -696,8 +719,27 @@ export function Toolbar({
             )}
             {group(
               'ASSEMBLE',
-              selected.filter((a) => ['holes', 'standoffs', 'ports', 'negative'].includes(a.id)),
-              tool('Hardware', <HardwareIcon className="okc-icon" />, onCatalogue),
+              [
+                ...creations.filter((a) => a.id === 'create-component'),
+                ...['joint', 'asBuiltJoint', 'rigidGroup', 'driveJoints', 'motionLink'].map(cmd),
+                { id: 'hardware', label: 'Insert hardware', run: onCatalogue },
+                ...selected.filter((a) =>
+                  ['holes', 'standoffs', 'ports', 'negative'].includes(a.id),
+                ),
+              ],
+              <>
+                {tool('Joint', <JointIcon className="okc-icon" />, () => invoke('joint'), 'J')}
+                {tool(
+                  'As-built Joint',
+                  <AsBuiltJointIcon className="okc-icon" />,
+                  () => invoke('asBuiltJoint'),
+                  'Shift J',
+                )}
+                {tool('Rigid Group', <RigidGroupIcon className="okc-icon" />, () =>
+                  invoke('rigidGroup'),
+                )}
+                {tool('Hardware', <HardwareIcon className="okc-icon" />, onCatalogue)}
+              </>,
             )}
             {group(
               'CONSTRUCT',
@@ -821,8 +863,8 @@ function ShortcutDialog({ onClose }: { onClose: () => void }) {
         ))}
       </dl>
       <p className="hint">
-        Press Pull (Q), joints (J), projection (P), CAM and surface modelling are not implemented.
-        Hole uses world XY coordinates. Arc is in the Sketch toolbar.
+        Press Pull (Q), CAM and surface modelling are not implemented. Hole uses world XY
+        coordinates. Arc is in the Sketch toolbar.
       </p>
     </dialog>
   )

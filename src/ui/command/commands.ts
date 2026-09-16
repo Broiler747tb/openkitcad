@@ -1,7 +1,14 @@
 import { findFeature } from '../../doc/model'
 import { selectedBodyId, sketchTargetBody, useStore } from '../../doc/store'
 import type { Feature, OkcDocument, SketchFeature } from '../../doc/types'
-import { bodyPick, elementPick, sketchPick } from './picks'
+import {
+  bodyPick,
+  elementPick,
+  featurePick,
+  jointSnapPick,
+  occurrencePick,
+  sketchPick,
+} from './picks'
 import { useCommand, type CommandStart } from './session'
 import {
   chamferCommand,
@@ -15,6 +22,15 @@ import { holeCommand, pointOnFace, ventCommand } from './specs/placed'
 import { boxCommand, cylinderCommand, sphereCommand } from './specs/primitives'
 import { operationValues, planeValues, profilePicksOf, resultIds } from './specs/shared'
 import { extrudeCommand, revolveCommand } from './specs/sketchBased'
+import {
+  asBuiltJointCommand,
+  driveJointsCommand,
+  jointCommand,
+  motionLinkCommand,
+  rigidGroupCommand,
+} from './specs/assemble'
+import { motionDofs } from '../../assembly/motion'
+import { findComponent } from '../../doc/model'
 import type { AnyCommandSpec, SelectionPick } from './types'
 
 const spec = (command: unknown) => command as AnyCommandSpec
@@ -33,6 +49,31 @@ export const COMMANDS: Readonly<Record<string, AnyCommandSpec>> = {
   move: spec(moveCommand),
   hole: spec(holeCommand),
   vent: spec(ventCommand),
+  joint: spec(jointCommand),
+  asBuiltJoint: spec(asBuiltJointCommand),
+  rigidGroup: spec(rigidGroupCommand),
+  motionLink: spec(motionLinkCommand),
+  driveJoints: spec(driveJointsCommand),
+}
+
+function pathPick(doc: OkcDocument, path: string[]): SelectionPick | null {
+  if (path.length) return occurrencePick(doc, path[path.length - 1])
+  const body = findComponent(doc, doc.rootComponentId)?.bodies[0]
+  return body ? bodyPick(doc, body.id) : null
+}
+
+function selectedJoint(doc: OkcDocument): SelectionPick[] {
+  const selection = useStore.getState().selection
+  if (selection.kind !== 'feature' || !selection.id) return []
+  const feature = findFeature(doc, selection.id)
+  return feature?.kind === 'joint' ? [featurePick(doc, feature.id)!] : []
+}
+
+function selectedOccurrence(doc: OkcDocument): SelectionPick[] {
+  const selection = useStore.getState().selection
+  if (selection.kind !== 'occurrence' || !selection.id) return []
+  const pick = occurrencePick(doc, selection.id, selection.instanceId)
+  return pick ? [pick] : []
 }
 
 function selectedSketch(doc: OkcDocument): SketchFeature | null {
@@ -100,6 +141,26 @@ function startOptions(id: string): CommandStart {
       return { initial: { face: faces.slice(0, 1), ...(faces[0] ? pointOnFace(faces[0]) : {}) } }
     case 'vent':
       return { initial: { face: faces.slice(0, 1) } }
+    case 'asBuiltJoint':
+      return { initial: { one: selectedOccurrence(doc) } }
+    case 'rigidGroup':
+      return { initial: { members: selectedOccurrence(doc) } }
+    case 'motionLink':
+      return { initial: { a: selectedJoint(doc) } }
+    case 'driveJoints': {
+      const joint = selectedJoint(doc)
+      const feature = joint[0] ? findFeature(doc, joint[0].id) : undefined
+      const current =
+        feature?.kind === 'joint'
+          ? Object.fromEntries(
+              motionDofs(feature.motion).map((dof, index) => [
+                dof.name,
+                feature.values[index] ?? 0,
+              ]),
+            )
+          : {}
+      return { initial: { joint, ...current } }
+    }
   }
   return {}
 }
@@ -237,6 +298,66 @@ function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, Comma
             ...(feature.counterboreDiameter ? { headDiameter: feature.counterboreDiameter } : {}),
             ...(feature.counterboreDepth ? { headDepth: feature.counterboreDepth } : {}),
             ...(feature.countersinkAngle ? { angle: feature.countersinkAngle } : {}),
+          },
+        },
+      ]
+    }
+    case 'joint': {
+      if (feature.asBuilt) {
+        const one = pathPick(doc, feature.one.occurrencePath)
+        const two = pathPick(doc, feature.two.occurrencePath)
+        return [
+          COMMANDS.asBuiltJoint,
+          {
+            initial: {
+              one: one ? [one] : [],
+              two: two ? [two] : [],
+              position: [jointSnapPick(doc, feature.one)],
+              motion: feature.motion.kind,
+            },
+          },
+        ]
+      }
+      return [
+        COMMANDS.joint,
+        {
+          initial: {
+            one: [jointSnapPick(doc, feature.one)],
+            two: [jointSnapPick(doc, feature.two)],
+            motion: feature.motion.kind,
+            angle: feature.angle,
+            offset: feature.offset,
+            flip: feature.flip,
+          },
+        },
+      ]
+    }
+    case 'rigidGroup':
+      return [
+        COMMANDS.rigidGroup,
+        {
+          initial: {
+            members: feature.members.flatMap((path) => pathPick(doc, path) ?? []),
+          },
+        },
+      ]
+    case 'motionLink': {
+      const a = findFeature(doc, feature.a.jointId)
+      const b = findFeature(doc, feature.b.jointId)
+      if (a?.kind !== 'joint' || b?.kind !== 'joint') return null
+      const aAmount = motionDofs(a.motion)[0]?.kind === 'rotate' ? 360 : 10
+      const bAmount = Math.abs(feature.ratio) * aAmount
+      return [
+        COMMANDS.motionLink,
+        {
+          initial: {
+            a: [featurePick(doc, a.id)!],
+            b: [featurePick(doc, b.id)!],
+            aAngle: aAmount,
+            aDistance: aAmount,
+            bAngle: bAmount,
+            bDistance: bAmount,
+            reverse: feature.ratio < 0,
           },
         },
       ]

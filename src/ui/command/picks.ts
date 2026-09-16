@@ -1,7 +1,14 @@
-import { findBody, findFeature } from '../../doc/model'
+import { findBody, findFeature, findOccurrence, pathKey } from '../../doc/model'
 import type { Vec3 } from '../../core/math'
 import { planeLabel } from '../../doc/planes'
-import type { ElementRef, OkcDocument, PlaneRef } from '../../doc/types'
+import {
+  FEATURE_LABEL,
+  type ElementRef,
+  type JointKeypoint,
+  type JointSide,
+  type OkcDocument,
+  type PlaneRef,
+} from '../../doc/types'
 import { visibleSelections } from './state'
 import { useCommand } from './session'
 import type { SelectionPick } from './types'
@@ -64,6 +71,50 @@ export function planePick(doc: OkcDocument, plane: PlaneRef): SelectionPick | nu
     id: JSON.stringify(plane),
     label: planeLabel(plane, doc.units),
     plane,
+  }
+}
+
+export function featurePick(doc: OkcDocument, featureId: string): SelectionPick | null {
+  const feature = findFeature(doc, featureId)
+  if (!feature) return null
+  return { kind: 'feature', id: feature.id, label: feature.name || FEATURE_LABEL[feature.kind] }
+}
+
+export function occurrencePick(
+  doc: OkcDocument,
+  occurrenceId: string,
+  instanceId?: string,
+): SelectionPick | null {
+  const occurrence = findOccurrence(doc, occurrenceId)
+  if (!occurrence) return null
+  return { kind: 'occurrence', id: occurrence.id, instanceId, label: occurrence.name }
+}
+
+const KEYPOINT_LABEL: Record<JointKeypoint, string> = {
+  centre: 'Centre',
+  middle: 'Middle',
+  point: 'Point',
+  origin: 'Origin',
+}
+
+export function jointSnapPick(doc: OkcDocument, side: JointSide): SelectionPick {
+  const owner = side.occurrencePath.length
+    ? findOccurrence(doc, side.occurrencePath[side.occurrencePath.length - 1])?.name
+    : undefined
+  const body = side.snap.ref ? findBody(doc, side.snap.ref.bodyId)?.body.name : undefined
+  const at = [side.frame[12], side.frame[13], side.frame[14]]
+    .map((value) => (Math.abs(value) < 5e-4 ? 0 : value).toFixed(3))
+    .join(',')
+  return {
+    kind: 'jointSnap',
+    id: [pathKey(side.occurrencePath), side.snap.ref?.name ?? '', side.snap.keypoint, at].join('|'),
+    label: `${KEYPOINT_LABEL[side.snap.keypoint]} of ${owner ?? body ?? 'component'}`,
+    joint: {
+      occurrencePath: side.occurrencePath,
+      ref: side.snap.ref,
+      keypoint: side.snap.keypoint,
+      frame: side.frame,
+    },
   }
 }
 

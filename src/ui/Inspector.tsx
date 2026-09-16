@@ -11,7 +11,11 @@ import { startConstraintTool } from './sketchConstraints'
 import { sketchActions } from '../sketch/actions'
 import { CONFIDENCE_LABEL, getPart } from '../catalogue'
 import { fmt } from '../core/math'
-import type { BodyOperation, Feature } from '../doc/types'
+import type { BodyOperation, Feature, JointFeature } from '../doc/types'
+import type { DofLimits } from '../assembly/types'
+import { motionDofs } from '../assembly/motion'
+import { editFeature } from './command/commands'
+import { DOF_LABEL, MOTION_OPTIONS, driveJoint, updateJoint } from './command/specs/assemble'
 import { findBody, findComponent, findFeature, findOccurrence } from '../doc/model'
 import { poseOf, withPose, type Pose } from '../doc/placement'
 import { kernel } from '../kernel/api'
@@ -188,6 +192,104 @@ export function Inspector({
         </>
       )}
     </div>
+  )
+}
+
+function JointPanel({ feature }: { feature: JointFeature }) {
+  const doc = useStore((s) => s.doc)
+  const [problem, setProblem] = useState<string | null>(null)
+  const dofs = motionDofs(feature.motion)
+  const motion = MOTION_OPTIONS.find((option) => option.value === feature.motion.kind)
+  const owner = (path: string[]) =>
+    path.length
+      ? (findOccurrence(doc, path[path.length - 1])?.name ?? 'a missing component')
+      : doc.name || 'the top design'
+  const current = dofs.map((_, index) => feature.values[index] ?? 0)
+  const setLimit = (index: number, change: Partial<DofLimits>) => {
+    const limits = dofs.map((_, i) => ({ ...(feature.limits[i] ?? {}) }))
+    limits[index] = { ...limits[index], ...change }
+    setProblem(updateJoint(feature.id, { limits }))
+  }
+  return (
+    <>
+      <p className="hint" style={{ marginTop: 0 }}>
+        {motion?.label ?? 'Joint'} between {owner(feature.one.occurrencePath)} and{' '}
+        {owner(feature.two.occurrencePath)}. {motion?.hint}
+      </p>
+      {dofs.map((dof, index) => {
+        const unit = dof.kind === 'rotate' ? '°' : 'mm'
+        const limit = feature.limits[index] ?? {}
+        const span = dof.kind === 'rotate' ? 90 : 10
+        return (
+          <div key={dof.name} className="joint-dof">
+            <Num
+              label={DOF_LABEL[dof.name]}
+              value={current[index]}
+              step={dof.kind === 'rotate' ? 15 : 1}
+              suffix={unit}
+              onChange={(value) =>
+                setProblem(
+                  driveJoint(
+                    feature.id,
+                    current.map((old, i) => (i === index ? value : old)),
+                  ),
+                )
+              }
+            />
+            <label className="sketch-option">
+              <input
+                type="checkbox"
+                checked={limit.min !== undefined}
+                onChange={(e) =>
+                  setLimit(index, { min: e.target.checked ? current[index] - span : undefined })
+                }
+              />
+              Minimum
+            </label>
+            {limit.min !== undefined && (
+              <Num
+                label="Minimum"
+                value={limit.min}
+                suffix={unit}
+                onChange={(value) => setLimit(index, { min: value })}
+              />
+            )}
+            <label className="sketch-option">
+              <input
+                type="checkbox"
+                checked={limit.max !== undefined}
+                onChange={(e) =>
+                  setLimit(index, { max: e.target.checked ? current[index] + span : undefined })
+                }
+              />
+              Maximum
+            </label>
+            {limit.max !== undefined && (
+              <Num
+                label="Maximum"
+                value={limit.max}
+                suffix={unit}
+                onChange={(value) => setLimit(index, { max: value })}
+              />
+            )}
+          </div>
+        )
+      })}
+      {dofs.length > 0 && (
+        <label className="sketch-option">
+          <input
+            type="checkbox"
+            checked={!!feature.locked}
+            onChange={(e) => setProblem(updateJoint(feature.id, { locked: e.target.checked }))}
+          />
+          Lock
+        </label>
+      )}
+      {problem && <p className="hint error">{problem}</p>}
+      <button className="btn primary" onClick={() => editFeature(feature)}>
+        Edit Joint
+      </button>
+    </>
   )
 }
 
@@ -548,6 +650,30 @@ function FeatureInspector({ featureId }: { featureId: string }) {
             Edit this sketch
           </button>
         </>
+      )}
+
+      {feature.kind === 'joint' && <JointPanel key={feature.id} feature={feature} />}
+
+      {feature.kind === 'rigidGroup' && (
+        <p className="hint" style={{ marginTop: 0 }}>
+          Holds{' '}
+          {feature.members
+            .map((path) =>
+              path.length
+                ? (findOccurrence(doc, path[path.length - 1])?.name ?? 'a missing component')
+                : doc.name || 'the top design',
+            )
+            .join(', ')}{' '}
+          together.
+        </p>
+      )}
+
+      {feature.kind === 'motionLink' && (
+        <p className="hint" style={{ marginTop: 0 }}>
+          {findFeature(doc, feature.a.jointId)?.name ?? 'A missing joint'} drives{' '}
+          {findFeature(doc, feature.b.jointId)?.name ?? 'a missing joint'} at a ratio of{' '}
+          {fmt(feature.ratio)}.
+        </p>
       )}
 
       {feature.kind === 'extrude' && (

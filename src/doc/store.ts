@@ -319,6 +319,8 @@ export function occurrenceReferences(feature: Feature): string[] {
   )
     return [...feature.source.occurrencePath, ...feature.source.contextPath]
   if (feature.kind === 'portCutout') return [...feature.occurrencePath, ...feature.contextPath]
+  if (feature.kind === 'joint')
+    return [...feature.one.occurrencePath, ...feature.two.occurrencePath]
   return []
 }
 
@@ -371,9 +373,14 @@ export function removeOccurrencesFromDocument(doc: OkcDocument, ids: string[]): 
     goneComponents.add(componentId)
     for (const child of childOccurrences(doc, componentId)) queue.push(child.id)
   }
+  for (const feature of doc.timeline) {
+    if (feature.kind !== 'rigidGroup') continue
+    feature.members = feature.members.filter((path) => !path.some((id) => goneOccurrences.has(id)))
+  }
   const features = doc.timeline.filter(
     (feature) =>
       goneComponents.has(feature.componentId) ||
+      (feature.kind === 'rigidGroup' && feature.members.length < 2) ||
       occurrenceReferences(feature).some((id) => goneOccurrences.has(id)),
   )
   deleteFeatures(

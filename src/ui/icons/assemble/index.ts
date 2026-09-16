@@ -1,0 +1,5 @@
+export { AsBuiltJointIcon } from './AsBuiltJointIcon'
+export { DriveJointsIcon } from './DriveJointsIcon'
+export { JointIcon } from './JointIcon'
+export { MotionLinkIcon } from './MotionLinkIcon'
+export { RigidGroupIcon } from './RigidGroupIcon'

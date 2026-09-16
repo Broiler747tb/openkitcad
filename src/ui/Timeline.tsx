@@ -12,7 +12,7 @@ import {
 import { GridSettings } from './PrecisionTools'
 import { ContextMenu } from './ContextMenu'
 import { editFeature } from './command/commands'
-import { offerPick, sketchPick } from './command/picks'
+import { featurePick, offerPick, sketchPick } from './command/picks'
 import { useCommand } from './command/session'
 
 const PLAY_STEP_MS = 450
@@ -182,7 +182,7 @@ export function Timeline({ onEdit }: { onEdit: () => void }) {
       if (to !== index) store.moveFeature(feature.id, to)
       return
     }
-    if (offerPick(sketchPick(doc, feature.id))) return
+    if (offerPick(sketchPick(doc, feature.id)) || offerPick(featurePick(doc, feature.id))) return
     if (e.shiftKey && selectedIndex >= 0) {
       setRange([Math.min(selectedIndex, index), Math.max(selectedIndex, index)])
       return

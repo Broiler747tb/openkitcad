@@ -85,6 +85,12 @@ export interface ProfileHit {
   distance: number
 }
 
+export interface JointGlyph {
+  id: string
+  frame: Matrix4
+  tone: 'hover' | 'picked' | 'placed'
+}
+
 export interface WorldHandle {
   id: string
   kind: 'arrow' | 'arc'
@@ -193,6 +199,8 @@ export class ViewportEngine {
   onLabels: ((labels: ScreenLabel[]) => void) | null = null
   onHandleScreens: ((handles: HandleScreen[]) => void) | null = null
   private handleGroup = new THREE.Group()
+  private jointGroup = new THREE.Group()
+  private jointGlyphs: JointGlyph[] = []
   private sketchOverlayGroup = new THREE.Group()
   private dimensionGroup = new THREE.Group()
   private dimensionSource: DimensionSource | null = null
@@ -288,6 +296,7 @@ export class ViewportEngine {
       this.gridGroup,
       this.highlightGroup,
       this.handleGroup,
+      this.jointGroup,
     )
     this.buildLighting()
     this.buildGrid()
@@ -1024,8 +1033,77 @@ export class ViewportEngine {
     )
   }
 
+  setJointGlyphs(glyphs: JointGlyph[]) {
+    this.jointGlyphs = glyphs
+    for (const child of [...this.jointGroup.children]) {
+      this.jointGroup.remove(child)
+      child.traverse((object) => {
+        const mesh = object as THREE.Mesh
+        mesh.geometry?.dispose?.()
+        ;(mesh.material as THREE.Material | undefined)?.dispose?.()
+      })
+    }
+    const position = new THREE.Vector3()
+    const quaternion = new THREE.Quaternion()
+    const size = new THREE.Vector3()
+    for (const glyph of glyphs) {
+      const colour =
+        glyph.tone === 'hover'
+          ? this.palette.handleHot
+          : glyph.tone === 'picked'
+            ? this.palette.selection
+            : this.palette.overlayLine
+      const paint = (color: number, opacity = 1) =>
+        new THREE.MeshBasicMaterial({
+          color,
+          depthTest: false,
+          transparent: true,
+          opacity,
+          side: THREE.DoubleSide,
+        })
+      const group = new THREE.Group()
+      const disc = new THREE.Mesh(
+        new THREE.CircleGeometry(6, 32),
+        paint(this.palette.background, 0.85),
+      )
+      const ring = new THREE.Mesh(new THREE.RingGeometry(5.5, 8.5, 32), paint(colour))
+      const shaft = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.1, 1.1, 24, 8).rotateX(Math.PI / 2).translate(0, 0, 12),
+        paint(colour),
+      )
+      const tip = new THREE.Mesh(
+        new THREE.ConeGeometry(3.5, 9, 16).rotateX(Math.PI / 2).translate(0, 0, 28),
+        paint(colour),
+      )
+      const tick = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.9, 0.9, 12, 6).rotateZ(-Math.PI / 2).translate(14.5, 0, 0),
+        paint(colour),
+      )
+      group.add(disc, ring, shaft, tip, tick)
+      group.children.forEach((child, index) => (child.renderOrder = 22 + index))
+      new THREE.Matrix4().fromArray(glyph.frame).decompose(position, quaternion, size)
+      group.position.copy(position)
+      group.quaternion.copy(quaternion)
+      group.userData = { scaleAt: [position.x, position.y, position.z], jointId: glyph.id }
+      this.jointGroup.add(group)
+    }
+    this.scaleHandles()
+  }
+
+  pickJointGlyph(clientX: number, clientY: number, tolerance = 14): string | null {
+    const rect = this.renderer.domElement.getBoundingClientRect()
+    let best: { id: string; d: number } | null = null
+    for (const glyph of this.jointGlyphs) {
+      const screen = this.screenOf([glyph.frame[12], glyph.frame[13], glyph.frame[14]])
+      if (!screen) continue
+      const d = Math.hypot(screen[0] + rect.left - clientX, screen[1] + rect.top - clientY)
+      if (d <= tolerance && (!best || d < best.d)) best = { id: glyph.id, d }
+    }
+    return best?.id ?? null
+  }
+
   private scaleHandles() {
-    for (const child of this.handleGroup.children) {
+    for (const child of [...this.handleGroup.children, ...this.jointGroup.children]) {
       const at = child.userData.scaleAt as Vec3 | undefined
       if (at) child.scale.setScalar(this.pixelSize(at))
       const shaftAt = child.userData.shaftAt as Vec3 | undefined
@@ -1342,7 +1420,11 @@ export class ViewportEngine {
    * sits on. Anything else and edges become unclickable, because the face
    * behind them is always the bigger target.
    */
-  pickSub(clientX: number, clientY: number): SubPick | null {
+  pickSub(
+    clientX: number,
+    clientY: number,
+    options: { catalogue?: boolean; vertices?: boolean } = {},
+  ): SubPick | null {
     const ndc = this.pointerToNdc(clientX, clientY)
     this.raycaster.setFromCamera(ndc, this.camera)
 
@@ -1355,13 +1437,14 @@ export class ViewportEngine {
     }
 
     const bodies = [...this.objects.values()].filter(
-      (entry) => entry.instance.kind === 'body' && !entry.instance.previewTool,
+      (entry) =>
+        (entry.instance.kind === 'body' || !!options.catalogue) && !entry.instance.previewTool,
     )
 
     const VERTEX_PX = 9
     let bestVertex: { entry: InstanceObject; pos: Vec3; d: number } | null = null
     const world = new THREE.Vector3()
-    for (const entry of bodies) {
+    for (const entry of options.vertices === false ? [] : bodies) {
       const groups = this.geometries.get(entry.instance.meshKey)?.data
       if (!groups) continue
       const seen = new Set<string>()

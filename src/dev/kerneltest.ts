@@ -263,6 +263,32 @@ export async function runKernelTest(): Promise<TestResult[]> {
       add('plate was built', false, 'no instance "root|plate" with a mesh came back')
     }
 
+    const jointed = piPlateDoc(translationMatrix([8, 7, PLATE_T]), true)
+    const frame = identityMatrix()
+    jointed.timeline.push({
+      id: 'joint-kernel',
+      kind: 'joint',
+      name: 'Joint',
+      componentId: jointed.rootComponentId,
+      asBuilt: false,
+      one: { occurrencePath: ['pi'], snap: { ref: null, keypoint: 'origin' }, frame },
+      two: { occurrencePath: [], snap: { ref: null, keypoint: 'origin' }, frame },
+      motion: { kind: 'revolute', axis: 'z' },
+      flip: false,
+      angle: 0,
+      offset: 0,
+      values: [0],
+      limits: [],
+    })
+    const withJoint = await evaluate(jointed)
+    add(
+      'a joint in the timeline leaves the build alone',
+      withJoint.errors.length === 0 && withJoint.instances.length === onPlate.instances.length,
+      withJoint.errors.length
+        ? errorText(withJoint)
+        : withJoint.instances.map((i) => i.id).join(', '),
+    )
+
     const holesOnly = await evaluate(piPlateDoc(translationMatrix([8, 7, PLATE_T]), false))
     const holesAway = await evaluate(piPlateDoc(translationMatrix([400, 400, PLATE_T]), false))
     const drilled = meshFor(holesOnly, 'root|plate')?.volume ?? 0

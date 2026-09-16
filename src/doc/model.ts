@@ -94,6 +94,11 @@ export function featureModifiesBodies(feature: Feature): string[] {
 export function featureReadsBodies(feature: Feature): string[] {
   const bodies: string[] = []
   if ('plane' in feature && feature.plane.kind === 'face') bodies.push(feature.plane.face.bodyId)
+  if (feature.kind === 'joint') {
+    for (const side of [feature.one, feature.two]) {
+      if (side.snap.ref) bodies.push(side.snap.ref.bodyId)
+    }
+  }
   if (feature.kind === 'combine') bodies.push(...feature.toolBodyIds)
   if (feature.kind === 'lid') bodies.push(feature.sourceBodyId)
   return bodies
@@ -108,6 +113,10 @@ export function featureDependencies(doc: OkcDocument, feature: Feature): string[
   if (feature.kind === 'extrude' || feature.kind === 'revolve') dependencies.add(feature.sketchId)
   if (feature.kind === 'lid') dependencies.add(feature.shellFeatureId)
   if (feature.kind === 'lidSocket') dependencies.add(feature.lidFeatureId)
+  if (feature.kind === 'motionLink') {
+    dependencies.add(feature.a.jointId)
+    dependencies.add(feature.b.jointId)
+  }
   for (const bodyId of [...featureModifiesBodies(feature), ...featureReadsBodies(feature)]) {
     const creator = bodyCreator(doc, bodyId)
     if (creator && creator.id !== feature.id) dependencies.add(creator.id)

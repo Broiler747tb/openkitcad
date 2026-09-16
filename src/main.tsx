@@ -36,6 +36,8 @@ if (params.has('selftest') || params.has('kerneltest')) {
       ['commands', async () => (await import('./dev/commandtest')).runCommandTest()],
       ['sketch', async () => (await import('./dev/sketchtest')).runSketchTest()],
       ['ui', async () => (await import('./dev/uitest')).runUiTest()],
+      ['joints', async () => (await import('./dev/jointtest')).runJointTest()],
+      ['assembly', async () => (await import('./dev/assemblytest')).runAssemblyTest()],
     )
   }
   suites.push(
@@ -43,9 +45,11 @@ if (params.has('selftest') || params.has('kerneltest')) {
     ['naming', async () => (await import('./dev/namingtest')).runNamingTest()],
     ['kernel', async () => (await import('./dev/kerneltest')).runKernelTest()],
   )
+  const only = params.get('suite')?.split(',').filter(Boolean)
   ;(async () => {
     const results: TestResult[] = []
     for (const [name, suite] of suites) {
+      if (only?.length && !only.includes(name)) continue
       try {
         results.push(...(await suite()))
       } catch (error) {

@@ -1,5 +1,13 @@
 import type { Vec3 } from '../../core/math'
-import type { ElementRef, Feature, LengthUnit, OkcDocument, PlaneRef } from '../../doc/types'
+import type {
+  ElementRef,
+  Feature,
+  JointKeypoint,
+  LengthUnit,
+  Matrix4,
+  OkcDocument,
+  PlaneRef,
+} from '../../doc/types'
 
 export type PickKind =
   | 'body'
@@ -16,6 +24,7 @@ export type PickKind =
   | 'plane'
   | 'axis'
   | 'point'
+  | 'jointSnap'
 
 export interface SelectionPick {
   kind: PickKind
@@ -30,6 +39,12 @@ export interface SelectionPick {
   point?: Vec3
   normal?: Vec3
   profile?: { sketchId: string; key: string }
+  joint?: {
+    occurrencePath: string[]
+    ref: ElementRef | null
+    keypoint: JointKeypoint
+    frame: Matrix4
+  }
 }
 
 export type CommandValue = SelectionPick[] | number | string | boolean
@@ -164,6 +179,12 @@ export interface CommandSpec<I extends readonly CommandInput[] = readonly Comman
   build(values: CommandValues<I>, context: CommandContext): Feature[]
   validate?(values: CommandValues<I>, context: CommandContext): CommandValidation<I[number]['id']>
   handles?(values: CommandValues<I>, context: CommandContext): CommandHandle[]
+  adjust?(
+    doc: OkcDocument,
+    features: Feature[],
+    context: CommandContext,
+    values: CommandValues<I>,
+  ): void
 }
 
 export type AnyCommandSpec = CommandSpec<readonly CommandInput[]>

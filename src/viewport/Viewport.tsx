@@ -32,10 +32,13 @@ import {
   bodyPick,
   commandPicks,
   elementPick,
+  featurePick,
+  occurrencePick,
   offerPick,
   pickSketchId,
   profilePick,
 } from '../ui/command/picks'
+import { jointGlyphs, snapAt, type SnapHit } from './joints'
 import {
   type ToolId,
   activeSketchFeature,
@@ -101,6 +104,7 @@ import {
   featureModifiesBodies,
   findBody,
   findComponent,
+  findFeature,
   findOccurrence,
   invertRigidMatrix,
   isElementRef,
@@ -518,7 +522,7 @@ export function Viewport() {
   useEffect(() => {
     const engine = engineRef.current
     if (!engine) return
-    if (activeSketch) {
+    if (activeSketch || commandSession) {
       engine.setGizmo(null, gizmoMode)
       return
     }
@@ -561,7 +565,7 @@ export function Viewport() {
       }
     }
     engine.setGizmo(null, gizmoMode)
-  }, [selection, doc, instances, meshes, gizmoMode, activeSketch])
+  }, [selection, doc, instances, meshes, gizmoMode, activeSketch, !!commandSession])
 
   // Frame whenever geometry appears out of nothing: opening a document, or
   // turning the first sketch into a solid. Waiting for the shapes rather than
@@ -679,6 +683,8 @@ export function Viewport() {
     return ids
   }, [commandSession, doc])
   const [hoveredProfile, setHoveredProfile] = useState<string | null>(null)
+  const [snapHover, setSnapHover] = useState<SnapHit | null>(null)
+  const [hotJoint, setHotJoint] = useState<string | null>(null)
   useEffect(() => {
     engineRef.current?.setProfileHighlight(pickedProfiles, hoveredProfile)
   }, [pickedProfiles, hoveredProfile, sketchOverlays])
@@ -693,6 +699,31 @@ export function Viewport() {
   useEffect(() => {
     engineRef.current?.setHandles(activeHandles, hotHandle)
   }, [activeHandles, hotHandle])
+
+  useEffect(() => {
+    const engine = engineRef.current
+    if (!engine) return
+    if (activeSketch) {
+      engine.setJointGlyphs([])
+      return
+    }
+    engine.setJointGlyphs(
+      jointGlyphs(doc, instances, {
+        picks: commandSession ? commandPicks() : [],
+        hover: snapHover,
+        selectedId: selection.kind === 'feature' ? selection.id : undefined,
+        hotId: hotJoint,
+        skipId: commandSession?.context.editingFeatureId,
+      }),
+    )
+  }, [doc, instances, commandSession, snapHover, selection, hotJoint, activeSketch, paletteVersion])
+
+  function activeKinds(): ReadonlySet<string> {
+    const session = useCommand.getState().session
+    if (!session) return new Set()
+    const input = session.state.active ? findInput(session.spec, session.state.active) : undefined
+    return input?.kind === 'selection' ? new Set(input.filter) : acceptedKinds()
+  }
 
   function dragHandle(handle: ActiveHandle, e: React.PointerEvent) {
     const engine = engineRef.current
@@ -1136,6 +1167,23 @@ export function Viewport() {
     }
     const hot = activeHandles.length ? engine.pickHandle(e.clientX, e.clientY) : null
     if (hot !== hotHandle) setHotHandle(hot)
+    if (!hot && activeKinds().has('jointSnap')) {
+      const snap = snapAt(engine, store.doc, instances, meshes, e.clientX, e.clientY)
+      if ((snap?.pick.id ?? null) !== (snapHover?.pick.id ?? null)) setSnapHover(snap)
+      setCursorHint(snap ? { x: e.clientX, y: e.clientY, text: snap.pick.label } : null)
+      if (store.hovered !== null) store.setHovered(null)
+      engine.setHoverPick(
+        snap ? engine.pickSub(e.clientX, e.clientY, { catalogue: true, vertices: false }) : null,
+      )
+      return
+    }
+    if (snapHover) {
+      setSnapHover(null)
+      setCursorHint(null)
+    }
+    const glyph = hot ? null : engine.pickJointGlyph(e.clientX, e.clientY)
+    const joint = glyph && findFeature(store.doc, glyph)?.kind === 'joint' ? glyph : null
+    if (joint !== hotJoint) setHotJoint(joint)
     const profile =
       !hot && useCommand.getState().session && acceptedKinds().has('profile')
         ? engine.pickProfile(e.clientX, e.clientY)
@@ -1385,6 +1433,23 @@ export function Viewport() {
     const store = useStore.getState()
     if (useCommand.getState().session) {
       const filter = acceptedKinds()
+      const focused = activeKinds()
+      if (filter.has('feature')) {
+        const glyph = engine.pickJointGlyph(e.clientX, e.clientY)
+        if (glyph && offerPick(featurePick(store.doc, glyph))) return
+      }
+      if (focused.has('jointSnap')) {
+        const snap = snapAt(engine, store.doc, instances, meshes, e.clientX, e.clientY)
+        if (snap && offerPick(snap.pick)) {
+          setSnapHover(null)
+          return
+        }
+      }
+      if (focused.has('occurrence')) {
+        const hit = engine.pick(e.clientX, e.clientY)
+        const id = hit?.path[hit.path.length - 1]
+        if (id && offerPick(occurrencePick(store.doc, id, hit.instanceId))) return
+      }
       if (filter.has('profile')) {
         const profile = engine.pickProfile(e.clientX, e.clientY)
         if (profile && offerPick(profilePick(store.doc, profile.sketchId, profile.key))) return
@@ -1420,6 +1485,13 @@ export function Viewport() {
     if (store.tool === 'measure') {
       if (hit) store.addMeasurePoint(hit.point)
       else store.setStatus('Click on a part, not empty space.')
+      return
+    }
+
+    const glyph = engine.pickJointGlyph(e.clientX, e.clientY)
+    if (glyph && findFeature(store.doc, glyph)?.kind === 'joint') {
+      store.select({ kind: 'feature', id: glyph })
+      store.setSubSelection([])
       return
     }
 

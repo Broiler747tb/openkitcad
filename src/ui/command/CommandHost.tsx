@@ -13,8 +13,10 @@ export function CommandHost() {
       context={session.context}
       state={session.state}
       dispatch={(action) => useCommand.getState().dispatch(action)}
-      onPreview={(preview) => useCommand.getState().show(preview.valid ? preview.features : null)}
-      onCommit={({ features }) => useCommand.getState().commit(features)}
+      onPreview={(preview) =>
+        useCommand.getState().show(preview.valid ? preview.features : null, preview.values)
+      }
+      onCommit={({ features, values }) => useCommand.getState().commit(features, values)}
       onCancel={() => useCommand.getState().cancel()}
       problem={problem ? `${problem.message}${problem.hint ? ` ${problem.hint}` : ''}` : null}
     />

@@ -14,7 +14,12 @@ import type { Feature, OkcDocument } from '../../doc/types'
 import { cancelPreview, requestPreview } from '../../kernel/api'
 import type { BodyMesh, Instance, KernelError } from '../../kernel/types'
 import { createCommandState, reduceCommand, type CommandAction, type CommandState } from './state'
-import type { AnyCommandSpec, CommandContext, CommandInitialValues } from './types'
+import type {
+  AnyCommandSpec,
+  CommandContext,
+  CommandInitialValues,
+  LooseCommandValues,
+} from './types'
 
 export interface CommandSession {
   spec: AnyCommandSpec
@@ -41,8 +46,8 @@ interface CommandStore {
   preview: CommandPreviewScene | null
   start: (spec: AnyCommandSpec, options?: CommandStart) => void
   dispatch: (action: CommandAction) => void
-  show: (features: Feature[] | null) => void
-  commit: (features: Feature[]) => void
+  show: (features: Feature[] | null, values?: LooseCommandValues) => void
+  commit: (features: Feature[], values?: LooseCommandValues) => void
   cancel: () => void
 }
 
@@ -117,7 +122,7 @@ export const useCommand = create<CommandStore>((set, get) => ({
     if (state !== session.state) set({ session: { ...session, state } })
   },
 
-  show(features) {
+  show(features, values = {}) {
     const session = get().session
     const current = ++ticket
     if (!session || !features) {
@@ -127,6 +132,18 @@ export const useCommand = create<CommandStore>((set, get) => ({
     }
     const doc = structuredClone(useStore.getState().doc)
     addCreatedBodies(doc, features)
+    if (session.spec.adjust) {
+      const trial = structuredClone(doc)
+      const editingId = session.context.editingFeatureId
+      if (editingId) replaceFeatureInDocument(trial, editingId, features)
+      else insertFeatures(trial, features)
+      try {
+        session.spec.adjust(trial, features, session.context, values as never)
+        doc.occurrences = trial.occurrences
+      } catch {
+        return
+      }
+    }
     const editing = session.context.editingFeatureId
     const at = editing ? featureIndex(doc, editing) : -1
     requestPreview(
@@ -153,7 +170,7 @@ export const useCommand = create<CommandStore>((set, get) => ({
     })
   },
 
-  commit(features) {
+  commit(features, values = {}) {
     const session = get().session
     if (!session) return
     ticket++
@@ -171,8 +188,16 @@ export const useCommand = create<CommandStore>((set, get) => ({
       }),
     )
     useStore.getState().commit((doc) => {
+      const adjust = () => {
+        try {
+          session.spec.adjust?.(doc, features, session.context, values as never)
+        } catch {
+          return
+        }
+      }
       if (!editing) {
         insertFeatures(doc, features)
+        adjust()
         for (const feature of features) {
           if (feature.kind !== 'extrude' && feature.kind !== 'revolve') continue
           const sketch = findFeature(doc, feature.sketchId)
@@ -181,6 +206,7 @@ export const useCommand = create<CommandStore>((set, get) => ({
         return
       }
       replaceFeatureInDocument(doc, editing, features)
+      adjust()
       doc.bindings = doc.bindings.filter(
         (link) => link.featureId !== editing || kept.has(link.field),
       )

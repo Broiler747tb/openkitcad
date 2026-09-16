@@ -2,6 +2,7 @@ import type { Vec2, Vec3 } from '../core/math'
 import type { Sketch2D } from '../sketch/types'
 import type { FastenerKind, ThreadSize } from '../fasteners'
 import type { CataloguePart } from '../catalogue/types'
+import type { DofLimits, DofReference, JointMotion } from '../assembly/types'
 
 export type LengthUnit = 'mm' | 'cm' | 'm' | 'in' | 'ft'
 
@@ -239,6 +240,46 @@ export interface MoveFeature extends FeatureBase {
   rotation: Vec3
 }
 
+export type JointKeypoint = 'centre' | 'middle' | 'point' | 'origin'
+
+export interface JointSnap {
+  ref: ElementRef | null
+  keypoint: JointKeypoint
+}
+
+export interface JointSide {
+  occurrencePath: string[]
+  snap: JointSnap
+  frame: Matrix4
+}
+
+export interface JointFeature extends FeatureBase {
+  kind: 'joint'
+  asBuilt: boolean
+  one: JointSide
+  two: JointSide
+  motion: JointMotion
+  flip: boolean
+  angle: number
+  offset: number
+  values: number[]
+  limits: DofLimits[]
+  locked?: boolean
+}
+
+export interface RigidGroupFeature extends FeatureBase {
+  kind: 'rigidGroup'
+  members: string[][]
+}
+
+export interface MotionLinkFeature extends FeatureBase {
+  kind: 'motionLink'
+  a: DofReference
+  b: DofReference
+  ratio: number
+  offset: number
+}
+
 export type Feature =
   | SketchFeature
   | ExtrudeFeature
@@ -257,6 +298,9 @@ export type Feature =
   | LidFeature
   | LidSocketFeature
   | MoveFeature
+  | JointFeature
+  | RigidGroupFeature
+  | MotionLinkFeature
 
 export type FeatureKind = Feature['kind']
 
@@ -350,6 +394,9 @@ export const FEATURE_LABEL: Record<FeatureKind, string> = {
   lid: 'Lid',
   lidSocket: 'Lid Seat',
   move: 'Move',
+  joint: 'Joint',
+  rigidGroup: 'Rigid Group',
+  motionLink: 'Motion Link',
 }
 
 export const FEATURE_HINT: Record<FeatureKind, string> = {
@@ -370,6 +417,9 @@ export const FEATURE_HINT: Record<FeatureKind, string> = {
   lid: 'A lid that fits the opening a Shell left.',
   lidSocket: 'The ledge or groove a lid sits in.',
   move: 'Moves and turns bodies by exact amounts.',
+  joint: 'Holds two components together, with the motion left between them.',
+  rigidGroup: 'Locks components together so they move as one.',
+  motionLink: 'Ties the motion of one joint to another.',
 }
 
 export const FEATURE_ICON: Record<FeatureKind, string> = {
@@ -390,4 +440,7 @@ export const FEATURE_ICON: Record<FeatureKind, string> = {
   lid: '▭',
   lidSocket: '⊓',
   move: '✚',
+  joint: '⚭',
+  rigidGroup: '⛓',
+  motionLink: '⟲',
 }

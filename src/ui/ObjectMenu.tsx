@@ -31,7 +31,9 @@ import { resizeSketch } from '../sketch/edit'
 import { getPart } from '../catalogue'
 import { ContextMenu } from './ContextMenu'
 import { chooseAction } from './ActionDialog'
-import { startCommand } from './command/commands'
+import { editFeature, startCommand } from './command/commands'
+import { setGrounded, updateJoint } from './command/specs/assemble'
+import { motionDofs } from '../assembly/motion'
 import { bodyPick, elementPick } from './command/picks'
 
 interface PromptField {
@@ -68,7 +70,20 @@ export interface ObjectAction {
 const OBJECT_GROUPS: Array<[string, string[]]> = [
   ['Sketch', ['sketch-XY', 'sketch-XZ', 'sketch-YZ', 'sketch-offset', 'sketch-tilted']],
   ['Create', ['add-box', 'add-cylinder', 'add-sphere', 'add-dome']],
-  ['Assemble', ['create-component', 'linked-copy', 'activate']],
+  [
+    'Assemble',
+    [
+      'create-component',
+      'linked-copy',
+      'activate',
+      'ground',
+      'joint',
+      'rigid-group',
+      'edit-joint',
+      'drive-joint',
+      'lock-joint',
+    ],
+  ],
   ['Sketch on Body', ['sketch-on-face', 'sketch-on-top', 'edit-sketch']],
   ['Modify', ['size', 'hollow', 'hollow-lid', 'round-picked', 'bevel-picked', 'round', 'bevel']],
   [
@@ -673,6 +688,26 @@ function buildObjectActions(
         run: () => store.activateComponent(component.id),
       })
     }
+    out.push({
+      id: 'ground',
+      label: occurrence.grounded ? 'Unground' : 'Ground',
+      hint: occurrence.grounded
+        ? 'Lets joints move this component again.'
+        : 'Pins this component in place, so joints move the others.',
+      run: () => setGrounded(id, !occurrence.grounded),
+    })
+    out.push({
+      id: 'joint',
+      label: 'Joint',
+      hint: 'Moves one component onto a snap point of another.',
+      run: () => startCommand('joint'),
+    })
+    out.push({
+      id: 'rigid-group',
+      label: 'Rigid Group',
+      hint: 'Locks this component to others so they move as one.',
+      run: () => startCommand('rigidGroup'),
+    })
 
     const holes = part?.mountingHoles
     const add = (kind: 'holes' | 'standoffs' | 'ports', height?: number) => {
@@ -731,6 +766,35 @@ function buildObjectActions(
       danger: true,
       run: () => store.removeOccurrence(id),
     })
+  }
+
+  if (selection.kind === 'feature' && selection.id) {
+    const feature = findFeature(doc, selection.id)
+    if (feature?.kind === 'joint') {
+      out.push({
+        id: 'edit-joint',
+        label: 'Edit Joint',
+        hint: 'Change the snap points, motion, angle or offset.',
+        run: () => editFeature(feature),
+      })
+      if (motionDofs(feature.motion).length) {
+        out.push({
+          id: 'drive-joint',
+          label: 'Drive Joint',
+          hint: 'Moves the joint to an exact position.',
+          run: () => startCommand('driveJoints'),
+        })
+        out.push({
+          id: 'lock-joint',
+          label: feature.locked ? 'Unlock' : 'Lock',
+          hint: feature.locked ? 'Lets the joint move again.' : 'Holds the joint where it is now.',
+          run: () => {
+            const problem = updateJoint(feature.id, { locked: !feature.locked })
+            if (problem) store.setStatus(problem)
+          },
+        })
+      }
+    }
   }
 
   return raw
