@@ -2,6 +2,7 @@
   "id": "servo-sg90",
   "name": "SG90 micro servo",
   "category": "motor",
+  "popularity": 95,
   "summary": "The 9 g blue hobby servo. Mounting tabs 28 mm apart, 2 mm holes.",
   "confidence": "approximate",
   "source": "SG90 is a clone family with no single official drawing and real variation between sellers. Values here are the commonly published ones: 32.2 x 12.2 mm overall including tabs, 22.8 mm body, tab holes about 28 mm apart. The part is modelled flange-up, with the body hanging below as a keepout. Measure yours before cutting the mounting slot.",

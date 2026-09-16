@@ -2,6 +2,7 @@
   "id": "arduino-uno-r3",
   "name": "Arduino Uno R3",
   "category": "mcu",
+  "popularity": 97,
   "manufacturer": "Arduino",
   "summary": "The classic 68.6 x 53.4 mm Arduino outline, with its famously off-grid holes.",
   "confidence": "datasheet",

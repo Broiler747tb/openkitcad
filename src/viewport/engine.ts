@@ -1562,6 +1562,70 @@ export class ViewportEngine {
     }
   }
 
+  private dropGhost: { group: THREE.Group; key: string } | null = null
+
+  setDropGhost(
+    ghost: {
+      key: string
+      bounds: [number, number, number, number, number, number]
+      matrix: Matrix4
+    } | null,
+  ) {
+    if (this.dropGhost && this.dropGhost.key !== ghost?.key) {
+      this.overlayGroup.remove(this.dropGhost.group)
+      this.dropGhost.group.traverse((child) => {
+        const drawn = child as THREE.Mesh
+        drawn.geometry?.dispose()
+        ;(drawn.material as THREE.Material | undefined)?.dispose()
+      })
+      this.dropGhost = null
+    }
+    if (!ghost) return
+    if (!this.dropGhost) {
+      const [x0, y0, z0, x1, y1, z1] = ghost.bounds
+      const geometry = new THREE.BoxGeometry(
+        Math.max(x1 - x0, 0.01),
+        Math.max(y1 - y0, 0.01),
+        Math.max(z1 - z0, 0.01),
+      ).translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2)
+      const fill = new THREE.Mesh(
+        geometry,
+        new THREE.MeshBasicMaterial({
+          color: this.palette.selection,
+          transparent: true,
+          opacity: 0.22,
+          depthWrite: false,
+        }),
+      )
+      const edges = new THREE.LineSegments(
+        new THREE.EdgesGeometry(geometry),
+        new THREE.LineBasicMaterial({ color: this.palette.selection }),
+      )
+      fill.renderOrder = 4
+      edges.renderOrder = 5
+      const group = new THREE.Group()
+      group.add(fill, edges)
+      group.matrixAutoUpdate = false
+      this.overlayGroup.add(group)
+      this.dropGhost = { group, key: ghost.key }
+    }
+    this.dropGhost.group.matrix.fromArray(ghost.matrix)
+    this.dropGhost.group.matrixWorldNeedsUpdate = true
+  }
+
+  dropTarget(clientX: number, clientY: number): { point: Vec3; normal?: Vec3 } | null {
+    const hit = this.pick(clientX, clientY)
+    const ray = this.raycaster.ray
+    if (hit) {
+      const [nx, ny, nz] = hit.normal
+      const away = nx * ray.direction.x + ny * ray.direction.y + nz * ray.direction.z > 0
+      return { point: hit.point, normal: away ? [-nx, -ny, -nz] : hit.normal }
+    }
+    const point = new THREE.Vector3()
+    if (!ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), point)) return null
+    return { point: [point.x, point.y, point.z] }
+  }
+
   isGizmoDragging(): boolean {
     return !!this.transform?.dragging
   }

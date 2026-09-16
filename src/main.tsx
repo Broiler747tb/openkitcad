@@ -40,6 +40,7 @@ if (params.has('selftest') || params.has('kerneltest')) {
       ['assembly', async () => (await import('./dev/assemblytest')).runAssemblyTest()],
       ['mesh', async () => (await import('./dev/meshtest')).runMeshTest()],
       ['meshCommands', async () => (await import('./dev/meshcommandtest')).runMeshCommandTest()],
+      ['parts', async () => (await import('./dev/partstest')).runPartsTest()],
       [
         'createCommands',
         async () => (await import('./dev/createcommandtest')).runCreateCommandTest(),

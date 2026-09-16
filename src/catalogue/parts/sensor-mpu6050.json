@@ -2,6 +2,7 @@
   "id": "sensor-mpu6050",
   "name": "MPU-6050 module (GY-521)",
   "category": "sensor",
+  "popularity": 81,
   "summary": "Accelerometer and gyroscope on an I2C breakout.",
   "confidence": "approximate",
   "source": "Dimensions taken from the commonly sold module. These boards are made by many suppliers to no common standard, so measure yours before cutting a panel.",

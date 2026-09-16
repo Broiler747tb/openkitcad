@@ -233,6 +233,9 @@ export interface CataloguePart {
   id: string
   name: string
   category: PartCategory
+  popularity?: number
+  family?: string
+  variant?: string
   manufacturer?: string
   /** One line a beginner can understand, shown under the name. */
   summary: string

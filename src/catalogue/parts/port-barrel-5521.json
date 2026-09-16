@@ -2,6 +2,7 @@
   "id": "port-barrel-5521",
   "name": "DC barrel jack 5.5 / 2.1 mm",
   "category": "connector",
+  "popularity": 88,
   "summary": "Threaded panel-mount power socket. Needs an 8 mm round hole.",
   "confidence": "measured",
   "source": "The common threaded panel-mount barrel jack for a 5.5 mm outer / 2.1 mm inner plug. The threaded barrel is 8 mm across, so the panel needs an 8 mm hole and a nut on the inside. The 5.5/2.1 plug size itself is standard; the body length behind the panel varies by a couple of millimetres between suppliers.",

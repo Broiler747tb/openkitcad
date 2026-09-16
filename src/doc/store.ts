@@ -153,7 +153,8 @@ interface AppState {
   activateComponent: (componentId: string) => void
   createComponent: (name?: string) => string
   linkedCopy: (occurrenceId: string, offset?: Vec3) => string | null
-  insertCatalogue: (partId: string, position?: Vec3) => string
+  insertCatalogue: (partId: string, transform?: Matrix4) => string
+  swapCataloguePart: (componentId: string, partId: string) => void
   updateOccurrence: (
     id: string,
     patch: Partial<Omit<Occurrence, 'id'>>,
@@ -866,7 +867,7 @@ export const useStore = create<AppState>((set, get) => ({
     return id
   },
 
-  insertCatalogue(partId, position = [0, 0, 0]) {
+  insertCatalogue(partId, transform = identityMatrix()) {
     const part = getPart(partId)
     const parent = activeComponentOf(get())
     const componentId = newId('part')
@@ -884,13 +885,52 @@ export const useStore = create<AppState>((set, get) => ({
         parentComponentId: parent,
         componentId,
         name: occurrenceName(d, component),
-        transform: translationMatrix(position),
+        transform: [...transform],
         visible: true,
         grounded: false,
       })
     })
     set({ selection: { kind: 'occurrence', id: occurrenceId }, subSelection: [] })
     return occurrenceId
+  },
+
+  swapCataloguePart(componentId, partId) {
+    const part = getPart(partId)
+    const component = findComponent(get().doc, componentId)
+    if (!part || component?.source.kind !== 'catalogue' || component.source.partId === partId)
+      return
+    const previous = getPart(component.source.partId)
+    get().commit((d) => {
+      const target = findComponent(d, componentId)
+      if (!target || target.source.kind !== 'catalogue') return
+      const sameKind = previous?.geometry.kind === part.geometry.kind
+      target.source = {
+        kind: 'catalogue',
+        partId,
+        ...(sameKind && target.source.overrides ? { overrides: target.source.overrides } : {}),
+      }
+      const oldName = target.name
+      if (previous && oldName !== previous.name) return
+      target.name = part.name
+      const taken = new Set(
+        d.occurrences.filter((o) => o.componentId !== componentId).map((o) => o.name),
+      )
+      for (const occurrence of d.occurrences) {
+        if (occurrence.componentId !== componentId) continue
+        const suffix =
+          occurrence.name === oldName
+            ? ''
+            : occurrence.name.startsWith(`${oldName}:`)
+              ? occurrence.name.slice(oldName.length)
+              : null
+        if (suffix === null) continue
+        let name = `${part.name}${suffix}`
+        let n = 2
+        while (taken.has(name)) name = `${part.name}:${n++}`
+        occurrence.name = name
+        taken.add(name)
+      }
+    })
   },
 
   updateOccurrence(id, patch, opts) {

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { editFeature } from './command/commands'
 import {
   bodyPick,
@@ -29,9 +29,7 @@ import {
   isRolledBack,
 } from '../doc/model'
 import { LENGTH_UNITS, UNIT_NAME } from '../core/units'
-import { PartMaker } from './PartMaker'
-import type { PartCategory } from '../catalogue'
-import { groupedCatalogue, searchParts, CATEGORY_BLURB, CONFIDENCE_LABEL } from '../catalogue'
+import { PartsPanel } from './parts/PartsPanel'
 
 export function LeftPanel({
   tab,
@@ -41,7 +39,7 @@ export function LeftPanel({
   onTab: (tab: 'design' | 'catalogue') => void
 }) {
   return (
-    <div className="panel-left">
+    <div className={`panel-left ${tab === 'catalogue' ? 'parts-open' : ''}`}>
       <div className="panel-caption">
         BROWSER <span>▾</span>
       </div>
@@ -53,7 +51,7 @@ export function LeftPanel({
           Components
         </button>
       </div>
-      {tab === 'design' ? <DesignTree /> : <Catalogue />}
+      {tab === 'design' ? <DesignTree /> : <PartsPanel />}
     </div>
   )
 }
@@ -560,107 +558,5 @@ function FeatureRow({
         ✕
       </button>
     </div>
-  )
-}
-
-function Catalogue() {
-  const [query, setQuery] = useState('')
-  const [making, setMaking] = useState(false)
-  const [openType, setOpenType] = useState<PartCategory | null>(null)
-  const [version, setVersion] = useState(0)
-  const groups = useMemo(() => groupedCatalogue(searchParts(query)), [query, version])
-
-  return (
-    <>
-      {making && (
-        <PartMaker
-          onClose={() => {
-            setMaking(false)
-            setVersion((v) => v + 1)
-          }}
-        />
-      )}
-      <div className="cat-search">
-        <input
-          placeholder="Search parts, e.g. pi, m3, nema"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-      </div>
-      <div className="scroll" style={{ flex: 1 }}>
-        {!query && openType && (
-          <button className="cat-back" onClick={() => setOpenType(null)}>
-            <span className="cat-back-arrow">‹</span> All types
-          </button>
-        )}
-        {!query && !openType && (
-          <>
-            {groups.map((group) => (
-              <button
-                key={group.category}
-                className="cat-type"
-                onClick={() => setOpenType(group.category)}
-              >
-                <strong>{group.label}</strong>
-                <span className="cat-count">{group.parts.length}</span>
-                <span className="cat-arrow">›</span>
-              </button>
-            ))}
-            <button className="btn cat-add" onClick={() => setMaking(true)}>
-              Add a part that isn't here
-              <small>Measure it once, use it straight away, send it in if you like</small>
-            </button>
-          </>
-        )}
-        {groups.length === 0 && (
-          <div className="empty">
-            Nothing matches that.
-            <br />
-            <br />
-            The catalogue is open source, and if a part you use is missing you can measure it
-            yourself in a couple of minutes.
-            <br />
-            <br />
-            <button className="btn" onClick={() => setMaking(true)}>
-              Add a part that isn't here
-            </button>
-          </div>
-        )}
-        {(query ? groups : groups.filter((g) => g.category === openType)).map((group) => (
-          <div key={group.category}>
-            <div className="cat-group">{group.label}</div>
-            <div className="cat-blurb">{CATEGORY_BLURB[group.category]}</div>
-            {group.parts.map((part) => (
-              <button
-                key={part.id}
-                className="cat-item"
-                title={`${CONFIDENCE_LABEL[part.confidence]}\n\n${part.source}`}
-                onClick={() => {
-                  const store = useStore.getState()
-                  store.insertCatalogue(part.id)
-                  store.setStatus(
-                    `${part.name} inserted as a component. Drag the arrows or enter its position in Properties.`,
-                  )
-                  window.dispatchEvent(new CustomEvent('okc:fit'))
-                }}
-              >
-                <strong>
-                  {part.name}
-                  <span className="add-indicator" aria-hidden="true">
-                    ＋
-                  </span>
-                  {part.confidence === 'approximate' && (
-                    <span style={{ color: 'var(--warn)', marginLeft: 6, fontSize: 10 }}>
-                      approx
-                    </span>
-                  )}
-                </strong>
-                <span>{part.summary}</span>
-              </button>
-            ))}
-          </div>
-        ))}
-      </div>
-    </>
   )
 }

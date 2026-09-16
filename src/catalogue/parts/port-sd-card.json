@@ -2,6 +2,7 @@
   "id": "port-sd-card",
   "name": "Full-size SD card slot",
   "category": "connector",
+  "popularity": 38,
   "summary": "Edge-mount socket for a normal SD memory card. Needs a 26 x 3.5 mm letterbox slot.",
   "confidence": "approximate",
   "source": "The card is the only part of this that is fixed: a full-size SD card is 32.0 x 24.0 x 2.1 mm by the SD Card Association standard, and the 26 x 3.5 mm slot here is that card plus enough clearance to get it in by hand. The socket body around it is generic. Shell width, height and how far the socket sits back from the panel all vary between makers, and push-push and push-pull types eject differently, so line the slot up against the socket you actually have.",

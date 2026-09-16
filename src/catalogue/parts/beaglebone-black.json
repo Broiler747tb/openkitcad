@@ -2,6 +2,7 @@
   "id": "beaglebone-black",
   "name": "BeagleBone Black",
   "category": "sbc",
+  "popularity": 30,
   "manufacturer": "BeagleBoard.org",
   "summary": "Older ARM board with a lot of GPIO and two real-time cores.",
   "confidence": "approximate",

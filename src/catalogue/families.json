@@ -1,0 +1,67 @@
+{
+  "18650-holder": {
+    "name": "18650 battery holder",
+    "category": "power",
+    "summary": "Holders for 18650 lithium cells."
+  },
+  "buck-converter": {
+    "name": "Buck converter",
+    "category": "power",
+    "summary": "Steps a higher voltage down, e.g. 12 V to 5 V."
+  },
+  "character-lcd": {
+    "name": "Character LCD",
+    "category": "display",
+    "summary": "HD44780 text displays with a backlight."
+  },
+  "hdmi-port": {
+    "name": "HDMI port",
+    "category": "connector",
+    "summary": "Panel cutouts for full-size and micro HDMI."
+  },
+  "heat-set-insert": {
+    "name": "Heat-set insert",
+    "category": "fastener",
+    "summary": "Brass threaded insert melted into a printed part."
+  },
+  "oled-display": {
+    "name": "OLED display",
+    "category": "display",
+    "summary": "Small monochrome OLED screens on I2C or SPI."
+  },
+  "potentiometer": {
+    "name": "Potentiometer",
+    "category": "control",
+    "summary": "Panel-mount knobs with a threaded bushing."
+  },
+  "raspberry-pi-3": {
+    "name": "Raspberry Pi 3",
+    "category": "sbc",
+    "summary": "The previous full-size Pi, in B+ and smaller A+ form."
+  },
+  "raspberry-pi-pico": {
+    "name": "Raspberry Pi Pico",
+    "category": "mcu",
+    "summary": "RP2040 microcontroller board, with or without wireless."
+  },
+  "raspberry-pi-zero": {
+    "name": "Raspberry Pi Zero",
+    "category": "sbc",
+    "summary": "The smallest Raspberry Pi, 65 x 30 mm."
+  },
+  "rotary-encoder": {
+    "name": "Rotary encoder",
+    "category": "control",
+    "summary": "Endless knobs with detents and a push switch."
+  },
+  "tft-display": {
+    "name": "TFT colour display",
+    "category": "display",
+    "summary": "SPI colour screens from 1.3 to 3.5 inch."
+  },
+  "xt-connector": {
+    "name": "XT power connector",
+    "category": "connector",
+    "summary": "Amass XT battery and power connectors."
+  }
+}

@@ -2,6 +2,7 @@
   "id": "port-rocker-kcd1",
   "name": "Rocker on/off switch (KCD1)",
   "category": "connector",
+  "popularity": 76,
   "summary": "The small square rocker switch found on power strips. Clips into a 19 x 13 mm rectangular hole, no screws needed.",
   "confidence": "approximate",
   "source": "KCD1 is a shape that many factories copy rather than a controlled standard, so the numbers move. The 19.0 x 13.0 mm snap-in cutout is what the common KCD1-101 wants and is the size most sellers quote, but parts also sold as KCD1 exist with a 21 x 15 mm cutout, and the illuminated versions are usually deeper. Nothing behind the panel is verified: housing depth, terminal type (solder lug or 4.8 mm spade) and terminal length all vary. Check the cutout drawing that came with your switch, and test-fit in scrap before cutting the real panel.",

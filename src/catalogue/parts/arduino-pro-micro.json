@@ -2,6 +2,7 @@
   "id": "arduino-pro-micro",
   "name": "Arduino Pro Micro (32U4)",
   "category": "mcu",
+  "popularity": 61,
   "summary": "Small board that can pretend to be a keyboard or mouse.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold board. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Most of these have no mounting holes; they are soldered into a board or held by their headers.",

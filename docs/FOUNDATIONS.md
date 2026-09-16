@@ -52,6 +52,10 @@ Scale on the SOLID tab, and the SURFACE tab (§12).
 **J: jank audit.** Press Pull, Offset Face and Draft, so Q and the marking menu work as in Fusion;
 stale notices, plural labels, narrow windows and dead code (§13).
 
+**P: parts.** The Components tab ranked by popularity, with families of versions and a picker,
+favourites, recently used, filters and a details card, drop on a face, and managing your own parts
+(§14). Then true-to-life looks with rendered previews, and every part pinned to a real, named product.
+
 ## 3. Document model v2
 
 Types live in `src/doc/types.ts`. Pure helpers every layer shares live in `src/doc/model.ts`
@@ -495,7 +499,46 @@ Below 1280 px the ribbon tools shrink, and below 1024 px the ribbon scrolls side
 pinned under it, so the page itself never scrolls. An unused welcome screen and three unused helpers
 are gone.
 
-## 14. How the work is done
+## 14. Parts (P)
+
+**Ranking and families.** Every shipped part carries `popularity` (1 to 100), a curated estimate of
+how often hobby projects use it, and the catalogue is sorted by it. Parts that are versions of one
+thing name a `family` from `src/catalogue/families.json` and a short `variant` label. Browsing and
+search collapse a family into one row that opens the version picker; a family with one matching member
+shows as that part. `src/catalogue/search.ts` scores every term against name, family, version, tags,
+id, maker, type and summary, with exact, prefix, substring and one- or two-typo matches, synonyms
+(rpi, type-c, screen, knob and so on) and `m3x10` split into size and length. All terms must match.
+
+**The Components tab** (`src/ui/parts`). A search box with a clear button and two filters, Verified
+sizes (not approximate) and Mounting holes. With no search it shows Favourites, Recently used (eight),
+Popular, the types with counts, and Your parts. Search results can be narrowed by type. A row opens
+the details card; its hover buttons star it or insert it at the origin. The details card has a drawn
+preview, the size, hole pattern, panel hole, thread, ports, headers and power, how the sizes were
+sourced, links, the other versions, Insert, and Edit or Copy and edit for rectangular boards. The
+version picker floats beside the panel with one card per version drawn at a shared scale. Previews
+are SVG drawings made from the part data (`PartSketch.tsx`). Favourites and recent parts are kept in
+localStorage. The panel widens to 320 px while it is open.
+
+**Drop on a face.** Rows, cards and the details preview drag into the view. While dragging, a box the
+size of the part follows the face under the pointer; empty space means the ground plane. A board, a
+standoff or a bearing lies flat on the face, centred on the pointer, with its top edge up on a wall; a
+screw or insert sinks in with its head or top flush; a stepper hangs off the face with its shaft through
+it; a port faces out of the face with its front on it. On a face square to the axes the drop point
+snaps to whole millimetres. The placement is computed in the active component's frame
+(`dropPlacement` in `src/catalogue/placement.ts`) and `insertCatalogue` takes the whole matrix.
+Typing a position, turning or flipping keeps any rotation that is not a turn about Z (`withPose`),
+and so do the move arrows and paste.
+
+**Versions after placing.** Properties shows a Version list for a part in a family. Changing it swaps
+the part in place (`swapCataloguePart`), keeping the placement and renaming the component and its
+occurrences if they still had the old name.
+
+**Your parts.** New part, Import (one part or a list, checked by `partProblems`, with a line per
+refused part), Export all, and per part Edit, Duplicate, Export and Delete, which warns when the part
+is placed. A user part with a shipped id overrides the shipped part and is marked. Edit keeps the id
+and everything the form does not show.
+
+## 15. How the work is done
 
 - Agents never start other agents or workflows.
 - New and rewritten code has no comments. Touched files are formatted with Prettier.

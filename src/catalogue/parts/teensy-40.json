@@ -2,6 +2,7 @@
   "id": "teensy-40",
   "name": "Teensy 4.0",
   "category": "mcu",
+  "popularity": 47,
   "manufacturer": "PJRC",
   "summary": "Very fast for its size. Popular for audio and USB work.",
   "confidence": "approximate",

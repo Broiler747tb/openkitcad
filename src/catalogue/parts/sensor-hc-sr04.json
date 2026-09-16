@@ -2,6 +2,7 @@
   "id": "sensor-hc-sr04",
   "name": "HC-SR04 ultrasonic sensor",
   "category": "sensor",
+  "popularity": 96,
   "summary": "Measures distance by ping. The two cylinders are the transducers.",
   "confidence": "approximate",
   "source": "Dimensions taken from the commonly sold module. These boards are made by many suppliers to no common standard, so measure yours before cutting a panel. The transducers stand about 13 mm off the board and need a 16 mm hole each if you are mounting it behind a panel.",

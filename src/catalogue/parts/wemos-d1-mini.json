@@ -2,6 +2,7 @@
   "id": "wemos-d1-mini",
   "name": "Wemos D1 mini (ESP8266)",
   "category": "mcu",
+  "popularity": 79,
   "summary": "Tiny wifi board with a stack of shields made for it.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold board. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Clones vary slightly in outline; the shield stack pitch is the number that matters most.",

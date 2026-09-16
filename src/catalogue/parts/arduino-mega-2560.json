@@ -2,6 +2,7 @@
   "id": "arduino-mega-2560",
   "name": "Arduino Mega 2560",
   "category": "mcu",
+  "popularity": 74,
   "manufacturer": "Arduino",
   "summary": "101.5 x 53.3 mm. Keeps the Uno hole positions so Uno shields still fit.",
   "confidence": "datasheet",

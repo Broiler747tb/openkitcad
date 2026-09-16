@@ -2,6 +2,7 @@
   "id": "sensor-mq2",
   "name": "MQ-2 gas sensor",
   "category": "sensor",
+  "popularity": 49,
   "summary": "Smoke and combustible gas. Needs a good while to warm up.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. The sensor can itself stands about 16 mm proud and runs hot, so give it air.",

@@ -2,6 +2,7 @@
   "id": "raspberry-pi-5",
   "name": "Raspberry Pi 5",
   "category": "sbc",
+  "popularity": 93,
   "manufacturer": "Raspberry Pi Ltd",
   "summary": "Single-board computer. Same 85 x 56 mm outline and hole pattern as the Pi 4.",
   "confidence": "datasheet",

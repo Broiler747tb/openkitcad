@@ -2,6 +2,7 @@
   "id": "port-dsub-9",
   "name": "D-sub 9 socket",
   "category": "connector",
+  "popularity": 25,
   "summary": "The old serial port. Needs a 30.8 x 12.5 mm hole.",
   "confidence": "approximate",
   "source": "Shell size follows the D-sub standard: 30.8 x 12.5 mm, with fixing screws 24.99 mm apart. The opening here is a plain rectangle rather than the true D shape, which is close enough for a printed panel and much easier to cut.",

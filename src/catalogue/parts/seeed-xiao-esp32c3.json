@@ -2,6 +2,7 @@
   "id": "seeed-xiao-esp32c3",
   "name": "Seeed XIAO ESP32-C3",
   "category": "mcu",
+  "popularity": 66,
   "manufacturer": "Seeed Studio",
   "summary": "Thumbnail-sized wifi board. No mounting holes, so it gets glued or soldered down.",
   "confidence": "approximate",

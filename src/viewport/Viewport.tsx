@@ -46,6 +46,7 @@ import { glyphFeatureId, jointGlyphs, originSnapAt, snapAt, type SnapHit } from 
 import { applyAssemblyResult, jointedPaths, solveDocument } from '../assembly/fromDocument'
 import {
   type ToolId,
+  activeComponentOf,
   activeSketchFeature,
   bodyInstance,
   componentMatrix,
@@ -119,8 +120,15 @@ import {
   remapElementName,
   transformPoint,
 } from '../doc/model'
-import { poseMatrix, poseOf } from '../doc/placement'
-import { CATEGORY_COLOUR, getPart } from '../catalogue'
+import { isUpright, poseMatrix, poseOf, withPose } from '../doc/placement'
+import {
+  CATEGORY_COLOUR,
+  dropPlacement,
+  getPart,
+  partBounds,
+  type CataloguePart,
+} from '../catalogue'
+import { draggedPart, PART_MIME, placePart } from '../ui/parts/actions'
 import { lengthLabel } from '../core/units'
 import { useTheme } from '../theme/theme'
 import { readPalette } from '../theme/palette'
@@ -237,6 +245,20 @@ function deleteSketchSelection(): void {
   store.setSketchSelection([])
 }
 
+function partDropAt(
+  engine: ViewportEngine,
+  part: CataloguePart,
+  clientX: number,
+  clientY: number,
+): { local: Matrix4; world: Matrix4 } | null {
+  const target = engine.dropTarget(clientX, clientY)
+  if (!target) return null
+  const state = useStore.getState()
+  const parent = componentMatrix(state.doc, activeComponentOf(state))
+  const local = dropPlacement(part, target, parent)
+  return { local, world: multiplyMatrices(parent, local) }
+}
+
 function pasteClipboard(): boolean {
   if (!clipboard) return false
   const store = useStore.getState()
@@ -255,8 +277,7 @@ function pasteClipboard(): boolean {
     const inserted = findOccurrence(useStore.getState().doc, id)
     if (inserted) {
       store.updateOccurrence(id, {
-        transform: poseMatrix({
-          ...pose,
+        transform: withPose(occurrence.transform, {
           position: [
             pose.position[0] + PASTE_OFFSET,
             pose.position[1] + PASTE_OFFSET,
@@ -484,20 +505,24 @@ export function Viewport() {
         )
         return
       }
-      const local = poseOf(multiplyMatrices(invertRigidMatrix(parent), pose.matrix))
+      const localMatrix = multiplyMatrices(invertRigidMatrix(parent), pose.matrix)
+      const local = poseOf(localMatrix)
+      const position: Vec3 = [
+        round(local.position[0]),
+        round(local.position[1]),
+        round(local.position[2]),
+      ]
       store.beginTransient()
       store.updateOccurrence(
         store.selection.id,
         {
-          transform: poseMatrix({
-            position: [
-              round(local.position[0]),
-              round(local.position[1]),
-              round(local.position[2]),
-            ],
-            turn: (((Math.round(local.turn * 10) / 10) % 360) + 360) % 360,
-            flipped: local.flipped,
-          }),
+          transform: isUpright(localMatrix)
+            ? poseMatrix({
+                position,
+                turn: (((Math.round(local.turn * 10) / 10) % 360) + 360) % 360,
+                flipped: local.flipped,
+              })
+            : withPose(localMatrix, { position }),
         },
         { transient: true },
       )
@@ -508,13 +533,16 @@ export function Viewport() {
 
     const onView = (e: Event) => engine.setStandardView((e as CustomEvent).detail)
     const onFit = () => engine.frameAll()
+    const onPartDragEnd = () => engine.setDropGhost(null)
     window.addEventListener('okc:view', onView)
     window.addEventListener('okc:fit', onFit)
+    window.addEventListener('okc:part-drag-end', onPartDragEnd)
 
     return () => {
       observer.disconnect()
       window.removeEventListener('okc:view', onView)
       window.removeEventListener('okc:fit', onFit)
+      window.removeEventListener('okc:part-drag-end', onPartDragEnd)
       engine.dispose()
       engineRef.current = null
     }
@@ -1978,6 +2006,30 @@ export function Viewport() {
       <div
         ref={mountRef}
         className="viewport-canvas"
+        onDragOver={(e) => {
+          if (!e.dataTransfer.types.includes(PART_MIME)) return
+          e.preventDefault()
+          const engine = engineRef.current
+          const part = getPart(draggedPart() ?? '')
+          const drop = engine && part ? partDropAt(engine, part, e.clientX, e.clientY) : null
+          e.dataTransfer.dropEffect = drop ? 'copy' : 'none'
+          engine?.setDropGhost(
+            drop && part ? { key: part.id, bounds: partBounds(part), matrix: drop.world } : null,
+          )
+        }}
+        onDragLeave={(e) => {
+          if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
+          engineRef.current?.setDropGhost(null)
+        }}
+        onDrop={(e) => {
+          const engine = engineRef.current
+          engine?.setDropGhost(null)
+          const part = getPart(e.dataTransfer.getData(PART_MIME))
+          if (!engine || !part) return
+          e.preventDefault()
+          const drop = partDropAt(engine, part, e.clientX, e.clientY)
+          if (drop) placePart(part.id, drop.local)
+        }}
         onPointerDownCapture={(e) => {
           if (!isAndroidApp) return
           if (e.pointerType === 'pen') penContactRef.current = true

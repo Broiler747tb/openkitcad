@@ -2,6 +2,7 @@
   "id": "nema-17-stepper",
   "name": "NEMA 17 stepper motor",
   "category": "motor",
+  "popularity": 92,
   "summary": "42 mm stepper. Four M3 holes on a 31 mm square, 22 mm centring boss.",
   "confidence": "datasheet",
   "source": "NEMA 17 is a standardised frame: 42.3 mm square body, 31.0 mm bolt spacing, 22 mm diameter x 2 mm centring boss, 5 mm shaft. Body length varies by model (34, 40 and 48 mm are common) - this entry uses 40 mm.",

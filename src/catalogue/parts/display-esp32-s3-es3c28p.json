@@ -2,6 +2,7 @@
   "id": "display-esp32-s3-es3c28p",
   "name": "ESP32-S3 2.8 inch touch display (ES3C28P)",
   "category": "mcu",
+  "popularity": 38,
   "manufacturer": "LCDWIKI / QDtech",
   "summary": "ESP32-S3 development board with a 240 × 320, 2.8 inch capacitive-touch display and four M3-clearance mounting holes.",
   "confidence": "datasheet",

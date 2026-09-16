@@ -1,6 +1,6 @@
 import type { Vec3 } from '../core/math'
 import type { Matrix4 } from './types'
-import { placementMatrix, transformPoint } from './model'
+import { multiplyMatrices, placementMatrix, rotationMatrix, transformPoint } from './model'
 
 export type Bounds = [number, number, number, number, number, number]
 
@@ -37,6 +37,23 @@ export function poseMatrix(pose: Pose): Matrix4 {
   return placementMatrix(pose.position, pose.turn, pose.flipped)
 }
 
+const FLIP: Matrix4 = [1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1]
+
+export function isUpright(m: Matrix4): boolean {
+  return [m[2], m[6], m[8], m[9]].every((value) => Math.abs(value) < 1e-9)
+}
+
 export function withPose(m: Matrix4, patch: Partial<Pose>): Matrix4 {
-  return poseMatrix({ ...poseOf(m), ...patch })
+  const pose = poseOf(m)
+  if (isUpright(m)) return poseMatrix({ ...pose, ...patch })
+  let out = [...m] as Matrix4
+  if (patch.turn !== undefined && patch.turn !== pose.turn)
+    out = multiplyMatrices(rotationMatrix('z', patch.turn - pose.turn), out)
+  if (patch.flipped !== undefined && patch.flipped !== pose.flipped)
+    out = multiplyMatrices(out, FLIP)
+  const [x, y, z] = patch.position ?? pose.position
+  out[12] = x
+  out[13] = y
+  out[14] = z
+  return out
 }

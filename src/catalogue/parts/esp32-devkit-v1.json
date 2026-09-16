@@ -2,6 +2,7 @@
   "id": "esp32-devkit-v1",
   "name": "ESP32 DevKit V1 (30-pin)",
   "category": "mcu",
+  "popularity": 94,
   "manufacturer": "Various",
   "summary": "The common 30-pin ESP32 dev board. Sizes vary between makers - measure yours.",
   "confidence": "approximate",

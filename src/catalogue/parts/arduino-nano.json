@@ -2,6 +2,7 @@
   "id": "arduino-nano",
   "name": "Arduino Nano",
   "category": "mcu",
+  "popularity": 92,
   "manufacturer": "Arduino",
   "summary": "43.2 x 17.8 mm breadboard board. Note: the original has no mounting holes.",
   "confidence": "datasheet",

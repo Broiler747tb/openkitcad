@@ -1,17 +1,23 @@
 import { useState } from 'react'
 import {
+  allParts,
   CATEGORY_LABEL,
   draftProblems,
   draftToPart,
+  editedPart,
   emptyDraft,
+  partToDraft,
   refreshUserParts,
   slugify,
+  uniquePartId,
   upsertUserPart,
+  type CataloguePart,
   type PartCategory,
   type PartDraft,
 } from '../catalogue'
 import { downloadBlob } from '../doc/persist'
 import { useStore } from '../doc/store'
+import { useShelf } from './parts/shelf'
 
 const REPO = 'https://github.com/Broiler747tb/openkitcad'
 
@@ -43,15 +49,42 @@ const CATEGORIES: PartCategory[] = [
  * laying out a plate; everything else in the schema is optional and can be
  * filled in later by whoever reviews it.
  */
-export function PartMaker({ onClose }: { onClose: () => void }) {
-  const [draft, setDraft] = useState<PartDraft>(emptyDraft())
+export function PartMaker({
+  onClose,
+  base,
+  mode = 'new',
+}: {
+  onClose: () => void
+  base?: CataloguePart
+  mode?: 'new' | 'edit' | 'copy'
+}) {
+  const [draft, setDraft] = useState<PartDraft>(() => {
+    const from = base ? partToDraft(base) : null
+    if (!from) return emptyDraft()
+    return mode === 'copy' ? { ...from, name: `${from.name} (my copy)` } : from
+  })
   const [saved, setSaved] = useState(false)
+  const [savedId, setSavedId] = useState<string | null>(null)
   const set = <K extends keyof PartDraft>(key: K, value: PartDraft[K]) => {
     setDraft((d) => ({ ...d, [key]: value }))
     setSaved(false)
   }
 
-  const part = draftToPart(draft)
+  const editing = mode !== 'new' && !!base && !!partToDraft(base)
+  const part =
+    editing && base
+      ? editedPart(
+          base,
+          draft,
+          mode === 'edit'
+            ? base.id
+            : (savedId ??
+                uniquePartId(
+                  slugify(draft.name) || 'my-part',
+                  new Set(allParts().map((p) => p.id)),
+                )),
+        )
+      : draftToPart(draft)
   const json = `${JSON.stringify(part, null, 2)}\n`
   const { blocking, warnings } = draftProblems(draft)
 
@@ -78,6 +111,8 @@ export function PartMaker({ onClose }: { onClose: () => void }) {
   const useIt = () => {
     upsertUserPart(part)
     refreshUserParts()
+    useShelf.getState().changed()
+    setSavedId(part.id)
     setSaved(true)
     useStore
       .getState()
@@ -87,11 +122,17 @@ export function PartMaker({ onClose }: { onClose: () => void }) {
   return (
     <div className="modal-backdrop" onPointerDown={onClose}>
       <div className="modal wide" onPointerDown={(e) => e.stopPropagation()}>
-        <h2>Add a part that isn't here yet</h2>
+        <h2>
+          {mode === 'edit'
+            ? `Edit ${base?.name ?? 'your part'}`
+            : mode === 'copy'
+              ? `Your own copy of ${base?.name ?? 'a part'}`
+              : "Add a part that isn't here yet"}
+        </h2>
         <p className="hint">
-          Measure the board in front of you and it becomes usable straight away, holes and standoffs
-          and all. If you want to send it in afterwards so nobody else has to measure the same
-          board, there's a button for that at the bottom.
+          {mode === 'new'
+            ? "Measure the board in front of you and it becomes usable straight away, holes and standoffs and all. If you want to send it in afterwards so nobody else has to measure the same board, there's a button for that at the bottom."
+            : 'Change the measurements and save. Parts already placed in your design update to match.'}
         </p>
 
         <div className="section">
@@ -303,16 +344,17 @@ export function PartMaker({ onClose }: { onClose: () => void }) {
 
         <div className="modal-actions">
           <button className="btn primary" disabled={blocking.length > 0} onClick={useIt}>
-            {saved ? 'Saved. Use it from the catalogue' : 'Add it to my catalogue'}
+            {saved
+              ? 'Saved. Use it from the catalogue'
+              : mode === 'edit'
+                ? 'Save changes'
+                : 'Add it to my catalogue'}
           </button>
           <button
             className="btn"
             disabled={blocking.length > 0}
             onClick={() =>
-              downloadBlob(
-                new Blob([json], { type: 'application/json' }),
-                `${slugify(draft.name) || 'my-part'}.json`,
-              )
+              downloadBlob(new Blob([json], { type: 'application/json' }), `${part.id}.json`)
             }
           >
             Download the file

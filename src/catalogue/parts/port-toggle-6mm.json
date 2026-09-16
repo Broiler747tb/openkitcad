@@ -2,6 +2,7 @@
   "id": "port-toggle-6mm",
   "name": "Miniature toggle switch (6 mm bushing)",
   "category": "connector",
+  "popularity": 57,
   "summary": "The little metal flick switch with a threaded collar and a nut. Needs a 6.2 mm round hole.",
   "confidence": "measured",
   "source": "The threaded bushing on miniature toggle switches of the MTS-102 family is M6 x 0.75, so it is 6 mm across and a 6.2 mm hole lets it drop in without forcing. That bushing size is consistent across the whole commodity family, which is why the hole is trustworthy. The rest is not: body size, how far the terminals reach behind the panel and the lever length differ between the two-position and three-position versions and between suppliers. Some of these also have a small anti-rotation tab beside the bushing, which needs its own notch in the panel or must be snapped off.",

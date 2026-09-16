@@ -2,6 +2,7 @@
   "id": "port-sma-jack",
   "name": "SMA panel jack",
   "category": "connector",
+  "popularity": 30,
   "summary": "Aerial connector. Needs a 6.5 mm hole.",
   "confidence": "approximate",
   "source": "The SMA panel nut takes a 6.5 mm hole and the flats are 8 mm across. The connector itself is a precise 50 ohm part; only the panel figures are given here.",

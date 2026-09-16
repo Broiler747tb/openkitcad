@@ -172,3 +172,48 @@ export function draftProblems(draft: PartDraft): { blocking: string[]; warnings:
   }
   return { blocking, warnings }
 }
+
+export function partToDraft(part: CataloguePart): PartDraft | null {
+  const g = part.geometry
+  if (g.kind !== 'board' || g.outline.shape !== 'rect') return null
+  return {
+    name: part.name,
+    category: part.category,
+    manufacturer: part.manufacturer ?? '',
+    summary: part.summary,
+    width: g.outline.w,
+    depth: g.outline.h,
+    thickness: g.thickness,
+    cornerRadius: g.outline.cornerRadius ?? 0,
+    holes: (part.mountingHoles ?? []).map((hole) => ({ ...hole })),
+    confidence: part.confidence,
+    source: part.source,
+    datasheet: part.links?.find((link) => link.label === 'Datasheet')?.url ?? '',
+    tags: (part.tags ?? []).join(' '),
+  }
+}
+
+export function editedPart(base: CataloguePart, draft: PartDraft, id = base.id): CataloguePart {
+  const made = draftToPart(draft)
+  const bumps = base.geometry.kind === 'board' ? base.geometry.bumps : undefined
+  const geometry =
+    made.geometry.kind === 'board' && bumps?.length ? { ...made.geometry, bumps } : made.geometry
+  const links = [
+    ...(base.links ?? []).filter((link) => link.label !== 'Datasheet'),
+    ...(made.links ?? []),
+  ]
+  const part: CataloguePart = { ...base, ...made, id, geometry }
+  if (!made.manufacturer) delete part.manufacturer
+  if (!made.mountingHoles) delete part.mountingHoles
+  if (!made.tags) delete part.tags
+  if (links.length) part.links = links
+  else delete part.links
+  return part
+}
+
+export function uniquePartId(base: string, taken: ReadonlySet<string>): string {
+  if (!taken.has(base)) return base
+  let n = 2
+  while (taken.has(`${base}-${n}`)) n++
+  return `${base}-${n}`
+}

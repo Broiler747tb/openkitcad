@@ -9,7 +9,7 @@ import { activeSketchFeature, bodyBounds, newId, targetBodies, useStore } from '
 import { usePreferences } from '../doc/preferences'
 import { startConstraintTool } from './sketchConstraints'
 import { sketchActions } from '../sketch/actions'
-import { CONFIDENCE_LABEL, getPart } from '../catalogue'
+import { allParts, byPopularity, CONFIDENCE_LABEL, getPart } from '../catalogue'
 import { fmt } from '../core/math'
 import type { BodyOperation, Feature, JointFeature } from '../doc/types'
 import type { DofLimits } from '../assembly/types'
@@ -392,6 +392,11 @@ function OccurrenceInspector({ id, instanceId }: { id: string; instanceId?: stri
     store.updateOccurrence(id, { transform: withPose(occurrence.transform, patch) })
   const source = component.source
   const part = source.kind === 'catalogue' ? getPart(source.partId) : undefined
+  const versions = part?.family
+    ? allParts()
+        .filter((p) => p.family === part.family)
+        .sort(byPopularity)
+    : []
   const bodies = targetBodies(doc)
   const body = bodies.some((b) => b.value === targetBody) ? targetBody : (bodies[0]?.value ?? '')
   const top = body ? bodyBounds({ instances, meshes }, body)?.[5] : undefined
@@ -418,6 +423,23 @@ function OccurrenceInspector({ id, instanceId }: { id: string; instanceId?: stri
           <p className="hint" style={{ marginTop: 0 }}>
             {part.summary}
           </p>
+        )}
+        {part?.family && versions.length > 1 && (
+          <div className="row">
+            <label>Version</label>
+            <select
+              aria-label="Part version"
+              title="Swap this part for another version. Its position is kept."
+              value={part.id}
+              onChange={(e) => store.swapCataloguePart(component.id, e.target.value)}
+            >
+              {versions.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.variant ?? v.name}
+                </option>
+              ))}
+            </select>
+          </div>
         )}
         <Num
           label="Across (X)"

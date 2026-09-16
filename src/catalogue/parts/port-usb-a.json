@@ -2,6 +2,7 @@
   "id": "port-usb-a",
   "name": "USB-A socket",
   "category": "connector",
+  "popularity": 74,
   "summary": "The full-size rectangular USB port. Needs a 13 x 6 mm panel slot.",
   "confidence": "approximate",
   "source": "The USB Type-A plug shell is 12.0 x 4.5 mm, which is fixed by the USB specification. The 13.0 x 6.0 mm cutout here is the usual working opening: it clears the shell plus the moulded strain relief on a typical cable. Socket bodies vary a lot between manufacturers, so check yours before cutting a panel.",

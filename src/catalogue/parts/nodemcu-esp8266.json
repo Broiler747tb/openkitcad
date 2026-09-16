@@ -2,6 +2,7 @@
   "id": "nodemcu-esp8266",
   "name": "NodeMCU ESP8266 (v3)",
   "category": "mcu",
+  "popularity": 77,
   "summary": "Wide breadboard board. Covers most of a small breadboard.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold board. These are made by many suppliers to no common standard, so measure yours before cutting a panel. v2 and v3 differ in width by a few millimetres, which is enough to matter in a slot.",

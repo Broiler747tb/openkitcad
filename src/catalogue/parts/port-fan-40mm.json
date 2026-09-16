@@ -2,6 +2,7 @@
   "id": "port-fan-40mm",
   "name": "40 mm cooling fan",
   "category": "connector",
+  "popularity": 56,
   "summary": "Small square case fan that bolts over a hole in the panel. Needs a 36 mm round hole and four M3 screws 32 mm apart.",
   "confidence": "approximate",
   "source": "The 40.0 x 40.0 mm frame and the 32.0 mm square screw pattern are the same on every 40 mm fan drawing (Sunon, Delta, Noctua and the rest), so those numbers are safe. Two things here are not from a drawing. The 10 mm thickness is the most common version but the same frame is also sold 20 mm and 28 mm deep, so check yours. The 36 mm air opening is a sensible recommendation, not a specification: it passes almost all the air while leaving about 2 mm of material between the hole and the corner screws. Screw holes are drawn at 4.5 mm; real fans run 4.3 to 4.5 mm, and people normally bolt them up with M3.",
