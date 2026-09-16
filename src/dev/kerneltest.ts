@@ -16,6 +16,8 @@ import type { BodyMesh, EvaluateResult, KernelApi } from '../kernel/types'
 import { sketchRegions } from '../sketch/regions'
 import { applySolve, solveSketch } from '../sketch/solver'
 import { emptySketch, type Sketch2D } from '../sketch/types'
+import { encodeMesh, meshDataId } from '../mesh/blob'
+import { boxMesh } from '../mesh/primitives'
 import type { TestResult } from './selftest'
 
 const PLATE_W = 100
@@ -1701,6 +1703,176 @@ export async function runKernelTest(): Promise<TestResult[]> {
         errorText(lost) || 'no error',
       )
     }
+
+    const encoded = encodeMesh(boxMesh([20, 10, 5], [0, 0, 0], 2))
+    const dataId = meshDataId(encoded)
+    const meshDoc = (features: Feature[], bodies: Body[]): OkcDocument => {
+      const doc = emptyDocument('Mesh')
+      doc.components[0].bodies = bodies
+      doc.timeline = features
+      doc.meshData = { [dataId]: encoded }
+      return doc
+    }
+    const insert: Feature = {
+      id: 'mi',
+      kind: 'meshInsert',
+      name: 'Insert Mesh',
+      componentId: 'root',
+      bodyId: 'mesh',
+      dataId,
+      transform: identityMatrix(),
+      unit: 'mm',
+      yUp: false,
+      centre: false,
+      ground: false,
+    }
+    const inserted = await evaluate(meshDoc([insert], [body('mesh')]))
+    const insertedMesh = meshFor(inserted, 'root|mesh')
+    add(
+      'an inserted mesh becomes a closed mesh body',
+      inserted.errors.length === 0 &&
+        insertedMesh?.kind === 'mesh' &&
+        Math.abs(insertedMesh.volume - 1000) < 1e-3,
+      inserted.errors.length
+        ? errorText(inserted)
+        : `${insertedMesh?.kind} body, ${insertedMesh?.volume.toFixed(3)} mm3, ${insertedMesh?.edges.edgeGroups.length} edges drawn`,
+    )
+
+    const halves = await evaluate(
+      meshDoc(
+        [
+          insert,
+          {
+            id: 'mc',
+            kind: 'meshPlaneCut',
+            name: 'Plane Cut',
+            componentId: 'root',
+            bodyId: 'mesh',
+            plane: { kind: 'named', name: 'XY', offset: 2 },
+            flip: false,
+            fill: true,
+            keep: 'both',
+            newBodyId: 'lower',
+          },
+        ],
+        [body('mesh'), body('lower')],
+      ),
+    )
+    const upper = meshFor(halves, 'root|mesh')?.volume ?? 0
+    const lower = meshFor(halves, 'root|lower')?.volume ?? 0
+    add(
+      'a filled plane cut leaves two closed mesh halves',
+      halves.errors.length === 0 && Math.abs(upper - 600) < 1e-3 && Math.abs(lower - 400) < 1e-3,
+      halves.errors.length ? errorText(halves) : `${upper.toFixed(3)} and ${lower.toFixed(3)} mm3`,
+    )
+
+    const tessellated = await evaluate(
+      meshDoc(
+        [
+          boxFeature('bx', 'solid', [0, 0], [10, 10, 10]),
+          {
+            id: 'ts',
+            kind: 'tessellate',
+            name: 'Tessellate',
+            componentId: 'root',
+            sourceBodyId: 'solid',
+            bodyId: 'tri',
+            refinement: 'medium',
+          },
+        ],
+        [body('solid'), body('tri')],
+      ),
+    )
+    const triangles = meshFor(tessellated, 'root|tri')
+    add(
+      'tessellate turns a solid into a closed mesh of the same volume',
+      tessellated.errors.length === 0 &&
+        triangles?.kind === 'mesh' &&
+        Math.abs(triangles.volume - 1000) < 1e-3 &&
+        meshFor(tessellated, 'root|solid')?.kind === 'solid',
+      tessellated.errors.length
+        ? errorText(tessellated)
+        : `${triangles?.volume.toFixed(3)} mm3 in ${(triangles?.mesh.triangles.length ?? 0) / 3} triangles`,
+    )
+
+    for (const method of ['faceted', 'prismatic'] as const) {
+      const converted = await evaluate(
+        meshDoc(
+          [
+            insert,
+            {
+              id: 'cv',
+              kind: 'meshConvert',
+              name: 'Convert Mesh',
+              componentId: 'root',
+              sourceBodyId: 'mesh',
+              bodyId: 'brep',
+              method,
+            },
+          ],
+          [body('mesh'), body('brep')],
+        ),
+      )
+      const brep = meshFor(converted, 'root|brep')
+      const faces = brep?.mesh.faceGroups.length ?? 0
+      add(
+        `a ${method} conversion makes a solid with ${method === 'faceted' ? 'a face per triangle' : 'one face per side'}`,
+        converted.errors.length === 0 &&
+          brep?.kind === 'solid' &&
+          Math.abs(brep.volume - 1000) < 1e-3 &&
+          faces === (method === 'faceted' ? 48 : 6),
+        converted.errors.length
+          ? errorText(converted)
+          : `${brep?.kind}, ${brep?.volume.toFixed(3)} mm3, ${faces} faces`,
+      )
+    }
+
+    const moved = await evaluate(
+      meshDoc(
+        [
+          insert,
+          {
+            id: 'mv',
+            kind: 'move',
+            name: 'Move',
+            componentId: 'root',
+            bodyIds: ['mesh'],
+            offset: [5, 0, 0],
+            rotation: [0, 0, 0],
+          },
+        ],
+        [body('mesh')],
+      ),
+    )
+    const movedBounds = meshFor(moved, 'root|mesh')?.bounds
+    add(
+      'Move carries a mesh body',
+      moved.errors.length === 0 && Math.abs((movedBounds?.[0] ?? 0) - 5) < 1e-6,
+      moved.errors.length ? errorText(moved) : `starts at x = ${movedBounds?.[0]}`,
+    )
+
+    const refused = await evaluate(
+      meshDoc(
+        [
+          insert,
+          {
+            id: 'sh',
+            kind: 'shell',
+            name: 'Shell',
+            componentId: 'root',
+            bodyId: 'mesh',
+            thickness: 1,
+            openFaces: [],
+          },
+        ],
+        [body('mesh')],
+      ),
+    )
+    add(
+      'a solid step on a mesh body says to convert it first',
+      refused.errors.some((error) => error.message.includes('mesh body')),
+      errorText(refused) || 'no error',
+    )
   } catch (e) {
     add('kernel test ran', false, `${(e as Error).message}\n${(e as Error).stack ?? ''}`)
   }

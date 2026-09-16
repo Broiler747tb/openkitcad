@@ -69,6 +69,15 @@ import {
   type OcShape,
 } from './naming'
 
+import {
+  CONVERT_LIMIT,
+  meshToShape,
+  runMeshStep,
+  tessellateShape,
+  type MeshBodyState,
+} from './meshSteps'
+import { meshBounds, transformMesh, triangleCount, type TriMesh } from '../mesh/types'
+
 export const CUT_MARGIN = 0.5
 const THROUGH_LENGTH = 1000
 const LID_REACH = 4000
@@ -849,6 +858,7 @@ function hintForFailure(feature: Feature, message: string): string | undefined {
 export interface Snapshot {
   key: string
   bodies: ReadonlyMap<string, BodyState>
+  meshBodies: ReadonlyMap<string, MeshBodyState>
   sketches: ReadonlyMap<string, SketchFeature>
   preShell: ReadonlyMap<string, PreShell>
   planes: ReadonlyMap<string, Frame>
@@ -860,6 +870,7 @@ export function emptySnapshot(key: string): Snapshot {
   return {
     key,
     bodies: new Map(),
+    meshBodies: new Map(),
     sketches: new Map(),
     preShell: new Map(),
     planes: new Map(),
@@ -874,10 +885,12 @@ export interface FeatureContext {
   doc: OkcDocument
   available: (featureId: string) => boolean
   capture?: ToolCapture
+  meshData?: (id: string) => TriMesh | undefined
 }
 
 interface Stage {
   bodies: Map<string, BodyState>
+  meshBodies: Map<string, MeshBodyState>
   sketches: Map<string, SketchFeature>
   preShell: Map<string, PreShell>
   planes: Map<string, Frame>
@@ -906,6 +919,7 @@ export function evaluateFeature(
   }
   const stage: Stage = {
     bodies: new Map(prev.bodies),
+    meshBodies: new Map(prev.meshBodies),
     sketches: new Map(prev.sketches),
     preShell: new Map(prev.preShell),
     planes: new Map(prev.planes),
@@ -942,6 +956,7 @@ export function evaluateFeature(
   return {
     key,
     bodies: failed ? prev.bodies : stage.bodies,
+    meshBodies: failed ? prev.meshBodies : stage.meshBodies,
     sketches: failed ? prev.sketches : stage.sketches,
     preShell: failed ? prev.preShell : stage.preShell,
     planes: failed ? prev.planes : stage.planes,
@@ -956,7 +971,14 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
   const bodyName = (id: string) => findBody(doc, id)?.body.name ?? id
   const need = (id: string): BodyState | null => {
     const state = stage.bodies.get(id)
-    if (!state) {
+    if (!state && stage.meshBodies.has(id)) {
+      stage.report(
+        'error',
+        `${bodyName(id)} is a mesh body, and this step needs a solid.`,
+        'Use Convert Mesh to turn it into a solid first.',
+        id,
+      )
+    } else if (!state) {
       stage.report(
         'error',
         `${bodyName(id)} does not exist at this point in the timeline.`,
@@ -1020,7 +1042,54 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
     }
   }
 
+  if (
+    runMeshStep(feature, key, {
+      meshBodies: stage.meshBodies,
+      report: stage.report,
+      bodyName,
+      planeFrame: planeOf,
+      meshData: (id) => ctx.meshData?.(id),
+    })
+  ) {
+    return
+  }
+
   switch (feature.kind) {
+    case 'tessellate': {
+      const source = need(feature.sourceBodyId)
+      if (!source) return
+      const mesh = tessellateShape(source.shape, feature.refinement)
+      stage.meshBodies.set(feature.bodyId, { mesh, key, featureId: feature.id })
+      return
+    }
+
+    case 'meshConvert': {
+      const source = stage.meshBodies.get(feature.sourceBodyId)
+      if (!source) {
+        stage.report(
+          'error',
+          `${bodyName(feature.sourceBodyId)} is not a mesh body at this point in the timeline.`,
+          'Pick a mesh body to convert.',
+          feature.sourceBodyId,
+        )
+        return
+      }
+      if (triangleCount(source.mesh) > CONVERT_LIMIT) {
+        stage.report(
+          'error',
+          `${bodyName(feature.sourceBodyId)} has ${triangleCount(source.mesh)} triangles; Convert Mesh takes up to ${CONVERT_LIMIT}.`,
+          'Reduce the mesh first.',
+          feature.sourceBodyId,
+        )
+        return
+      }
+      const shape = meshToShape(source.mesh, feature.method)
+      const named = nameShape(oc, `${feature.id}:mesh`, downcast(shape) as unknown as OcShape)
+      shape.delete()
+      set(feature.bodyId, named)
+      return
+    }
+
     case 'joint':
     case 'jointOrigin':
     case 'rigidGroup':
@@ -1092,8 +1161,11 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
     }
 
     case 'move': {
-      const states = feature.bodyIds.map((id) => [id, need(id)] as const)
-      if (!states.length || states.some(([, state]) => !state)) return
+      const meshes = feature.bodyIds.filter((id) => stage.meshBodies.has(id))
+      const states = feature.bodyIds
+        .filter((id) => !stage.meshBodies.has(id))
+        .map((id) => [id, need(id)] as const)
+      if (!feature.bodyIds.length || states.some(([, state]) => !state)) return
       const [rx, ry, rz] = feature.rotation
       const [dx, dy, dz] = feature.offset
       if (!rx && !ry && !rz && !dx && !dy && !dz) return
@@ -1106,6 +1178,13 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
           hi[i] = Math.max(hi[i], bmax[i])
         }
       }
+      for (const id of meshes) {
+        const { min, max } = meshBounds(stage.meshBodies.get(id)!.mesh)
+        for (let i = 0; i < 3; i++) {
+          lo[i] = Math.min(lo[i], min[i])
+          hi[i] = Math.max(hi[i], max[i])
+        }
+      }
       const centre: Vec3 = [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2]
       let matrix = translationMatrix(v3.scale(centre, -1))
       matrix = multiplyMatrices(rotationMatrix('x', rx), matrix)
@@ -1116,6 +1195,14 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
         ([id, state]) => [id, transformNamed(oc, feature.id, namedOf(state!), matrix)] as const,
       )
       for (const [id, named] of moved) set(id, named)
+      for (const id of meshes) {
+        const state = stage.meshBodies.get(id)!
+        stage.meshBodies.set(id, {
+          mesh: transformMesh(state.mesh, matrix),
+          key,
+          featureId: feature.id,
+        })
+      }
       return
     }
 

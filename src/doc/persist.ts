@@ -12,6 +12,7 @@ import type { CataloguePart } from '../catalogue/types'
 import { getPart, refreshUserParts, upsertUserPart } from '../catalogue'
 import { loadUserParts } from '../catalogue/userParts'
 import { androidDownload } from '../platform/android'
+import { absorbMeshData, referencedMeshData } from './meshData'
 
 const AUTOSAVE_KEY = 'openkitcad.autosave.v2'
 const OLD_AUTOSAVE_KEY = 'openkitcad.autosave.v1'
@@ -30,7 +31,18 @@ export function isCurrentDesign(value: unknown): value is OkcDocument {
   )
 }
 
+function withMeshData(doc: OkcDocument): OkcDocument {
+  const meshData = referencedMeshData(doc)
+  const out: OkcDocument = { ...doc }
+  if (Object.keys(meshData).length) out.meshData = meshData
+  else delete out.meshData
+  return out
+}
+
 function normalise(doc: OkcDocument): OkcDocument {
+  absorbMeshData(doc.meshData)
+  const { meshData: _meshData, ...rest } = doc
+  doc = rest
   const base = emptyDocument(doc.name ?? 'Untitled')
   return {
     ...base,
@@ -63,7 +75,10 @@ export function scheduleAutosave(doc: OkcDocument): void {
 export function saveAutosaveNow(doc: OkcDocument): void {
   clearTimeout(autosaveTimer)
   try {
-    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({ savedAt: new Date().toISOString(), doc }))
+    localStorage.setItem(
+      AUTOSAVE_KEY,
+      JSON.stringify({ savedAt: new Date().toISOString(), doc: withMeshData(doc) }),
+    )
   } catch {
     return
   }
@@ -100,7 +115,7 @@ function partsUsedBy(doc: OkcDocument): CataloguePart[] {
 
 export function serialise(doc: OkcDocument): string {
   const used = partsUsedBy(doc)
-  const out: OkcDocument = { ...doc }
+  const out: OkcDocument = withMeshData(doc)
   if (used.length) out.customParts = used
   else delete out.customParts
   return JSON.stringify(out, null, 2)
@@ -269,7 +284,8 @@ export function makeShareLink(doc: OkcDocument): string {
   // A share link is the whole design or it is nothing: a link that opens with
   // somebody's board missing is worse than no link.
   const used = partsUsedBy(doc)
-  const full: OkcDocument = used.length ? { ...doc, customParts: used } : doc
+  const packedDoc = withMeshData(doc)
+  const full: OkcDocument = used.length ? { ...packedDoc, customParts: used } : packedDoc
   const packed = deflateSync(strToU8(JSON.stringify(full)), { level: 9 })
   const base = `${location.origin}${location.pathname}`
   return `${base}#d=${toBase64Url(packed)}`

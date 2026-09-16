@@ -169,6 +169,13 @@
   border-bottom: 3px solid transparent;
   color: var(--okc-text-muted);
 }
+button.workspace-tab {
+  align-self: stretch;
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+}
 .workspace-tab.active {
   border-bottom-color: var(--accent);
   color: var(--accent);

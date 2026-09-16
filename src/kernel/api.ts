@@ -1,5 +1,6 @@
 import * as Comlink from 'comlink'
-import type { OkcDocument } from '../doc/types'
+import { getMeshData, meshDataIds } from '../doc/meshData'
+import type { Feature, OkcDocument } from '../doc/types'
 import type { EvaluateResult, KernelApi, PreviewRequest } from './types'
 
 let worker: Worker | null = null
@@ -30,6 +31,14 @@ interface PreviewJob {
 }
 
 let building = false
+const sentMeshData = new Set<string>()
+
+function withMeshData(doc: OkcDocument, extra: readonly Feature[] = []): OkcDocument {
+  const missing = meshDataIds(doc, extra).filter((id) => !sentMeshData.has(id) && getMeshData(id))
+  if (!missing.length) return doc
+  for (const id of missing) sentMeshData.add(id)
+  return { ...doc, meshData: Object.fromEntries(missing.map((id) => [id, getMeshData(id)!])) }
+}
 let pendingBuild: BuildJob | null = null
 let pendingPreview: PreviewJob | null = null
 
@@ -89,8 +98,11 @@ async function pump() {
   try {
     const result =
       job.kind === 'build'
-        ? await kernel().evaluate(job.doc, keysOf(job.known))
-        : await kernel().preview(job.request, keysOf(job.known))
+        ? await kernel().evaluate(withMeshData(job.doc), keysOf(job.known))
+        : await kernel().preview(
+            { ...job.request, doc: withMeshData(job.request.doc, job.request.features) },
+            keysOf(job.known),
+          )
     job.resolve(result)
   } catch (e) {
     job.resolve(failedResult(e))

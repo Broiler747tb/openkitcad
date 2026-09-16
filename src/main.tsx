@@ -38,6 +38,8 @@ if (params.has('selftest') || params.has('kerneltest')) {
       ['ui', async () => (await import('./dev/uitest')).runUiTest()],
       ['joints', async () => (await import('./dev/jointtest')).runJointTest()],
       ['assembly', async () => (await import('./dev/assemblytest')).runAssemblyTest()],
+      ['mesh', async () => (await import('./dev/meshtest')).runMeshTest()],
+      ['meshCommands', async () => (await import('./dev/meshcommandtest')).runMeshCommandTest()],
     )
   }
   suites.push(

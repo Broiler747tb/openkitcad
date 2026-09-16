@@ -3,6 +3,7 @@ import type { Sketch2D } from '../sketch/types'
 import type { FastenerKind, ThreadSize } from '../fasteners'
 import type { CataloguePart } from '../catalogue/types'
 import type { DofLimits, DofReference, JointMotion } from '../assembly/types'
+import type { EncodedMesh } from '../mesh/blob'
 
 export type LengthUnit = 'mm' | 'cm' | 'm' | 'in' | 'ft'
 
@@ -240,6 +241,89 @@ export interface MoveFeature extends FeatureBase {
   rotation: Vec3
 }
 
+export type MeshRefinement = 'coarse' | 'medium' | 'high'
+
+export interface MeshInsertFeature extends FeatureBase {
+  kind: 'meshInsert'
+  bodyId: string
+  dataId: string
+  transform: Matrix4
+  unit: LengthUnit | 'um'
+  yUp: boolean
+  centre: boolean
+  ground: boolean
+}
+
+export interface TessellateFeature extends FeatureBase {
+  kind: 'tessellate'
+  sourceBodyId: string
+  bodyId: string
+  refinement: MeshRefinement
+}
+
+export interface MeshRepairFeature extends FeatureBase {
+  kind: 'meshRepair'
+  bodyId: string
+  closeHoles: boolean
+}
+
+export interface MeshReduceFeature extends FeatureBase {
+  kind: 'meshReduce'
+  bodyId: string
+  method: 'proportion' | 'tolerance' | 'count'
+  proportion: number
+  tolerance: number
+  count: number
+}
+
+export interface MeshRemeshFeature extends FeatureBase {
+  kind: 'meshRemesh'
+  bodyId: string
+  edgeLength: number
+  preserveSharp: boolean
+}
+
+export interface MeshSmoothFeature extends FeatureBase {
+  kind: 'meshSmooth'
+  bodyId: string
+  strength: number
+  iterations: number
+}
+
+export interface MeshReverseFeature extends FeatureBase {
+  kind: 'meshReverse'
+  bodyIds: string[]
+}
+
+export interface MeshPlaneCutFeature extends FeatureBase {
+  kind: 'meshPlaneCut'
+  bodyId: string
+  plane: PlaneRef
+  flip: boolean
+  fill: boolean
+  keep: 'both' | 'front' | 'back'
+  newBodyId: string
+}
+
+export interface MeshSeparateFeature extends FeatureBase {
+  kind: 'meshSeparate'
+  bodyId: string
+  newBodyIds: string[]
+}
+
+export interface MeshCombineFeature extends FeatureBase {
+  kind: 'meshCombine'
+  bodyId: string
+  toolBodyIds: string[]
+}
+
+export interface MeshConvertFeature extends FeatureBase {
+  kind: 'meshConvert'
+  sourceBodyId: string
+  bodyId: string
+  method: 'faceted' | 'prismatic'
+}
+
 export type JointKeypoint = 'centre' | 'middle' | 'point' | 'origin'
 
 export interface JointSnap {
@@ -330,6 +414,17 @@ export type Feature =
   | RigidGroupFeature
   | MotionLinkFeature
   | MotionStudyFeature
+  | MeshInsertFeature
+  | TessellateFeature
+  | MeshRepairFeature
+  | MeshReduceFeature
+  | MeshRemeshFeature
+  | MeshSmoothFeature
+  | MeshReverseFeature
+  | MeshPlaneCutFeature
+  | MeshSeparateFeature
+  | MeshCombineFeature
+  | MeshConvertFeature
 
 export type FeatureKind = Feature['kind']
 
@@ -384,6 +479,7 @@ export interface OkcDocument {
   marker: number | null
   groups: TimelineGroup[]
   customParts?: CataloguePart[]
+  meshData?: Record<string, EncodedMesh>
 }
 
 export const ROOT_COMPONENT_ID = 'root'
@@ -428,6 +524,17 @@ export const FEATURE_LABEL: Record<FeatureKind, string> = {
   rigidGroup: 'Rigid Group',
   motionLink: 'Motion Link',
   motionStudy: 'Motion Study',
+  meshInsert: 'Insert Mesh',
+  tessellate: 'Tessellate',
+  meshRepair: 'Repair',
+  meshReduce: 'Reduce',
+  meshRemesh: 'Remesh',
+  meshSmooth: 'Smooth',
+  meshReverse: 'Reverse Normal',
+  meshPlaneCut: 'Plane Cut',
+  meshSeparate: 'Separate',
+  meshCombine: 'Combine Meshes',
+  meshConvert: 'Convert Mesh',
 }
 
 export const FEATURE_HINT: Record<FeatureKind, string> = {
@@ -453,6 +560,17 @@ export const FEATURE_HINT: Record<FeatureKind, string> = {
   rigidGroup: 'Locks components together so they move as one.',
   motionLink: 'Ties the motion of one joint to another.',
   motionStudy: 'Moves joints over time so the mechanism can be played back.',
+  meshInsert: 'A mesh read from an STL, OBJ or 3MF file.',
+  tessellate: 'Turns a solid into a mesh of triangles.',
+  meshRepair: 'Joins loose triangles, turns them all the same way and closes holes.',
+  meshReduce: 'Uses fewer, larger triangles while keeping the shape.',
+  meshRemesh: 'Rebuilds the mesh from evenly sized triangles.',
+  meshSmooth: 'Evens out bumps and noise in the surface.',
+  meshReverse: 'Turns the mesh inside out.',
+  meshPlaneCut: 'Cuts a mesh in two along a plane, and can close the cut.',
+  meshSeparate: 'Splits a mesh into one body per loose piece.',
+  meshCombine: 'Merges meshes into one mesh body.',
+  meshConvert: 'Turns a mesh into a solid body made of flat faces.',
 }
 
 export const FEATURE_ICON: Record<FeatureKind, string> = {
@@ -478,4 +596,15 @@ export const FEATURE_ICON: Record<FeatureKind, string> = {
   rigidGroup: '⛓',
   motionLink: '⟲',
   motionStudy: '⏵',
+  meshInsert: '▲',
+  tessellate: '◬',
+  meshRepair: '✚',
+  meshReduce: '▼',
+  meshRemesh: '◇',
+  meshSmooth: '≈',
+  meshReverse: '⇅',
+  meshPlaneCut: '⊟',
+  meshSeparate: '⧉',
+  meshCombine: '⊞',
+  meshConvert: '⬢',
 }

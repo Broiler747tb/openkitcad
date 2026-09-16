@@ -23,6 +23,9 @@ export interface BodyMesh {
   edges: EdgeData
   volume: number
   bounds: [number, number, number, number, number, number]
+  kind?: 'solid' | 'surface' | 'mesh'
+  pieces?: number
+  watertight?: boolean
 }
 
 export type InstanceKind = 'body' | 'catalogue'
@@ -76,7 +79,7 @@ export interface PreviewRequest {
   replaceFeatureId?: string
 }
 
-export type ExportFormat = 'step' | 'stl' | 'stl-ascii' | '3mf' | 'dxf' | 'svg' | 'pdf'
+export type ExportFormat = 'step' | 'stl' | 'stl-ascii' | '3mf' | 'obj' | 'dxf' | 'svg' | 'pdf'
 
 export type ProjectionPlane = 'XY' | 'XZ' | 'YZ'
 

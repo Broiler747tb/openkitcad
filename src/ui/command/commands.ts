@@ -32,7 +32,26 @@ import {
   rigidGroupCommand,
 } from './specs/assemble'
 import { motionDofs } from '../../assembly/motion'
-import { expandInstances, findComponent } from '../../doc/model'
+import { getMeshData } from '../../doc/meshData'
+import { decodeMesh } from '../../mesh/blob'
+import { meshBounds, triangleCount } from '../../mesh/types'
+import {
+  meshCombineCommand,
+  meshConvertCommand,
+  meshInsertCommand,
+  meshPlaneCutCommand,
+  meshReduceCommand,
+  meshRemeshCommand,
+  meshRepairCommand,
+  meshReverseCommand,
+  meshSeparateCommand,
+  meshSmoothCommand,
+  averageEdge,
+  middleAlong,
+  setPendingMeshes,
+  tessellateCommand,
+} from './specs/mesh'
+import { expandInstances, findBody, findComponent } from '../../doc/model'
 import type { AnyCommandSpec, SelectionPick } from './types'
 
 const spec = (command: unknown) => command as AnyCommandSpec
@@ -57,6 +76,17 @@ export const COMMANDS: Readonly<Record<string, AnyCommandSpec>> = {
   motionLink: spec(motionLinkCommand),
   driveJoints: spec(driveJointsCommand),
   jointOrigin: spec(jointOriginCommand),
+  meshInsert: spec(meshInsertCommand),
+  tessellate: spec(tessellateCommand),
+  meshRepair: spec(meshRepairCommand),
+  meshReduce: spec(meshReduceCommand),
+  meshRemesh: spec(meshRemeshCommand),
+  meshSmooth: spec(meshSmoothCommand),
+  meshReverse: spec(meshReverseCommand),
+  meshPlaneCut: spec(meshPlaneCutCommand),
+  meshSeparate: spec(meshSeparateCommand),
+  meshCombine: spec(meshCombineCommand),
+  meshConvert: spec(meshConvertCommand),
 }
 
 function pathPick(doc: OkcDocument, path: string[]): SelectionPick | null {
@@ -146,6 +176,25 @@ function startOptions(id: string): CommandStart {
       return { initial: { face: faces.slice(0, 1) } }
     case 'asBuiltJoint':
       return { initial: { one: selectedOccurrence(doc) } }
+    case 'meshPlaneCut':
+      return {
+        initial: { body: bodies, ...(bodyId ? { offset: middleAlong(bodyId, 'XY') } : {}) },
+      }
+    case 'meshRemesh': {
+      const edge = bodyId ? averageEdge(bodyId) : null
+      return { initial: { body: bodies, ...(edge ? { edgeLength: edge } : {}) } }
+    }
+    case 'tessellate':
+    case 'meshRepair':
+    case 'meshReduce':
+    case 'meshSmooth':
+    case 'meshSeparate':
+    case 'meshConvert':
+      return { initial: { body: bodies } }
+    case 'meshReverse':
+      return { initial: { bodies } }
+    case 'meshCombine':
+      return { initial: { target: bodies } }
     case 'rigidGroup':
       return { initial: { members: selectedOccurrence(doc) } }
     case 'motionLink':
@@ -335,6 +384,122 @@ function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, Comma
         },
       ]
     }
+    case 'meshInsert': {
+      const data = getMeshData(feature.dataId)
+      if (!data) return null
+      const mesh = decodeMesh(data)
+      const { min, max } = meshBounds(mesh)
+      setPendingMeshes([
+        {
+          name: findBody(doc, feature.bodyId)?.body.name ?? 'Mesh',
+          dataId: feature.dataId,
+          min,
+          max,
+          triangles: triangleCount(mesh),
+        },
+      ])
+      return [
+        COMMANDS.meshInsert,
+        {
+          initial: {
+            unit: feature.unit,
+            yUp: feature.yUp,
+            centre: feature.centre,
+            ground: feature.ground,
+          },
+        },
+      ]
+    }
+    case 'tessellate':
+      return [
+        COMMANDS.tessellate,
+        {
+          initial: {
+            body: bodyPicks([feature.sourceBodyId]),
+            refinement: feature.refinement,
+          },
+          ids: { mesh: feature.bodyId },
+        },
+      ]
+    case 'meshRepair':
+      return [
+        COMMANDS.meshRepair,
+        { initial: { body: bodyPicks([feature.bodyId]), closeHoles: feature.closeHoles } },
+      ]
+    case 'meshReduce':
+      return [
+        COMMANDS.meshReduce,
+        {
+          initial: {
+            body: bodyPicks([feature.bodyId]),
+            method: feature.method,
+            proportion: Math.round(feature.proportion * 100),
+            tolerance: feature.tolerance,
+            count: feature.count,
+          },
+        },
+      ]
+    case 'meshRemesh':
+      return [
+        COMMANDS.meshRemesh,
+        {
+          initial: {
+            body: bodyPicks([feature.bodyId]),
+            edgeLength: feature.edgeLength,
+            preserveSharp: feature.preserveSharp,
+          },
+        },
+      ]
+    case 'meshSmooth':
+      return [
+        COMMANDS.meshSmooth,
+        {
+          initial: {
+            body: bodyPicks([feature.bodyId]),
+            strength: Math.round(feature.strength * 100),
+            iterations: feature.iterations,
+          },
+        },
+      ]
+    case 'meshReverse':
+      return [COMMANDS.meshReverse, { initial: { bodies: bodyPicks(feature.bodyIds) } }]
+    case 'meshPlaneCut': {
+      const named = feature.plane.kind === 'named' ? feature.plane.name : 'XY'
+      return [
+        COMMANDS.meshPlaneCut,
+        {
+          initial: {
+            body: bodyPicks([feature.bodyId]),
+            plane:
+              feature.plane.kind === 'face'
+                ? planeValues(doc, { ...feature.plane, offset: 0 })
+                : [],
+            origin: named,
+            offset: feature.plane.offset,
+            flip: feature.flip,
+            fill: feature.fill,
+            keep: feature.keep,
+          },
+        },
+      ]
+    }
+    case 'meshSeparate':
+      return [COMMANDS.meshSeparate, { initial: { body: bodyPicks([feature.bodyId]) } }]
+    case 'meshCombine':
+      return [
+        COMMANDS.meshCombine,
+        {
+          initial: {
+            target: bodyPicks([feature.bodyId]),
+            tools: bodyPicks(feature.toolBodyIds),
+          },
+        },
+      ]
+    case 'meshConvert':
+      return [
+        COMMANDS.meshConvert,
+        { initial: { body: bodyPicks([feature.sourceBodyId]), method: feature.method } },
+      ]
     case 'jointOrigin': {
       const node = expandInstances(doc).find(
         (candidate) => candidate.componentId === feature.componentId,

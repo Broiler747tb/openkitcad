@@ -620,12 +620,21 @@ function BodyInspector({ id, instanceId }: { id: string; instanceId?: string }) 
           <p className="hint mono" style={{ marginTop: 8 }}>
             {show(size[0])} × {show(size[1])} × {show(size[2])} {units}
             <br />
-            {volumeLabel(mesh.volume, units)} of material
+            {mesh.kind === 'mesh' && !mesh.watertight
+              ? 'Open mesh, so it has no volume'
+              : `${volumeLabel(mesh.volume, units)} of material`}
+          </p>
+        )}
+        {mesh?.kind === 'mesh' && (
+          <p className="hint" style={{ marginTop: 0 }}>
+            Mesh body: {(mesh.mesh.triangles.length / 3).toLocaleString()} triangles
+            {mesh.pieces && mesh.pieces > 1 ? `, ${mesh.pieces} loose pieces` : ''}.{' '}
+            {mesh.watertight ? 'Watertight.' : 'It has open edges; Repair closes small holes.'}
           </p>
         )}
       </div>
 
-      <div className="section">
+      <div className="section" hidden={mesh?.kind === 'mesh'}>
         <h3>Quick actions</h3>
         {objectActions({ kind: 'body', id })
           .filter((a) => ['size', 'round', 'bevel', 'sketch-on-top'].includes(a.id))

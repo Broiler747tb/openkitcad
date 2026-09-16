@@ -7,6 +7,8 @@ import { downloadBlob } from '../doc/persist'
 import { useStore } from '../doc/store'
 import { meshTo3MF, meshToBinarySTL, projectionToDXF, projectionToSVG } from './formats'
 import { projectionToDrillTemplatePDF } from './pdf'
+import { writeObj } from '../mesh/obj'
+import { createMesh } from '../mesh/types'
 
 export interface ExportTarget {
   id: string
@@ -25,6 +27,12 @@ export const EXPORT_FORMATS: Array<{
     label: '3MF',
     detail: '3D printing, but carries real units so nothing gets mis-scaled.',
     extension: '3mf',
+  },
+  {
+    id: 'obj',
+    label: 'OBJ',
+    detail: 'Mesh for rendering, games and most other 3D software.',
+    extension: 'obj',
   },
   {
     id: 'step',
@@ -57,6 +65,7 @@ const LABEL: Record<ExportFormat, string> = {
   stl: 'STL',
   'stl-ascii': 'STL',
   '3mf': '3MF',
+  obj: 'OBJ',
   dxf: 'DXF',
   svg: 'SVG',
   pdf: 'PDF',
@@ -97,6 +106,12 @@ export async function exportShape(format: ExportFormat, target: ExportTarget): P
           new Blob([zip as BlobPart], { type: 'model/3mf' }),
           filename(target.name, '3mf'),
         )
+        return
+      }
+      case 'obj': {
+        const data = await api.meshOf(target.id)
+        const text = writeObj(createMesh(data.vertices, data.triangles), { name: target.name })
+        downloadBlob(new Blob([text], { type: 'model/obj' }), filename(target.name, 'obj'))
         return
       }
       case 'dxf': {

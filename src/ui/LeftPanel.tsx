@@ -122,6 +122,15 @@ function ComponentContents({
 }) {
   const doc = useStore((s) => s.doc)
   const selection = useStore((s) => s.selection)
+  const instances = useStore((s) => s.instances)
+  const meshes = useStore((s) => s.meshes)
+  const meshBodyIds = new Set(
+    instances
+      .filter((instance) => meshes.get(instance.meshKey)?.kind === 'mesh')
+      .map((instance) => instance.bodyId),
+  )
+  const solidBodies = component.bodies.filter((body) => !meshBodyIds.has(body.id))
+  const meshBodies = component.bodies.filter((body) => meshBodyIds.has(body.id))
   const sketches = doc.timeline.filter(
     (feature) => feature.kind === 'sketch' && feature.componentId === component.id,
   )
@@ -149,10 +158,18 @@ function ComponentContents({
 
   return (
     <>
-      {component.bodies.length > 0 && (
+      {solidBodies.length > 0 && (
         <details className="browser-folder" open>
-          <summary>Bodies ({component.bodies.length})</summary>
-          {component.bodies.map((body) => (
+          <summary>Bodies ({solidBodies.length})</summary>
+          {solidBodies.map((body) => (
+            <BodyBranch key={body.id} body={body} failed={failed} />
+          ))}
+        </details>
+      )}
+      {meshBodies.length > 0 && (
+        <details className="browser-folder" open>
+          <summary>Mesh Bodies ({meshBodies.length})</summary>
+          {meshBodies.map((body) => (
             <BodyBranch key={body.id} body={body} failed={failed} />
           ))}
         </details>

@@ -19,6 +19,18 @@ import { THEME_LABEL, THEME_PREFERENCES, useTheme } from '../theme/theme'
 import type { ReactNode } from 'react'
 import { BrandMark } from './BrandMark'
 import { openMotionStudy } from './MotionStudy'
+import { insertMeshFile } from './meshImport'
+import {
+  ConvertMeshIcon,
+  InsertMeshIcon,
+  MeshPlaneCutIcon,
+  MeshReduceIcon,
+  MeshRepairIcon,
+  MeshReverseIcon,
+  MeshSmoothIcon,
+  RemeshIcon,
+  TessellateIcon,
+} from './icons/mesh'
 import { rememberCommand } from './MarkingMenu'
 import { ExtrudeIcon, HoleIcon, RevolveIcon } from './icons/solid'
 import { AsBuiltJointIcon, JointIcon, JointOriginIcon, RigidGroupIcon } from './icons/assemble'
@@ -66,6 +78,17 @@ const labels: Record<string, string> = {
   rigidGroup: 'Rigid Group',
   motionLink: 'Motion Link',
   driveJoints: 'Drive Joints',
+  meshInsert: 'Insert Mesh',
+  tessellate: 'Tessellate',
+  meshRepair: 'Repair',
+  meshReduce: 'Reduce',
+  meshRemesh: 'Remesh',
+  meshSmooth: 'Smooth',
+  meshReverse: 'Reverse Normal',
+  meshPlaneCut: 'Plane Cut',
+  meshSeparate: 'Separate',
+  meshCombine: 'Combine Meshes',
+  meshConvert: 'Convert Mesh',
 }
 export function Toolbar({
   onExport,
@@ -85,6 +108,7 @@ export function Toolbar({
   const [pending, setPending] = useState<string | null>(null),
     [menu, setMenu] = useState<string | null>(null)
   const [variants, setVariants] = useState<Record<string, ToolId>>({})
+  const [workspace, setWorkspace] = useState<'solid' | 'mesh'>('solid')
   const themeState = useTheme()
   const root = useRef<HTMLElement>(null)
   const sketch = activeSketchFeature(state)
@@ -510,7 +534,22 @@ export function Toolbar({
       </div>
       <div className="workspace-tabs">
         <span className="design-workspace">DESIGN</span>
-        <span className={'workspace-tab ' + (!state.activeSketch ? 'active' : '')}>SOLID</span>
+        {(['solid', 'mesh'] as const).map((tab) => (
+          <button
+            key={tab}
+            className={
+              'workspace-tab ' + (!state.activeSketch && workspace === tab ? 'active' : '')
+            }
+            aria-pressed={!state.activeSketch && workspace === tab}
+            onClick={() => {
+              if (state.activeSketch) state.closeSketch()
+              setMenu(null)
+              setWorkspace(tab)
+            }}
+          >
+            {tab.toUpperCase()}
+          </button>
+        ))}
         {state.activeSketch && <span className="workspace-tab sketch-tab active">SKETCH</span>}
         <span className="spacer" />
         <span className="offline-indicator">● Offline document</span>
@@ -677,6 +716,95 @@ export function Toolbar({
               <FinishSketchIcon className="okc-icon" width={30} height={30} />
               <span>Finish Sketch</span>
             </button>
+          </>
+        ) : workspace === 'mesh' ? (
+          <>
+            {group(
+              'CREATE',
+              [
+                {
+                  id: 'mesh-insert',
+                  label: 'Insert Mesh',
+                  hint: 'Places an STL, OBJ or 3MF mesh in the design as a mesh body.',
+                  group: 'Create',
+                  run: () => void insertMeshFile(),
+                },
+                { ...cmd('tessellate'), group: 'Create' },
+              ],
+              <>
+                {tool(
+                  'Insert Mesh',
+                  <InsertMeshIcon className="okc-icon" />,
+                  () => void insertMeshFile(),
+                )}
+                {tool('Tessellate', <TessellateIcon className="okc-icon" />, () =>
+                  invoke('tessellate'),
+                )}
+              </>,
+            )}
+            {group(
+              'PREPARE',
+              ['meshRepair', 'meshRemesh', 'meshReduce', 'meshConvert'].map((id) => ({
+                ...cmd(id),
+                group: 'Prepare',
+              })),
+              <>
+                {tool('Repair', <MeshRepairIcon className="okc-icon" />, () =>
+                  invoke('meshRepair'),
+                )}
+                {tool('Remesh', <RemeshIcon className="okc-icon" />, () => invoke('meshRemesh'))}
+                {tool('Reduce', <MeshReduceIcon className="okc-icon" />, () =>
+                  invoke('meshReduce'),
+                )}
+                {tool('Convert Mesh', <ConvertMeshIcon className="okc-icon" />, () =>
+                  invoke('meshConvert'),
+                )}
+              </>,
+            )}
+            {group(
+              'MODIFY',
+              [
+                ...[
+                  'meshPlaneCut',
+                  'meshSmooth',
+                  'meshReverse',
+                  'meshSeparate',
+                  'meshCombine',
+                  'move',
+                ].map((id) => ({ ...cmd(id), group: 'Modify' })),
+              ],
+              <>
+                {tool('Plane Cut', <MeshPlaneCutIcon className="okc-icon" />, () =>
+                  invoke('meshPlaneCut'),
+                )}
+                {tool('Smooth', <MeshSmoothIcon className="okc-icon" />, () =>
+                  invoke('meshSmooth'),
+                )}
+                {tool('Reverse Normal', <MeshReverseIcon className="okc-icon" />, () =>
+                  invoke('meshReverse'),
+                )}
+              </>,
+            )}
+            {group(
+              'INSPECT',
+              [],
+              tool(
+                'Measure',
+                <MeasureIcon className="okc-icon" />,
+                () => {
+                  state.clearMeasure()
+                  state.setTool(state.tool === 'measure' ? 'select' : 'measure')
+                },
+                'I',
+              ),
+            )}
+            <div className="fusion-group standalone">
+              {tool('Select', <SelectIcon className="okc-icon okc-icon-2d" />, () => {
+                setPending(null)
+                state.setTool('select')
+                state.select({ kind: 'none' })
+              })}
+            </div>
           </>
         ) : (
           <>

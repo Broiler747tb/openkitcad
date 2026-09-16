@@ -44,6 +44,10 @@ import {
   type OcShape,
 } from './naming'
 import { flattenSvgPaths } from '../export/svgpath'
+import { analyzeMesh } from '../mesh/analysis'
+import { decodeMesh } from '../mesh/blob'
+import { meshDisplay } from '../mesh/display'
+import { transformMesh, type TriMesh } from '../mesh/types'
 import type {
   BodyMesh,
   Clash,
@@ -151,6 +155,9 @@ interface Tessellation {
   edges: EdgeData
   volume: number
   bounds: Bounds
+  kind?: BodyMesh['kind']
+  pieces?: number
+  watertight?: boolean
 }
 
 interface PartSolid {
@@ -186,6 +193,7 @@ interface LiveInstance {
   world: any | null
   map?: ElementMap<OcShape>
   references?: ReferenceNames
+  mesh?: TriMesh
 }
 
 const snapshots = new Lru<Snapshot>(SNAPSHOT_CAP)
@@ -193,6 +201,35 @@ const tessellations = new Lru<Tessellation>(TESSELLATION_CAP)
 const partSolids = new Lru<PartSolid>(PART_CAP)
 const cuts = new Lru<CutEntry>(CUT_CAP)
 let live = new Map<string, LiveInstance>()
+const meshBlobs = new Map<string, TriMesh>()
+
+function absorbMeshData(doc: OkcDocument) {
+  for (const [id, encoded] of Object.entries(doc.meshData ?? {})) {
+    if (!meshBlobs.has(id)) meshBlobs.set(id, decodeMesh(encoded))
+  }
+  delete doc.meshData
+}
+
+const MESH_ONLY = 'Mesh bodies cannot be used here. Convert the mesh to a solid first.'
+
+function tessellateMesh(mesh: TriMesh): Tessellation {
+  const display = meshDisplay(mesh)
+  const report = analyzeMesh(mesh)
+  return {
+    mesh: {
+      vertices: display.vertices,
+      triangles: display.triangles,
+      normals: display.normals,
+      faceGroups: display.faceGroups,
+    },
+    edges: { lines: display.lines, edgeGroups: display.edgeGroups },
+    volume: report.watertight ? Math.abs(report.volume) : 0,
+    bounds: [...report.bounds.min, ...report.bounds.max] as Bounds,
+    kind: 'mesh',
+    pieces: report.componentCount,
+    watertight: report.watertight,
+  }
+}
 let liveSnapshot: Snapshot | null = null
 const localBounds = new WeakMap<object, Bounds>()
 
@@ -422,6 +459,7 @@ function cutNegatives(target: LiveInstance, cutters: LiveInstance[]): CutEntry {
 }
 
 function worldOf(entry: LiveInstance): any {
+  if (entry.mesh) throw new Error(MESH_ONLY)
   if (!entry.world) entry.world = transformShape(entry.local, entry.instance.matrix)
   return entry.world
 }
@@ -535,7 +573,12 @@ function run(
           })
       : undefined
     snapshot = evaluateFeature(
-      { doc, available: (id) => (position.get(id) ?? Infinity) < index, capture },
+      {
+        doc,
+        available: (id) => (position.get(id) ?? Infinity) < index,
+        capture,
+        meshData: (id) => meshBlobs.get(id),
+      },
       feature,
       keys[i],
       snapshot,
@@ -580,6 +623,32 @@ function run(
       continue
     }
     for (const body of component.bodies) {
+      const meshState = snapshot.meshBodies.get(body.id)
+      if (meshState) {
+        const id = instanceId(node.path, body.id)
+        built.set(id, {
+          instance: {
+            id,
+            kind: 'body',
+            path: node.path,
+            componentId: component.id,
+            bodyId: body.id,
+            meshKey: hash(meshState.key, body.id, 'mesh'),
+            matrix: node.matrix,
+            visible: node.visible && body.visible,
+            negative: false,
+          },
+          label: occurrenceName ? `${occurrenceName} / ${body.name}` : body.name,
+          name: body.name,
+          colour: body.colour,
+          featureId: meshState.featureId,
+          ancestorsVisible: node.visible,
+          local: null,
+          world: null,
+          mesh: meshState.mesh,
+        })
+        continue
+      }
       const state = snapshot.bodies.get(body.id)
       if (!state) continue
       const id = instanceId(node.path, body.id)
@@ -608,12 +677,12 @@ function run(
   }
 
   const cutters = [...built.values()].filter(
-    (entry) => entry.instance.negative && entry.ancestorsVisible,
+    (entry) => entry.instance.negative && entry.ancestorsVisible && !entry.mesh,
   )
   if (cutters.length) {
     const cutterBounds = cutters.map((entry) => worldBounds(entry.local, entry.instance.matrix))
     for (const target of built.values()) {
-      if (target.instance.negative || target.instance.kind !== 'body') continue
+      if (target.instance.negative || target.instance.kind !== 'body' || target.mesh) continue
       const box = worldBounds(target.local, target.instance.matrix)
       const hits = cutters.filter((_, i) => boundsOverlap(box, cutterBounds[i]))
       if (!hits.length) continue
@@ -679,6 +748,9 @@ function run(
       edges,
       volume: tessellation.volume,
       bounds: [...tessellation.bounds],
+      kind: tessellation.kind ?? 'solid',
+      ...(tessellation.pieces !== undefined ? { pieces: tessellation.pieces } : {}),
+      ...(tessellation.watertight !== undefined ? { watertight: tessellation.watertight } : {}),
     })
   }
   for (const entry of built.values()) {
@@ -687,7 +759,9 @@ function run(
     let tessellation = tessellations.get(key)
     if (!tessellation) {
       try {
-        tessellation = tessellate(entry.local, entry.map, entry.references)
+        tessellation = entry.mesh
+          ? tessellateMesh(entry.mesh)
+          : tessellate(entry.local, entry.map, entry.references)
         tessellations.set(key, tessellation)
       } catch (e) {
         broken.add(key)
@@ -879,6 +953,7 @@ const api: KernelApi = {
 
   async evaluate(doc: OkcDocument, knownMeshKeys: string[]): Promise<EvaluateResult> {
     await ensureOC()
+    absorbMeshData(doc)
     const resolved = structuredClone(doc)
     resolveParameters(resolved)
     const out = run(resolved, knownMeshKeys, false)
@@ -891,6 +966,7 @@ const api: KernelApi = {
 
   async preview(request: PreviewRequest, knownMeshKeys: string[]): Promise<EvaluateResult> {
     await ensureOC()
+    absorbMeshData(request.doc)
     const doc = structuredClone(request.doc)
     const insertAt = Math.max(0, Math.min(request.insertAt, doc.timeline.length))
     const prefix = doc.timeline
@@ -913,18 +989,34 @@ const api: KernelApi = {
   async exportStep(instanceIds: string[], name: string): Promise<ArrayBuffer> {
     await ensureOC()
     const parts = instanceIds
-      .filter((id) => live.has(id))
+      .filter((id) => live.has(id) && !live.get(id)!.mesh)
       .map((id) => ({
         shape: requireWorld(id),
         name: `${name}-${live.get(id)!.label}`,
         colour: live.get(id)!.colour,
       }))
-    if (parts.length === 0) throw new Error('Nothing to export.')
+    if (parts.length === 0) {
+      throw new Error(
+        instanceIds.some((id) => live.get(id)?.mesh)
+          ? 'Mesh bodies cannot be written to STEP. Export them as STL, OBJ or 3MF, or convert them to solids first.'
+          : 'Nothing to export.',
+      )
+    }
     return writeStep(parts)
   },
 
   async meshOf(instanceId: string): Promise<MeshData> {
     await ensureOC()
+    const entry = live.get(instanceId)
+    if (entry?.mesh) {
+      const placed = transformMesh(entry.mesh, entry.instance.matrix)
+      return {
+        vertices: new Float32Array(placed.positions),
+        triangles: new Uint32Array(placed.triangles),
+        normals: new Float32Array(placed.positions.length),
+        faceGroups: [],
+      }
+    }
     const raw = requireWorld(instanceId).mesh({
       tolerance: MESH_TOLERANCE / 2,
       angularTolerance: MESH_ANGULAR_TOLERANCE / 2,
@@ -976,7 +1068,7 @@ const api: KernelApi = {
       }
     }
 
-    const entries = [...live.values()]
+    const entries = [...live.values()].filter((entry) => !entry.mesh)
     const bodies = entries.filter((entry) => entry.instance.kind === 'body')
     for (const keepout of keepouts) {
       for (const body of bodies)
@@ -1008,7 +1100,7 @@ const api: KernelApi = {
     const out: PrintWarning[] = []
     for (const id of instanceIds) {
       const entry = live.get(id)
-      if (!entry) continue
+      if (!entry || entry.mesh) continue
       const shape = worldOf(entry)
       const name = entry.label
       const warn = (severity: PrintWarning['severity'], message: string, hint?: string) =>
@@ -1101,7 +1193,7 @@ const api: KernelApi = {
     await ensureOC()
     const first = live.get(a)
     const second = live.get(b)
-    if (!first || !second) return null
+    if (!first || !second || first.mesh || second.mesh) return null
     try {
       return measureDistanceBetween(worldOf(first), worldOf(second))
     } catch {

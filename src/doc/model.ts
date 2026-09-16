@@ -66,6 +66,16 @@ function operationOf(feature: Feature): BodyOperation | null {
 }
 
 export function featureCreatesBodies(feature: Feature): string[] {
+  switch (feature.kind) {
+    case 'meshInsert':
+    case 'tessellate':
+    case 'meshConvert':
+      return [feature.bodyId]
+    case 'meshPlaneCut':
+      return feature.keep === 'both' ? [feature.newBodyId] : []
+    case 'meshSeparate':
+      return feature.newBodyIds
+  }
   const operation = operationOf(feature)
   return operation?.kind === 'newBody' ? [operation.bodyId] : []
 }
@@ -82,7 +92,16 @@ export function featureModifiesBodies(feature: Feature): string[] {
     case 'combine':
       return [feature.bodyId]
     case 'move':
+    case 'meshReverse':
       return feature.bodyIds
+    case 'meshRepair':
+    case 'meshReduce':
+    case 'meshRemesh':
+    case 'meshSmooth':
+    case 'meshPlaneCut':
+    case 'meshSeparate':
+    case 'meshCombine':
+      return [feature.bodyId]
     default: {
       const operation = operationOf(feature)
       if (!operation || operation.kind === 'newBody') return []
@@ -100,6 +119,10 @@ export function featureReadsBodies(feature: Feature): string[] {
     }
   }
   if (feature.kind === 'jointOrigin' && feature.snap.ref) bodies.push(feature.snap.ref.bodyId)
+  if (feature.kind === 'tessellate' || feature.kind === 'meshConvert') {
+    bodies.push(feature.sourceBodyId)
+  }
+  if (feature.kind === 'meshCombine') bodies.push(...feature.toolBodyIds)
   if (feature.kind === 'combine') bodies.push(...feature.toolBodyIds)
   if (feature.kind === 'lid') bodies.push(feature.sourceBodyId)
   return bodies
