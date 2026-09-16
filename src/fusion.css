@@ -761,3 +761,50 @@
   border-color: var(--okc-accent);
   color: var(--okc-accent-text);
 }
+
+.marking-ring {
+  position: fixed;
+  width: 0;
+  height: 0;
+  z-index: var(--okc-z-menu);
+}
+.marking-hub {
+  position: absolute;
+  left: -7px;
+  top: -7px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--okc-accent);
+  border-radius: 50%;
+  background: var(--okc-surface-overlay);
+  box-shadow: var(--okc-shadow-sm);
+}
+.marking-item {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 6px;
+  border: 1px solid var(--okc-line);
+  border-radius: var(--okc-radius-pill);
+  background: var(--okc-surface-overlay);
+  color: var(--okc-text);
+  font: 12px var(--okc-font-ui);
+  white-space: nowrap;
+  box-shadow: var(--okc-shadow-md);
+  cursor: pointer;
+}
+.marking-item:hover:not(:disabled) {
+  border-color: var(--okc-accent);
+  background: var(--okc-accent-soft);
+}
+.marking-item:disabled {
+  color: var(--okc-text-disabled);
+  cursor: default;
+}
+.marking-item .okc-icon {
+  width: 18px;
+  height: 18px;
+}

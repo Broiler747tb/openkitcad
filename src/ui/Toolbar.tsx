@@ -18,6 +18,7 @@ import { moveCopyAction, rectangularPatternAction, scaleAction } from './sketchM
 import { THEME_LABEL, THEME_PREFERENCES, useTheme } from '../theme/theme'
 import type { ReactNode } from 'react'
 import { BrandMark } from './BrandMark'
+import { rememberCommand } from './MarkingMenu'
 import { ExtrudeIcon, HoleIcon, RevolveIcon } from './icons/solid'
 import { FilletIcon, MoveCopyIcon as SolidMoveIcon, ShellIcon } from './icons/modify'
 import {
@@ -100,6 +101,8 @@ export function Toolbar({
   const pickTool = (id: ToolId) => {
     setPending(null)
     setMenu(null)
+    const label = SKETCH_TOOLS.find((tool) => tool.id === id)?.label ?? id
+    rememberCommand(id, label, () => useStore.getState().setTool(id))
     state.setTool(id)
   }
   const toolActions: ObjectAction[] = SKETCH_TOOLS.map((tool) => ({
@@ -192,6 +195,7 @@ export function Toolbar({
       ]
   function invoke(id: string) {
     setMenu(null)
+    rememberCommand(id, labels[id] ?? id, () => invoke(id))
     if (startCommand(id)) {
       setPending(null)
       return

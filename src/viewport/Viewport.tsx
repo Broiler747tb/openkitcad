@@ -9,6 +9,18 @@ import {
 } from './engine'
 import { resolveHandles, type ActiveHandle } from './handles'
 import { ViewCube } from './ViewCube'
+import { MarkingRing, recentCommand, rememberCommand, type MarkingItem } from '../ui/MarkingMenu'
+import { startCommand } from '../ui/command/commands'
+import { createSketchAction, resolveCommand } from '../ui/fusionCommands'
+import { ExtrudeIcon, HoleIcon } from '../ui/icons/solid'
+import { DeleteIcon, MoveCopyIcon as MoveIcon } from '../ui/icons/modify'
+import {
+  CreateSketchIcon,
+  FinishSketchIcon,
+  LineIcon,
+  OffsetIcon,
+  TrimIcon,
+} from '../ui/icons/sketch'
 import { entityCentre, pointLookup, tessellate } from '../sketch/curves'
 import { cachedRegions } from '../sketch/regions'
 import { findInput } from '../ui/command/state'
@@ -25,6 +37,7 @@ import {
   profilePick,
 } from '../ui/command/picks'
 import {
+  type ToolId,
   activeSketchFeature,
   bodyInstance,
   componentMatrix,
@@ -1999,16 +2012,37 @@ export function Viewport() {
       )}
 
       {menu && activeSketch && (
-        <SketchMenu x={menu.x} y={menu.y} cursor={menu.cursor} onClose={() => setMenu(null)} />
+        <>
+          <MarkingRing
+            x={menu.x}
+            y={menu.y}
+            items={sketchMarkingItems()}
+            onClose={() => setMenu(null)}
+          />
+          <SketchMenu
+            x={menu.x - 110}
+            y={menu.y + 96}
+            cursor={menu.cursor}
+            onClose={() => setMenu(null)}
+          />
+        </>
       )}
 
       {objectMenu && !activeSketch && (
-        <ObjectMenu
-          x={objectMenu.x}
-          y={objectMenu.y}
-          actions={objectActions(selection, objectMenu.picked)}
-          onClose={() => setObjectMenu(null)}
-        />
+        <>
+          <MarkingRing
+            x={objectMenu.x}
+            y={objectMenu.y}
+            items={solidMarkingItems()}
+            onClose={() => setObjectMenu(null)}
+          />
+          <ObjectMenu
+            x={objectMenu.x - 110}
+            y={objectMenu.y + 96}
+            actions={objectActions(selection, objectMenu.picked)}
+            onClose={() => setObjectMenu(null)}
+          />
+        </>
       )}
 
       <ViewCube subscribe={subscribeView} />
@@ -2053,6 +2087,114 @@ function constraintTitle(id: string): string {
   const sketch = activeSketchFeature(useStore.getState())?.sketch
   const constraint = sketch?.constraints.find((c) => c.id === id)
   return constraint ? CONSTRAINT_LABELS[constraint.kind] : 'Constraint'
+}
+
+function runCommand(id: string, label: string) {
+  rememberCommand(id, label, () => runCommand(id, label))
+  if (startCommand(id)) return
+  const action = resolveCommand(id)
+  if (action) chooseAction(action)
+  else useStore.getState().setStatus(`${label}: select what it applies to first.`)
+}
+
+function repeatItem(): MarkingItem | null {
+  const recent = recentCommand()
+  return recent
+    ? { id: 'repeat', label: `Repeat ${recent.label}`, run: recent.run }
+    : { id: 'repeat', label: 'Repeat', disabled: true, run: () => undefined }
+}
+
+function solidMarkingItems(): Array<MarkingItem | null> {
+  const store = useStore.getState()
+  const deletable = store.selection.kind === 'body' || store.selection.kind === 'occurrence'
+  return [
+    repeatItem(),
+    {
+      id: 'delete',
+      label: 'Delete',
+      icon: DeleteIcon,
+      disabled: !deletable,
+      run: () => {
+        const state = useStore.getState()
+        if (state.selection.kind === 'body' && state.selection.id)
+          state.removeBody(state.selection.id)
+        else if (state.selection.kind === 'occurrence' && state.selection.id) {
+          state.removeOccurrence(state.selection.id)
+        }
+        state.select({ kind: 'none' })
+      },
+    },
+    {
+      id: 'extrude',
+      label: 'Extrude',
+      icon: ExtrudeIcon,
+      run: () => runCommand('extrude', 'Extrude'),
+    },
+    {
+      id: 'undo',
+      label: 'Undo',
+      disabled: !store.past.length,
+      run: () => useStore.getState().undo(),
+    },
+    {
+      id: 'redo',
+      label: 'Redo',
+      disabled: !store.future.length,
+      run: () => useStore.getState().redo(),
+    },
+    { id: 'move', label: 'Move/Copy', icon: MoveIcon, run: () => runCommand('move', 'Move/Copy') },
+    { id: 'hole', label: 'Hole', icon: HoleIcon, run: () => runCommand('hole', 'Hole') },
+    {
+      id: 'sketch',
+      label: 'Create Sketch',
+      icon: CreateSketchIcon,
+      run: () => chooseAction(createSketchAction()),
+    },
+  ]
+}
+
+function sketchMarkingItems(): Array<MarkingItem | null> {
+  const store = useStore.getState()
+  const tool = (id: ToolId, label: string, icon: MarkingItem['icon']): MarkingItem => ({
+    id,
+    label,
+    icon,
+    run: () => {
+      rememberCommand(id, label, () => useStore.getState().setTool(id))
+      useStore.getState().setTool(id)
+    },
+  })
+  return [
+    repeatItem(),
+    {
+      id: 'delete',
+      label: 'Delete',
+      icon: DeleteIcon,
+      disabled: !store.sketchSelection.length,
+      run: () => deleteSketchSelection(),
+    },
+    tool('line', 'Line', LineIcon),
+    {
+      id: 'undo',
+      label: 'Undo',
+      disabled: !store.past.length,
+      run: () => useStore.getState().undo(),
+    },
+    {
+      id: 'redo',
+      label: 'Redo',
+      disabled: !store.future.length,
+      run: () => useStore.getState().redo(),
+    },
+    tool('trim', 'Trim', TrimIcon),
+    { id: 'offset', label: 'Offset', icon: OffsetIcon, run: () => runCommand('offset', 'Offset') },
+    {
+      id: 'finish',
+      label: 'Finish Sketch',
+      icon: FinishSketchIcon,
+      run: () => useStore.getState().closeSketch(),
+    },
+  ]
 }
 
 /** Split a sketch selection into the shape the engine wants for highlighting. */
