@@ -16,18 +16,28 @@ import { CONSTRAINT_TOOLS } from '../sketch/constraintTools'
 import { startConstraintTool } from './sketchConstraints'
 import { moveCopyAction, rectangularPatternAction, scaleAction } from './sketchModify'
 import { THEME_LABEL, THEME_PREFERENCES, useTheme } from '../theme/theme'
+import type { ReactNode } from 'react'
+import { BrandMark } from './BrandMark'
+import { ExtrudeIcon, HoleIcon, RevolveIcon } from './icons/solid'
+import { FilletIcon, MoveCopyIcon as SolidMoveIcon, ShellIcon } from './icons/modify'
+import {
+  BreakIcon,
+  CONSTRAINT_ICONS,
+  CreateSketchIcon,
+  ExtendIcon,
+  FinishSketchIcon,
+  HardwareIcon,
+  MeasureIcon,
+  MoveCopyIcon,
+  OffsetIcon,
+  PlaneIcon,
+  SelectIcon,
+  SKETCH_MENU_ICONS,
+  SketchDimensionIcon,
+  SketchFilletIcon,
+  TrimIcon,
+} from './icons/sketch'
 
-const SKETCH_MENU_ICONS: Record<string, string> = {
-  Line: '╱',
-  Rectangle: '▭',
-  Circle: '○',
-  Arc: '◠',
-  Polygon: '⬡',
-  Ellipse: '⬭',
-  Slot: '⊂⊃',
-  Spline: '∿',
-  Point: '·',
-}
 const RIBBON_MENUS = ['Line', 'Rectangle', 'Circle', 'Arc', 'Polygon', 'Slot', 'Spline']
 const labels: Record<string, string> = {
   extrude: 'Extrude',
@@ -352,7 +362,7 @@ export function Toolbar({
     window.addEventListener('keydown', key)
     return () => window.removeEventListener('keydown', key)
   })
-  const tool = (label: string, icon: string, run: () => void, key?: string) => (
+  const tool = (label: string, icon: ReactNode, run: () => void, key?: string) => (
     <button className="ribbon-tool" title={label + (key ? ' (' + key + ')' : '')} onClick={run}>
       <span className="tool-symbol" aria-hidden="true">
         {icon}
@@ -391,7 +401,8 @@ export function Toolbar({
     <header className="workspace-header" ref={root}>
       <div className="app-header">
         <span className="brand">
-          <span className="brand-mark">K</span>OpenKitCAD
+          <BrandMark size={26} />
+          OpenKitCAD
         </span>
         <button className="tb" onClick={() => setParametersOpen(true)}>
           fx Parameters
@@ -499,7 +510,12 @@ export function Toolbar({
                       aria-pressed={active}
                       onClick={() => pickTool(chosen.id)}
                     >
-                      <span className="tool-symbol">{SKETCH_MENU_ICONS[name]}</span>
+                      <span className="tool-symbol">
+                        {(() => {
+                          const Icon = SKETCH_MENU_ICONS[name]
+                          return Icon ? <Icon className="okc-icon okc-icon-2d" /> : null
+                        })()}
+                      </span>
                       <span>{name}</span>
                     </button>
                     {tools.length > 1 && (
@@ -542,12 +558,33 @@ export function Toolbar({
                 ...sketchCommands.filter((a) => a.group === 'Modify' || a.group === 'Pattern'),
               ],
               <>
-                {tool('Fillet', '◜', () => chooseAction(sketchModifyActions[0]))}
-                {tool('Trim', '✂', () => chooseAction(sketchModifyActions[1]), 'T')}
-                {tool('Extend', '⟶', () => chooseAction(sketchModifyActions[2]))}
-                {tool('Break', '⌇', () => chooseAction(sketchModifyActions[3]))}
-                {tool('Offset', '⊚', () => invoke('offset'), 'O')}
-                {tool('Move/Copy', '✥', () => chooseAction(sketchModifyActions[4]), 'M')}
+                {tool('Fillet', <SketchFilletIcon className="okc-icon okc-icon-2d" />, () =>
+                  chooseAction(sketchModifyActions[0]),
+                )}
+                {tool(
+                  'Trim',
+                  <TrimIcon className="okc-icon okc-icon-2d" />,
+                  () => chooseAction(sketchModifyActions[1]),
+                  'T',
+                )}
+                {tool('Extend', <ExtendIcon className="okc-icon okc-icon-2d" />, () =>
+                  chooseAction(sketchModifyActions[2]),
+                )}
+                {tool('Break', <BreakIcon className="okc-icon okc-icon-2d" />, () =>
+                  chooseAction(sketchModifyActions[3]),
+                )}
+                {tool(
+                  'Offset',
+                  <OffsetIcon className="okc-icon okc-icon-2d" />,
+                  () => invoke('offset'),
+                  'O',
+                )}
+                {tool(
+                  'Move/Copy',
+                  <MoveCopyIcon className="okc-icon okc-icon-2d" />,
+                  () => chooseAction(sketchModifyActions[4]),
+                  'M',
+                )}
               </>,
             )}
             {group(
@@ -563,7 +600,12 @@ export function Toolbar({
                 ...sketchCommands.filter((a) => a.group === 'Dimensions'),
               ],
               <>
-                {tool('Sketch Dimension', '↔', () => pickTool('dimension'), 'D')}
+                {tool(
+                  'Sketch Dimension',
+                  <SketchDimensionIcon className="okc-icon okc-icon-2d" />,
+                  () => pickTool('dimension'),
+                  'D',
+                )}
                 <div className="constraint-grid" role="group" aria-label="Constraints">
                   {CONSTRAINT_TOOLS.map((constraint) => (
                     <button
@@ -581,7 +623,14 @@ export function Toolbar({
                         startConstraintTool(constraint.id)
                       }}
                     >
-                      {constraint.icon}
+                      {(() => {
+                        const Icon = CONSTRAINT_ICONS[constraint.id]
+                        return Icon ? (
+                          <Icon className="okc-icon okc-icon-2d" width={18} height={18} />
+                        ) : (
+                          constraint.icon
+                        )
+                      })()}
                     </button>
                   ))}
                 </div>
@@ -595,13 +644,16 @@ export function Toolbar({
                 state.closeSketch()
               }}
             >
-              ✓<span>Finish Sketch</span>
+              <FinishSketchIcon className="okc-icon" width={30} height={30} />
+              <span>Finish Sketch</span>
             </button>
           </>
         ) : (
           <>
             <div className="fusion-group standalone">
-              {tool('Create Sketch', '▧', () => chooseAction(createSketchAction()))}
+              {tool('Create Sketch', <CreateSketchIcon className="okc-icon" />, () =>
+                chooseAction(createSketchAction()),
+              )}
             </div>
             {group(
               'CREATE',
@@ -614,9 +666,14 @@ export function Toolbar({
                 cmd('sphere'),
               ],
               <>
-                {tool('Extrude', '⇧', () => invoke('extrude'), 'E')}
-                {tool('Revolve', '⟳', () => invoke('revolve'))}
-                {tool('Hole', '⊙', () => invoke('hole'), 'H')}
+                {tool(
+                  'Extrude',
+                  <ExtrudeIcon className="okc-icon" />,
+                  () => invoke('extrude'),
+                  'E',
+                )}
+                {tool('Revolve', <RevolveIcon className="okc-icon" />, () => invoke('revolve'))}
+                {tool('Hole', <HoleIcon className="okc-icon" />, () => invoke('hole'), 'H')}
               </>,
             )}
             {group(
@@ -628,20 +685,22 @@ export function Toolbar({
                 ...selected,
               ],
               <>
-                {tool('Fillet', '◜', () => invoke('fillet'), 'F')}
-                {tool('Move', '✥', () => invoke('move'), 'M')}
-                {tool('Shell', '▣', () => invoke('hollow'))}
+                {tool('Fillet', <FilletIcon className="okc-icon" />, () => invoke('fillet'), 'F')}
+                {tool('Move', <SolidMoveIcon className="okc-icon" />, () => invoke('move'), 'M')}
+                {tool('Shell', <ShellIcon className="okc-icon" />, () => invoke('hollow'))}
               </>,
             )}
             {group(
               'ASSEMBLE',
               selected.filter((a) => ['holes', 'standoffs', 'ports', 'negative'].includes(a.id)),
-              tool('Hardware', '▦', onCatalogue),
+              tool('Hardware', <HardwareIcon className="okc-icon" />, onCatalogue),
             )}
             {group(
               'CONSTRUCT',
               creations.filter((a) => a.id.startsWith('sketch-')),
-              tool('Plane', '▱', () => chooseAction(createSketchAction())),
+              tool('Plane', <PlaneIcon className="okc-icon" />, () =>
+                chooseAction(createSketchAction()),
+              ),
             )}
             {group(
               'INSPECT',
@@ -655,7 +714,7 @@ export function Toolbar({
               ],
               tool(
                 'Measure',
-                '↔',
+                <MeasureIcon className="okc-icon" />,
                 () => {
                   state.clearMeasure()
                   state.setTool(state.tool === 'measure' ? 'select' : 'measure')
@@ -666,10 +725,10 @@ export function Toolbar({
             {group(
               'INSERT',
               [{ id: 'hardware', label: 'Insert hardware', run: onCatalogue }],
-              tool('Insert', '⊞', onCatalogue),
+              tool('Insert', <HardwareIcon className="okc-icon" />, onCatalogue),
             )}
             <div className="fusion-group standalone">
-              {tool('Select', '↖', () => {
+              {tool('Select', <SelectIcon className="okc-icon okc-icon-2d" />, () => {
                 setPending(null)
                 state.setTool('select')
                 state.select({ kind: 'none' })

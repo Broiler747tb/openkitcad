@@ -1,0 +1,101 @@
+import type { SVGProps } from 'react'
+
+export function PhysicalMaterialIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 32 32" width={32} height={32} {...props}>
+      <polygon
+        points="4.74,22.5 16,29 16,16 4.74,9.5"
+        fill="#a9b2bb"
+        stroke="#3c4652"
+        strokeWidth={1.2}
+        strokeLinejoin="round"
+      />
+      <polygon
+        points="27.26,22.5 16,29 16,16 27.26,9.5"
+        fill="#8a949e"
+        stroke="#3c4652"
+        strokeWidth={1.2}
+        strokeLinejoin="round"
+      />
+      <polygon
+        points="16,3 27.26,9.5 16,16 4.74,9.5"
+        fill="#c9d0d7"
+        stroke="#3c4652"
+        strokeWidth={1.2}
+        strokeLinejoin="round"
+      />
+      <line
+        x1="27.26"
+        y1="17.3"
+        x2="22.75"
+        y2="25.1"
+        stroke="#3c4652"
+        strokeWidth={1}
+        strokeLinecap="round"
+      />
+      <line
+        x1="27.26"
+        y1="12.1"
+        x2="18.25"
+        y2="27.7"
+        stroke="#3c4652"
+        strokeWidth={1}
+        strokeLinecap="round"
+      />
+      <line
+        x1="25.01"
+        y1="10.8"
+        x2="16"
+        y2="26.4"
+        stroke="#3c4652"
+        strokeWidth={1}
+        strokeLinecap="round"
+      />
+      <line
+        x1="20.5"
+        y1="13.4"
+        x2="16"
+        y2="21.2"
+        stroke="#3c4652"
+        strokeWidth={1}
+        strokeLinecap="round"
+      />
+      <line
+        x1="4.74"
+        y1="17.3"
+        x2="9.25"
+        y2="25.1"
+        stroke="#3c4652"
+        strokeWidth={1}
+        strokeLinecap="round"
+      />
+      <line
+        x1="4.74"
+        y1="12.1"
+        x2="13.75"
+        y2="27.7"
+        stroke="#3c4652"
+        strokeWidth={1}
+        strokeLinecap="round"
+      />
+      <line
+        x1="6.99"
+        y1="10.8"
+        x2="16"
+        y2="26.4"
+        stroke="#3c4652"
+        strokeWidth={1}
+        strokeLinecap="round"
+      />
+      <line
+        x1="11.5"
+        y1="13.4"
+        x2="16"
+        y2="21.2"
+        stroke="#3c4652"
+        strokeWidth={1}
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}

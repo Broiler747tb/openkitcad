@@ -115,14 +115,6 @@
   gap: 6px;
   margin-right: 8px;
 }
-.brand .brand-mark {
-  width: 22px;
-  height: 24px;
-  font-size: 17px;
-  border-radius: 2px;
-  background: var(--okc-warning);
-  color: white;
-}
 .quick-icon {
   padding: 3px 7px;
   font-size: 20px;
@@ -670,4 +662,39 @@
   background: var(--okc-surface-panel);
   color: var(--okc-text);
   font: inherit;
+}
+
+.brand .brand-mark {
+  flex: none;
+  display: block;
+}
+.okc-icon {
+  display: block;
+  width: 26px;
+  height: 26px;
+}
+[data-theme='dark'] .okc-icon-2d [stroke='#3c4652'] {
+  stroke: #c3ccd5;
+}
+[data-theme='dark'] .okc-icon-2d [fill='#3c4652'] {
+  fill: #c3ccd5;
+}
+[data-theme='dark'] .okc-icon-2d [fill='#ffffff'] {
+  fill: #2b3036;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .okc-icon-2d [stroke='#3c4652'] {
+    stroke: #c3ccd5;
+  }
+  :root:not([data-theme]) .okc-icon-2d [fill='#ffffff'] {
+    fill: #2b3036;
+  }
+}
+.constraint-tool .okc-icon {
+  width: 18px;
+  height: 18px;
+}
+.finish-sketch .okc-icon {
+  width: 30px;
+  height: 30px;
 }
