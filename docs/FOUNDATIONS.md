@@ -37,6 +37,9 @@ dependency checks, groups, editing in place.
 **S: sketch parity.** Profiles from regions, Fusion's sketch tools with heads-up input, the
 constraint panel, placed dimensions, the modify tools and projection (§8).
 
+**L: look and feel.** Light and dark themes on one token set, the icon set and brand mark, the
+faces-only view cube, the marking menu and mouse schemes (§9).
+
 ## 3. Document model v2
 
 Types live in `src/doc/types.ts`. Pure helpers every layer shares live in `src/doc/model.ts`
@@ -309,7 +312,30 @@ link.
 **Rebuilds.** Edits inside the active sketch update only the sketch. The model rebuilds once when the
 sketch is finished.
 
-## 9. How the work is done
+## 9. Look and feel (L)
+
+**Themes.** `src/theme/tokens.css` defines every colour for light and dark; the older `--bg`,
+`--panel`, `--accent` names map onto the tokens, and no stylesheet carries its own palette. The theme
+is Light, Dark or Match the system (`src/theme/theme.ts`, stored in `okc.theme.v1`). The viewport
+reads its colours from the same tokens (`src/theme/palette.ts`) and redraws when the theme changes.
+Selection and pre-highlight are blue.
+
+**Icons and brand.** Full colour isometric icons live in `src/ui/icons` (solid, modify, sketch). Flat
+sketch icons carry the class `okc-icon-2d` so their line work lightens in the dark theme. The brand
+mark is a blue square with an open box, drawn in `src/ui/BrandMark.tsx`.
+
+**View cube.** Six labelled faces follow the camera through CSS transforms and swing the view there
+when clicked; the house returns home. Edges and corners are not selectable: US7782319B2 runs to
+March 2029 and its first claim needs faces, edges and corners together.
+
+**Marking menu.** Right-click opens eight commands around the cursor with the context list below.
+Repeat reruns the last command or sketch tool.
+
+**Mouse schemes.** Fusion, SolidWorks, Onshape and Tinkercad bindings (`src/ui/mouse/schemes.ts`)
+set the orbit, pan and zoom buttons per press, reverse the wheel for SolidWorks, and a right-button
+drag in the Onshape and Tinkercad schemes never opens the context menu.
+
+## 10. How the work is done
 
 - Agents never start other agents or workflows.
 - New and rewritten code has no comments. Touched files are formatted with Prettier.
@@ -337,3 +363,6 @@ sketch is finished.
   dimension the line. Finish the sketch, extrude two of the regions and check the preview only covers
   those two. Sketch on the top face, project the face, offset it 3 mm inward and extrude the ring as a
   cut. Undo back through every step.
+- **L smoke test.** Switch to Dark and back: panels, canvas, grid, sketch lines and dimensions follow.
+  Click FRONT on the cube, then the house. Right-click the model and run Extrude from the ring, then
+  Repeat. Choose the SolidWorks scheme and orbit with the middle button.
