@@ -1,50 +1,152 @@
 {
   "id": "display-lcd-2004",
-  "name": "20x4 character LCD (HD44780)",
+  "name": "20x4 character LCD (Tinsharp TC2004A-01)",
   "category": "display",
   "popularity": 62,
   "family": "character-lcd",
   "variant": "20 × 4 characters",
-  "summary": "Four lines of twenty characters. The big brother of the 1602.",
-  "confidence": "approximate",
-  "source": "Outline and the 93 x 55 mm hole pattern follow the long-standing 2004 module layout, which is consistent between suppliers. With bezel and headers it stands closer to 13 mm.",
+  "manufacturer": "Tinsharp",
+  "summary": "Four lines of 20 characters on a 98 x 60 mm board with four M3 holes.",
+  "confidence": "datasheet",
+  "source": "Tinsharp TC2004A-01 module outline drawing (as supplied with Adafruit product 198): board 98.0 x 60.0 mm and 1.6 mm thick, four 3.0 mm holes 2.5 mm in from the corners (93 x 55 mm apart), bezel 97.0 x 39.5 mm, viewing area 76.0 x 26.0 mm, active area 70.4 x 20.8 mm, 16 pins at 2.54 mm pitch starting 10.1 mm from the left edge 3.1 mm below the top edge. The bezel top is 9.9 mm above the back of the board and the whole module 14.0 mm deep with its backlight.",
+  "look": {
+    "colour": "#1f6f4a",
+    "components": [
+      {
+        "kind": "box",
+        "x": 0.5,
+        "y": 10.25,
+        "w": 97.0,
+        "h": 39.5,
+        "height": 8.2,
+        "finish": "metal",
+        "colour": "#a8aeb4",
+        "label": "Bezel"
+      },
+      {
+        "kind": "screen",
+        "x": 11.0,
+        "y": 17.0,
+        "z": 9.8,
+        "w": 76.0,
+        "h": 26.0,
+        "height": 0.1,
+        "colour": "#9cb43b",
+        "active": [
+          13.8,
+          19.6,
+          70.4,
+          20.8
+        ],
+        "backlight": "#8aa532",
+        "label": "Display"
+      },
+      {
+        "kind": "cylinder",
+        "x": 36.0,
+        "y": 30.0,
+        "d": 14.0,
+        "height": 1.2,
+        "finish": "chip",
+        "colour": "#111315",
+        "flip": true,
+        "z": 0,
+        "label": "Controller"
+      },
+      {
+        "kind": "cylinder",
+        "x": 62.0,
+        "y": 30.0,
+        "d": 14.0,
+        "height": 1.2,
+        "finish": "chip",
+        "colour": "#111315",
+        "flip": true,
+        "z": 0,
+        "label": "Driver"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
       "shape": "rect",
-      "w": 98,
-      "h": 60
+      "w": 98.0,
+      "h": 60.0
     },
-    "thickness": 1.6
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 0.5,
+        "y": 10.25,
+        "w": 97.0,
+        "h": 39.5,
+        "z": 1.6,
+        "height": 8.3,
+        "colour": "#a8aeb4",
+        "label": "Bezel and display"
+      },
+      {
+        "x": 25.0,
+        "y": 20.0,
+        "w": 48.0,
+        "h": 20.0,
+        "z": -3.0,
+        "height": 3.0,
+        "colour": "#111315",
+        "label": "Chips on the back"
+      }
+    ]
   },
   "mountingHoles": [
     {
       "id": "h1",
       "x": 2.5,
       "y": 2.5,
-      "diameter": 3,
+      "diameter": 3.0,
       "screw": "M3"
     },
     {
       "id": "h2",
       "x": 95.5,
       "y": 2.5,
-      "diameter": 3,
+      "diameter": 3.0,
       "screw": "M3"
     },
     {
       "id": "h3",
       "x": 2.5,
       "y": 57.5,
-      "diameter": 3,
+      "diameter": 3.0,
       "screw": "M3"
     },
     {
       "id": "h4",
       "x": 95.5,
       "y": 57.5,
-      "diameter": 3,
+      "diameter": 3.0,
       "screw": "M3"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "pins",
+      "label": "VSS VDD V0 RS RW E D0-D7 A K",
+      "x": 10.1,
+      "y": 56.9,
+      "rows": 1,
+      "cols": 16,
+      "pitch": 2.54
+    }
+  ],
+  "links": [
+    {
+      "label": "TC2004A-01 datasheet",
+      "url": "https://cdn-shop.adafruit.com/datasheets/TC2004A-01.pdf"
+    },
+    {
+      "label": "Adafruit 198",
+      "url": "https://www.adafruit.com/product/198"
     }
   ],
   "tags": [

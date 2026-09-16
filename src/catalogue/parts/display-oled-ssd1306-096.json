@@ -1,13 +1,36 @@
 {
   "id": "display-oled-ssd1306-096",
-  "name": "0.96 inch OLED (SSD1306)",
+  "name": "0.96 inch OLED, I2C (LCDwiki MC096)",
   "category": "display",
   "popularity": 96,
   "family": "oled-display",
   "variant": "0.96 in, 128 × 64, SSD1306",
-  "summary": "Small blue-and-white I2C display. The one on every starter kit.",
-  "confidence": "approximate",
-  "source": "Dimensions taken from the commonly sold module. These boards are made by many suppliers to no common standard, so measure yours before cutting a panel. The display glass sits about 2 mm proud of the board and is not included in the thickness.",
+  "manufacturer": "LCDwiki",
+  "summary": "The common 4-pin I2C OLED on a 27.3 x 27.8 mm board with four M2 holes.",
+  "confidence": "datasheet",
+  "source": "LCDwiki MC096 dimension drawing: board 27.30 x 27.80 mm, four 2.0 mm holes (3.5 mm pads) 2.0 mm in from the sides, 4 pins (VCC GND SCL SDA) at 2.54 mm pitch 9.84 mm in from each side and 1.5 mm below the top edge, glass 26.70 x 19.27 mm starting 4.27 mm below the top edge, active area 21.74 x 10.86 mm 2.10 mm below the top of the glass. The drawing gives 1.2 and 1.5 mm for the board and glass. Sold under many names with this same outline.",
+  "look": {
+    "colour": "#1b3f8a",
+    "components": [
+      {
+        "kind": "screen",
+        "x": 0.3,
+        "y": 4.26,
+        "w": 26.7,
+        "h": 19.27,
+        "height": 1.5,
+        "colour": "#14171b",
+        "active": [
+          2.78,
+          10.57,
+          21.74,
+          10.86
+        ],
+        "backlight": "#050607",
+        "label": "Display"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
@@ -15,36 +38,65 @@
       "w": 27.3,
       "h": 27.8
     },
-    "thickness": 1.2
+    "thickness": 1.2,
+    "bumps": [
+      {
+        "x": 0.3,
+        "y": 4.26,
+        "w": 26.7,
+        "h": 19.27,
+        "z": 1.2,
+        "height": 1.5,
+        "colour": "#14171b",
+        "label": "Display"
+      }
+    ]
   },
   "mountingHoles": [
     {
       "id": "h1",
-      "x": 2.2,
-      "y": 2.2,
-      "diameter": 2,
+      "x": 2.0,
+      "y": 2.0,
+      "diameter": 2.0,
       "screw": "M2"
     },
     {
       "id": "h2",
-      "x": 25.1,
-      "y": 2.2,
-      "diameter": 2,
+      "x": 25.3,
+      "y": 2.0,
+      "diameter": 2.0,
       "screw": "M2"
     },
     {
       "id": "h3",
-      "x": 2.2,
-      "y": 25.6,
-      "diameter": 2,
+      "x": 2.0,
+      "y": 25.8,
+      "diameter": 2.0,
       "screw": "M2"
     },
     {
       "id": "h4",
-      "x": 25.1,
-      "y": 25.6,
-      "diameter": 2,
+      "x": 25.3,
+      "y": 25.8,
+      "diameter": 2.0,
       "screw": "M2"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "pins",
+      "label": "VCC GND SCL SDA",
+      "x": 9.84,
+      "y": 26.3,
+      "rows": 1,
+      "cols": 4,
+      "pitch": 2.54
+    }
+  ],
+  "links": [
+    {
+      "label": "LCDwiki MC096 drawing",
+      "url": "https://www.lcdwiki.com/images/1/19/MC096-015.jpg"
     }
   ],
   "tags": [

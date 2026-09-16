@@ -855,8 +855,9 @@ function drawComponent(look: Look, c: LookComponent, top: number, bottom: number
       }
       case 'jst': {
         const pitch = c.pitch ?? 2.5
-        const width = (c.pins - 1) * pitch + 4.9
-        const [depth, height] = [5.75, 7]
+        const small = pitch < 2
+        const width = (c.pins - 1) * pitch + (small ? 3 : 4.9)
+        const [depth, height] = small ? [4.25, 2.95] : [5.75, 7]
         if (c.facing === '+z') {
           const z = c.z ?? top
           look.box(

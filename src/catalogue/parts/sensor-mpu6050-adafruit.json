@@ -1,0 +1,271 @@
+{
+  "id": "sensor-mpu6050-adafruit",
+  "name": "MPU-6050 accelerometer and gyro (Adafruit 3886)",
+  "category": "sensor",
+  "popularity": 52,
+  "family": "mpu6050-board",
+  "variant": "Adafruit STEMMA QT (3886)",
+  "manufacturer": "Adafruit",
+  "summary": "6-axis motion sensor on a 25.4 x 17.8 mm board with four M2.5 holes and STEMMA QT sockets.",
+  "confidence": "datasheet",
+  "source": "Adafruit's Eagle files for the MPU-6050 6-DoF Accelerometer and Gyro Sensor - STEMMA QT (product 3886): board 25.4 x 17.78 mm with 2.54 mm corner radii, 4 x 2.5 mm mounting holes 2.54 mm in from the corners, two 6-pin headers at 2.54 mm pitch along the long edges and a STEMMA QT socket on each short edge. The chip and socket positions in the look come from the same files.",
+  "look": {
+    "colour": "#1d1f22",
+    "components": [
+      {
+        "kind": "box",
+        "x": 15.678,
+        "y": 5.433,
+        "w": 0.76,
+        "h": 1.334,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C1"
+      },
+      {
+        "kind": "box",
+        "x": 9.353,
+        "y": 4.81,
+        "w": 0.76,
+        "h": 1.335,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C2"
+      },
+      {
+        "kind": "box",
+        "x": 8.543,
+        "y": 10.962,
+        "w": 0.76,
+        "h": 1.334,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R2"
+      },
+      {
+        "kind": "chip",
+        "x": 10.7,
+        "y": 6.89,
+        "w": 4.0,
+        "h": 4.0,
+        "height": 0.9,
+        "label": "MPU-6050"
+      },
+      {
+        "kind": "box",
+        "x": 6.468,
+        "y": 4.349,
+        "w": 1.758,
+        "h": 1.16,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C5"
+      },
+      {
+        "kind": "chip",
+        "x": 6.274,
+        "y": 6.374,
+        "w": 2.845,
+        "h": 3.0,
+        "height": 1.1,
+        "label": "AP2112K-3.3"
+      },
+      {
+        "kind": "box",
+        "x": 6.467,
+        "y": 10.672,
+        "w": 1.16,
+        "h": 1.758,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C6"
+      },
+      {
+        "kind": "box",
+        "x": 12.778,
+        "y": 5.213,
+        "w": 1.335,
+        "h": 0.76,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C7"
+      },
+      {
+        "kind": "box",
+        "x": 16.144,
+        "y": 9.901,
+        "w": 2.56,
+        "h": 1.28,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R3"
+      },
+      {
+        "kind": "chip",
+        "x": 17.313,
+        "y": 5.097,
+        "w": 2.0,
+        "h": 2.1,
+        "height": 1.1,
+        "label": "BSS138"
+      },
+      {
+        "kind": "jst",
+        "x": 24.946,
+        "y": 8.94,
+        "pins": 4,
+        "pitch": 1.0,
+        "facing": "+x",
+        "label": "STEMMA QT"
+      },
+      {
+        "kind": "jst",
+        "x": 0.454,
+        "y": 8.84,
+        "pins": 4,
+        "pitch": 1.0,
+        "facing": "-x",
+        "label": "STEMMA QT"
+      },
+      {
+        "kind": "led",
+        "x": 3.556,
+        "y": 12.573,
+        "colour": "#39d06b",
+        "size": 1.6,
+        "label": "D1"
+      },
+      {
+        "kind": "box",
+        "x": 5.089,
+        "y": 11.737,
+        "w": 0.76,
+        "h": 1.334,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R4"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 25.4,
+      "h": 17.78,
+      "cornerRadius": 2.54
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 20.696,
+        "y": 5.89,
+        "w": 4.25,
+        "h": 6.1,
+        "z": 1.6,
+        "height": 2.95,
+        "colour": "#ece6d6",
+        "label": "STEMMA QT socket"
+      },
+      {
+        "x": 0.454,
+        "y": 5.79,
+        "w": 4.25,
+        "h": 6.1,
+        "z": 1.6,
+        "height": 2.95,
+        "colour": "#ece6d6",
+        "label": "STEMMA QT socket"
+      }
+    ]
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2.54,
+      "y": 15.24,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h2",
+      "x": 22.86,
+      "y": 15.24,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h3",
+      "x": 2.54,
+      "y": 2.54,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h4",
+      "x": 22.86,
+      "y": 2.54,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "jp2",
+      "label": "Pins along the top edge",
+      "x": 6.35,
+      "y": 15.24,
+      "rows": 1,
+      "cols": 6,
+      "pitch": 2.54
+    },
+    {
+      "id": "jp3",
+      "label": "Pins along the bottom edge",
+      "x": 6.35,
+      "y": 2.54,
+      "rows": 1,
+      "cols": 6,
+      "pitch": 2.54
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      3.3,
+      5
+    ],
+    "currentTypical": 0.004,
+    "note": "Runs from 3 to 5 V; I2C address 0x68, or 0x69 with the AD0 jumper."
+  },
+  "links": [
+    {
+      "label": "Adafruit 3886",
+      "url": "https://www.adafruit.com/product/3886"
+    },
+    {
+      "label": "Eagle files",
+      "url": "https://github.com/adafruit/Adafruit-MPU6050-PCB"
+    }
+  ],
+  "tags": [
+    "mpu6050",
+    "mpu-6050",
+    "imu",
+    "accelerometer",
+    "gyro",
+    "motion",
+    "i2c",
+    "stemma",
+    "qwiic",
+    "adafruit",
+    "3886"
+  ]
+}

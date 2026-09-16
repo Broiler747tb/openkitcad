@@ -1,0 +1,419 @@
+{
+  "id": "display-oled-ssd1306-096-adafruit",
+  "name": "0.96 inch OLED 128x64 (Adafruit 326)",
+  "category": "display",
+  "popularity": 48,
+  "family": "oled-display",
+  "variant": "0.96 in, Adafruit STEMMA QT (326)",
+  "manufacturer": "Adafruit",
+  "summary": "0.96 inch 128x64 OLED on a 29.2 x 31.8 mm board with four M2.5 holes and STEMMA QT sockets.",
+  "confidence": "datasheet",
+  "source": "Adafruit's Eagle files for product 326: board 29.21 x 31.75 mm with 2.54 mm corner radii and four 2.5 mm holes 2.54 mm in from the corners. The display sits on the side Eagle calls the bottom, so the board is shown turned over with the glass up and the STEMMA QT sockets and chips behind. Glass and active-area sizes are from the OLED panel the board is designed around.",
+  "look": {
+    "colour": "#1d1f22",
+    "components": [
+      {
+        "kind": "box",
+        "x": 26.851,
+        "y": 23.879,
+        "w": 1.16,
+        "h": 1.758,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "flip": true,
+        "z": 0,
+        "label": "C2"
+      },
+      {
+        "kind": "chip",
+        "x": 23.089,
+        "y": 23.011,
+        "w": 2.844,
+        "h": 3.0,
+        "height": 1.1,
+        "flip": true,
+        "z": 0,
+        "label": "AP2112K-3.3"
+      },
+      {
+        "kind": "box",
+        "x": 19.741,
+        "y": 23.893,
+        "w": 1.16,
+        "h": 1.758,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "flip": true,
+        "z": 0,
+        "label": "C3"
+      },
+      {
+        "kind": "box",
+        "x": 21.596,
+        "y": 24.221,
+        "w": 0.76,
+        "h": 1.334,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "flip": true,
+        "z": 0,
+        "label": "C1"
+      },
+      {
+        "kind": "box",
+        "x": 6.218,
+        "y": 23.485,
+        "w": 1.28,
+        "h": 2.56,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "flip": true,
+        "z": 0,
+        "label": "R3"
+      },
+      {
+        "kind": "chip",
+        "x": 2.252,
+        "y": 24.019,
+        "w": 2.1,
+        "h": 2.0,
+        "height": 1.1,
+        "flip": true,
+        "z": 0,
+        "label": "BSS138"
+      },
+      {
+        "kind": "jst",
+        "x": 28.756,
+        "y": 16.46,
+        "pins": 4,
+        "pitch": 1.0,
+        "facing": "+x",
+        "flip": true,
+        "z": 0,
+        "label": "STEMMA QT"
+      },
+      {
+        "kind": "led",
+        "x": 27.432,
+        "y": 12.192,
+        "colour": "#39d06b",
+        "size": 1.6,
+        "z": -0.6,
+        "label": "D1"
+      },
+      {
+        "kind": "box",
+        "x": 26.642,
+        "y": 10.166,
+        "w": 1.334,
+        "h": 0.76,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "flip": true,
+        "z": 0,
+        "label": "R1"
+      },
+      {
+        "kind": "chip",
+        "x": 14.453,
+        "y": 14.961,
+        "w": 2.844,
+        "h": 2.59,
+        "height": 1.1,
+        "flip": true,
+        "z": 0,
+        "label": "APX803"
+      },
+      {
+        "kind": "chip",
+        "x": 1.255,
+        "y": 5.073,
+        "w": 26.7,
+        "h": 19.76,
+        "height": 1.0,
+        "label": "UG-2864HSWEG01"
+      },
+      {
+        "kind": "chip",
+        "x": 16.297,
+        "y": 25.335,
+        "w": 2.0,
+        "h": 1.4,
+        "height": 1.0,
+        "flip": true,
+        "z": 0,
+        "label": "1N4148"
+      },
+      {
+        "kind": "chip",
+        "x": 11.802,
+        "y": 25.081,
+        "w": 2.0,
+        "h": 1.4,
+        "height": 1.0,
+        "flip": true,
+        "z": 0,
+        "label": "1N4148"
+      },
+      {
+        "kind": "chip",
+        "x": 8.825,
+        "y": 23.917,
+        "w": 1.4,
+        "h": 2.0,
+        "height": 1.0,
+        "flip": true,
+        "z": 0,
+        "label": "1N4148"
+      },
+      {
+        "kind": "box",
+        "x": 18.284,
+        "y": 15.11,
+        "w": 0.76,
+        "h": 1.335,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "flip": true,
+        "z": 0,
+        "label": "R9"
+      },
+      {
+        "kind": "box",
+        "x": 6.731,
+        "y": 14.942,
+        "w": 1.16,
+        "h": 1.758,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "flip": true,
+        "z": 0,
+        "label": "C12"
+      },
+      {
+        "kind": "box",
+        "x": 9.017,
+        "y": 14.942,
+        "w": 1.16,
+        "h": 1.758,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "flip": true,
+        "z": 0,
+        "label": "C13"
+      },
+      {
+        "kind": "box",
+        "x": 21.644,
+        "y": 15.015,
+        "w": 1.16,
+        "h": 1.758,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "flip": true,
+        "z": 0,
+        "label": "C14"
+      },
+      {
+        "kind": "box",
+        "x": 10.927,
+        "y": 14.928,
+        "w": 1.161,
+        "h": 1.758,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "flip": true,
+        "z": 0,
+        "label": "C15"
+      },
+      {
+        "kind": "box",
+        "x": 19.739,
+        "y": 15.015,
+        "w": 1.16,
+        "h": 1.758,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "flip": true,
+        "z": 0,
+        "label": "C16"
+      },
+      {
+        "kind": "box",
+        "x": 12.775,
+        "y": 15.151,
+        "w": 0.76,
+        "h": 1.334,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "flip": true,
+        "z": 0,
+        "label": "C17"
+      },
+      {
+        "kind": "jst",
+        "x": 0.454,
+        "y": 16.56,
+        "pins": 4,
+        "pitch": 1.0,
+        "facing": "-x",
+        "flip": true,
+        "z": 0,
+        "label": "STEMMA QT"
+      },
+      {
+        "kind": "box",
+        "x": 11.674,
+        "y": 22.728,
+        "w": 2.56,
+        "h": 1.28,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "flip": true,
+        "z": 0,
+        "label": "R2"
+      },
+      {
+        "kind": "screen",
+        "x": 1.26,
+        "y": 5.07,
+        "w": 26.7,
+        "h": 19.26,
+        "height": 1.4,
+        "colour": "#14171b",
+        "active": [
+          3.74,
+          11.07,
+          21.74,
+          10.86
+        ],
+        "backlight": "#050607",
+        "label": "Display"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 29.21,
+      "h": 31.75,
+      "cornerRadius": 2.54
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 1.26,
+        "y": 5.07,
+        "w": 26.7,
+        "h": 19.26,
+        "z": 1.6,
+        "height": 1.4,
+        "colour": "#14171b",
+        "label": "Display"
+      },
+      {
+        "x": 24.506,
+        "y": 13.41,
+        "w": 4.25,
+        "h": 6.1,
+        "z": -2.95,
+        "height": 2.95,
+        "colour": "#ece6d6",
+        "label": "STEMMA QT socket"
+      },
+      {
+        "x": 0.454,
+        "y": 13.51,
+        "w": 4.25,
+        "h": 6.1,
+        "z": -2.95,
+        "height": 2.95,
+        "colour": "#ece6d6",
+        "label": "STEMMA QT socket"
+      }
+    ]
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 26.67,
+      "y": 29.21,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h2",
+      "x": 2.54,
+      "y": 29.21,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h3",
+      "x": 26.67,
+      "y": 2.54,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h4",
+      "x": 2.54,
+      "y": 2.54,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "jp2",
+      "label": "Pins along the top edge",
+      "x": 5.715,
+      "y": 29.21,
+      "rows": 1,
+      "cols": 8,
+      "pitch": 2.54
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      3.3,
+      5
+    ],
+    "note": "I2C at address 0x3D, or 0x3C with the jumper; runs from 3 to 5 V."
+  },
+  "links": [
+    {
+      "label": "Adafruit 326",
+      "url": "https://www.adafruit.com/product/326"
+    },
+    {
+      "label": "Eagle files",
+      "url": "https://github.com/adafruit/Adafruit-128x64-Monochrome-OLED-PCB"
+    }
+  ],
+  "tags": [
+    "oled",
+    "display",
+    "screen",
+    "ssd1306",
+    "i2c",
+    "stemma",
+    "adafruit",
+    "326"
+  ]
+}

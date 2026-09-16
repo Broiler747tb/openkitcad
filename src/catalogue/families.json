@@ -4,6 +4,11 @@
     "category": "power",
     "summary": "Holders for 18650 lithium cells."
   },
+  "ads1115-board": {
+    "name": "ADS1115 ADC",
+    "category": "sensor",
+    "summary": "16-bit, 4-channel analogue inputs over I2C."
+  },
   "audio-jack": {
     "name": "3.5 mm audio jack",
     "category": "connector",
@@ -13,6 +18,11 @@
     "name": "DC barrel jack",
     "category": "connector",
     "summary": "Power jacks for 5.5 x 2.1 mm plugs, panel or board mount."
+  },
+  "bh1750-board": {
+    "name": "BH1750 light sensor",
+    "category": "sensor",
+    "summary": "Ambient light sensors that report lux over I2C."
   },
   "buck-converter": {
     "name": "Buck converter",
@@ -34,10 +44,20 @@
     "category": "fastener",
     "summary": "Brass threaded insert melted into a printed part."
   },
+  "hx711-board": {
+    "name": "HX711 load cell amplifier",
+    "category": "sensor",
+    "summary": "24-bit amplifiers for load cells and strain gauges."
+  },
   "iec-inlet": {
     "name": "IEC C14 mains inlet",
     "category": "connector",
     "summary": "The socket a kettle lead plugs into, plain or with a fuse."
+  },
+  "mpu6050-board": {
+    "name": "MPU-6050 motion sensor",
+    "category": "sensor",
+    "summary": "Accelerometer and gyro boards on I2C."
   },
   "oled-display": {
     "name": "OLED display",
@@ -83,6 +103,11 @@
     "name": "USB-C port",
     "category": "connector",
     "summary": "USB-C sockets for a board edge, a breakout board or a panel."
+  },
+  "vl53l0x-board": {
+    "name": "VL53L0X distance sensor",
+    "category": "sensor",
+    "summary": "Laser time-of-flight rangefinders up to about 1.2 m."
   },
   "xt-connector": {
     "name": "XT power connector",

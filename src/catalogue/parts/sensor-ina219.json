@@ -1,55 +1,228 @@
 {
   "id": "sensor-ina219",
-  "name": "INA219 current sensor",
+  "name": "INA219 current sensor (Adafruit 904)",
   "category": "sensor",
   "popularity": 56,
-  "summary": "Measures volts and amps on a rail without breaking the ground.",
-  "confidence": "approximate",
-  "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Hole positions in particular differ between makers - check yours against these.",
+  "manufacturer": "Adafruit",
+  "summary": "High-side current and voltage sensor with a screw terminal, on a 25.4 x 20.3 mm board with four M2.5 holes.",
+  "confidence": "datasheet",
+  "source": "Adafruit's Eagle files for the INA219 High Side DC Current Sensor Breakout - STEMMA QT (product 904): board 25.4 x 20.32 mm with 2.54 mm corner radii, 4 x 2.5 mm mounting holes 2.54 mm in from the corners, a 6-pin header at 2.54 mm pitch along the bottom edge, a 3.5 mm screw terminal on the top edge and a STEMMA QT socket on each short edge. The chip and socket positions in the look come from the same files. The cheap purple INA219 modules copy the older Adafruit layout, which is 1.9 mm taller.",
+  "look": {
+    "colour": "#1d1f22",
+    "components": [
+      {
+        "kind": "chip",
+        "x": 11.2,
+        "y": 5.485,
+        "w": 3.0,
+        "h": 3.0,
+        "height": 1.1,
+        "label": "INA219BIDCNT"
+      },
+      {
+        "kind": "box",
+        "x": 9.785,
+        "y": 6.449,
+        "w": 0.76,
+        "h": 1.334,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C1"
+      },
+      {
+        "kind": "box",
+        "x": 10.141,
+        "y": 9.937,
+        "w": 5.13,
+        "h": 2.48,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R5"
+      },
+      {
+        "kind": "terminal",
+        "x": 12.6,
+        "y": 20.11,
+        "pins": 2,
+        "pitch": 3.5,
+        "facing": "+y",
+        "colour": "#2c6fc9",
+        "label": "J1"
+      },
+      {
+        "kind": "box",
+        "x": 7.803,
+        "y": 6.226,
+        "w": 1.16,
+        "h": 1.758,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C2"
+      },
+      {
+        "kind": "box",
+        "x": 15.87,
+        "y": 5.705,
+        "w": 1.28,
+        "h": 2.56,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R6"
+      },
+      {
+        "kind": "jst",
+        "x": 24.946,
+        "y": 10.21,
+        "pins": 4,
+        "pitch": 1.0,
+        "facing": "+x",
+        "label": "STEMMA QT"
+      },
+      {
+        "kind": "jst",
+        "x": 0.454,
+        "y": 10.11,
+        "pins": 4,
+        "pitch": 1.0,
+        "facing": "-x",
+        "label": "STEMMA QT"
+      },
+      {
+        "kind": "led",
+        "x": 3.556,
+        "y": 14.351,
+        "colour": "#39d06b",
+        "size": 1.6,
+        "label": "D1"
+      },
+      {
+        "kind": "box",
+        "x": 5.203,
+        "y": 13.045,
+        "w": 0.76,
+        "h": 1.334,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R7"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
       "shape": "rect",
-      "w": 26,
-      "h": 20
+      "w": 25.4,
+      "h": 20.32,
+      "cornerRadius": 2.54
     },
-    "thickness": 1.6
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 9.1,
+        "y": 13.11,
+        "w": 7.0,
+        "h": 7.0,
+        "z": 1.6,
+        "height": 8.5,
+        "colour": "#2c6fc9",
+        "label": "Screw terminal"
+      },
+      {
+        "x": 20.696,
+        "y": 7.16,
+        "w": 4.25,
+        "h": 6.1,
+        "z": 1.6,
+        "height": 2.95,
+        "colour": "#ece6d6",
+        "label": "STEMMA QT socket"
+      },
+      {
+        "x": 0.454,
+        "y": 7.06,
+        "w": 4.25,
+        "h": 6.1,
+        "z": 1.6,
+        "height": 2.95,
+        "colour": "#ece6d6",
+        "label": "STEMMA QT socket"
+      }
+    ]
   },
   "mountingHoles": [
     {
       "id": "h1",
-      "x": 2.5,
-      "y": 2.5,
+      "x": 2.54,
+      "y": 17.78,
       "diameter": 2.5,
       "screw": "M2.5"
     },
     {
       "id": "h2",
-      "x": 23.5,
-      "y": 2.5,
+      "x": 22.86,
+      "y": 17.78,
       "diameter": 2.5,
       "screw": "M2.5"
     },
     {
       "id": "h3",
-      "x": 2.5,
-      "y": 17.5,
+      "x": 2.54,
+      "y": 2.54,
       "diameter": 2.5,
       "screw": "M2.5"
     },
     {
       "id": "h4",
-      "x": 23.5,
-      "y": 17.5,
+      "x": 22.86,
+      "y": 2.54,
       "diameter": 2.5,
       "screw": "M2.5"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "jp1",
+      "label": "Pins along the bottom edge",
+      "x": 6.35,
+      "y": 2.54,
+      "rows": 1,
+      "cols": 6,
+      "pitch": 2.54
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      3.3,
+      5
+    ],
+    "currentPeak": 3.2,
+    "note": "Measures up to 26 V and plus or minus 3.2 A through its 0.1 ohm shunt."
+  },
+  "links": [
+    {
+      "label": "Adafruit 904",
+      "url": "https://www.adafruit.com/product/904"
+    },
+    {
+      "label": "Eagle files",
+      "url": "https://github.com/adafruit/Adafruit-INA219-Current-Sensor-PCB"
     }
   ],
   "tags": [
     "ina219",
     "current",
+    "voltage",
     "power",
     "monitor",
-    "sensor"
+    "shunt",
+    "i2c",
+    "stemma",
+    "adafruit",
+    "904"
   ]
 }

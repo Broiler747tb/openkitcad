@@ -1,50 +1,152 @@
 {
   "id": "display-lcd-1602",
-  "name": "16x2 character LCD (HD44780)",
+  "name": "16x2 character LCD (Tinsharp TC1602A-01T)",
   "category": "display",
   "popularity": 86,
   "family": "character-lcd",
   "variant": "16 × 2 characters",
-  "summary": "Two lines of sixteen characters. Needs a 16-pin header or an I2C backpack.",
-  "confidence": "approximate",
-  "source": "Board outline and the 75 x 31 mm hole pattern follow the long-standing 1602 module layout, which is consistent between suppliers. Overall depth with a bezel and headers is closer to 13 mm.",
+  "manufacturer": "Tinsharp",
+  "summary": "The classic 16-character, 2-line text display on an 80 x 36 mm board with four M2.5 holes.",
+  "confidence": "datasheet",
+  "source": "Tinsharp TC1602A-01T module outline drawing (as supplied with Adafruit product 181): board 80.0 x 36.0 mm and 1.6 mm thick, four 2.5 mm holes 2.5 mm in from the corners (75 x 31 mm apart), metal bezel 71.3 x 26.8 mm, viewing area 64.5 x 13.8 mm, active area 57.7 x 9.4 mm, 16 pins at 2.54 mm pitch starting 8.0 mm from the left edge 2.5 mm below the top edge. The bezel top is 8.9 mm above the back of the board and the whole module 13.5 mm deep with its backlight. Most 1602 modules copy this outline.",
+  "look": {
+    "colour": "#1f6f4a",
+    "components": [
+      {
+        "kind": "box",
+        "x": 4.35,
+        "y": 5.8,
+        "w": 71.3,
+        "h": 26.8,
+        "height": 7.2,
+        "finish": "metal",
+        "colour": "#a8aeb4",
+        "label": "Bezel"
+      },
+      {
+        "kind": "screen",
+        "x": 7.75,
+        "y": 12.3,
+        "z": 8.8,
+        "w": 64.5,
+        "h": 13.8,
+        "height": 0.1,
+        "colour": "#9cb43b",
+        "active": [
+          11.15,
+          14.5,
+          57.7,
+          9.4
+        ],
+        "backlight": "#8aa532",
+        "label": "Display"
+      },
+      {
+        "kind": "cylinder",
+        "x": 28.0,
+        "y": 18.0,
+        "d": 12.0,
+        "height": 1.2,
+        "finish": "chip",
+        "colour": "#111315",
+        "flip": true,
+        "z": 0,
+        "label": "Controller"
+      },
+      {
+        "kind": "cylinder",
+        "x": 52.0,
+        "y": 18.0,
+        "d": 12.0,
+        "height": 1.2,
+        "finish": "chip",
+        "colour": "#111315",
+        "flip": true,
+        "z": 0,
+        "label": "Driver"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
       "shape": "rect",
-      "w": 80,
-      "h": 36
+      "w": 80.0,
+      "h": 36.0
     },
-    "thickness": 1.6
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 4.35,
+        "y": 5.8,
+        "w": 71.3,
+        "h": 26.8,
+        "z": 1.6,
+        "height": 7.3,
+        "colour": "#a8aeb4",
+        "label": "Bezel and display"
+      },
+      {
+        "x": 20.0,
+        "y": 8.0,
+        "w": 40.0,
+        "h": 20.0,
+        "z": -3.0,
+        "height": 3.0,
+        "colour": "#111315",
+        "label": "Chips on the back"
+      }
+    ]
   },
   "mountingHoles": [
     {
       "id": "h1",
       "x": 2.5,
       "y": 2.5,
-      "diameter": 3,
-      "screw": "M3"
+      "diameter": 2.5,
+      "screw": "M2.5"
     },
     {
       "id": "h2",
       "x": 77.5,
       "y": 2.5,
-      "diameter": 3,
-      "screw": "M3"
+      "diameter": 2.5,
+      "screw": "M2.5"
     },
     {
       "id": "h3",
       "x": 2.5,
       "y": 33.5,
-      "diameter": 3,
-      "screw": "M3"
+      "diameter": 2.5,
+      "screw": "M2.5"
     },
     {
       "id": "h4",
       "x": 77.5,
       "y": 33.5,
-      "diameter": 3,
-      "screw": "M3"
+      "diameter": 2.5,
+      "screw": "M2.5"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "pins",
+      "label": "VSS VDD V0 RS RW E D0-D7 A K",
+      "x": 8.0,
+      "y": 33.5,
+      "rows": 1,
+      "cols": 16,
+      "pitch": 2.54
+    }
+  ],
+  "links": [
+    {
+      "label": "TC1602A-01T datasheet",
+      "url": "https://cdn-shop.adafruit.com/datasheets/TC1602A-01T.pdf"
+    },
+    {
+      "label": "Adafruit 181",
+      "url": "https://www.adafruit.com/product/181"
     }
   ],
   "tags": [

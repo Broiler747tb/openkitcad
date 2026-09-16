@@ -1,0 +1,258 @@
+{
+  "id": "sensor-bh1750-adafruit",
+  "name": "BH1750 light sensor (Adafruit 4681)",
+  "category": "sensor",
+  "popularity": 36,
+  "family": "bh1750-board",
+  "variant": "Adafruit STEMMA QT (4681)",
+  "manufacturer": "Adafruit",
+  "summary": "Ambient light sensor that reports lux, on a 25.4 x 17.8 mm board with four M2.5 holes.",
+  "confidence": "datasheet",
+  "source": "Adafruit's Eagle files for the BH1750 Light Sensor - STEMMA QT (product 4681): board 25.4 x 17.78 mm with 2.54 mm corner radii, 4 x 2.5 mm mounting holes 2.54 mm in from the corners, a 6-pin header at 2.54 mm pitch along the bottom edge and a STEMMA QT socket on each short edge. The chip and socket positions in the look come from the same files.",
+  "look": {
+    "colour": "#1d1f22",
+    "components": [
+      {
+        "kind": "box",
+        "x": 7.002,
+        "y": 5.136,
+        "w": 1.758,
+        "h": 1.16,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C2"
+      },
+      {
+        "kind": "chip",
+        "x": 6.706,
+        "y": 7.263,
+        "w": 2.844,
+        "h": 3.0,
+        "height": 1.1,
+        "label": "AP2112K-3.3"
+      },
+      {
+        "kind": "box",
+        "x": 7.256,
+        "y": 11.613,
+        "w": 1.758,
+        "h": 1.16,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C3"
+      },
+      {
+        "kind": "box",
+        "x": 10.664,
+        "y": 11.013,
+        "w": 0.76,
+        "h": 1.334,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C1"
+      },
+      {
+        "kind": "box",
+        "x": 15.865,
+        "y": 10.79,
+        "w": 2.56,
+        "h": 1.28,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R3"
+      },
+      {
+        "kind": "chip",
+        "x": 15.841,
+        "y": 6.493,
+        "w": 2.1,
+        "h": 2.0,
+        "height": 1.1,
+        "label": "BSS138BKS"
+      },
+      {
+        "kind": "jst",
+        "x": 24.946,
+        "y": 8.94,
+        "pins": 4,
+        "pitch": 1.0,
+        "facing": "+x",
+        "label": "STEMMA QT"
+      },
+      {
+        "kind": "jst",
+        "x": 0.454,
+        "y": 8.84,
+        "pins": 4,
+        "pitch": 1.0,
+        "facing": "-x",
+        "label": "STEMMA QT"
+      },
+      {
+        "kind": "led",
+        "x": 3.556,
+        "y": 12.573,
+        "colour": "#39d06b",
+        "size": 1.6,
+        "label": "D1"
+      },
+      {
+        "kind": "box",
+        "x": 5.213,
+        "y": 11.783,
+        "w": 0.76,
+        "h": 1.334,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R1"
+      },
+      {
+        "kind": "chip",
+        "x": 11.4,
+        "y": 8.09,
+        "w": 2.6,
+        "h": 1.6,
+        "height": 0.9,
+        "label": "BH1750"
+      },
+      {
+        "kind": "box",
+        "x": 11.14,
+        "y": 5.213,
+        "w": 1.334,
+        "h": 0.76,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R2"
+      },
+      {
+        "kind": "box",
+        "x": 13.712,
+        "y": 11.013,
+        "w": 0.76,
+        "h": 1.334,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C4"
+      },
+      {
+        "kind": "box",
+        "x": 12.198,
+        "y": 11.021,
+        "w": 0.76,
+        "h": 1.334,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R4"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 25.4,
+      "h": 17.78,
+      "cornerRadius": 2.54
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 20.696,
+        "y": 5.89,
+        "w": 4.25,
+        "h": 6.1,
+        "z": 1.6,
+        "height": 2.95,
+        "colour": "#ece6d6",
+        "label": "STEMMA QT socket"
+      },
+      {
+        "x": 0.454,
+        "y": 5.79,
+        "w": 4.25,
+        "h": 6.1,
+        "z": 1.6,
+        "height": 2.95,
+        "colour": "#ece6d6",
+        "label": "STEMMA QT socket"
+      }
+    ]
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2.54,
+      "y": 15.24,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h2",
+      "x": 22.86,
+      "y": 15.24,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h3",
+      "x": 2.54,
+      "y": 2.54,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h4",
+      "x": 22.86,
+      "y": 2.54,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "jp1",
+      "label": "Pins along the bottom edge",
+      "x": 6.35,
+      "y": 2.54,
+      "rows": 1,
+      "cols": 6,
+      "pitch": 2.54
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      3.3,
+      5
+    ],
+    "note": "Reads 0 to 65535 lux over I2C."
+  },
+  "links": [
+    {
+      "label": "Adafruit 4681",
+      "url": "https://www.adafruit.com/product/4681"
+    },
+    {
+      "label": "Eagle files",
+      "url": "https://github.com/adafruit/Adafruit-BH1750-PCB"
+    }
+  ],
+  "tags": [
+    "bh1750",
+    "light",
+    "lux",
+    "ambient",
+    "i2c",
+    "stemma",
+    "adafruit",
+    "4681"
+  ]
+}

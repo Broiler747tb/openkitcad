@@ -1,8 +1,10 @@
 {
   "id": "sensor-hx711",
-  "name": "HX711 load cell amplifier",
+  "name": "HX711 module (generic)",
   "category": "sensor",
   "popularity": 62,
+  "family": "hx711-board",
+  "variant": "Green module (generic)",
   "summary": "Reads a strain gauge, which is how you build a scale.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Hole positions in particular differ between makers - check yours against these.",

@@ -1,50 +1,158 @@
 {
   "id": "display-tft-ili9341-24",
-  "name": "2.4 inch TFT (ILI9341)",
+  "name": "2.4 inch TFT, SPI (LCDwiki MSP2402)",
   "category": "display",
   "popularity": 70,
   "family": "tft-display",
   "variant": "2.4 in, ILI9341",
-  "summary": "320 x 240 colour screen, usually with an SD slot on the back.",
-  "confidence": "approximate",
-  "source": "Dimensions taken from the commonly sold module. These boards are made by many suppliers to no common standard, so measure yours before cutting a panel.",
+  "manufacturer": "LCDwiki",
+  "summary": "240x320 colour touch screen on a 42.7 x 77.2 mm board with four M3 holes and pins on the back.",
+  "confidence": "datasheet",
+  "source": "LCDwiki MSP2402 outline drawing (V1.0): board 42.72 x 77.18 mm and 1.6 mm thick, four 3.2 mm holes 3.0 mm in from the sides, 3.0 mm from the top and 6.92 mm from the bottom (36.72 x 67.26 mm apart), backlight 42.72 x 60.26 mm, active area 36.72 x 48.96 mm, 14 pins at 2.54 mm pitch along the bottom edge 2.0 mm up, starting 4.85 mm from the left. 4.3 mm thick without the pins, which stand 11.17 mm behind the board. An SD card slot sits on the back. This is the widely sold red SPI module these drivers are known by.",
+  "look": {
+    "colour": "#b3261e",
+    "components": [
+      {
+        "kind": "box",
+        "x": 0.0,
+        "y": 10.41,
+        "w": 42.72,
+        "h": 60.26,
+        "z": 2.1,
+        "height": 1.9,
+        "finish": "metal",
+        "colour": "#d9dde1",
+        "label": "Backlight"
+      },
+      {
+        "kind": "screen",
+        "x": 0.0,
+        "y": 10.41,
+        "z": 4.0,
+        "w": 42.72,
+        "h": 60.26,
+        "height": 0.3,
+        "colour": "#14171b",
+        "active": [
+          3.0,
+          18.96,
+          36.72,
+          48.96
+        ],
+        "backlight": "#0c1018",
+        "label": "Display"
+      },
+      {
+        "kind": "header",
+        "x": 4.85,
+        "y": 2.0,
+        "rows": 1,
+        "cols": 14,
+        "height": 9.57,
+        "flip": true,
+        "z": 0,
+        "label": "Pins"
+      },
+      {
+        "kind": "box",
+        "x": 4.0,
+        "y": 45.0,
+        "w": 26.0,
+        "h": 26.0,
+        "height": 2.8,
+        "finish": "metal",
+        "flip": true,
+        "z": 0,
+        "label": "SD card slot"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
       "shape": "rect",
-      "w": 71,
-      "h": 52
+      "w": 42.72,
+      "h": 77.18
     },
-    "thickness": 1.6
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 0.0,
+        "y": 10.41,
+        "w": 42.72,
+        "h": 60.26,
+        "z": 1.6,
+        "height": 2.7,
+        "colour": "#14171b",
+        "label": "Display"
+      },
+      {
+        "x": 3.58,
+        "y": 0.73,
+        "w": 35.56,
+        "h": 2.54,
+        "z": -9.57,
+        "height": 9.57,
+        "colour": "#1b1d20",
+        "label": "Pins behind"
+      },
+      {
+        "x": 4.0,
+        "y": 45.0,
+        "w": 26.0,
+        "h": 26.0,
+        "z": -2.8,
+        "height": 2.8,
+        "colour": "#b9c0c7",
+        "label": "SD card slot"
+      }
+    ]
   },
   "mountingHoles": [
     {
       "id": "h1",
-      "x": 2.5,
-      "y": 2.5,
-      "diameter": 3,
+      "x": 3.0,
+      "y": 6.92,
+      "diameter": 3.2,
       "screw": "M3"
     },
     {
       "id": "h2",
-      "x": 68.5,
-      "y": 2.5,
-      "diameter": 3,
+      "x": 39.72,
+      "y": 6.92,
+      "diameter": 3.2,
       "screw": "M3"
     },
     {
       "id": "h3",
-      "x": 2.5,
-      "y": 49.5,
-      "diameter": 3,
+      "x": 3.0,
+      "y": 74.18,
+      "diameter": 3.2,
       "screw": "M3"
     },
     {
       "id": "h4",
-      "x": 68.5,
-      "y": 49.5,
-      "diameter": 3,
+      "x": 39.72,
+      "y": 74.18,
+      "diameter": 3.2,
       "screw": "M3"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "pins",
+      "label": "VCC GND CS RESET DC SDI SCK LED SDO T_CLK T_CS T_DIN T_DO T_IRQ",
+      "x": 4.85,
+      "y": 2.0,
+      "rows": 1,
+      "cols": 14,
+      "pitch": 2.54
+    }
+  ],
+  "links": [
+    {
+      "label": "LCDwiki MSP2402 drawing",
+      "url": "https://www.lcdwiki.com/res/MSP2402/MSP2401_Size.pdf"
     }
   ],
   "tags": [

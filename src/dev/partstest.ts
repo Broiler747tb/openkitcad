@@ -126,7 +126,7 @@ export function runPartsTest(): TestResult[] {
   const oled = searchEntries(CATALOGUE, 'oled').find((entry) => entry.id === 'oled-display')
   check(
     'versions of one part come back as one family row',
-    oled?.kind === 'family' && oled.parts.length === 3,
+    oled?.kind === 'family' && oled.parts.length >= 3,
     oled ? `${oled.kind} with ${oled.kind === 'family' ? oled.parts.length : 1}` : 'no oled family',
   )
   check('nonsense finds nothing', searchEntries(CATALOGUE, 'zzqx flux capacitor').length === 0)

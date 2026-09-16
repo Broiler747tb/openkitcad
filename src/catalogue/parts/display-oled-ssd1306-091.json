@@ -1,6 +1,6 @@
 {
   "id": "display-oled-ssd1306-091",
-  "name": "0.91 inch OLED (SSD1306)",
+  "name": "0.91 inch OLED, I2C (generic)",
   "category": "display",
   "popularity": 72,
   "family": "oled-display",

@@ -1,50 +1,158 @@
 {
   "id": "display-tft-ili9488-35",
-  "name": "3.5 inch TFT (ILI9488)",
+  "name": "3.5 inch TFT, SPI (LCDwiki MSP3520)",
   "category": "display",
   "popularity": 44,
   "family": "tft-display",
   "variant": "3.5 in, ILI9488",
-  "summary": "480 x 320, often sold as a Pi-shaped touch screen.",
-  "confidence": "approximate",
-  "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Hole positions in particular differ between makers - check yours against these.",
+  "manufacturer": "LCDwiki",
+  "summary": "320x480 colour touch screen on a 56.3 x 98 mm board with four M3 holes and pins on the back.",
+  "confidence": "datasheet",
+  "source": "LCDwiki MSP3520 outline drawing (V1.0): board 56.34 x 98.0 mm and 1.6 mm thick, four 3.2 mm holes 3.42 mm in from the sides and 3.0 mm from the top and bottom (49.5 x 92 mm apart), backlight 55.50 x 84.96 mm, touch panel 55.00 x 84.36 mm, active area 48.96 x 73.44 mm, 14 pins at 2.54 mm pitch along the bottom edge 2.0 mm up, starting 11.66 mm from the left. 5.8 mm thick without the pins, which stand 11.17 mm behind the board. An SD card slot sits on the back. This is the widely sold red SPI module these drivers are known by.",
+  "look": {
+    "colour": "#b3261e",
+    "components": [
+      {
+        "kind": "box",
+        "x": 0.42,
+        "y": 6.5,
+        "w": 55.5,
+        "h": 84.96,
+        "z": 2.1,
+        "height": 3.4,
+        "finish": "metal",
+        "colour": "#d9dde1",
+        "label": "Backlight"
+      },
+      {
+        "kind": "screen",
+        "x": 0.67,
+        "y": 7.0,
+        "z": 5.5,
+        "w": 55.0,
+        "h": 84.36,
+        "height": 0.3,
+        "colour": "#14171b",
+        "active": [
+          3.69,
+          14.61,
+          48.96,
+          73.44
+        ],
+        "backlight": "#0c1018",
+        "label": "Display"
+      },
+      {
+        "kind": "header",
+        "x": 11.66,
+        "y": 2.0,
+        "rows": 1,
+        "cols": 14,
+        "height": 9.57,
+        "flip": true,
+        "z": 0,
+        "label": "Pins"
+      },
+      {
+        "kind": "box",
+        "x": 15.0,
+        "y": 60.0,
+        "w": 26.0,
+        "h": 26.0,
+        "height": 2.8,
+        "finish": "metal",
+        "flip": true,
+        "z": 0,
+        "label": "SD card slot"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
       "shape": "rect",
-      "w": 85,
-      "h": 56
+      "w": 56.34,
+      "h": 98.0
     },
-    "thickness": 1.6
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 0.42,
+        "y": 6.5,
+        "w": 55.5,
+        "h": 84.96,
+        "z": 1.6,
+        "height": 4.2,
+        "colour": "#14171b",
+        "label": "Display"
+      },
+      {
+        "x": 10.39,
+        "y": 0.73,
+        "w": 35.56,
+        "h": 2.54,
+        "z": -9.57,
+        "height": 9.57,
+        "colour": "#1b1d20",
+        "label": "Pins behind"
+      },
+      {
+        "x": 15.0,
+        "y": 60.0,
+        "w": 26.0,
+        "h": 26.0,
+        "z": -2.8,
+        "height": 2.8,
+        "colour": "#b9c0c7",
+        "label": "SD card slot"
+      }
+    ]
   },
   "mountingHoles": [
     {
       "id": "h1",
-      "x": 3.5,
-      "y": 3.5,
-      "diameter": 3,
+      "x": 3.42,
+      "y": 3.0,
+      "diameter": 3.2,
       "screw": "M3"
     },
     {
       "id": "h2",
-      "x": 81.5,
-      "y": 3.5,
-      "diameter": 3,
+      "x": 52.92,
+      "y": 3.0,
+      "diameter": 3.2,
       "screw": "M3"
     },
     {
       "id": "h3",
-      "x": 3.5,
-      "y": 52.5,
-      "diameter": 3,
+      "x": 3.42,
+      "y": 95.0,
+      "diameter": 3.2,
       "screw": "M3"
     },
     {
       "id": "h4",
-      "x": 81.5,
-      "y": 52.5,
-      "diameter": 3,
+      "x": 52.92,
+      "y": 95.0,
+      "diameter": 3.2,
       "screw": "M3"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "pins",
+      "label": "VCC GND CS RESET DC SDI SCK LED SDO T_CLK T_CS T_DIN T_DO T_IRQ",
+      "x": 11.66,
+      "y": 2.0,
+      "rows": 1,
+      "cols": 14,
+      "pitch": 2.54
+    }
+  ],
+  "links": [
+    {
+      "label": "LCDwiki MSP3520 drawing",
+      "url": "https://www.lcdwiki.com/res/MSP3520/MSP3520_Size.pdf"
     }
   ],
   "tags": [

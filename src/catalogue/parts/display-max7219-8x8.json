@@ -1,6 +1,6 @@
 {
   "id": "display-max7219-8x8",
-  "name": "MAX7219 8x8 LED matrix",
+  "name": "MAX7219 8x8 LED matrix (FC-16, generic)",
   "category": "display",
   "popularity": 51,
   "summary": "Single red matrix module. They chain end to end.",

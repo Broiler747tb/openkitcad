@@ -1,6 +1,6 @@
 {
   "id": "display-epaper-213",
-  "name": "2.13 inch e-paper",
+  "name": "2.13 inch e-paper module (generic)",
   "category": "display",
   "popularity": 46,
   "summary": "Holds its picture with the power off. Slow to redraw.",

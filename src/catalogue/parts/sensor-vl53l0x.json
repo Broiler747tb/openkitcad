@@ -1,8 +1,10 @@
 {
   "id": "sensor-vl53l0x",
-  "name": "VL53L0X time-of-flight range",
+  "name": "VL53L0X module (GY-530, generic)",
   "category": "sensor",
   "popularity": 60,
+  "family": "vl53l0x-board",
+  "variant": "GY-530 module (generic)",
   "summary": "Measures distance with laser rather than sound. Good to about 2 m.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. It needs a clear window in front of it, not just a hole - the sensor is fussy about anything in the beam.",

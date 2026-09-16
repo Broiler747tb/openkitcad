@@ -1,0 +1,323 @@
+{
+  "id": "sensor-hx711-adafruit",
+  "name": "HX711 load cell amplifier (Adafruit 5974)",
+  "category": "sensor",
+  "popularity": 40,
+  "family": "hx711-board",
+  "variant": "Adafruit (5974)",
+  "manufacturer": "Adafruit",
+  "summary": "24-bit load cell amplifier with a screw terminal for the cell, on a 25.4 x 22.9 mm board with four M2.5 holes.",
+  "confidence": "datasheet",
+  "source": "Adafruit's Eagle files for the HX711 24-bit ADC for Load Cells / Strain Gauges (product 5974): board 25.4 x 22.86 mm with 2.54 mm corner radii, four 2.5 mm holes 2.54 mm in from the corners, a 6-pin header along the bottom edge and a 6-way 2.54 mm terminal block for the load cell along the top edge, plus a rate switch on the right. Chip positions in the look come from the same files.",
+  "look": {
+    "colour": "#1d1f22",
+    "components": [
+      {
+        "kind": "box",
+        "x": 15.701,
+        "y": 10.153,
+        "w": 1.758,
+        "h": 1.16,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C3"
+      },
+      {
+        "kind": "box",
+        "x": 15.775,
+        "y": 12.071,
+        "w": 1.335,
+        "h": 0.76,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C1"
+      },
+      {
+        "kind": "box",
+        "x": 1.75,
+        "y": 10.283,
+        "w": 1.334,
+        "h": 0.76,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C7"
+      },
+      {
+        "kind": "box",
+        "x": 1.139,
+        "y": 12.346,
+        "w": 0.76,
+        "h": 1.335,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R1"
+      },
+      {
+        "kind": "box",
+        "x": 2.79,
+        "y": 12.346,
+        "w": 0.76,
+        "h": 1.335,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R2"
+      },
+      {
+        "kind": "chip",
+        "x": 4.826,
+        "y": 5.918,
+        "w": 9.398,
+        "h": 6.198,
+        "height": 1.75,
+        "label": "HX711"
+      },
+      {
+        "kind": "box",
+        "x": 21.052,
+        "y": 5.921,
+        "w": 4.1,
+        "h": 6.7,
+        "height": 1.5,
+        "finish": "metal",
+        "label": "SW1"
+      },
+      {
+        "kind": "box",
+        "x": 4.98,
+        "y": 13.786,
+        "w": 1.335,
+        "h": 0.76,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C8"
+      },
+      {
+        "kind": "box",
+        "x": 1.678,
+        "y": 5.34,
+        "w": 1.335,
+        "h": 0.76,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C9"
+      },
+      {
+        "kind": "box",
+        "x": 2.853,
+        "y": 7.393,
+        "w": 0.76,
+        "h": 1.335,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R4"
+      },
+      {
+        "kind": "box",
+        "x": 1.012,
+        "y": 7.393,
+        "w": 0.76,
+        "h": 1.335,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R5"
+      },
+      {
+        "kind": "box",
+        "x": 8.29,
+        "y": 13.775,
+        "w": 1.335,
+        "h": 0.76,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R6"
+      },
+      {
+        "kind": "box",
+        "x": 11.457,
+        "y": 13.849,
+        "w": 1.335,
+        "h": 0.76,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R7"
+      },
+      {
+        "kind": "box",
+        "x": 15.839,
+        "y": 4.832,
+        "w": 1.334,
+        "h": 0.76,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C2"
+      },
+      {
+        "kind": "box",
+        "x": 18.665,
+        "y": 5.806,
+        "w": 0.76,
+        "h": 1.334,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R8"
+      },
+      {
+        "kind": "box",
+        "x": 21.48,
+        "y": 13.899,
+        "w": 1.758,
+        "h": 1.16,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C4"
+      },
+      {
+        "kind": "box",
+        "x": 18.125,
+        "y": 13.849,
+        "w": 1.334,
+        "h": 0.76,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C5"
+      },
+      {
+        "kind": "box",
+        "x": 14.696,
+        "y": 13.849,
+        "w": 1.334,
+        "h": 0.76,
+        "height": 0.5,
+        "colour": "#3a3d42",
+        "finish": "chip",
+        "label": "L1"
+      },
+      {
+        "kind": "chip",
+        "x": 15.065,
+        "y": 6.579,
+        "w": 3.144,
+        "h": 2.59,
+        "height": 1.1,
+        "label": "S8550"
+      },
+      {
+        "kind": "terminal",
+        "x": 12.7,
+        "y": 22.86,
+        "pins": 6,
+        "pitch": 2.54,
+        "facing": "+y",
+        "colour": "#2c6fc9",
+        "label": "Load cell terminal"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 25.4,
+      "h": 22.86,
+      "cornerRadius": 2.54
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 6.1,
+        "y": 15.3,
+        "w": 13.2,
+        "h": 7.56,
+        "z": 1.6,
+        "height": 8.5,
+        "colour": "#2c6fc9",
+        "label": "Load cell terminal"
+      }
+    ]
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2.54,
+      "y": 20.32,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h2",
+      "x": 22.86,
+      "y": 20.32,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h3",
+      "x": 2.54,
+      "y": 2.54,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h4",
+      "x": 22.86,
+      "y": 2.54,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "jp1",
+      "label": "Pins along the bottom edge",
+      "x": 6.35,
+      "y": 2.54,
+      "rows": 1,
+      "cols": 6,
+      "pitch": 2.54
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      3.3,
+      5
+    ],
+    "note": "Reads 10 or 80 samples a second, set by the switch."
+  },
+  "links": [
+    {
+      "label": "Adafruit 5974",
+      "url": "https://www.adafruit.com/product/5974"
+    },
+    {
+      "label": "Eagle files",
+      "url": "https://github.com/adafruit/Adafruit-HX711-24-bit-ADC-PCB"
+    }
+  ],
+  "tags": [
+    "hx711",
+    "load",
+    "cell",
+    "scale",
+    "weight",
+    "strain",
+    "amplifier",
+    "adc",
+    "adafruit",
+    "5974"
+  ]
+}

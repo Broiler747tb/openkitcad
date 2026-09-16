@@ -1,8 +1,10 @@
 {
   "id": "sensor-bh1750",
-  "name": "BH1750 light sensor",
+  "name": "BH1750 module (GY-302, generic)",
   "category": "sensor",
   "popularity": 50,
+  "family": "bh1750-board",
+  "variant": "GY-302 module (generic)",
   "summary": "Reads brightness in lux over I2C.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Hole positions in particular differ between makers - check yours against these.",
