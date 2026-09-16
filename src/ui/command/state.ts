@@ -15,11 +15,13 @@ import {
   formatInteger,
   formatLength,
   parseAngle,
+  formatNumber,
   parseInteger,
   parseLength,
+  parseNumber,
 } from './units'
 
-export type NumericFieldState = { kind: 'length' | 'angle' | 'integer'; text: string }
+export type NumericFieldState = { kind: 'length' | 'angle' | 'integer' | 'number'; text: string }
 
 export type FieldState =
   | { kind: 'selection'; picks: SelectionPick[] }
@@ -88,6 +90,7 @@ function defaultChoice(input: ChoiceInput): string {
 function formatNumeric(input: NumericInput, value: number, units: UnitContext): string {
   if (input.kind === 'length') return formatLength(value, units.unit)
   if (input.kind === 'angle') return formatAngle(value)
+  if (input.kind === 'number') return formatNumber(value, 4)
   return formatInteger(value)
 }
 
@@ -119,6 +122,7 @@ export function createCommandState(
       case 'length':
       case 'angle':
       case 'integer':
+      case 'number':
         fields[input.id] = {
           kind: input.kind,
           text:
@@ -217,7 +221,10 @@ function applyFills(
     const input = findInput(spec, id)
     if (!input) continue
     if (
-      (input.kind === 'length' || input.kind === 'angle' || input.kind === 'integer') &&
+      (input.kind === 'length' ||
+        input.kind === 'angle' ||
+        input.kind === 'integer' ||
+        input.kind === 'number') &&
       typeof value === 'number'
     ) {
       next = withField(next, id, { kind: input.kind, text: formatNumeric(input, value, units) })
@@ -366,7 +373,8 @@ function readField(
     }
     case 'length':
     case 'angle':
-    case 'integer': {
+    case 'integer':
+    case 'number': {
       const text = field && field.kind === input.kind ? field.text : ''
       try {
         const value =
@@ -374,7 +382,9 @@ function readField(
             ? parseLength(text, units.unit, units.variable)
             : input.kind === 'angle'
               ? parseAngle(text, units.variable)
-              : parseInteger(text, units.variable)
+              : input.kind === 'number'
+                ? parseNumber(text, units.variable)
+                : parseInteger(text, units.variable)
         return { value, error: rangeError(input, value, units), missing: false }
       } catch (error) {
         return { value: input.default, error: messageOf(error), missing: false }

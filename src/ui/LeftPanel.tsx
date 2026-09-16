@@ -124,10 +124,14 @@ function ComponentContents({
   const selection = useStore((s) => s.selection)
   const instances = useStore((s) => s.instances)
   const meshes = useStore((s) => s.meshes)
+  const bodyKinds = new Map(
+    instances.flatMap((instance) => {
+      const kind = meshes.get(instance.meshKey)?.kind
+      return instance.bodyId && kind ? [[instance.bodyId, kind] as const] : []
+    }),
+  )
   const meshBodyIds = new Set(
-    instances
-      .filter((instance) => meshes.get(instance.meshKey)?.kind === 'mesh')
-      .map((instance) => instance.bodyId),
+    [...bodyKinds].filter(([, kind]) => kind === 'mesh').map(([bodyId]) => bodyId),
   )
   const solidBodies = component.bodies.filter((body) => !meshBodyIds.has(body.id))
   const meshBodies = component.bodies.filter((body) => meshBodyIds.has(body.id))
@@ -162,7 +166,12 @@ function ComponentContents({
         <details className="browser-folder" open>
           <summary>Bodies ({solidBodies.length})</summary>
           {solidBodies.map((body) => (
-            <BodyBranch key={body.id} body={body} failed={failed} />
+            <BodyBranch
+              key={body.id}
+              body={body}
+              failed={failed}
+              surface={bodyKinds.get(body.id) === 'surface'}
+            />
           ))}
         </details>
       )}
@@ -343,7 +352,15 @@ function OccurrenceBranch({
   )
 }
 
-function BodyBranch({ body, failed }: { body: Body; failed: Set<string> }) {
+function BodyBranch({
+  body,
+  failed,
+  surface,
+}: {
+  body: Body
+  failed: Set<string>
+  surface?: boolean
+}) {
   const doc = useStore((s) => s.doc)
   const selection = useStore((s) => s.selection)
   const store = useStore.getState()
@@ -366,7 +383,9 @@ function BodyBranch({ body, failed }: { body: Body; failed: Set<string> }) {
         onMouseEnter={() => store.setHovered(body.id)}
         onMouseLeave={() => store.setHovered(null)}
       >
-        <span className="glyph">▣</span>
+        <span className="glyph" title={surface ? 'Surface body' : undefined}>
+          {surface ? '▭' : '▣'}
+        </span>
         <span className="name" style={{ opacity: body.visible ? 1 : 0.45 }}>
           {body.name}
         </span>

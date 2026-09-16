@@ -622,7 +622,9 @@ function BodyInspector({ id, instanceId }: { id: string; instanceId?: string }) 
             <br />
             {mesh.kind === 'mesh' && !mesh.watertight
               ? 'Open mesh, so it has no volume'
-              : `${volumeLabel(mesh.volume, units)} of material`}
+              : mesh.kind === 'surface'
+                ? 'Surface body, so it has no volume'
+                : `${volumeLabel(mesh.volume, units)} of material`}
           </p>
         )}
         {mesh?.kind === 'mesh' && (

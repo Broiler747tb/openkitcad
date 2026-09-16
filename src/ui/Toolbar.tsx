@@ -32,9 +32,18 @@ import {
   TessellateIcon,
 } from './icons/mesh'
 import { rememberCommand } from './MarkingMenu'
-import { ExtrudeIcon, HoleIcon, RevolveIcon } from './icons/solid'
-import { AsBuiltJointIcon, JointIcon, JointOriginIcon, RigidGroupIcon } from './icons/assemble'
-import { FilletIcon, MoveCopyIcon as SolidMoveIcon, ShellIcon } from './icons/modify'
+import { ExtrudeIcon, HoleIcon, LoftIcon, RevolveIcon, SweepIcon, ThickenIcon } from './icons/solid'
+import {
+  OffsetSurfaceIcon,
+  PatchIcon,
+  StitchIcon,
+  SurfaceExtrudeIcon,
+  SurfaceReverseNormalIcon,
+  SurfaceRevolveIcon,
+  UnstitchIcon,
+} from './icons/surface'
+import { AsBuiltJointIcon, JointIcon, JointOriginIcon } from './icons/assemble'
+import { FilletIcon, MoveCopyIcon as SolidMoveIcon, ShellIcon, SplitBodyIcon } from './icons/modify'
 import {
   BreakIcon,
   CONSTRAINT_ICONS,
@@ -54,6 +63,49 @@ import {
 } from './icons/sketch'
 
 const RIBBON_MENUS = ['Line', 'Rectangle', 'Circle', 'Arc', 'Polygon', 'Slot', 'Spline']
+const WORKSPACES = ['solid', 'surface', 'mesh'] as const
+const DESIGN_COMMANDS = [
+  'extrude',
+  'revolve',
+  'sweep',
+  'loft',
+  'coil',
+  'pipe',
+  'thicken',
+  'bodyPattern',
+  'mirror',
+  'fillet',
+  'move',
+  'splitBody',
+  'scale',
+  'hole',
+  'appearance',
+  'extrudeSurface',
+  'revolveSurface',
+  'sweepSurface',
+  'loftSurface',
+  'patch',
+  'surfaceOffset',
+  'stitch',
+  'unstitch',
+  'reverseNormal',
+  'joint',
+  'asBuiltJoint',
+  'jointOrigin',
+  'rigidGroup',
+  'driveJoints',
+  'motionLink',
+  'tessellate',
+  'meshRepair',
+  'meshRemesh',
+  'meshReduce',
+  'meshConvert',
+  'meshPlaneCut',
+  'meshSmooth',
+  'meshReverse',
+  'meshSeparate',
+  'meshCombine',
+]
 const labels: Record<string, string> = {
   extrude: 'Extrude',
   revolve: 'Revolve',
@@ -89,6 +141,24 @@ const labels: Record<string, string> = {
   meshSeparate: 'Separate',
   meshCombine: 'Combine Meshes',
   meshConvert: 'Convert Mesh',
+  sweep: 'Sweep',
+  loft: 'Loft',
+  coil: 'Coil',
+  pipe: 'Pipe',
+  thicken: 'Thicken',
+  bodyPattern: 'Pattern',
+  mirror: 'Mirror',
+  splitBody: 'Split Body',
+  scale: 'Scale',
+  extrudeSurface: 'Extrude Surface',
+  revolveSurface: 'Revolve Surface',
+  sweepSurface: 'Sweep Surface',
+  loftSurface: 'Loft Surface',
+  patch: 'Patch',
+  surfaceOffset: 'Offset Surface',
+  stitch: 'Stitch',
+  unstitch: 'Unstitch',
+  reverseNormal: 'Reverse Normal',
 }
 export function Toolbar({
   onExport,
@@ -108,7 +178,7 @@ export function Toolbar({
   const [pending, setPending] = useState<string | null>(null),
     [menu, setMenu] = useState<string | null>(null)
   const [variants, setVariants] = useState<Record<string, ToolId>>({})
-  const [workspace, setWorkspace] = useState<'solid' | 'mesh'>('solid')
+  const [workspace, setWorkspace] = useState<(typeof WORKSPACES)[number]>('solid')
   const themeState = useTheme()
   const root = useRef<HTMLElement>(null)
   const sketch = activeSketchFeature(state)
@@ -223,20 +293,7 @@ export function Toolbar({
         createSketchAction(),
         ...creations,
         ...(state.selection.kind === 'none' ? [] : selected),
-        ...[
-          'extrude',
-          'revolve',
-          'fillet',
-          'move',
-          'hole',
-          'appearance',
-          'joint',
-          'asBuiltJoint',
-          'jointOrigin',
-          'rigidGroup',
-          'driveJoints',
-          'motionLink',
-        ].map(cmd),
+        ...DESIGN_COMMANDS.map(cmd),
       ]
   function invoke(id: string) {
     setMenu(null)
@@ -451,6 +508,28 @@ export function Toolbar({
       )}
     </div>
   )
+  const inspectGroup = group(
+    'INSPECT',
+    [],
+    tool(
+      'Measure',
+      <MeasureIcon className="okc-icon" />,
+      () => {
+        state.clearMeasure()
+        state.setTool(state.tool === 'measure' ? 'select' : 'measure')
+      },
+      'I',
+    ),
+  )
+  const selectGroup = (
+    <div className="fusion-group standalone">
+      {tool('Select', <SelectIcon className="okc-icon okc-icon-2d" />, () => {
+        setPending(null)
+        state.setTool('select')
+        state.select({ kind: 'none' })
+      })}
+    </div>
+  )
   return (
     <header className="workspace-header" ref={root}>
       <div className="app-header">
@@ -534,7 +613,7 @@ export function Toolbar({
       </div>
       <div className="workspace-tabs">
         <span className="design-workspace">DESIGN</span>
-        {(['solid', 'mesh'] as const).map((tab) => (
+        {WORKSPACES.map((tab) => (
           <button
             key={tab}
             className={
@@ -717,6 +796,56 @@ export function Toolbar({
               <span>Finish Sketch</span>
             </button>
           </>
+        ) : workspace === 'surface' ? (
+          <>
+            <div className="fusion-group standalone">
+              {tool('Create Sketch', <CreateSketchIcon className="okc-icon" />, () =>
+                chooseAction(createSketchAction()),
+              )}
+            </div>
+            {group(
+              'CREATE',
+              [
+                'extrudeSurface',
+                'revolveSurface',
+                'sweepSurface',
+                'loftSurface',
+                'patch',
+                'surfaceOffset',
+                'thicken',
+              ].map((id) => ({ ...cmd(id), group: 'Create' })),
+              <>
+                {tool('Extrude', <SurfaceExtrudeIcon className="okc-icon" />, () =>
+                  invoke('extrudeSurface'),
+                )}
+                {tool('Revolve', <SurfaceRevolveIcon className="okc-icon" />, () =>
+                  invoke('revolveSurface'),
+                )}
+                {tool('Loft', <LoftIcon className="okc-icon" />, () => invoke('loftSurface'))}
+                {tool('Patch', <PatchIcon className="okc-icon" />, () => invoke('patch'))}
+                {tool('Offset', <OffsetSurfaceIcon className="okc-icon" />, () =>
+                  invoke('surfaceOffset'),
+                )}
+                {tool('Thicken', <ThickenIcon className="okc-icon" />, () => invoke('thicken'))}
+              </>,
+            )}
+            {group(
+              'MODIFY',
+              ['stitch', 'unstitch', 'reverseNormal', 'splitBody', 'scale', 'move'].map((id) => ({
+                ...cmd(id),
+                group: 'Modify',
+              })),
+              <>
+                {tool('Stitch', <StitchIcon className="okc-icon" />, () => invoke('stitch'))}
+                {tool('Unstitch', <UnstitchIcon className="okc-icon" />, () => invoke('unstitch'))}
+                {tool('Reverse Normal', <SurfaceReverseNormalIcon className="okc-icon" />, () =>
+                  invoke('reverseNormal'),
+                )}
+              </>,
+            )}
+            {inspectGroup}
+            {selectGroup}
+          </>
         ) : workspace === 'mesh' ? (
           <>
             {group(
@@ -785,26 +914,8 @@ export function Toolbar({
                 )}
               </>,
             )}
-            {group(
-              'INSPECT',
-              [],
-              tool(
-                'Measure',
-                <MeasureIcon className="okc-icon" />,
-                () => {
-                  state.clearMeasure()
-                  state.setTool(state.tool === 'measure' ? 'select' : 'measure')
-                },
-                'I',
-              ),
-            )}
-            <div className="fusion-group standalone">
-              {tool('Select', <SelectIcon className="okc-icon okc-icon-2d" />, () => {
-                setPending(null)
-                state.setTool('select')
-                state.select({ kind: 'none' })
-              })}
-            </div>
+            {inspectGroup}
+            {selectGroup}
           </>
         ) : (
           <>
@@ -816,13 +927,20 @@ export function Toolbar({
             {group(
               'CREATE',
               [
-                cmd('extrude'),
-                cmd('revolve'),
-                cmd('hole'),
-                cmd('box'),
-                cmd('cylinder'),
-                cmd('sphere'),
-              ],
+                'extrude',
+                'revolve',
+                'sweep',
+                'loft',
+                'hole',
+                'box',
+                'cylinder',
+                'sphere',
+                'coil',
+                'pipe',
+                'bodyPattern',
+                'mirror',
+                'thicken',
+              ].map((id) => ({ ...cmd(id), group: 'Create' })),
               <>
                 {tool(
                   'Extrude',
@@ -831,21 +949,34 @@ export function Toolbar({
                   'E',
                 )}
                 {tool('Revolve', <RevolveIcon className="okc-icon" />, () => invoke('revolve'))}
+                {tool('Sweep', <SweepIcon className="okc-icon" />, () => invoke('sweep'))}
+                {tool('Loft', <LoftIcon className="okc-icon" />, () => invoke('loft'))}
                 {tool('Hole', <HoleIcon className="okc-icon" />, () => invoke('hole'), 'H')}
               </>,
             )}
             {group(
               'MODIFY',
               [
-                ...['fillet', 'chamfer', 'hollow', 'combine', 'vent', 'move', 'appearance'].map(
-                  cmd,
-                ),
+                ...[
+                  'fillet',
+                  'chamfer',
+                  'hollow',
+                  'combine',
+                  'splitBody',
+                  'scale',
+                  'vent',
+                  'move',
+                  'appearance',
+                ].map(cmd),
                 ...selected,
               ],
               <>
                 {tool('Fillet', <FilletIcon className="okc-icon" />, () => invoke('fillet'), 'F')}
-                {tool('Move', <SolidMoveIcon className="okc-icon" />, () => invoke('move'), 'M')}
                 {tool('Shell', <ShellIcon className="okc-icon" />, () => invoke('hollow'))}
+                {tool('Split Body', <SplitBodyIcon className="okc-icon" />, () =>
+                  invoke('splitBody'),
+                )}
+                {tool('Move', <SolidMoveIcon className="okc-icon" />, () => invoke('move'), 'M')}
               </>,
             )}
             {group(
@@ -888,10 +1019,6 @@ export function Toolbar({
                 {tool('Joint Origin', <JointOriginIcon className="okc-icon" />, () =>
                   invoke('jointOrigin'),
                 )}
-                {tool('Rigid Group', <RigidGroupIcon className="okc-icon" />, () =>
-                  invoke('rigidGroup'),
-                )}
-                {tool('Hardware', <HardwareIcon className="okc-icon" />, onCatalogue)}
               </>,
             )}
             {group(

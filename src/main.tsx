@@ -40,6 +40,10 @@ if (params.has('selftest') || params.has('kerneltest')) {
       ['assembly', async () => (await import('./dev/assemblytest')).runAssemblyTest()],
       ['mesh', async () => (await import('./dev/meshtest')).runMeshTest()],
       ['meshCommands', async () => (await import('./dev/meshcommandtest')).runMeshCommandTest()],
+      [
+        'createCommands',
+        async () => (await import('./dev/createcommandtest')).runCreateCommandTest(),
+      ],
     )
   }
   suites.push(

@@ -1,6 +1,6 @@
 import { findFeature } from '../../doc/model'
 import { selectedBodyId, sketchTargetBody, useStore } from '../../doc/store'
-import type { Feature, OkcDocument, SketchFeature } from '../../doc/types'
+import type { Feature, OkcDocument, PlaneRef, SketchFeature } from '../../doc/types'
 import {
   bodyPick,
   elementPick,
@@ -23,6 +23,26 @@ import { holeCommand, pointOnFace, ventCommand } from './specs/placed'
 import { boxCommand, cylinderCommand, sphereCommand } from './specs/primitives'
 import { operationValues, planeValues, profilePicksOf, resultIds } from './specs/shared'
 import { extrudeCommand, revolveCommand } from './specs/sketchBased'
+import {
+  coilCommand,
+  extrudeSurfaceCommand,
+  loftCommand,
+  loftSurfaceCommand,
+  revolveSurfaceCommand,
+  sweepSurfaceCommand,
+  mirrorCommand,
+  patchCommand,
+  patternCommand,
+  pipeCommand,
+  reverseNormalCommand,
+  scaleCommand,
+  splitBodyCommand,
+  stitchCommand,
+  surfaceOffsetCommand,
+  sweepCommand,
+  thickenCommand,
+  unstitchCommand,
+} from './specs/create'
 import {
   asBuiltJointCommand,
   driveJointsCommand,
@@ -87,6 +107,36 @@ export const COMMANDS: Readonly<Record<string, AnyCommandSpec>> = {
   meshSeparate: spec(meshSeparateCommand),
   meshCombine: spec(meshCombineCommand),
   meshConvert: spec(meshConvertCommand),
+  loft: spec(loftCommand),
+  sweep: spec(sweepCommand),
+  coil: spec(coilCommand),
+  pipe: spec(pipeCommand),
+  thicken: spec(thickenCommand),
+  patch: spec(patchCommand),
+  bodyPattern: spec(patternCommand),
+  mirror: spec(mirrorCommand),
+  splitBody: spec(splitBodyCommand),
+  scale: spec(scaleCommand),
+  stitch: spec(stitchCommand),
+  unstitch: spec(unstitchCommand),
+  surfaceOffset: spec(surfaceOffsetCommand),
+  reverseNormal: spec(reverseNormalCommand),
+  extrudeSurface: extrudeSurfaceCommand,
+  revolveSurface: revolveSurfaceCommand,
+  loftSurface: loftSurfaceCommand,
+  sweepSurface: sweepSurfaceCommand,
+}
+
+function variantOf(kind: string, surface: boolean | undefined): AnyCommandSpec {
+  return COMMANDS[surface ? `${kind}Surface` : kind]
+}
+
+function planeInputs(doc: OkcDocument, plane: PlaneRef) {
+  return {
+    plane: plane.kind === 'named' ? [] : planeValues(doc, { ...plane, offset: 0 }),
+    origin: plane.kind === 'named' ? plane.name : 'XY',
+    offset: plane.offset,
+  }
 }
 
 function pathPick(doc: OkcDocument, path: string[]): SelectionPick | null {
@@ -140,7 +190,36 @@ function startOptions(id: string): CommandStart {
   const body = bodyId ? bodyPick(doc, bodyId, state.selection.instanceId) : null
   const bodies = body ? [body] : []
   const faces = selectedElements(doc, 'face')
+  const sketchPicks = () => {
+    const sketch = selectedSketch(doc)
+    return sketch ? [sketchPick(doc, sketch.id)!] : []
+  }
   switch (id) {
+    case 'loft':
+    case 'loftSurface':
+      return { initial: { sections: sketchPicks() } }
+    case 'sweep':
+    case 'sweepSurface':
+    case 'patch':
+      return { initial: { profile: sketchPicks() } }
+    case 'pipe':
+      return { initial: { path: sketchPicks() } }
+    case 'coil':
+      return { initial: { plane: faces.slice(0, 1) } }
+    case 'thicken':
+    case 'surfaceOffset':
+    case 'splitBody':
+    case 'unstitch':
+      return { initial: { body: bodies } }
+    case 'bodyPattern':
+    case 'mirror':
+    case 'scale':
+    case 'stitch':
+    case 'reverseNormal':
+      return { initial: { bodies } }
+    case 'extrudeSurface':
+    case 'revolveSurface':
+      return { initial: { profile: sketchPicks() } }
     case 'extrude':
     case 'revolve': {
       const sketch = selectedSketch(doc)
@@ -239,13 +318,151 @@ function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, Comma
         feature.kind === 'extrude'
           ? {
               ...shared,
+              surface: feature.surface === true,
               direction: feature.symmetric ? 'symmetric' : 'one',
               distance: feature.distance,
               flip: feature.reverse,
             }
-          : { ...shared, axis: feature.axis, angle: feature.angle }
-      return [COMMANDS[feature.kind], { initial, ids: resultIds(feature.result) }]
+          : {
+              ...shared,
+              surface: feature.surface === true,
+              axis: feature.axis,
+              angle: feature.angle,
+            }
+      return [variantOf(feature.kind, feature.surface), { initial, ids: resultIds(feature.result) }]
     }
+    case 'loft':
+      return [
+        variantOf('loft', feature.surface),
+        {
+          initial: {
+            sections: feature.sections.flatMap((section) =>
+              profilePicksOf(doc, section.sketchId, section.profiles),
+            ),
+            ruled: feature.ruled,
+            surface: feature.surface,
+            ...operationValues(doc, feature.result),
+          },
+          ids: resultIds(feature.result),
+        },
+      ]
+    case 'sweep': {
+      const path = sketchPick(doc, feature.pathSketchId)
+      return [
+        variantOf('sweep', feature.surface),
+        {
+          initial: {
+            profile: profilePicksOf(doc, feature.sketchId, feature.profiles),
+            path: path ? [path] : [],
+            surface: feature.surface,
+            ...operationValues(doc, feature.result),
+          },
+          ids: resultIds(feature.result),
+        },
+      ]
+    }
+    case 'coil':
+      return [
+        COMMANDS.coil,
+        {
+          initial: {
+            ...planeInputs(doc, feature.plane),
+            x: feature.centre[0],
+            y: feature.centre[1],
+            diameter: feature.diameter,
+            revolutions: feature.revolutions,
+            height: feature.height,
+            section: feature.section,
+            sectionSize: feature.sectionSize,
+            clockwise: feature.clockwise,
+            ...operationValues(doc, feature.result),
+          },
+          ids: resultIds(feature.result),
+        },
+      ]
+    case 'pipe': {
+      const path = sketchPick(doc, feature.pathSketchId)
+      return [
+        COMMANDS.pipe,
+        {
+          initial: {
+            path: path ? [path] : [],
+            section: feature.section,
+            size: feature.size,
+            hollow: feature.hollow,
+            thickness: feature.thickness,
+            ...operationValues(doc, feature.result),
+          },
+          ids: resultIds(feature.result),
+        },
+      ]
+    }
+    case 'thicken':
+      return [
+        COMMANDS.thicken,
+        {
+          initial: {
+            body: bodyPicks([feature.sourceBodyId]),
+            thickness: feature.thickness,
+            direction: feature.symmetric ? 'symmetric' : 'one',
+            ...operationValues(doc, feature.result),
+          },
+          ids: resultIds(feature.result),
+        },
+      ]
+    case 'patch':
+      return [
+        COMMANDS.patch,
+        { initial: { profile: profilePicksOf(doc, feature.sketchId, feature.profiles) } },
+      ]
+    case 'bodyPattern':
+      return [
+        COMMANDS.bodyPattern,
+        {
+          initial: {
+            bodies: bodyPicks(feature.bodyIds),
+            pattern: feature.pattern,
+            axisOne: feature.axisOne,
+            countOne: feature.countOne,
+            spacingOne: feature.spacingOne,
+            axisTwo: feature.axisTwo,
+            countTwo: feature.countTwo,
+            spacingTwo: feature.spacingTwo,
+            axis: feature.axis,
+            count: feature.count,
+            angle: feature.angle,
+          },
+        },
+      ]
+    case 'mirror':
+      return [
+        COMMANDS.mirror,
+        { initial: { bodies: bodyPicks(feature.bodyIds), ...planeInputs(doc, feature.plane) } },
+      ]
+    case 'splitBody':
+      return [
+        COMMANDS.splitBody,
+        { initial: { body: bodyPicks([feature.bodyId]), ...planeInputs(doc, feature.plane) } },
+      ]
+    case 'scale':
+      return [
+        COMMANDS.scale,
+        { initial: { bodies: bodyPicks(feature.bodyIds), factor: feature.factor } },
+      ]
+    case 'stitch':
+      return [
+        COMMANDS.stitch,
+        { initial: { bodies: bodyPicks(feature.bodyIds), tolerance: feature.tolerance } },
+      ]
+    case 'unstitch':
+      return [COMMANDS.unstitch, { initial: { body: bodyPicks([feature.bodyId]) } }]
+    case 'surfaceOffset':
+      return [
+        COMMANDS.surfaceOffset,
+        { initial: { body: bodyPicks([feature.sourceBodyId]), distance: feature.distance } },
+      ]
+    case 'reverseNormal':
+      return [COMMANDS.reverseNormal, { initial: { bodies: bodyPicks(feature.bodyIds) } }]
     case 'box':
       return [
         COMMANDS.box,

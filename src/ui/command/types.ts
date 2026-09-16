@@ -96,6 +96,14 @@ export interface IntegerInput<Id extends string = string> extends InputBase<Id> 
   step?: number
 }
 
+export interface NumberInput<Id extends string = string> extends InputBase<Id> {
+  kind: 'number'
+  default: number
+  min?: number
+  max?: number
+  exclusiveMin?: boolean
+}
+
 export interface ChoiceOption<V extends string = string> {
   value: V
   label: string
@@ -118,9 +126,9 @@ export interface ToggleInput<Id extends string = string> extends InputBase<Id> {
 }
 
 export type CommandInput =
-  SelectionInput | LengthInput | AngleInput | IntegerInput | ChoiceInput | ToggleInput
+  SelectionInput | LengthInput | AngleInput | IntegerInput | NumberInput | ChoiceInput | ToggleInput
 
-export type NumericInput = LengthInput | AngleInput | IntegerInput
+export type NumericInput = LengthInput | AngleInput | IntegerInput | NumberInput
 
 export type InputKind = CommandInput['kind']
 

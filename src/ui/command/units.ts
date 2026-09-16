@@ -102,6 +102,13 @@ export function parseInteger(text: string, variable?: VariableResolver): number 
   return rounded
 }
 
+export function parseNumber(text: string, variable?: VariableResolver): number {
+  if (!text.trim()) throw new Error('Enter a number, such as 2 or 0.5.')
+  const value = quantity(text, '', variable)
+  if (!Number.isFinite(value)) throw new Error('That is not a finite number.')
+  return tidy(value)
+}
+
 export function formatNumber(value: number, decimals: number): string {
   const fixed = Number(value.toFixed(decimals))
   return String(Object.is(fixed, -0) ? 0 : fixed)

@@ -241,7 +241,8 @@ function InputRow({ input, field, error, active, dispatch, rowId }: RowProps) {
       break
     case 'length':
     case 'angle':
-    case 'integer': {
+    case 'integer':
+    case 'number': {
       const text = field && 'text' in field ? field.text : ''
       control = (
         <div className="okc-cmd-number">

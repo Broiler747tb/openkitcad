@@ -334,7 +334,12 @@ export function removeBodyFromDocument(doc: OkcDocument, bodyId: string): void {
       feature.result.bodyIds.length > 1
     )
       feature.result.bodyIds = others(feature.result.bodyIds)
-    if (feature.kind === 'move' && feature.bodyIds.length > 1)
+    if (
+      (feature.kind === 'move' || feature.kind === 'scale' || feature.kind === 'reverseNormal') &&
+      feature.bodyIds.length > 1
+    )
+      feature.bodyIds = others(feature.bodyIds)
+    if (feature.kind === 'stitch' && feature.bodyIds.length > 2 && feature.bodyIds[0] !== bodyId)
       feature.bodyIds = others(feature.bodyIds)
     if (feature.kind === 'combine' && feature.toolBodyIds.length > 1)
       feature.toolBodyIds = others(feature.toolBodyIds)

@@ -13,6 +13,13 @@ import {
   sketchOf,
 } from './shared'
 
+export const SURFACE_INPUT = {
+  id: 'surface',
+  kind: 'toggle',
+  label: 'Surface',
+  visible: () => false,
+} as const
+
 export const OPERATION_INPUTS = [
   {
     id: 'operation',
@@ -20,6 +27,7 @@ export const OPERATION_INPUTS = [
     label: 'Operation',
     options: OPERATIONS,
     default: 'newBody',
+    visible: (values: LooseCommandValues) => values.surface !== true,
   },
   {
     id: 'bodies',
@@ -29,7 +37,8 @@ export const OPERATION_INPUTS = [
     filter: ['body'],
     min: 1,
     prompt: 'Select bodies',
-    visible: (values: LooseCommandValues) => values.operation !== 'newBody',
+    visible: (values: LooseCommandValues) =>
+      values.surface !== true && values.operation !== 'newBody',
   },
 ] as const
 
@@ -78,13 +87,31 @@ export const extrudeCommand = defineCommand({
       hint: 'Extrude to the other side of the sketch plane.',
       visible: (values) => values.direction !== 'symmetric',
     },
+    SURFACE_INPUT,
     ...OPERATION_INPUTS,
   ],
   validate(values, context) {
+    if (values.surface)
+      return sketchOf(context.doc, values.profile) ? null : { profile: 'Pick a sketch.' }
     return profileProblem(context.doc, values.profile) ?? operationProblem(values)
   },
   build(values, context) {
     const sketch = sketchOf(context.doc, values.profile)!
+    if (values.surface) {
+      const surface: ExtrudeFeature = {
+        id: context.editing?.id ?? context.id('extrude'),
+        kind: 'extrude',
+        name: context.editing?.name ?? 'Extrude Surface',
+        componentId: sketch.componentId,
+        sketchId: sketch.id,
+        distance: values.distance,
+        symmetric: values.direction === 'symmetric',
+        reverse: values.direction !== 'symmetric' && values.flip,
+        surface: true,
+        result: { kind: 'newBody', bodyId: context.id('body') },
+      }
+      return [surface]
+    }
     const feature: ExtrudeFeature = {
       id: context.editing?.id ?? context.id('extrude'),
       kind: 'extrude',
@@ -148,13 +175,30 @@ export const revolveCommand = defineCommand({
       exclusiveMin: true,
       field: 'angle',
     },
+    SURFACE_INPUT,
     ...OPERATION_INPUTS,
   ],
   validate(values, context) {
+    if (values.surface)
+      return sketchOf(context.doc, values.profile) ? null : { profile: 'Pick a sketch.' }
     return profileProblem(context.doc, values.profile) ?? operationProblem(values)
   },
   build(values, context) {
     const sketch = sketchOf(context.doc, values.profile)!
+    if (values.surface) {
+      const surface: RevolveFeature = {
+        id: context.editing?.id ?? context.id('revolve'),
+        kind: 'revolve',
+        name: context.editing?.name ?? 'Revolve Surface',
+        componentId: sketch.componentId,
+        sketchId: sketch.id,
+        angle: values.angle,
+        axis: values.axis,
+        surface: true,
+        result: { kind: 'newBody', bodyId: context.id('body') },
+      }
+      return [surface]
+    }
     const feature: RevolveFeature = {
       id: context.editing?.id ?? context.id('revolve'),
       kind: 'revolve',
