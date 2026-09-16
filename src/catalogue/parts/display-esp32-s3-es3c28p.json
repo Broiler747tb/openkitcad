@@ -7,32 +7,127 @@
   "summary": "ESP32-S3 development board with a 240 × 320, 2.8 inch capacitive-touch display and four M3-clearance mounting holes.",
   "confidence": "datasheet",
   "source": "LCDWIKI ES3C28P / ES3N28P Specification V1.0, outline drawing 5.1: PCB 50.00 × 86.00 mm; four Ø3.20 mm holes at 42.00 × 78.00 mm centres; 10.60 mm maximum total depth. The capacitive touch panel is 50.00 × 69.20 mm and starts 8.22 mm from the PCB bottom; its 43.20 × 57.60 mm active LCD area is centred within it. It does not model each connector, button, or the flex cable individually.",
-  "links": [
-    { "label": "Official ES3C28P specification", "url": "https://www.lcdwiki.com/res/ES3C28P/ES3C28P_ES3N28P%E4%BA%A7%E5%93%81%E8%A7%84%E6%A0%BC%E4%B9%A6_V1.0.pdf" }
-  ],
+  "look": {
+    "colour": "#1d1f22",
+    "components": [
+      {
+        "kind": "screen",
+        "x": 0.0,
+        "y": 8.22,
+        "z": 1.6,
+        "w": 50.0,
+        "h": 69.2,
+        "height": 1.2,
+        "colour": "#0e1116",
+        "active": [
+          3.4,
+          14.02,
+          43.2,
+          57.6
+        ],
+        "backlight": "#101a26",
+        "label": "2.8 inch touch panel"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
-    "outline": { "shape": "rect", "w": 50, "h": 86, "cornerRadius": 3.5 },
+    "outline": {
+      "shape": "rect",
+      "w": 50,
+      "h": 86,
+      "cornerRadius": 3.5
+    },
     "thickness": 1.6,
     "bumps": [
-      { "x": 0, "y": 8.22, "w": 50, "h": 69.2, "z": 1.6, "height": 1.2, "colour": "#e8edf2", "label": "2.8 inch capacitive touch panel" },
-      { "x": 3.4, "y": 14.02, "w": 43.2, "h": 57.6, "z": 2.8, "height": 0.2, "colour": "#111820", "label": "2.8 inch LCD active area" }
+      {
+        "x": 0,
+        "y": 8.22,
+        "w": 50,
+        "h": 69.2,
+        "z": 1.6,
+        "height": 1.2,
+        "colour": "#e8edf2",
+        "label": "2.8 inch capacitive touch panel"
+      },
+      {
+        "x": 3.4,
+        "y": 14.02,
+        "w": 43.2,
+        "h": 57.6,
+        "z": 2.8,
+        "height": 0.2,
+        "colour": "#111820",
+        "label": "2.8 inch LCD active area"
+      }
     ]
   },
   "mountingHoles": [
-    { "id": "h1", "x": 4, "y": 4, "diameter": 3.2, "screw": "M3" },
-    { "id": "h2", "x": 46, "y": 4, "diameter": 3.2, "screw": "M3" },
-    { "id": "h3", "x": 4, "y": 82, "diameter": 3.2, "screw": "M3" },
-    { "id": "h4", "x": 46, "y": 82, "diameter": 3.2, "screw": "M3" }
+    {
+      "id": "h1",
+      "x": 4,
+      "y": 4,
+      "diameter": 3.2,
+      "screw": "M3"
+    },
+    {
+      "id": "h2",
+      "x": 46,
+      "y": 4,
+      "diameter": 3.2,
+      "screw": "M3"
+    },
+    {
+      "id": "h3",
+      "x": 4,
+      "y": 82,
+      "diameter": 3.2,
+      "screw": "M3"
+    },
+    {
+      "id": "h4",
+      "x": 46,
+      "y": 82,
+      "diameter": 3.2,
+      "screw": "M3"
+    }
   ],
   "keepouts": [
-    { "id": "k-depth", "label": "Maximum board and component depth", "x": 0, "y": 0, "w": 50, "h": 86, "z": -9, "height": 10.6 }
+    {
+      "id": "k-depth",
+      "label": "Maximum board and component depth",
+      "x": 0,
+      "y": 0,
+      "w": 50,
+      "h": 86,
+      "z": -9,
+      "height": 10.6
+    }
   ],
   "electrical": {
-    "voltage": [5],
+    "voltage": [
+      5
+    ],
     "currentTypical": 0.14,
     "currentPeak": 0.56,
     "note": "USB-C powered; the datasheet lists 560 mA with display, speaker and battery charging active."
   },
-  "tags": ["esp32", "esp32-s3", "es3c28p", "lcdwiki", "qdtech", "tft", "ili9341", "touch", "display", "2.8"]
+  "links": [
+    {
+      "label": "Official ES3C28P specification",
+      "url": "https://www.lcdwiki.com/res/ES3C28P/ES3C28P_ES3N28P%E4%BA%A7%E5%93%81%E8%A7%84%E6%A0%BC%E4%B9%A6_V1.0.pdf"
+    }
+  ],
+  "tags": [
+    "esp32",
+    "esp32-s3",
+    "es3c28p",
+    "lcdwiki",
+    "qdtech",
+    "tft",
+    "ili9341",
+    "touch",
+    "display",
+    "2.8"
+  ]
 }

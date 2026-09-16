@@ -6,6 +6,772 @@
   "summary": "Single red matrix module. They chain end to end.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Modules are made to chain, so the 32 mm pitch is the number that matters if you are cutting a window for several.",
+  "look": {
+    "colour": "#1d4f91",
+    "components": [
+      {
+        "kind": "box",
+        "x": 0.0,
+        "y": 0.0,
+        "z": 4.6,
+        "w": 32.0,
+        "h": 32.0,
+        "height": 7.0,
+        "finish": "plastic",
+        "colour": "#15171a",
+        "radius": 0.3,
+        "label": "8 x 8 LED matrix"
+      },
+      {
+        "kind": "cylinder",
+        "x": 2.0,
+        "y": 2.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 6.0,
+        "y": 2.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 10.0,
+        "y": 2.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 14.0,
+        "y": 2.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 18.0,
+        "y": 2.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 22.0,
+        "y": 2.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 26.0,
+        "y": 2.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 30.0,
+        "y": 2.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 2.0,
+        "y": 6.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 6.0,
+        "y": 6.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 10.0,
+        "y": 6.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 14.0,
+        "y": 6.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 18.0,
+        "y": 6.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 22.0,
+        "y": 6.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 26.0,
+        "y": 6.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 30.0,
+        "y": 6.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 2.0,
+        "y": 10.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 6.0,
+        "y": 10.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 10.0,
+        "y": 10.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 14.0,
+        "y": 10.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 18.0,
+        "y": 10.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 22.0,
+        "y": 10.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 26.0,
+        "y": 10.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 30.0,
+        "y": 10.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 2.0,
+        "y": 14.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 6.0,
+        "y": 14.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 10.0,
+        "y": 14.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 14.0,
+        "y": 14.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 18.0,
+        "y": 14.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 22.0,
+        "y": 14.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 26.0,
+        "y": 14.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 30.0,
+        "y": 14.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 2.0,
+        "y": 18.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 6.0,
+        "y": 18.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 10.0,
+        "y": 18.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 14.0,
+        "y": 18.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 18.0,
+        "y": 18.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 22.0,
+        "y": 18.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 26.0,
+        "y": 18.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 30.0,
+        "y": 18.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 2.0,
+        "y": 22.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 6.0,
+        "y": 22.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 10.0,
+        "y": 22.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 14.0,
+        "y": 22.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 18.0,
+        "y": 22.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 22.0,
+        "y": 22.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 26.0,
+        "y": 22.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 30.0,
+        "y": 22.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 2.0,
+        "y": 26.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 6.0,
+        "y": 26.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 10.0,
+        "y": 26.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 14.0,
+        "y": 26.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 18.0,
+        "y": 26.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 22.0,
+        "y": 26.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 26.0,
+        "y": 26.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 30.0,
+        "y": 26.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 2.0,
+        "y": 30.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 6.0,
+        "y": 30.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 10.0,
+        "y": 30.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 14.0,
+        "y": 30.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 18.0,
+        "y": 30.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 22.0,
+        "y": 30.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 26.0,
+        "y": 30.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "cylinder",
+        "x": 30.0,
+        "y": 30.0,
+        "z": 11.6,
+        "d": 2.9,
+        "height": 0.04,
+        "finish": "translucent",
+        "colour": "#d8322b",
+        "label": "LED"
+      },
+      {
+        "kind": "box",
+        "x": 1.0,
+        "y": 1.0,
+        "z": 1.6,
+        "w": 30.0,
+        "h": 30.0,
+        "height": 3.0,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "label": "Matrix sockets"
+      },
+      {
+        "kind": "chip",
+        "x": 8.9,
+        "y": 9.6,
+        "w": 14.2,
+        "h": 12.8,
+        "height": 2.5,
+        "legs": "dual",
+        "flip": true,
+        "z": 0,
+        "label": "MAX7219"
+      },
+      {
+        "kind": "header",
+        "x": 1.5,
+        "y": 10.92,
+        "rows": 5,
+        "cols": 1,
+        "height": 8.5,
+        "flip": true,
+        "label": "VCC, GND, DIN, CS, CLK"
+      },
+      {
+        "kind": "header",
+        "x": 30.5,
+        "y": 10.92,
+        "rows": 5,
+        "cols": 1,
+        "height": 8.5,
+        "flip": true,
+        "label": "VCC, GND, DOUT, CS, CLK"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
@@ -13,7 +779,19 @@
       "w": 32,
       "h": 32
     },
-    "thickness": 1.6
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 0.0,
+        "y": 0.0,
+        "w": 32.0,
+        "h": 32.0,
+        "z": 1.6,
+        "height": 10.0,
+        "colour": "#15171a",
+        "label": "LED matrix"
+      }
+    ]
   },
   "mountingHoles": [
     {
@@ -43,6 +821,52 @@
       "y": 29.5,
       "diameter": 3,
       "screw": "M3"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "in",
+      "label": "VCC, GND, DIN, CS, CLK",
+      "x": 1.5,
+      "y": 10.92,
+      "rows": 5,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "VCC",
+        "GND",
+        "DIN",
+        "CS",
+        "CLK"
+      ]
+    },
+    {
+      "id": "out",
+      "label": "VCC, GND, DOUT, CS, CLK",
+      "x": 30.5,
+      "y": 10.92,
+      "rows": 5,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "VCC",
+        "GND",
+        "DOUT",
+        "CS",
+        "CLK"
+      ]
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-pins",
+      "label": "Chip and pins underneath",
+      "x": 0,
+      "y": 0,
+      "w": 32,
+      "h": 32,
+      "z": -8.5,
+      "height": 8.5
     }
   ],
   "tags": [

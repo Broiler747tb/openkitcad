@@ -8,6 +8,39 @@
   "summary": "Bigger brother of the 0.96. Same four wires, more room.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Hole positions in particular differ between makers - check yours against these.",
+  "look": {
+    "colour": "#1d4f91",
+    "components": [
+      {
+        "kind": "screen",
+        "x": 0.5,
+        "y": 4.5,
+        "w": 34.5,
+        "h": 23.0,
+        "height": 1.4,
+        "colour": "#15181c",
+        "active": [
+          3.04,
+          8.8,
+          29.42,
+          14.7
+        ],
+        "backlight": "#0b0d10",
+        "label": "OLED glass"
+      },
+      {
+        "kind": "box",
+        "x": 14.0,
+        "y": 27.5,
+        "w": 7.5,
+        "h": 2.0,
+        "height": 0.3,
+        "finish": "plastic",
+        "colour": "#c9a46a",
+        "label": "Flex cable"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
@@ -15,7 +48,19 @@
       "w": 35.5,
       "h": 33.5
     },
-    "thickness": 1.2
+    "thickness": 1.2,
+    "bumps": [
+      {
+        "x": 0.5,
+        "y": 4.5,
+        "w": 34.5,
+        "h": 23.0,
+        "z": 1.2,
+        "height": 1.4,
+        "colour": "#15181c",
+        "label": "OLED glass"
+      }
+    ]
   },
   "mountingHoles": [
     {
@@ -45,6 +90,23 @@
       "y": 31.3,
       "diameter": 2,
       "screw": "M2"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "pins",
+      "label": "GND, VCC, SCL, SDA",
+      "x": 13.94,
+      "y": 31.3,
+      "rows": 1,
+      "cols": 4,
+      "pitch": 2.54,
+      "pins": [
+        "GND",
+        "VCC",
+        "SCL",
+        "SDA"
+      ]
     }
   ],
   "tags": [

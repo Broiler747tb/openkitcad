@@ -8,6 +8,39 @@
   "summary": "Narrow 128 x 32 strip. Fits where the 0.96 will not.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. This one usually has no mounting holes at all, so it gets glued behind a cutout or held by its header. The glass stands about 2 mm proud of the board.",
+  "look": {
+    "colour": "#1d1f22",
+    "components": [
+      {
+        "kind": "screen",
+        "x": 6.0,
+        "y": 0.25,
+        "w": 30.0,
+        "h": 11.5,
+        "height": 1.4,
+        "colour": "#15181c",
+        "active": [
+          9.81,
+          3.21,
+          22.38,
+          5.58
+        ],
+        "backlight": "#0b0d10",
+        "label": "OLED glass"
+      },
+      {
+        "kind": "box",
+        "x": 3.2,
+        "y": 3.5,
+        "w": 2.8,
+        "h": 5.0,
+        "height": 0.3,
+        "finish": "plastic",
+        "colour": "#c9a46a",
+        "label": "Flex cable"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
@@ -15,8 +48,37 @@
       "w": 38,
       "h": 12
     },
-    "thickness": 1.2
+    "thickness": 1.2,
+    "bumps": [
+      {
+        "x": 6.0,
+        "y": 0.25,
+        "w": 30.0,
+        "h": 11.5,
+        "z": 1.2,
+        "height": 1.4,
+        "colour": "#15181c",
+        "label": "OLED glass"
+      }
+    ]
   },
+  "pinHeaders": [
+    {
+      "id": "pins",
+      "label": "GND, VCC, SCL, SDA",
+      "x": 1.8,
+      "y": 2.19,
+      "rows": 4,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "GND",
+        "VCC",
+        "SCL",
+        "SDA"
+      ]
+    }
+  ],
   "tags": [
     "oled",
     "ssd1306",

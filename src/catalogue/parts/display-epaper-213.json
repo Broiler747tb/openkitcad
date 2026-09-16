@@ -6,6 +6,60 @@
   "summary": "Holds its picture with the power off. Slow to redraw.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. The panel itself is thin and fragile; the driver board behind it is what these figures describe.",
+  "look": {
+    "colour": "#1d1f22",
+    "components": [
+      {
+        "kind": "screen",
+        "x": 8.5,
+        "y": 1.9,
+        "w": 49.5,
+        "h": 25.4,
+        "height": 1.0,
+        "colour": "#d9dad4",
+        "active": [
+          9.2,
+          2.75,
+          48.55,
+          23.71
+        ],
+        "backlight": "#c9cbc4",
+        "label": "E-paper panel"
+      },
+      {
+        "kind": "box",
+        "x": 5.0,
+        "y": 8.6,
+        "w": 3.5,
+        "h": 12.0,
+        "height": 0.3,
+        "finish": "plastic",
+        "colour": "#c9a46a",
+        "label": "Flex cable"
+      },
+      {
+        "kind": "chip",
+        "x": 20.0,
+        "y": 10.0,
+        "w": 3.0,
+        "h": 3.0,
+        "height": 1.0,
+        "flip": true,
+        "z": 0,
+        "label": "Level shifter"
+      },
+      {
+        "kind": "header",
+        "x": 1.6,
+        "y": 5.71,
+        "rows": 8,
+        "cols": 1,
+        "height": 8.5,
+        "flip": true,
+        "label": "SPI header"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
@@ -13,7 +67,19 @@
       "w": 59,
       "h": 29.2
     },
-    "thickness": 1.2
+    "thickness": 1.2,
+    "bumps": [
+      {
+        "x": 8.5,
+        "y": 1.9,
+        "w": 49.5,
+        "h": 25.4,
+        "z": 1.2,
+        "height": 1.0,
+        "colour": "#d9dad4",
+        "label": "E-paper panel"
+      }
+    ]
   },
   "mountingHoles": [
     {
@@ -29,6 +95,39 @@
       "y": 26.2,
       "diameter": 3,
       "screw": "M3"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "spi",
+      "label": "VCC, GND, DIN, CLK, CS, DC, RST, BUSY",
+      "x": 1.6,
+      "y": 5.71,
+      "rows": 8,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "VCC",
+        "GND",
+        "DIN",
+        "CLK",
+        "CS",
+        "DC",
+        "RST",
+        "BUSY"
+      ]
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-pins",
+      "label": "Header pins underneath",
+      "x": 0,
+      "y": 4.4,
+      "w": 3.2,
+      "h": 20.9,
+      "z": -8.5,
+      "height": 8.5
     }
   ],
   "tags": [
