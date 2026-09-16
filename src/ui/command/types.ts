@@ -1,3 +1,4 @@
+import type { Vec3 } from '../../core/math'
 import type { ElementRef, Feature, LengthUnit, OkcDocument, PlaneRef } from '../../doc/types'
 
 export type PickKind =
@@ -26,6 +27,8 @@ export interface SelectionPick {
   face?: ElementRef
   edge?: ElementRef
   plane?: PlaneRef
+  point?: Vec3
+  normal?: Vec3
 }
 
 export type CommandValue = SelectionPick[] | number | string | boolean
@@ -46,6 +49,7 @@ export interface SelectionInput<Id extends string = string> extends InputBase<Id
   max?: number
   clearable?: boolean
   prompt?: string
+  fills?: (pick: SelectionPick) => Readonly<Record<string, number | string | boolean>>
 }
 
 export interface LengthInput<Id extends string = string> extends InputBase<Id> {

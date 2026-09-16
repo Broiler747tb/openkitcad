@@ -1,5 +1,4 @@
 import {
-  activeComponentOf,
   bodyBounds,
   componentInstance,
   newId,
@@ -9,13 +8,11 @@ import {
   type Selection,
 } from '../doc/store'
 import type {
-  Body,
   ElementRef,
   ExtrudeFeature,
   Feature,
   MoveFeature,
   OkcDocument,
-  LidFit,
   SketchFeature,
   VentShape,
 } from '../doc/types'
@@ -34,6 +31,8 @@ import { resizeSketch } from '../sketch/edit'
 import { getPart } from '../catalogue'
 import { ContextMenu } from './ContextMenu'
 import { chooseAction } from './ActionDialog'
+import { startCommand } from './command/commands'
+import { bodyPick, elementPick } from './command/picks'
 
 interface PromptField {
   label: string
@@ -198,14 +197,6 @@ export function objectActions(
         }
       : {}),
   }))
-}
-
-function addPrimitive(name: string, build: (componentId: string, bodyId: string) => Feature) {
-  const store = useStore.getState()
-  const componentId = activeComponentOf(store)
-  const bodyId = newId('body')
-  store.addFeature(build(componentId, bodyId), { [bodyId]: { name } })
-  useStore.getState().select({ kind: 'body', id: bodyId })
 }
 
 export function mountFeature(
@@ -376,198 +367,85 @@ function buildObjectActions(
         },
       })
     }
+    const facePicks = () =>
+      picked
+        ? [
+            elementPick(doc, { bodyId, kind: 'face', name: picked.name }, picked.instanceId, {
+              point: picked.point,
+              normal: picked.normal,
+            }),
+          ].flatMap((pick) => pick ?? [])
+        : []
+    const thisBody = () => [bodyPick(doc, bodyId)].flatMap((pick) => pick ?? [])
     if (picked && onThis) {
-      const hollowOut = (
-        thickness: number,
-        withLid: boolean,
-        clearance = 0,
-        fit: LidFit = 'friction',
-      ) => {
-        const shellId = newId('shell')
-        const features: Feature[] = [
-          {
-            id: shellId,
-            kind: 'shell',
-            name: 'Hollow out',
-            componentId,
-            bodyId,
-            thickness,
-            openFaces: [{ bodyId, kind: 'face', name: picked.name }],
-          },
-        ]
-        const bodies: Record<string, Partial<Body>> = {}
-        if (withLid) {
-          const lidBodyId = newId('body')
-          const lidId = newId('lid')
-          bodies[lidBodyId] = { name: `${body.name} lid` }
-          features.push({
-            id: lidId,
-            kind: 'lid',
-            name: 'Lid',
-            componentId,
-            sourceBodyId: bodyId,
-            shellFeatureId: shellId,
-            thickness,
-            clearance,
-            fit,
-            result: { kind: 'newBody', bodyId: lidBodyId },
-          })
-          if (fit !== 'friction') {
-            features.push({
-              id: newId('seat'),
-              kind: 'lidSocket',
-              name: fit === 'ledge' ? 'Ledge for the lid' : 'Groove for the lid',
-              componentId,
-              bodyId,
-              lidFeatureId: lidId,
-            })
-          }
-        }
-        store.addFeatures(features, bodies)
-      }
-
       out.push({
         id: 'hollow',
         label: 'Hollow it out, opening this face',
-        hint: 'Turns a solid block into a box with walls this thick',
-        prompt: { label: 'Wall', initial: 2, unit: 'mm' },
-        run: (thickness) => hollowOut(thickness, false),
+        hint: 'Shell: turns a solid block into a box with even walls',
+        run: () => startCommand('shell', { faces: facePicks() }),
       })
       out.push({
         id: 'hollow-lid',
         label: 'Hollow it out and make this side a lid',
-        hint: 'Same, plus a cap that drops into the opening',
-        choice: {
-          label: 'How it holds on',
-          initial: 'ledge',
-          options: [
-            {
-              value: 'ledge',
-              label: 'Rests on a ledge',
-              hint: 'A step is cut into the wall so the lid sits on it and cannot fall through. Good default.',
-            },
-            {
-              value: 'snap',
-              label: 'Snaps in',
-              hint: 'The lid gets a thin skirt with a ridge round it that clicks into a groove in the wall. Needs a wall of about 2 mm or more.',
-            },
-            {
-              value: 'friction',
-              label: 'Just drops in',
-              hint: 'Nothing holds it but the fit. Simplest to print, and it lifts straight out.',
-            },
-          ],
-        },
-        prompt: { label: 'Wall', initial: 2, unit: 'mm' },
-        prompt2: { label: 'Gap round the lid', initial: 0.2, unit: 'mm' },
-        run: (thickness, clearance, _third, fit) =>
-          hollowOut(thickness, true, clearance ?? 0.2, (fit as LidFit) ?? 'ledge'),
+        hint: 'Shell with a lid that closes the opening',
+        run: () => startCommand('shell', { faces: facePicks(), lid: true }),
       })
     }
     const pickedEdges = store.subSelection.filter(
       (s) => s.bodyId === bodyId && s.kind === 'edge' && !!s.name,
     )
     if (pickedEdges.length > 0) {
-      const refs: ElementRef[] = pickedEdges.map((s) => ({ bodyId, kind: 'edge', name: s.name }))
+      const edgePicks = () =>
+        pickedEdges.flatMap(
+          (s) =>
+            elementPick(doc, { bodyId, kind: 'edge', name: s.name } as ElementRef, s.instanceId) ??
+            [],
+        )
       const many = pickedEdges.length > 1
       out.push({
         id: 'round-picked',
         label: `Round ${many ? `these ${pickedEdges.length} edges` : 'this edge'}`,
-        hint: 'Only the ones you selected',
-        prompt: { label: 'Radius', initial: 2, unit: 'mm' },
-        run: (radius) =>
-          store.addFeature({
-            id: newId('fillet'),
-            kind: 'fillet',
-            name: many ? `Round ${pickedEdges.length} edges` : 'Round an edge',
-            componentId,
-            bodyId,
-            radius,
-            edges: refs,
-          }),
+        hint: 'Fillet only the ones you selected',
+        run: () => startCommand('fillet', { edges: edgePicks() }),
       })
       out.push({
         id: 'bevel-picked',
         label: `Bevel ${many ? `these ${pickedEdges.length} edges` : 'this edge'}`,
-        prompt: { label: 'Size', initial: 1, unit: 'mm' },
-        run: (distance) =>
-          store.addFeature({
-            id: newId('chamfer'),
-            kind: 'chamfer',
-            name: many ? `Bevel ${pickedEdges.length} edges` : 'Bevel an edge',
-            componentId,
-            bodyId,
-            distance,
-            edges: refs,
-          }),
+        hint: 'Chamfer only the ones you selected',
+        run: () => startCommand('chamfer', { edges: edgePicks() }),
       })
     }
 
     if (picked && onThis) {
-      const ventOn = (shape: VentShape, label: string, hint: string, initial: number) => ({
+      const ventOn = (shape: VentShape, label: string, hint: string) => ({
         id: `vent-${shape}`,
         label,
         hint,
         sub: 'Vent it',
-        prompt: {
-          label: shape === 'gyroid' ? 'Pattern size' : 'Hole size',
-          initial,
-          unit: 'mm',
-        },
-        prompt2: { label: 'Gap between', initial: 2, unit: 'mm' },
-        run: (size: number, spacing?: number) =>
-          store.addFeature({
-            id: newId('vent'),
-            kind: 'vent',
-            name: 'Vent holes',
-            componentId,
-            bodyId,
-            plane: {
-              kind: 'face',
-              face: { bodyId, kind: 'face', name: picked.name },
-              offset: 0,
-            },
-            shape,
-            size,
-            spacing: spacing ?? 2,
-            margin: 3,
-            depth: 'through',
-          }),
+        run: () => startCommand('vent', { face: facePicks(), shape }),
       })
       out.push(
-        ventOn(
-          'hex',
-          'Hexagons',
-          'The classic honeycomb. Webs the same width in every direction',
-          6,
-        ),
+        ventOn('hex', 'Hexagons', 'The classic honeycomb. Webs the same width in every direction'),
       )
-      out.push(ventOn('round', 'Round holes', 'Plain and quiet. Prints cleanly at any size', 4))
-      out.push(ventOn('square', 'Square holes', 'A grille. Reads as deliberate on a flat panel', 4))
-      out.push(ventOn('triangle', 'Triangles', 'Alternating rows, so the webs stay even', 6))
-      out.push(ventOn('diamond', 'Diamonds', 'Squares on their corner. No flat overhang to sag', 6))
+      out.push(ventOn('round', 'Round holes', 'Plain and quiet. Prints cleanly at any size'))
+      out.push(ventOn('square', 'Square holes', 'A grille. Reads as deliberate on a flat panel'))
+      out.push(ventOn('triangle', 'Triangles', 'Alternating rows, so the webs stay even'))
+      out.push(ventOn('diamond', 'Diamonds', 'Squares on their corner. No flat overhang to sag'))
       out.push(
         ventOn(
           'slot',
           'Slots',
           'Louvre bars with rounded ends, which is where a printed panel splits first',
-          12,
         ),
       )
       out.push(
-        ventOn(
-          'cross',
-          'Crosses',
-          'Decorative. Arms a third of the span, so the webs stay even',
-          7,
-        ),
+        ventOn('cross', 'Crosses', 'Decorative. Arms a third of the span, so the webs stay even'),
       )
       out.push(
         ventOn(
           'gyroid',
           'Gyroid weave',
           'One winding channel rather than separate holes. Slower to work out',
-          14,
         ),
       )
     }
@@ -575,33 +453,14 @@ function buildObjectActions(
     out.push({
       id: 'round',
       label: 'Round all the edges',
-      hint: 'Softens every corner at once',
-      prompt: { label: 'Radius', initial: 2, unit: 'mm' },
-      run: (radius) =>
-        store.addFeature({
-          id: newId('fillet'),
-          kind: 'fillet',
-          name: 'Round edges',
-          componentId,
-          bodyId,
-          radius,
-          edges: [],
-        }),
+      hint: 'Fillet every edge at once',
+      run: () => startCommand('fillet', { edges: thisBody() }),
     })
     out.push({
       id: 'bevel',
       label: 'Bevel all the edges',
-      prompt: { label: 'Size', initial: 1, unit: 'mm' },
-      run: (distance) =>
-        store.addFeature({
-          id: newId('chamfer'),
-          kind: 'chamfer',
-          name: 'Bevel edges',
-          componentId,
-          bodyId,
-          distance,
-          edges: [],
-        }),
+      hint: 'Chamfer every edge at once',
+      run: () => startCommand('chamfer', { edges: thisBody() }),
     })
     out.push({
       id: 'sketch-on-top',
@@ -614,20 +473,10 @@ function buildObjectActions(
     })
     for (const other of component.bodies.filter((candidate) => candidate.id !== bodyId)) {
       const combine = (operation: 'join' | 'cut' | 'intersect') => () =>
-        store.addFeature({
-          id: newId('combine'),
-          kind: 'combine',
-          name:
-            operation === 'join'
-              ? `Join with ${other.name}`
-              : operation === 'cut'
-                ? `Cut away ${other.name}`
-                : `Overlap with ${other.name}`,
-          componentId,
-          bodyId,
-          toolBodyIds: [other.id],
+        startCommand('combine', {
+          target: thisBody(),
+          tools: [bodyPick(doc, other.id)].flatMap((pick) => pick ?? []),
           operation,
-          keepTools: false,
         })
       out.push({
         id: `join-${other.id}`,
@@ -672,40 +521,32 @@ function buildObjectActions(
     out.push({
       id: 'cut-ball',
       label: 'Cut a ball-shaped hollow',
-      hint: 'Scoops a sphere out of the part, centred where you clicked',
-      prompt: { label: 'Diameter', initial: 20, unit: 'mm' },
-      run: (diameter) =>
-        store.addFeature({
-          id: newId('sphere'),
-          kind: 'sphere',
-          name: 'Ball hollow',
-          componentId,
-          plane: { kind: 'named', name: 'XY', offset: 0 },
-          centre: picked ? [picked.point[0], picked.point[1]] : [0, 0],
-          radius: diameter / 2,
-          half: false,
-          result: { kind: 'cut', bodyIds: [bodyId] },
+      hint: 'Sphere cut into the part, centred where you clicked',
+      run: () =>
+        startCommand('sphere', {
+          operation: 'cut',
+          bodies: thisBody(),
+          ...(picked ? { x: picked.point[0], y: picked.point[1] } : {}),
         }),
     })
     out.push({
       id: 'cut-box',
       label: 'Cut a square hollow',
-      prompt: { label: 'Across', initial: 20, unit: 'mm' },
-      prompt2: { label: 'Deep', initial: 10, unit: 'mm' },
-      run: (across, deep) =>
-        store.addFeature({
-          id: newId('box'),
-          kind: 'box',
-          name: 'Square hollow',
-          componentId,
-          plane: { kind: 'named', name: 'XY', offset: topOf() },
-          origin: picked
-            ? [picked.point[0] - across / 2, picked.point[1] - across / 2]
-            : [-across / 2, -across / 2],
-          width: across,
-          depth: across,
-          height: -(deep ?? 10),
-          result: { kind: 'cut', bodyIds: [bodyId] },
+      hint: 'Box cut down into the part from its top',
+      run: () =>
+        startCommand('box', {
+          operation: 'cut',
+          bodies: thisBody(),
+          plane: [
+            {
+              kind: 'plane',
+              id: 'top',
+              label: 'Top of the part',
+              plane: { kind: 'named', name: 'XY', offset: topOf() },
+            },
+          ],
+          height: -10,
+          ...(picked ? { x: picked.point[0] - 10, y: picked.point[1] - 10 } : {}),
         }),
     })
 
@@ -753,81 +594,27 @@ function buildObjectActions(
     })
     out.push({
       id: 'add-box',
-      label: 'Add a box',
-      hint: 'A plain rectangular block, no sketching needed',
-      prompt: { label: 'Width', initial: 40, unit: 'mm', min: 0.01 },
-      prompt2: { label: 'Depth', initial: 30, unit: 'mm', min: 0.01 },
-      prompt3: { label: 'Height', initial: 20, unit: 'mm', min: 0.01 },
-      run: (across, depth = 30, tall = 20) => {
-        addPrimitive('Box', (componentId, bodyId) => ({
-          id: newId('box'),
-          kind: 'box',
-          name: 'Box',
-          componentId,
-          plane: { kind: 'named', name: 'XY', offset: 0 },
-          origin: [-across / 2, -depth / 2],
-          width: across,
-          depth,
-          height: tall ?? 20,
-          result: { kind: 'newBody', bodyId },
-        }))
-      },
+      label: 'Box',
+      hint: 'A rectangular block, no sketching needed',
+      run: () => startCommand('box'),
     })
     out.push({
       id: 'add-cylinder',
-      label: 'Add a cylinder',
-      prompt: { label: 'Diameter', initial: 30, unit: 'mm', min: 0.01 },
-      prompt2: { label: 'Height', initial: 20, unit: 'mm', min: 0.01 },
-      run: (diameter, tall) => {
-        addPrimitive('Cylinder', (componentId, bodyId) => ({
-          id: newId('cyl'),
-          kind: 'cylinder',
-          name: 'Cylinder',
-          componentId,
-          plane: { kind: 'named', name: 'XY', offset: 0 },
-          centre: [0, 0],
-          radius: diameter / 2,
-          height: tall ?? 20,
-          result: { kind: 'newBody', bodyId },
-        }))
-      },
+      label: 'Cylinder',
+      hint: 'A round post',
+      run: () => startCommand('cylinder'),
     })
     out.push({
       id: 'add-sphere',
-      label: 'Add a ball',
-      prompt: { label: 'Diameter', initial: 30, unit: 'mm', min: 0.01 },
-      run: (diameter) => {
-        addPrimitive('Ball', (componentId, bodyId) => ({
-          id: newId('sphere'),
-          kind: 'sphere',
-          name: 'Ball',
-          componentId,
-          plane: { kind: 'named', name: 'XY', offset: 0 },
-          centre: [0, 0],
-          radius: diameter / 2,
-          half: false,
-          result: { kind: 'newBody', bodyId },
-        }))
-      },
+      label: 'Sphere',
+      hint: 'A ball',
+      run: () => startCommand('sphere'),
     })
     out.push({
       id: 'add-dome',
-      label: 'Add a dome',
-      hint: 'Half a ball, flat side down',
-      prompt: { label: 'Diameter', initial: 30, unit: 'mm', min: 0.01 },
-      run: (diameter) => {
-        addPrimitive('Dome', (componentId, bodyId) => ({
-          id: newId('sphere'),
-          kind: 'sphere',
-          name: 'Dome',
-          componentId,
-          plane: { kind: 'named', name: 'XY', offset: 0 },
-          centre: [0, 0],
-          radius: diameter / 2,
-          half: true,
-          result: { kind: 'newBody', bodyId },
-        }))
-      },
+      label: 'Dome',
+      hint: 'Half a sphere, flat side down',
+      run: () => startCommand('sphere', { half: true }),
     })
     out.push({
       id: 'sketch-tilted',

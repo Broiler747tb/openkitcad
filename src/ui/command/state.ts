@@ -190,9 +190,34 @@ function addPick(
   else if (input.max === 1) picks = [pick]
   else if (input.max !== undefined && current.length >= input.max) return state
   else picks = [...current, pick]
-  const next: CommandState = { ...withField(state, id, { kind: 'selection', picks }), active: id }
+  let next: CommandState = { ...withField(state, id, { kind: 'selection', picks }), active: id }
+  if (!existing && input.fills) next = applyFills(spec, next, input.fills(pick), units)
   if (!existing && input.max !== undefined && picks.length >= input.max) {
     next.active = nextOpenSelection(spec, next, id, units) ?? id
+  }
+  return next
+}
+
+function applyFills(
+  spec: AnyCommandSpec,
+  state: CommandState,
+  fills: Readonly<Record<string, number | string | boolean>>,
+  units: UnitContext,
+): CommandState {
+  let next = state
+  for (const [id, value] of Object.entries(fills)) {
+    const input = findInput(spec, id)
+    if (!input) continue
+    if (
+      (input.kind === 'length' || input.kind === 'angle' || input.kind === 'integer') &&
+      typeof value === 'number'
+    ) {
+      next = withField(next, id, { kind: input.kind, text: formatNumeric(input, value, units) })
+    } else if (input.kind === 'choice' && typeof value === 'string') {
+      next = withField(next, id, { kind: 'choice', value })
+    } else if (input.kind === 'toggle' && typeof value === 'boolean') {
+      next = withField(next, id, { kind: 'toggle', value })
+    }
   }
   return next
 }

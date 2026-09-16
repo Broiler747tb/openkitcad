@@ -28,6 +28,12 @@ const labels: Record<string, string> = {
   hole: 'Hole',
   appearance: 'Appearance',
   hollow: 'Shell',
+  shell: 'Shell',
+  combine: 'Combine',
+  vent: 'Vent',
+  box: 'Box',
+  cylinder: 'Cylinder',
+  sphere: 'Sphere',
   offset: 'Offset',
   construction: 'Construction',
   trim: 'Trim',
@@ -416,7 +422,9 @@ export function Toolbar({
                 cmd('extrude'),
                 cmd('revolve'),
                 cmd('hole'),
-                ...creations.filter((a) => a.id.startsWith('add-')),
+                cmd('box'),
+                cmd('cylinder'),
+                cmd('sphere'),
               ],
               <>
                 {tool('Extrude', '⇧', () => invoke('extrude'), 'E')}
@@ -426,7 +434,12 @@ export function Toolbar({
             )}
             {group(
               'MODIFY',
-              [...['fillet', 'chamfer', 'hollow', 'move', 'appearance'].map(cmd), ...selected],
+              [
+                ...['fillet', 'chamfer', 'hollow', 'combine', 'vent', 'move', 'appearance'].map(
+                  cmd,
+                ),
+                ...selected,
+              ],
               <>
                 {tool('Fillet', '◜', () => invoke('fillet'), 'F')}
                 {tool('Move', '✥', () => invoke('move'), 'M')}

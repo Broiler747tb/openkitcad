@@ -1,5 +1,7 @@
 import { findBody, findFeature } from '../../doc/model'
-import type { ElementRef, OkcDocument } from '../../doc/types'
+import type { Vec3 } from '../../core/math'
+import { planeLabel } from '../../doc/planes'
+import type { ElementRef, OkcDocument, PlaneRef } from '../../doc/types'
 import { visibleSelections } from './state'
 import { useCommand } from './session'
 import type { SelectionPick } from './types'
@@ -24,6 +26,7 @@ export function elementPick(
   doc: OkcDocument,
   ref: ElementRef,
   instanceId?: string,
+  at?: { point: Vec3; normal: Vec3 },
 ): SelectionPick | null {
   if (ref.kind === 'vertex' || !ref.name) return null
   const body = findBody(doc, ref.bodyId)?.body.name ?? 'body'
@@ -35,6 +38,17 @@ export function elementPick(
     name: ref.name,
     label: `${ref.kind === 'face' ? 'Face' : 'Edge'} of ${body}`,
     ...(ref.kind === 'face' ? { face: ref } : { edge: ref }),
+    ...at,
+  }
+}
+
+export function planePick(doc: OkcDocument, plane: PlaneRef): SelectionPick | null {
+  if (plane.kind === 'face') return elementPick(doc, plane.face)
+  return {
+    kind: 'plane',
+    id: JSON.stringify(plane),
+    label: planeLabel(plane, doc.units),
+    plane,
   }
 }
 

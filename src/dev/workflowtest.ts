@@ -3,6 +3,29 @@ import { emptyDocument } from '../doc/types'
 import { allBodies, findBody } from '../doc/model'
 import { objectActions } from '../ui/ObjectMenu'
 import { createSketchAction, resolveCommand, toggleVisibility } from '../ui/fusionCommands'
+import { startCommand } from '../ui/command/commands'
+import { useCommand } from '../ui/command/session'
+import { evaluateCommand } from '../ui/command/state'
+
+function evaluateSession() {
+  const session = useCommand.getState().session
+  return session
+    ? evaluateCommand(session.spec, session.state, session.context, { build: true })
+    : null
+}
+
+function typeInto(values: Record<string, string>) {
+  for (const [id, text] of Object.entries(values)) {
+    useCommand.getState().dispatch({ type: 'text', id, text })
+  }
+}
+
+function commitSession(): boolean {
+  const evaluation = evaluateSession()
+  if (!evaluation?.valid || !evaluation.features) return false
+  useCommand.getState().commit(evaluation.features)
+  return true
+}
 
 export function runWorkflowTest() {
   const saved = useStore.getState()
@@ -28,27 +51,46 @@ export function runWorkflowTest() {
       meshes: new Map(),
       instances: [],
     })
-    check('Fillet waits for selection', resolveCommand('fillet') === null)
+    startCommand('fillet')
+    check(
+      'Fillet opens and waits for edges without touching history',
+      useCommand.getState().session?.state.active === 'edges' &&
+        evaluateSession()?.missing.includes('edges') === true &&
+        useStore.getState().past.length === 0,
+    )
+    useCommand.getState().cancel()
+
     objectActions({ kind: 'none' })
       .find((a) => a.id === 'add-box')!
-      .run(40, 30, 20)
+      .run(0)
+    check('Add a box opens the Box command', useCommand.getState().session?.spec.id === 'box')
+    typeInto({ length: '40', width: '30', height: '20' })
+    const committed = commitSession()
     const s = useStore.getState()
     const body = allBodies(s.doc)[0]?.body
     check(
       'primitive is one undo step',
-      s.past.length === 1 && s.doc.timeline.length === 1 && !!body,
+      committed && s.past.length === 1 && s.doc.timeline.length === 1 && !!body,
     )
+    check('the command closes once it is committed', useCommand.getState().session === null)
     if (!body) return results
+
     useStore.getState().select({ kind: 'body', id: body.id })
-    const move = resolveCommand('move')
+    startCommand('move')
+    const moving = useCommand.getState().session
+    const picked = moving?.state.fields.bodies
     check(
-      'opening Move does not mutate history',
-      useStore.getState().past.length === 1 && !!move?.prompt3,
+      'opening Move picks the selected body and does not touch history',
+      useStore.getState().past.length === 1 &&
+        picked?.kind === 'selection' &&
+        picked.picks[0]?.id === body.id,
     )
-    if (!move) return results
-    move.run(0, 0, 0)
-    check('zero move is not a modelling step', useStore.getState().past.length === 1)
-    move.run(5, 10, 15)
+    check(
+      'a zero move cannot be committed',
+      !commitSession() && useStore.getState().past.length === 1,
+    )
+    typeInto({ dx: '5', dy: '10', dz: '15' })
+    commitSession()
     const feature = useStore.getState().doc.timeline[1]
     check(
       'Move stores all three distances',
@@ -79,8 +121,13 @@ export function runWorkflowTest() {
       useStore.getState().activeSketch === null &&
         useStore.getState().selection.id === active?.featureId,
     )
-    check('empty sketch cannot be extruded', resolveCommand('extrude') === null)
+    startCommand('extrude')
+    check(
+      'empty sketch cannot be extruded',
+      evaluateSession()?.fieldErrors.profile !== undefined && !commitSession(),
+    )
   } finally {
+    useCommand.getState().cancel()
     useStore.setState(saved, true)
   }
   return results

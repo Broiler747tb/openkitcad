@@ -1,7 +1,9 @@
 import { replaceFeatureInDocument } from '../doc/store'
 import { emptyDocument, type ExtrudeFeature, type Feature, type OkcDocument } from '../doc/types'
 import { emptySketch } from '../sketch/types'
-import { extrudeCommand } from '../ui/command/commands'
+import { filletCommand, shellCommand } from '../ui/command/specs/modify'
+import { holeCommand } from '../ui/command/specs/placed'
+import { extrudeCommand } from '../ui/command/specs/sketchBased'
 import { createCommandState, evaluateCommand, reduceCommand } from '../ui/command/state'
 import type { AnyCommandSpec, CommandContext } from '../ui/command/types'
 import { formatLength, parseAngle, parseLength } from '../ui/command/units'
@@ -178,6 +180,65 @@ export function runCommandTest(): TestResult[] {
     'a replaced step keeps links only for fields it still has',
     history.bindings.map((link) => link.field).join() === 'distance',
     history.bindings.map((link) => link.field).join(),
+  )
+
+  const boxed = squareSketchDoc()
+  const top = { bodyId: 'b1', kind: 'face' as const, name: 'bx:+z' }
+  const shell = shellCommand as unknown as AnyCommandSpec
+  const shellState = createCommandState(shell, contextFor(boxed), {
+    faces: [{ kind: 'face', id: 'b1|bx:+z', bodyId: 'b1', face: top, label: 'Face' }],
+    lid: true,
+    fit: 'snap',
+  })
+  const hollowed = evaluateCommand(shell, shellState, contextFor(boxed), { build: true })
+  check(
+    'a shell with a snap lid adds the lid and the groove it snaps into',
+    hollowed.features?.map((feature) => feature.kind).join() === 'shell,lid,lidSocket',
+    hollowed.features?.map((feature) => feature.kind).join() ?? JSON.stringify(hollowed),
+  )
+
+  const fillet = filletCommand as unknown as AnyCommandSpec
+  const whole = evaluateCommand(
+    fillet,
+    createCommandState(fillet, contextFor(boxed), {
+      edges: [{ kind: 'body', id: 'b1', bodyId: 'b1', label: 'Plate' }],
+    }),
+    contextFor(boxed),
+    { build: true },
+  )
+  const rounded = whole.features?.[0]
+  check(
+    'filleting a whole body rounds every edge',
+    rounded?.kind === 'fillet' && rounded.bodyId === 'b1' && rounded.edges.length === 0,
+    JSON.stringify(rounded),
+  )
+
+  const hole = holeCommand as unknown as AnyCommandSpec
+  const drilled = reduceCommand(
+    hole,
+    createCommandState(hole, contextFor(boxed)),
+    {
+      type: 'pick',
+      pick: {
+        kind: 'face',
+        id: 'b1|bx:+z',
+        bodyId: 'b1',
+        face: top,
+        label: 'Face',
+        point: [12, 7, 20],
+        normal: [0, 0, 1],
+      },
+    },
+    contextFor(boxed),
+  )
+  const placed = evaluateCommand(hole, drilled, contextFor(boxed), { build: true }).features?.[0]
+  check(
+    'picking a face for a hole puts the hole where it was clicked',
+    placed?.kind === 'hole' &&
+      placed.source.kind === 'explicit' &&
+      placed.source.positions[0].join() === '12,7' &&
+      placed.plane.kind === 'face',
+    JSON.stringify(placed),
   )
 
   return results
