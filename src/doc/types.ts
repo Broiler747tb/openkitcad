@@ -84,6 +84,7 @@ export interface SketchFeature extends FeatureBase {
 }
 
 export interface ExtrudeFeature extends FeatureBase {
+  surface?: boolean
   kind: 'extrude'
   sketchId: string
   profiles?: string[]
@@ -95,6 +96,7 @@ export interface ExtrudeFeature extends FeatureBase {
 }
 
 export interface RevolveFeature extends FeatureBase {
+  surface?: boolean
   kind: 'revolve'
   sketchId: string
   profiles?: string[]
@@ -239,6 +241,128 @@ export interface MoveFeature extends FeatureBase {
   bodyIds: string[]
   offset: Vec3
   rotation: Vec3
+}
+
+export interface LoftSection {
+  sketchId: string
+  profiles?: string[]
+}
+
+export interface LoftFeature extends FeatureBase {
+  kind: 'loft'
+  sections: LoftSection[]
+  ruled: boolean
+  surface: boolean
+  result: BodyOperation
+}
+
+export interface SweepFeature extends FeatureBase {
+  kind: 'sweep'
+  sketchId: string
+  profiles?: string[]
+  pathSketchId: string
+  surface: boolean
+  result: BodyOperation
+}
+
+export type CoilSection = 'circular' | 'square' | 'triangleOutside' | 'triangleInside'
+
+export interface CoilFeature extends FeatureBase {
+  kind: 'coil'
+  plane: PlaneRef
+  centre: Vec2
+  diameter: number
+  revolutions: number
+  height: number
+  section: CoilSection
+  sectionSize: number
+  clockwise: boolean
+  result: BodyOperation
+}
+
+export interface PipeFeature extends FeatureBase {
+  kind: 'pipe'
+  pathSketchId: string
+  section: 'circular' | 'square' | 'triangular'
+  size: number
+  hollow: boolean
+  thickness: number
+  result: BodyOperation
+}
+
+export interface ThickenFeature extends FeatureBase {
+  kind: 'thicken'
+  sourceBodyId: string
+  thickness: number
+  symmetric: boolean
+  result: BodyOperation
+}
+
+export interface PatchFeature extends FeatureBase {
+  kind: 'patch'
+  sketchId: string
+  profiles?: string[]
+  bodyId: string
+}
+
+export interface BodyPatternFeature extends FeatureBase {
+  kind: 'bodyPattern'
+  bodyIds: string[]
+  pattern: 'rectangular' | 'circular'
+  axisOne: 'x' | 'y' | 'z'
+  countOne: number
+  spacingOne: number
+  axisTwo: 'x' | 'y' | 'z'
+  countTwo: number
+  spacingTwo: number
+  axis: 'x' | 'y' | 'z'
+  count: number
+  angle: number
+  newBodyIds: string[]
+}
+
+export interface MirrorFeature extends FeatureBase {
+  kind: 'mirror'
+  bodyIds: string[]
+  plane: PlaneRef
+  newBodyIds: string[]
+}
+
+export interface SplitBodyFeature extends FeatureBase {
+  kind: 'splitBody'
+  bodyId: string
+  plane: PlaneRef
+  newBodyId: string
+}
+
+export interface ScaleFeature extends FeatureBase {
+  kind: 'scale'
+  bodyIds: string[]
+  factor: number
+}
+
+export interface StitchFeature extends FeatureBase {
+  kind: 'stitch'
+  bodyIds: string[]
+  tolerance: number
+}
+
+export interface UnstitchFeature extends FeatureBase {
+  kind: 'unstitch'
+  bodyId: string
+  newBodyIds: string[]
+}
+
+export interface SurfaceOffsetFeature extends FeatureBase {
+  kind: 'surfaceOffset'
+  sourceBodyId: string
+  distance: number
+  bodyId: string
+}
+
+export interface ReverseNormalFeature extends FeatureBase {
+  kind: 'reverseNormal'
+  bodyIds: string[]
 }
 
 export type MeshRefinement = 'coarse' | 'medium' | 'high'
@@ -425,6 +549,20 @@ export type Feature =
   | MeshSeparateFeature
   | MeshCombineFeature
   | MeshConvertFeature
+  | LoftFeature
+  | SweepFeature
+  | CoilFeature
+  | PipeFeature
+  | ThickenFeature
+  | PatchFeature
+  | BodyPatternFeature
+  | MirrorFeature
+  | SplitBodyFeature
+  | ScaleFeature
+  | StitchFeature
+  | UnstitchFeature
+  | SurfaceOffsetFeature
+  | ReverseNormalFeature
 
 export type FeatureKind = Feature['kind']
 
@@ -535,6 +673,20 @@ export const FEATURE_LABEL: Record<FeatureKind, string> = {
   meshSeparate: 'Separate',
   meshCombine: 'Combine Meshes',
   meshConvert: 'Convert Mesh',
+  loft: 'Loft',
+  sweep: 'Sweep',
+  coil: 'Coil',
+  pipe: 'Pipe',
+  thicken: 'Thicken',
+  patch: 'Patch',
+  bodyPattern: 'Pattern',
+  mirror: 'Mirror',
+  splitBody: 'Split Body',
+  scale: 'Scale',
+  stitch: 'Stitch',
+  unstitch: 'Unstitch',
+  surfaceOffset: 'Offset Surface',
+  reverseNormal: 'Reverse Normal',
 }
 
 export const FEATURE_HINT: Record<FeatureKind, string> = {
@@ -571,6 +723,20 @@ export const FEATURE_HINT: Record<FeatureKind, string> = {
   meshSeparate: 'Splits a mesh into one body per loose piece.',
   meshCombine: 'Merges meshes into one mesh body.',
   meshConvert: 'Turns a mesh into a solid body made of flat faces.',
+  loft: 'A shape that blends from one profile to the next.',
+  sweep: 'A profile carried along a path.',
+  coil: 'A spring or thread-like helix.',
+  pipe: 'A round, square or triangular tube along a path.',
+  thicken: 'Gives a surface a thickness so it becomes a solid.',
+  patch: 'A surface filling a closed outline.',
+  bodyPattern: 'Copies of bodies in rows, columns or around an axis.',
+  mirror: 'A mirror image of bodies across a plane.',
+  splitBody: 'Cuts a body in two along a plane.',
+  scale: 'Makes bodies bigger or smaller.',
+  stitch: 'Joins surfaces along their edges, closing them into a solid when they meet all round.',
+  unstitch: 'Breaks a body into one surface per face.',
+  surfaceOffset: 'A copy of a surface moved a set distance along its normal.',
+  reverseNormal: 'Turns a surface inside out.',
 }
 
 export const FEATURE_ICON: Record<FeatureKind, string> = {
@@ -607,4 +773,18 @@ export const FEATURE_ICON: Record<FeatureKind, string> = {
   meshSeparate: '⧉',
   meshCombine: '⊞',
   meshConvert: '⬢',
+  loft: '◭',
+  sweep: '⤳',
+  coil: '➰',
+  pipe: '◯',
+  thicken: '▰',
+  patch: '▭',
+  bodyPattern: '⁂',
+  mirror: '⧓',
+  splitBody: '⊘',
+  scale: '⤢',
+  stitch: '⧢',
+  unstitch: '⧣',
+  surfaceOffset: '⧈',
+  reverseNormal: '⇵',
 }

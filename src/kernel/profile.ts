@@ -12,6 +12,7 @@ import {
 import { selectProfiles, type ProfileLoop, type RegionRing } from '../sketch/regions'
 import type { Sketch2D, SketchEntity } from '../sketch/types'
 import type { PieceSample } from './naming/profileMatch'
+import type { SketchChain } from '../sketch/chains'
 
 export type ProfilePiece = PieceSample
 
@@ -202,6 +203,20 @@ function ringBlueprint(
       Math.abs(piece.to - piece.from) >= 1 - 1e-9
     curves.push(pieceCurve(oc, entity, pts, piece.from, piece.to, full, start, end))
     pieces.push({ entityId: piece.entityId, token: piece.token, start, end })
+  })
+  return new Blueprint(curves)
+}
+
+export function chainBlueprint(sketch: Sketch2D, chain: SketchChain): Blueprint {
+  const oc = getOC() as OcAny
+  const pts = pointLookup(sketch)
+  const byId = new Map(sketch.entities.map((entity) => [entity.id, entity]))
+  const curves = chain.pieces.map((piece) => {
+    const entity = byId.get(piece.entityId)!
+    const curve = curveOf(entity, pts)!
+    const from = piece.reversed ? 1 : 0
+    const to = piece.reversed ? 0 : 1
+    return pieceCurve(oc, entity, pts, from, to, curve.closed, curve.at(from), curve.at(to))
   })
   return new Blueprint(curves)
 }

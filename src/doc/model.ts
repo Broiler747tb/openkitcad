@@ -74,7 +74,15 @@ export function featureCreatesBodies(feature: Feature): string[] {
     case 'meshPlaneCut':
       return feature.keep === 'both' ? [feature.newBodyId] : []
     case 'meshSeparate':
+    case 'bodyPattern':
+    case 'mirror':
+    case 'unstitch':
       return feature.newBodyIds
+    case 'patch':
+    case 'surfaceOffset':
+      return [feature.bodyId]
+    case 'splitBody':
+      return [feature.newBodyId]
   }
   const operation = operationOf(feature)
   return operation?.kind === 'newBody' ? [operation.bodyId] : []
@@ -93,7 +101,14 @@ export function featureModifiesBodies(feature: Feature): string[] {
       return [feature.bodyId]
     case 'move':
     case 'meshReverse':
+    case 'scale':
+    case 'reverseNormal':
       return feature.bodyIds
+    case 'stitch':
+      return feature.bodyIds.slice(0, 1)
+    case 'splitBody':
+    case 'unstitch':
+      return [feature.bodyId]
     case 'meshRepair':
     case 'meshReduce':
     case 'meshRemesh':
@@ -123,6 +138,11 @@ export function featureReadsBodies(feature: Feature): string[] {
     bodies.push(feature.sourceBodyId)
   }
   if (feature.kind === 'meshCombine') bodies.push(...feature.toolBodyIds)
+  if (feature.kind === 'thicken' || feature.kind === 'surfaceOffset') {
+    bodies.push(feature.sourceBodyId)
+  }
+  if (feature.kind === 'bodyPattern' || feature.kind === 'mirror') bodies.push(...feature.bodyIds)
+  if (feature.kind === 'stitch') bodies.push(...feature.bodyIds.slice(1))
   if (feature.kind === 'combine') bodies.push(...feature.toolBodyIds)
   if (feature.kind === 'lid') bodies.push(feature.sourceBodyId)
   return bodies
@@ -135,6 +155,14 @@ export function bodyCreator(doc: OkcDocument, bodyId: string): Feature | undefin
 export function featureDependencies(doc: OkcDocument, feature: Feature): string[] {
   const dependencies = new Set<string>()
   if (feature.kind === 'extrude' || feature.kind === 'revolve') dependencies.add(feature.sketchId)
+  if (feature.kind === 'loft')
+    for (const section of feature.sections) dependencies.add(section.sketchId)
+  if (feature.kind === 'sweep') {
+    dependencies.add(feature.sketchId)
+    dependencies.add(feature.pathSketchId)
+  }
+  if (feature.kind === 'pipe') dependencies.add(feature.pathSketchId)
+  if (feature.kind === 'patch') dependencies.add(feature.sketchId)
   if (feature.kind === 'lid') dependencies.add(feature.shellFeatureId)
   if (feature.kind === 'lidSocket') dependencies.add(feature.lidFeatureId)
   if (feature.kind === 'motionLink') {

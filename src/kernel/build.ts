@@ -77,6 +77,9 @@ import {
   type MeshBodyState,
 } from './meshSteps'
 import { meshBounds, transformMesh, triangleCount, type TriMesh } from '../mesh/types'
+import { runSolidStep } from './solidSteps'
+import { sketchChains } from '../sketch/chains'
+import { chainBlueprint } from './profile'
 
 export const CUT_MARGIN = 0.5
 const THROUGH_LENGTH = 1000
@@ -183,7 +186,7 @@ function sketchOn(drawing: Drawing, frame: Frame, offset = 0): any {
   return drawing.sketchOnPlane(toReplicadPlane(frame, offset)) as any
 }
 
-function profileFace(drawing: Drawing, frame: Frame): any {
+export function profileFace(drawing: Drawing, frame: Frame): any {
   const sketch = sketchOn(drawing, frame)
   return typeof sketch.face === 'function' ? sketch.face() : sketch.faces()
 }
@@ -1043,6 +1046,32 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
   }
 
   if (
+    runSolidStep(feature, {
+      bodies: stage.bodies,
+      report: stage.report,
+      bodyName,
+      need,
+      set,
+      apply,
+      planeOf,
+      sketch: (id) => {
+        const sketchFeature = stage.sketches.get(id)
+        if (!sketchFeature) return null
+        return {
+          feature: sketchFeature,
+          frame:
+            stage.planes.get(sketchFeature.id) ??
+            frameFromPlaneRef(sketchFeature.plane, stage.bodies),
+        }
+      },
+      toPlane: (frame) => toReplicadPlane(frame),
+      profileFace,
+    })
+  ) {
+    return
+  }
+
+  if (
     runMeshStep(feature, key, {
       meshBodies: stage.meshBodies,
       report: stage.report,
@@ -1112,6 +1141,70 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
           'The sketch this was built from is missing.',
           'It may have been deleted, suppressed or rolled back. Delete this step or point it at another sketch.',
         )
+        return
+      }
+      if (feature.surface) {
+        if (feature.result.kind !== 'newBody') {
+          stage.report('error', 'A surface is always a new body.', 'Set the operation to New Body.')
+          return
+        }
+        const chains = sketchChains(sketchFeature.sketch)
+        if (!chains.length) {
+          stage.report(
+            'error',
+            'The sketch has no curves to make a surface from.',
+            'Draw lines, arcs or splines in the sketch first.',
+          )
+          return
+        }
+        const plane =
+          stage.planes.get(sketchFeature.id) ?? frameFromPlaneRef(sketchFeature.plane, stage.bodies)
+        const ocAny = oc as any
+        const assembler = new ocAny.TopoDS_Builder()
+        const compound = new ocAny.TopoDS_Compound()
+        assembler.MakeCompound(compound)
+        const owned: Array<{ delete(): void }> = [assembler]
+        try {
+          for (const chain of chains) {
+            const wire = (
+              chainBlueprint(sketchFeature.sketch, chain).sketchOnPlane(
+                toReplicadPlane(plane),
+              ) as any
+            ).wire
+            if (feature.kind === 'extrude') {
+              const distance = feature.reverse ? -feature.distance : feature.distance
+              const start = feature.symmetric ? -Math.abs(distance) / 2 : 0
+              const length = feature.symmetric ? Math.abs(distance) : distance
+              const shifted = start ? wire.translate(v3.scale(plane.normal, start)) : wire
+              const vector = new ocAny.gp_Vec_4(...v3.scale(plane.normal, length))
+              const prism = new ocAny.BRepPrimAPI_MakePrism_1(shifted.wrapped, vector, false, true)
+              owned.push(vector, prism)
+              assembler.Add(compound, prism.Shape())
+            } else {
+              const axisDirection = feature.axis === 'x' ? plane.xDir : plane.yDir
+              const axis = new ocAny.gp_Ax1_2(
+                new ocAny.gp_Pnt_3(...plane.origin),
+                new ocAny.gp_Dir_4(...axisDirection),
+              )
+              const angle = feature.angle > 0 && feature.angle < 360 ? feature.angle : 360
+              const revolution = new ocAny.BRepPrimAPI_MakeRevol_1(
+                wire.wrapped,
+                axis,
+                (angle * Math.PI) / 180,
+                false,
+              )
+              owned.push(axis, revolution)
+              assembler.Add(compound, revolution.Shape())
+            }
+          }
+          set(
+            feature.result.bodyId,
+            nameShape(oc, feature.id, downcast(compound) as unknown as OcShape),
+          )
+        } finally {
+          for (const item of owned.reverse()) item.delete()
+          compound.delete()
+        }
         return
       }
       const profile = sketchToProfile(sketchFeature.sketch, feature.profiles)

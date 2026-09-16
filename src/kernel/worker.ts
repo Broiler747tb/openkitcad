@@ -344,7 +344,21 @@ function tessellate(
   } catch {
     volume = 0
   }
-  return { mesh, edges, volume, bounds: boundsOf(shape) }
+  const oc = getOC() as any
+  const explorer = new oc.TopExp_Explorer_2(
+    shape.wrapped,
+    oc.TopAbs_ShapeEnum.TopAbs_SOLID,
+    oc.TopAbs_ShapeEnum.TopAbs_SHAPE,
+  )
+  const solid = explorer.More()
+  explorer.delete()
+  return {
+    mesh,
+    edges,
+    volume: solid ? volume : 0,
+    bounds: boundsOf(shape),
+    kind: solid ? 'solid' : 'surface',
+  }
 }
 
 function boundsOf(shape: any): Bounds {

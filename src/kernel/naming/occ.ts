@@ -1,6 +1,7 @@
 import type { Frame, Vec2, Vec3 } from '../../core/math'
 import type {
   BRepAlgoAPI_BuilderAlgo,
+  BRepBuilderAPI_TransitionMode,
   BRepFilletAPI_MakeChamfer,
   BRepFilletAPI_MakeFillet,
   BRepOffset_Mode,
@@ -85,6 +86,20 @@ export function joinType(oc: OC, join: JoinKind): GeomAbs_JoinType {
   const value =
     join === 'arc' ? oc.GeomAbs_JoinType.GeomAbs_Arc : oc.GeomAbs_JoinType.GeomAbs_Intersection
   return value as unknown as GeomAbs_JoinType
+}
+
+export function transitionMode(
+  oc: OC,
+  corners: 'transformed' | 'right' | 'round' | undefined,
+): BRepBuilderAPI_TransitionMode {
+  const modes = oc.BRepBuilderAPI_TransitionMode
+  const value =
+    corners === 'right'
+      ? modes.BRepBuilderAPI_RightCorner
+      : corners === 'round'
+        ? modes.BRepBuilderAPI_RoundCorner
+        : modes.BRepBuilderAPI_Transformed
+  return value as unknown as BRepBuilderAPI_TransitionMode
 }
 
 export function skinMode(oc: OC): BRepOffset_Mode {

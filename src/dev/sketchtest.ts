@@ -25,6 +25,7 @@ import { sketchTool } from '../sketch/tools/specs'
 import type { SketchToolId, ToolAnchor } from '../sketch/tools/types'
 import { applySolve, solveSketch } from '../sketch/solver'
 import { emptySketch, type Constraint, type Sketch2D, type SketchEntity } from '../sketch/types'
+import { chainTangent, sketchChains } from '../sketch/chains'
 import type { TestResult } from './selftest'
 
 type Draft = { sketch: Sketch2D; id: (prefix: string) => string }
@@ -1322,6 +1323,53 @@ export function runSketchTest(): TestResult[] {
         worst < 1e-9 &&
         v2.dist(polyline[0], polyline[polyline.length - 1]) < 1e-9,
       `${polyline.length} points, worst ${worst.toExponential(2)}`,
+    )
+  })
+
+  guard('chains', () => {
+    const d = draft()
+    const a = point(d, 0, 0)
+    const b = point(d, 10, 0)
+    const c = point(d, 10, 10)
+    const e = point(d, 20, 10)
+    entity(d, { kind: 'line', p1: b, p2: a, construction: false })
+    entity(d, { kind: 'line', p1: b, p2: c, construction: false })
+    entity(d, { kind: 'line', p1: e, p2: c, construction: false })
+    entity(d, { kind: 'line', p1: a, p2: e, construction: true })
+    const [path] = sketchChains(d.sketch)
+    check(
+      'an open path of lines drawn in any direction chains end to end',
+      (sketchChains(d.sketch).length === 1 &&
+        path.pieces.length === 3 &&
+        !path.closed &&
+        v2.dist(path.start, [0, 0]) + v2.dist(path.end, [20, 10]) < 1e-9) ||
+        v2.dist(path.start, [20, 10]) + v2.dist(path.end, [0, 0]) < 1e-9,
+      JSON.stringify(sketchChains(d.sketch)),
+    )
+    const tangent = chainTangent(d.sketch, path)
+    check(
+      'the path starts off along its first curve',
+      v2.dist(tangent.at, path.start) < 1e-9 &&
+        Math.abs(Math.hypot(tangent.direction[0], tangent.direction[1]) - 1) < 1e-9,
+      JSON.stringify(tangent),
+    )
+    const loop = draft()
+    const corners = [
+      [0, 0],
+      [8, 0],
+      [8, 5],
+      [0, 5],
+    ].map(([x, y]) => point(loop, x, y))
+    corners.forEach((p, i) =>
+      entity(loop, { kind: 'line', p1: p, p2: corners[(i + 1) % 4], construction: false }),
+    )
+    const centre = point(loop, 30, 0)
+    entity(loop, { kind: 'circle', c: centre, r: 3, construction: false })
+    const chains = sketchChains(loop.sketch)
+    check(
+      'a rectangle and a circle make two closed chains',
+      chains.length === 2 && chains.every((chain) => chain.closed),
+      JSON.stringify(chains.map((chain) => [chain.pieces.length, chain.closed])),
     )
   })
 

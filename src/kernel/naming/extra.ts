@@ -39,9 +39,7 @@ export function transformNamed(
   named: NamedShape,
   matrix: readonly number[],
 ): NamedShape {
-  const scratch = new Scratch()
-  try {
-    const trsf = scratch.track(new oc.gp_Trsf_1())
+  return transformNamedWith(oc, featureId, named, (trsf) =>
     trsf.SetValues(
       matrix[0],
       matrix[4],
@@ -55,7 +53,20 @@ export function transformNamed(
       matrix[6],
       matrix[10],
       matrix[14],
-    )
+    ),
+  )
+}
+
+export function transformNamedWith(
+  oc: OC,
+  featureId: string,
+  named: NamedShape,
+  configure: (trsf: any, scratch: Scratch) => void,
+): NamedShape {
+  const scratch = new Scratch()
+  try {
+    const trsf = scratch.track(new oc.gp_Trsf_1())
+    configure(trsf, scratch)
     const builder = scratch.track(new oc.BRepBuilderAPI_Transform_2(named.shape, trsf, true))
     const shape = builder.Shape()
     const result = exploreTopology(oc, shape)

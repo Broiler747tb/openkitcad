@@ -26,6 +26,7 @@ import {
   subShapes,
   thickSolidHistory,
   thruSectionsHistory,
+  transitionMode,
   type JoinKind,
   type OC,
   type OcProfileNames,
@@ -129,6 +130,7 @@ export interface SweepOptions extends ProfileInput {
   spine: OcShape
   frenet?: boolean
   solid?: boolean
+  corners?: 'transformed' | 'right' | 'round'
 }
 
 export interface BoxOptions {
@@ -523,7 +525,7 @@ export function loft(oc: OC, options: LoftOptions): NamedShape {
       }
       builder.AddWire(scratch.track(oc.TopoDS.Wire_1(section.shape)))
     }
-    builder.CheckCompatibility(false)
+    builder.CheckCompatibility(true)
     build(oc, builder, 'Loft')
     const history = thruSectionsHistory(oc, builder, scratch)
     const first = nonNullShape(builder.FirstShape(), scratch)
@@ -568,6 +570,7 @@ export function sweep(oc: OC, options: SweepOptions): NamedShape {
       new oc.BRepOffsetAPI_MakePipeShell(scratch.track(oc.TopoDS.Wire_1(options.spine))),
     )
     builder.SetMode_1(options.frenet ?? false)
+    builder.SetTransitionMode(transitionMode(oc, options.corners))
     builder.Add_1(profile.shape, false, false)
     build(oc, builder, 'Sweep')
     if (options.solid !== false && !builder.MakeSolid()) {
