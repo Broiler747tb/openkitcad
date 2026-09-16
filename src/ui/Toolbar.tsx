@@ -65,6 +65,9 @@ import {
 const RIBBON_MENUS = ['Line', 'Rectangle', 'Circle', 'Arc', 'Polygon', 'Slot', 'Spline']
 const WORKSPACES = ['solid', 'surface', 'mesh'] as const
 const DESIGN_COMMANDS = [
+  'offsetPlane',
+  'planeAtAngle',
+  'midplane',
   'pressPull',
   'offsetFace',
   'draft',
@@ -144,6 +147,9 @@ const labels: Record<string, string> = {
   meshSeparate: 'Separate',
   meshCombine: 'Combine Meshes',
   meshConvert: 'Convert Mesh',
+  offsetPlane: 'Offset Plane',
+  planeAtAngle: 'Plane at Angle',
+  midplane: 'Midplane',
   pressPull: 'Press Pull',
   offsetFace: 'Offset Face',
   draft: 'Draft',
@@ -1041,10 +1047,11 @@ export function Toolbar({
             )}
             {group(
               'CONSTRUCT',
-              creations.filter((a) => a.id.startsWith('sketch-')),
-              tool('Plane', <PlaneIcon className="okc-icon" />, () =>
-                chooseAction(createSketchAction()),
-              ),
+              ['offsetPlane', 'planeAtAngle', 'midplane'].map((id) => ({
+                ...cmd(id),
+                group: 'Construct',
+              })),
+              tool('Offset Plane', <PlaneIcon className="okc-icon" />, () => invoke('offsetPlane')),
             )}
             {group(
               'INSPECT',

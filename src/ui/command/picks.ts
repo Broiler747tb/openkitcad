@@ -66,10 +66,12 @@ export function elementPick(
 
 export function planePick(doc: OkcDocument, plane: PlaneRef): SelectionPick | null {
   if (plane.kind === 'face') return elementPick(doc, plane.face)
+  const construction = plane.kind === 'construction' ? findFeature(doc, plane.featureId) : undefined
+  if (plane.kind === 'construction' && !construction) return null
   return {
     kind: 'plane',
     id: JSON.stringify(plane),
-    label: planeLabel(plane, doc.units),
+    label: construction?.name ?? planeLabel(plane, doc.units),
     plane,
   }
 }

@@ -729,6 +729,92 @@ export async function runSolidTest(): Promise<TestResult[]> {
         }
       },
     )
+
+    const plane = (id: string, extra: Partial<Feature>): Feature =>
+      ({
+        id,
+        name: id,
+        componentId: 'root',
+        kind: 'constructionPlane',
+        method: 'offset',
+        base: XY,
+        distance: 0,
+        axis: 'x',
+        angle: 0,
+        visible: true,
+        ...extra,
+      }) as Feature
+    await check(
+      'a sketch on an offset plane builds up from that plane',
+      doc(
+        [
+          plane('p1', { distance: 12 }),
+          plane('p2', { base: { kind: 'construction', featureId: 'p1', offset: 0 }, distance: 3 }),
+          sketch(
+            's1',
+            { kind: 'construction', featureId: 'p2', offset: 0 },
+            rectangle(0, 0, 10, 10),
+          ),
+          {
+            id: 'ex',
+            name: 'Extrude',
+            componentId: 'root',
+            kind: 'extrude',
+            sketchId: 's1',
+            distance: 5,
+            symmetric: false,
+            reverse: false,
+            result: { kind: 'newBody', bodyId: 'raised' },
+          },
+        ],
+        ['raised'],
+      ),
+      (result) => {
+        const raised = meshFor(result, 'raised')
+        const p2 = result.planes.find((entry) => entry.featureId === 'p2')
+        return {
+          pass: near(raised?.bounds[2], 15, 1e-6) && near(raised?.bounds[5], 20, 1e-6) && !!p2,
+          detail: `z ${raised?.bounds[2]} to ${raised?.bounds[5]}`,
+        }
+      },
+    )
+    await check(
+      'a midplane between two box faces and a plane at an angle resolve',
+      doc(
+        [
+          box('bx', 'cube', [0, 0], [10, 10, 10]),
+          plane('mid', {
+            method: 'midplane',
+            base: {
+              kind: 'face',
+              face: { bodyId: 'cube', kind: 'face', name: 'bx:+x' },
+              offset: 0,
+            },
+            second: {
+              kind: 'face',
+              face: { bodyId: 'cube', kind: 'face', name: 'bx:-x' },
+              offset: 0,
+            },
+          }),
+          plane('tilt', { method: 'angle', axis: 'y', angle: 30 }),
+        ],
+        ['cube'],
+      ),
+      (result) => {
+        const mid = result.planes.find((entry) => entry.featureId === 'mid')?.frame
+        const tilt = result.planes.find((entry) => entry.featureId === 'tilt')?.frame
+        const offset = mid ? mid.origin[0] * mid.normal[0] : NaN
+        return {
+          pass:
+            !!mid &&
+            Math.abs(Math.abs(mid.normal[0]) - 1) < 1e-9 &&
+            near(offset, 5, 1e-6) &&
+            !!tilt &&
+            near(Math.abs(tilt.normal[2]), Math.cos(Math.PI / 6), 1e-9),
+          detail: `mid ${mid?.origin.join(',')} n ${mid?.normal.join(',')}; tilt n ${tilt?.normal.map((v) => v.toFixed(3)).join(',')}`,
+        }
+      },
+    )
   } catch (error) {
     add('solid test ran', false, `${(error as Error).message}`)
   } finally {

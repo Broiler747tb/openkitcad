@@ -44,7 +44,7 @@ import {
   transformPoint,
   translationMatrix,
 } from '../doc/model'
-import { datumFrame } from '../doc/planes'
+import { datumFrame, midplaneFrame, offsetFrame } from '../doc/planes'
 import { getPart, type CataloguePart } from '../catalogue'
 import {
   box as namedBox,
@@ -166,7 +166,20 @@ function opensBesideCurvedFace(state: BodyState, openFaces: readonly ElementRef[
   )
 }
 
-export function frameFromPlaneRef(ref: PlaneRef, bodies: ReadonlyMap<string, BodyState>): Frame {
+export function frameFromPlaneRef(
+  ref: PlaneRef,
+  bodies: ReadonlyMap<string, BodyState>,
+  planes?: ReadonlyMap<string, Frame>,
+): Frame {
+  if (ref.kind === 'construction') {
+    const frame = planes?.get(ref.featureId)
+    if (!frame) {
+      throw new Error(
+        'The construction plane this uses does not exist at this point in the timeline.',
+      )
+    }
+    return offsetFrame(frame, ref.offset)
+  }
   if (ref.kind !== 'face') return datumFrame(ref)
   const state = bodies.get(ref.face.bodyId)
   if (!state) {
@@ -999,8 +1012,8 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
   const tool = (solid: any, role: string): NamedShape =>
     nameShape(oc, `${feature.id}:${role}`, downcast(solid.wrapped) as unknown as OcShape)
   const planeOf = (ref: PlaneRef): Frame => {
-    const frame = frameFromPlaneRef(ref, stage.bodies)
-    if (ref.kind === 'face') stage.planes.set(feature.id, frame)
+    const frame = frameFromPlaneRef(ref, stage.bodies, stage.planes)
+    if (ref.kind === 'face' || ref.kind === 'construction') stage.planes.set(feature.id, frame)
     return frame
   }
   const combineInto = (
@@ -1061,7 +1074,7 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
           feature: sketchFeature,
           frame:
             stage.planes.get(sketchFeature.id) ??
-            frameFromPlaneRef(sketchFeature.plane, stage.bodies),
+            frameFromPlaneRef(sketchFeature.plane, stage.bodies, stage.planes),
         }
       },
       toPlane: (frame) => toReplicadPlane(frame),
@@ -1128,7 +1141,63 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
 
     case 'sketch': {
       stage.sketches.set(feature.id, feature)
-      stage.planes.set(feature.id, frameFromPlaneRef(feature.plane, stage.bodies))
+      stage.planes.set(feature.id, frameFromPlaneRef(feature.plane, stage.bodies, stage.planes))
+      return
+    }
+
+    case 'constructionPlane': {
+      const base = frameFromPlaneRef(feature.base, stage.bodies, stage.planes)
+      if (feature.method === 'offset') {
+        stage.planes.set(feature.id, offsetFrame(base, feature.distance))
+        return
+      }
+      if (feature.method === 'angle') {
+        const tilted =
+          feature.axis === 'x'
+            ? datumFrame({
+                kind: 'angled',
+                name: 'XY',
+                tiltAxis: 'x',
+                angle: feature.angle,
+                offset: 0,
+              })
+            : feature.axis === 'y'
+              ? datumFrame({
+                  kind: 'angled',
+                  name: 'XY',
+                  tiltAxis: 'y',
+                  angle: feature.angle,
+                  offset: 0,
+                })
+              : datumFrame({
+                  kind: 'angled',
+                  name: 'XZ',
+                  tiltAxis: 'y',
+                  angle: feature.angle,
+                  offset: 0,
+                })
+        stage.planes.set(feature.id, tilted)
+        return
+      }
+      if (!feature.second) {
+        stage.report(
+          'error',
+          'Midplane needs two planes or faces.',
+          'Edit this step and pick a second one.',
+        )
+        return
+      }
+      const other = frameFromPlaneRef(feature.second, stage.bodies, stage.planes)
+      const middle = midplaneFrame(base, other)
+      if (!middle) {
+        stage.report(
+          'error',
+          'Those two planes are the same plane.',
+          'Pick two different planes or faces.',
+        )
+        return
+      }
+      stage.planes.set(feature.id, middle)
       return
     }
 
@@ -1158,7 +1227,8 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
           return
         }
         const plane =
-          stage.planes.get(sketchFeature.id) ?? frameFromPlaneRef(sketchFeature.plane, stage.bodies)
+          stage.planes.get(sketchFeature.id) ??
+          frameFromPlaneRef(sketchFeature.plane, stage.bodies, stage.planes)
         const ocAny = oc as any
         const assembler = new ocAny.TopoDS_Builder()
         const compound = new ocAny.TopoDS_Compound()
@@ -1213,7 +1283,8 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
         return
       }
       const frame =
-        stage.planes.get(sketchFeature.id) ?? frameFromPlaneRef(sketchFeature.plane, stage.bodies)
+        stage.planes.get(sketchFeature.id) ??
+        frameFromPlaneRef(sketchFeature.plane, stage.bodies, stage.planes)
       if (feature.kind === 'extrude') {
         const distance = feature.reverse ? -feature.distance : feature.distance
         const offset = feature.symmetric ? -Math.abs(distance) / 2 : 0

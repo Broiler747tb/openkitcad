@@ -130,6 +130,11 @@ export function featureModifiesBodies(feature: Feature): string[] {
 export function featureReadsBodies(feature: Feature): string[] {
   const bodies: string[] = []
   if ('plane' in feature && feature.plane.kind === 'face') bodies.push(feature.plane.face.bodyId)
+  if (feature.kind === 'constructionPlane') {
+    for (const ref of [feature.base, feature.second]) {
+      if (ref?.kind === 'face') bodies.push(ref.face.bodyId)
+    }
+  }
   if (feature.kind === 'joint') {
     for (const side of [feature.one, feature.two]) {
       if (side.snap.ref) bodies.push(side.snap.ref.bodyId)
@@ -164,6 +169,15 @@ export function featureDependencies(doc: OkcDocument, feature: Feature): string[
     dependencies.add(feature.pathSketchId)
   }
   if (feature.kind === 'pipe') dependencies.add(feature.pathSketchId)
+  const planeRefs =
+    feature.kind === 'constructionPlane'
+      ? [feature.base, feature.second]
+      : 'plane' in feature
+        ? [feature.plane]
+        : []
+  for (const ref of planeRefs) {
+    if (ref?.kind === 'construction') dependencies.add(ref.featureId)
+  }
   if (feature.kind === 'patch') dependencies.add(feature.sketchId)
   if (feature.kind === 'lid') dependencies.add(feature.shellFeatureId)
   if (feature.kind === 'lidSocket') dependencies.add(feature.lidFeatureId)

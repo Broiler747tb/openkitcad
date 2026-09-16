@@ -534,6 +534,34 @@ export function Viewport() {
     engineRef.current?.setOriginPlanes(planesWanted)
   }, [planesWanted, instances, paletteVersion])
 
+  const hoveredPlaneRef = useRef<string | null>(null)
+  const constructionPlanes = useMemo(
+    () =>
+      activeFeatures(doc).flatMap((feature) => {
+        if (feature.kind !== 'constructionPlane' || !feature.visible || feature.suppressed)
+          return []
+        const local = planes.get(feature.id)
+        return local
+          ? [
+              {
+                id: feature.id,
+                frame: transformFrame(local, componentMatrix(doc, feature.componentId)),
+              },
+            ]
+          : []
+      }),
+    [doc, planes],
+  )
+  useEffect(() => {
+    const engine = engineRef.current
+    if (!engine) return
+    engine.setConstructionPlanes(constructionPlanes)
+    engine.setConstructionPlaneState(
+      hoveredPlaneRef.current,
+      selection.kind === 'feature' ? (selection.id ?? null) : null,
+    )
+  }, [constructionPlanes, instances, paletteVersion, selection])
+
   // Ghosts of the screws and inserts the holes were drilled for.
   useEffect(() => {
     const engine = engineRef.current
@@ -1191,10 +1219,22 @@ export function Viewport() {
       dragHandle(handleDragRef.current, e)
       return
     }
+    const bodyUnder = constructionPlanes.length ? engine.pick(e.clientX, e.clientY) : null
+    const constructionUnder =
+      constructionPlanes.length && !bodyUnder
+        ? engine.pickConstructionPlane(e.clientX, e.clientY)
+        : null
+    if (constructionUnder !== hoveredPlaneRef.current) {
+      hoveredPlaneRef.current = constructionUnder
+      engine.setConstructionPlaneState(
+        constructionUnder,
+        store.selection.kind === 'feature' ? (store.selection.id ?? null) : null,
+      )
+    }
     if (planesWanted) {
       const body = engine.pick(e.clientX, e.clientY)
       const flat = body?.kind === 'body' && engine.isFlatFace(body)
-      const plane = body ? null : engine.pickOriginPlane(e.clientX, e.clientY)
+      const plane = body || constructionUnder ? null : engine.pickOriginPlane(e.clientX, e.clientY)
       engine.setOriginPlaneHover(plane)
       if (store.pickingSketchPlane) {
         if (store.hovered !== (body?.instanceId ?? null)) store.setHovered(body?.instanceId ?? null)
@@ -1204,11 +1244,13 @@ export function Viewport() {
           y: e.clientY,
           text: plane
             ? `Sketch on ${plane}`
-            : flat
-              ? 'Sketch on this face'
-              : body
-                ? 'Pick a flat face'
-                : 'Click an origin plane or a flat face',
+            : constructionUnder
+              ? 'Sketch on this plane'
+              : flat
+                ? 'Sketch on this face'
+                : body
+                  ? 'Pick a flat face'
+                  : 'Click an origin plane or a flat face',
         })
         return
       }
@@ -1501,6 +1543,12 @@ export function Viewport() {
         )
         return
       }
+      const construction = body ? null : engine.pickConstructionPlane(e.clientX, e.clientY)
+      if (construction) {
+        setCursorHint(null)
+        store.startSketch({ kind: 'construction', featureId: construction, offset: 0 })
+        return
+      }
       const plane = body ? null : engine.pickOriginPlane(e.clientX, e.clientY)
       if (plane) {
         setCursorHint(null)
@@ -1518,6 +1566,14 @@ export function Viewport() {
       const filter = acceptedKinds()
       const focused = activeKinds()
       if (filter.has('plane') && !engine.pick(e.clientX, e.clientY)) {
+        const construction = engine.pickConstructionPlane(e.clientX, e.clientY)
+        if (
+          construction &&
+          offerPick(
+            planePick(store.doc, { kind: 'construction', featureId: construction, offset: 0 }),
+          )
+        )
+          return
         const plane = engine.pickOriginPlane(e.clientX, e.clientY)
         if (plane && offerPick(planePick(store.doc, { kind: 'named', name: plane, offset: 0 })))
           return
@@ -1587,6 +1643,12 @@ export function Viewport() {
     }
 
     if (!hit) {
+      const construction = engine.pickConstructionPlane(e.clientX, e.clientY)
+      if (construction) {
+        store.select({ kind: 'feature', id: construction })
+        store.setSubSelection([])
+        return
+      }
       if (!e.shiftKey) {
         store.select({ kind: 'none' })
         store.setSubSelection([])

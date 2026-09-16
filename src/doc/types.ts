@@ -58,6 +58,7 @@ export type PlaneRef =
       angle: number
       offset: number
     }
+  | { kind: 'construction'; featureId: string; offset: number }
 
 export type BodyOperation =
   | { kind: 'newBody'; bodyId: string }
@@ -241,6 +242,19 @@ export interface MoveFeature extends FeatureBase {
   bodyIds: string[]
   offset: Vec3
   rotation: Vec3
+}
+
+export type ConstructionPlaneMethod = 'offset' | 'angle' | 'midplane'
+
+export interface ConstructionPlaneFeature extends FeatureBase {
+  kind: 'constructionPlane'
+  method: ConstructionPlaneMethod
+  base: PlaneRef
+  second?: PlaneRef
+  distance: number
+  axis: 'x' | 'y' | 'z'
+  angle: number
+  visible: boolean
 }
 
 export interface OffsetFaceFeature extends FeatureBase {
@@ -579,6 +593,7 @@ export type Feature =
   | UnstitchFeature
   | OffsetFaceFeature
   | DraftFeature
+  | ConstructionPlaneFeature
   | SurfaceOffsetFeature
   | ReverseNormalFeature
 
@@ -707,6 +722,7 @@ export const FEATURE_LABEL: Record<FeatureKind, string> = {
   reverseNormal: 'Reverse Normal',
   offsetFace: 'Offset Face',
   draft: 'Draft',
+  constructionPlane: 'Plane',
 }
 
 export const FEATURE_HINT: Record<FeatureKind, string> = {
@@ -759,6 +775,7 @@ export const FEATURE_HINT: Record<FeatureKind, string> = {
   reverseNormal: 'Turns a surface inside out.',
   offsetFace: 'Moves flat faces of a body in or out, stretching the faces around them.',
   draft: 'Tilts faces by an angle so the part slides out of a mould.',
+  constructionPlane: 'A plane to sketch on or cut with, placed from other planes and faces.',
 }
 
 export const FEATURE_ICON: Record<FeatureKind, string> = {
@@ -811,4 +828,5 @@ export const FEATURE_ICON: Record<FeatureKind, string> = {
   reverseNormal: '⇵',
   offsetFace: '⇱',
   draft: '◿',
+  constructionPlane: '▭',
 }

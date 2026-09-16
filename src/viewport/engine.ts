@@ -163,6 +163,7 @@ export class ViewportEngine {
   private sketchGroup = new THREE.Group()
   private overlayGroup = new THREE.Group()
   private originPlaneGroup = new THREE.Group()
+  private constructionGroup = new THREE.Group()
   private gridGroup = new THREE.Group()
 
   private geometries = new Map<string, GeometryEntry>()
@@ -295,6 +296,7 @@ export class ViewportEngine {
       this.sketchGroup,
       this.overlayGroup,
       this.originPlaneGroup,
+      this.constructionGroup,
       this.gridGroup,
       this.highlightGroup,
       this.handleGroup,
@@ -928,11 +930,7 @@ export class ViewportEngine {
       })
     }
     if (!visible) return
-    const box = new THREE.Box3().setFromObject(this.solidGroup)
-    const reach = box.isEmpty()
-      ? 0
-      : Math.max(...box.min.toArray().map(Math.abs), ...box.max.toArray().map(Math.abs))
-    const size = Math.max(30, reach * 1.15)
+    const size = this.planeSize()
     for (const name of ['XY', 'XZ', 'YZ'] as const) {
       const frame = NAMED_FRAMES[name]
       const geometry = new THREE.PlaneGeometry(size, size)
@@ -963,6 +961,75 @@ export class ViewportEngine {
       mesh.renderOrder = 2
       this.originPlaneGroup.add(mesh)
     }
+  }
+
+  private planeSize(): number {
+    const box = new THREE.Box3().setFromObject(this.solidGroup)
+    const reach = box.isEmpty()
+      ? 0
+      : Math.max(...box.min.toArray().map(Math.abs), ...box.max.toArray().map(Math.abs))
+    return Math.max(30, reach * 1.15)
+  }
+
+  setConstructionPlanes(planes: ReadonlyArray<{ id: string; frame: Frame }>) {
+    for (const child of [...this.constructionGroup.children]) {
+      this.constructionGroup.remove(child)
+      child.traverse((object) => {
+        const mesh = object as THREE.Mesh
+        mesh.geometry?.dispose()
+        ;(mesh.material as THREE.Material | undefined)?.dispose()
+      })
+    }
+    const size = this.planeSize() * 0.8
+    for (const { id, frame } of planes) {
+      const geometry = new THREE.PlaneGeometry(size, size)
+      const mesh = new THREE.Mesh(
+        geometry,
+        new THREE.MeshBasicMaterial({
+          color: this.palette.originPlane,
+          transparent: true,
+          opacity: 0.16,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+        }),
+      )
+      mesh.add(
+        new THREE.LineSegments(
+          new THREE.EdgesGeometry(geometry),
+          new THREE.LineBasicMaterial({ color: this.palette.originPlaneEdge }),
+        ),
+      )
+      mesh.quaternion.setFromRotationMatrix(
+        new THREE.Matrix4().makeBasis(
+          new THREE.Vector3(...frame.xDir),
+          new THREE.Vector3(...frame.yDir),
+          new THREE.Vector3(...frame.normal),
+        ),
+      )
+      mesh.position.set(...frame.origin)
+      mesh.userData.constructionPlane = id
+      mesh.renderOrder = 2
+      this.constructionGroup.add(mesh)
+    }
+  }
+
+  setConstructionPlaneState(hovered: string | null, selected: string | null) {
+    for (const child of this.constructionGroup.children) {
+      const id = child.userData.constructionPlane as string
+      const material = (child as THREE.Mesh).material as THREE.MeshBasicMaterial
+      material.opacity = id === selected ? 0.4 : id === hovered ? 0.32 : 0.16
+      const edge = child.children[0] as THREE.LineSegments | undefined
+      ;(edge?.material as THREE.LineBasicMaterial | undefined)?.color.setHex(
+        id === selected ? this.palette.selection : this.palette.originPlaneEdge,
+      )
+    }
+  }
+
+  pickConstructionPlane(clientX: number, clientY: number): string | null {
+    if (!this.constructionGroup.children.length) return null
+    this.raycaster.setFromCamera(this.pointerToNdc(clientX, clientY), this.camera)
+    const hit = this.raycaster.intersectObjects(this.constructionGroup.children, false)[0]
+    return (hit?.object.userData.constructionPlane as string | undefined) ?? null
   }
 
   pickOriginPlane(clientX: number, clientY: number): 'XY' | 'XZ' | 'YZ' | null {

@@ -1,6 +1,13 @@
 import { useMemo, useState } from 'react'
 import { editFeature } from './command/commands'
-import { bodyPick, featurePick, occurrencePick, offerPick, sketchPick } from './command/picks'
+import {
+  bodyPick,
+  featurePick,
+  occurrencePick,
+  offerPick,
+  planePick,
+  sketchPick,
+} from './command/picks'
 import { setGrounded } from './command/specs/assemble'
 import { useStore } from '../doc/store'
 import {
@@ -67,8 +74,16 @@ function DesignTree() {
       <details className="origin-planes">
         <summary>▱ Origin</summary>
         {(['XY', 'XZ', 'YZ'] as const).map((name) => (
-          <button key={name} onClick={() => store.startSketch({ kind: 'named', name, offset: 0 })}>
-            ▧ {name} plane · Create Sketch
+          <button
+            key={name}
+            title={`Use the ${name} plane in the open command, or sketch on it`}
+            onClick={() => {
+              const plane = { kind: 'named', name, offset: 0 } as const
+              if (offerPick(planePick(doc, plane))) return
+              store.startSketch(plane)
+            }}
+          >
+            ▧ {name} Plane
           </button>
         ))}
       </details>
@@ -141,6 +156,9 @@ function ComponentContents({
   const children = childOccurrences(doc, component.id).filter(
     (occurrence) => !lineage.includes(occurrence.componentId),
   )
+  const planes = doc.timeline.filter(
+    (feature) => feature.kind === 'constructionPlane' && feature.componentId === component.id,
+  )
   const origins = doc.timeline.filter(
     (feature) =>
       feature.kind === 'jointOrigin' &&
@@ -187,6 +205,19 @@ function ComponentContents({
         <details className="browser-folder">
           <summary>Sketches ({sketches.length})</summary>
           {sketches.map((feature) => (
+            <FeatureRow
+              key={feature.id}
+              feature={feature}
+              selected={selection.kind === 'feature' && selection.id === feature.id}
+              failed={failed.has(feature.id)}
+            />
+          ))}
+        </details>
+      )}
+      {planes.length > 0 && (
+        <details className="browser-folder" open>
+          <summary>Construction ({planes.length})</summary>
+          {planes.map((feature) => (
             <FeatureRow
               key={feature.id}
               feature={feature}
@@ -454,6 +485,11 @@ function FeatureRow({
       onClick={() => {
         if (offerPick(sketchPick(doc, feature.id)) || offerPick(featurePick(doc, feature.id)))
           return
+        if (
+          feature.kind === 'constructionPlane' &&
+          offerPick(planePick(doc, { kind: 'construction', featureId: feature.id, offset: 0 }))
+        )
+          return
         store.select({ kind: 'feature', id: feature.id })
       }}
       onDoubleClick={() => {
@@ -466,7 +502,7 @@ function FeatureRow({
       <span className="name" style={{ opacity: dimmed ? 0.45 : 1 }}>
         {feature.name || FEATURE_LABEL[feature.kind]}
       </span>
-      {feature.kind === 'sketch' && (
+      {(feature.kind === 'sketch' || feature.kind === 'constructionPlane') && (
         <button
           className="act"
           title={feature.visible ? 'Hide' : 'Show'}

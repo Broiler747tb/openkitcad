@@ -455,6 +455,17 @@ appear as translucent squares reaching past the model, a hovered plane darkens, 
 or on a flat face opens the sketch there; Esc cancels. The same planes appear whenever a command's
 Plane input is waiting, so Mirror, Split Body, Coil and Draft take a click on an origin plane.
 
+**Construction planes.** Offset Plane, Plane at Angle and Midplane are timeline features
+(`constructionPlane`) under CONSTRUCT. The kernel resolves each into the same plane table sketches use,
+and a plane reference can now name one (`{ kind: 'construction', featureId, offset }`), so sketches,
+Mirror, Split Body, Coil, Draft and further planes can be built on them and follow when they move.
+Offset Plane takes a face or plane and a distance with a drag arrow; Plane at Angle turns about the X,
+Y or Z axis; Midplane sits halfway between two parallel planes or bisects two that meet, through the
+side where both lie. They are listed under Construction in the Browser with a visibility toggle, drawn
+as translucent squares that highlight under the pointer, and a click selects one or hands it to a
+waiting Plane input or to Create Sketch. The Origin planes in the Browser also hand themselves to a
+waiting command instead of always starting a sketch.
+
 **Tidying.** Counts read "1 body" and "2 bodies" (`src/core/words.ts`). The Inspector hides while a
 command panel is open, and surface bodies no longer offer edge rounding. The Shortcuts dialog no
 longer claims surfaces and Press Pull are missing, and P outside a sketch says Project needs one.
@@ -510,7 +521,8 @@ are gone.
   into six surfaces, Stitch them back into a solid and Reverse Normal one of the surfaces first.
   Double-click each step on the timeline, change a value and OK. Undo back through every step.
 - **J smoke test.** Click Create Sketch and then the XZ plane, finish, click Create Sketch again and
-  click the top of a box. Select the top face of a box and press Q: the Press Pull panel pulls it 8 mm with
+  click the top of a box. Make an Offset Plane 20 mm above XY, sketch on it and extrude, then edit the
+  plane to 30 mm and see the extrude follow. Select the top face of a box and press Q: the Press Pull panel pulls it 8 mm with
   the arrow. Select an edge and press Q to get Fillet; select a sketch and press Q to get Extrude.
   Right-click a side face and choose Draft, pick XY as the plane and tilt it 10°. Scale a body by 2.5
   in an inch document and read 2.5, not a length. Open any command and see the Inspector step aside.

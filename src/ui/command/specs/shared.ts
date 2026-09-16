@@ -190,5 +190,7 @@ export function pickedFrame(picks: readonly SelectionPick[], featureId?: string)
     }
     return featureId ? (useStore.getState().planes.get(featureId) ?? null) : null
   }
-  return pick.plane ? frameFromPlaneRefLocal(pick.plane, undefined) : NAMED_FRAMES.XY
+  return pick.plane
+    ? frameFromPlaneRefLocal(pick.plane, undefined, useStore.getState().planes)
+    : NAMED_FRAMES.XY
 }

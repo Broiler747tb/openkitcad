@@ -26,6 +26,7 @@ import { holeCommand, pointOnFace, ventCommand } from './specs/placed'
 import { boxCommand, cylinderCommand, sphereCommand } from './specs/primitives'
 import { operationValues, planeValues, profilePicksOf, resultIds } from './specs/shared'
 import { extrudeCommand, revolveCommand } from './specs/sketchBased'
+import { midplaneCommand, offsetPlaneCommand, planeAtAngleCommand } from './specs/construct'
 import {
   coilCommand,
   extrudeSurfaceCommand,
@@ -124,6 +125,9 @@ export const COMMANDS: Readonly<Record<string, AnyCommandSpec>> = {
   unstitch: spec(unstitchCommand),
   surfaceOffset: spec(surfaceOffsetCommand),
   reverseNormal: spec(reverseNormalCommand),
+  offsetPlane: spec(offsetPlaneCommand),
+  planeAtAngle: spec(planeAtAngleCommand),
+  midplane: spec(midplaneCommand),
   offsetFace: spec(offsetFaceCommand),
   pressPull: pressPullCommand,
   draft: spec(draftCommand),
@@ -205,6 +209,10 @@ function startOptions(id: string): CommandStart {
     case 'pressPull':
     case 'draft':
       return { initial: { faces } }
+    case 'offsetPlane':
+      return { initial: { plane: faces.slice(0, 1) } }
+    case 'midplane':
+      return { initial: { first: faces.slice(0, 1), second: faces.slice(1, 2) } }
     case 'loft':
     case 'loftSurface':
       return { initial: { sections: sketchPicks() } }
@@ -350,6 +358,30 @@ function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, Comma
             }
       return [variantOf(feature.kind, feature.surface), { initial, ids: resultIds(feature.result) }]
     }
+    case 'constructionPlane':
+      if (feature.method === 'offset') {
+        return [
+          COMMANDS.offsetPlane,
+          {
+            initial: {
+              plane: planeValues(doc, feature.base),
+              distance: feature.distance,
+            },
+          },
+        ]
+      }
+      if (feature.method === 'angle') {
+        return [COMMANDS.planeAtAngle, { initial: { axis: feature.axis, angle: feature.angle } }]
+      }
+      return [
+        COMMANDS.midplane,
+        {
+          initial: {
+            first: planeValues(doc, feature.base),
+            second: feature.second ? planeValues(doc, feature.second) : [],
+          },
+        },
+      ]
     case 'offsetFace':
       return [
         COMMANDS.offsetFace,

@@ -18,6 +18,8 @@ import {
   wouldCreateCycle,
 } from '../doc/model'
 import { emptyDocument, type Feature, type Matrix4, type Occurrence } from '../doc/types'
+import { midplaneFrame } from '../doc/planes'
+import { makeFrame, type Frame } from '../core/math'
 import { emptySketch } from '../sketch/types'
 import type { TestResult } from './selftest'
 
@@ -135,6 +137,61 @@ export function runModelTest(): TestResult[] {
     'timeline groups ignore overlapping, reversed and dangling ranges',
     spans.map((span) => `${span.group.id}:${span.start}-${span.end}`).join() === 'g1:0-1',
     spans.map((span) => `${span.group.id}:${span.start}-${span.end}`).join(),
+  )
+
+  const top = makeFrame([0, 0, 10], [0, 0, 1])
+  const bottom = makeFrame([0, 0, 0], [0, 0, -1])
+  const between = midplaneFrame(top, bottom)
+  check(
+    'a midplane between parallel faces sits halfway',
+    !!between && near(between.origin, [0, 0, 5]) && near(between.normal, [0, 0, 1]),
+    between ? show([...between.origin, ...between.normal]) : 'none',
+  )
+  const side = makeFrame([4, 0, 0], [1, 0, 0])
+  const lid = makeFrame([0, 0, 4], [0, 0, 1])
+  const corner = midplaneFrame(side, lid)
+  const onCorner = (frame: Frame, point: number[]) =>
+    Math.abs(
+      (point[0] - frame.origin[0]) * frame.normal[0] +
+        (point[1] - frame.origin[1]) * frame.normal[1] +
+        (point[2] - frame.origin[2]) * frame.normal[2],
+    ) < 1e-9
+  check(
+    'a midplane between meeting faces runs through the edge and the inside of the corner',
+    !!corner && onCorner(corner, [4, 7, 4]) && onCorner(corner, [0, 0, 0]),
+    corner ? show([...corner.origin, ...corner.normal]) : 'none',
+  )
+  check('a plane has no midplane with itself', midplaneFrame(top, top) === null, 'same plane')
+
+  const planeTimeline: Feature[] = [
+    {
+      id: 'p1',
+      name: 'Plane1',
+      componentId: 'root',
+      kind: 'constructionPlane',
+      method: 'offset',
+      base: { kind: 'named', name: 'XY', offset: 0 },
+      distance: 10,
+      axis: 'x',
+      angle: 0,
+      visible: true,
+    },
+    {
+      id: 's9',
+      name: 's9',
+      componentId: 'root',
+      kind: 'sketch',
+      plane: { kind: 'construction', featureId: 'p1', offset: 0 },
+      sketch: emptySketch(),
+      visible: true,
+    },
+  ]
+  const planeDoc = { ...emptyDocument('Planes'), timeline: planeTimeline }
+  check(
+    'a sketch on a construction plane depends on the plane',
+    featureDependencies(planeDoc, planeTimeline[1]).includes('p1') &&
+      !canMoveFeature(planeDoc, 's9', 0),
+    featureDependencies(planeDoc, planeTimeline[1]).join(),
   )
 
   return results

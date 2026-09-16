@@ -472,6 +472,43 @@ export function runCreateCommandTest(): TestResult[] {
         bodyIds: ['b1', 'b2'],
       },
       {
+        id: 'plane1',
+        kind: 'constructionPlane',
+        name: 'Offset Plane',
+        componentId: 'root',
+        visible: true,
+        method: 'offset',
+        base: { kind: 'named', name: 'XZ', offset: 0 },
+        distance: 12.5,
+        axis: 'x',
+        angle: 0,
+      },
+      {
+        id: 'plane2',
+        kind: 'constructionPlane',
+        name: 'Plane at Angle',
+        componentId: 'root',
+        visible: false,
+        method: 'angle',
+        base: { kind: 'named', name: 'XZ', offset: 0 },
+        distance: 0,
+        axis: 'z',
+        angle: -30,
+      },
+      {
+        id: 'plane3',
+        kind: 'constructionPlane',
+        name: 'Midplane',
+        componentId: 'root',
+        visible: true,
+        method: 'midplane',
+        base: { kind: 'face', face: { bodyId: 'b1', kind: 'face', name: 'bx:+x' }, offset: 0 },
+        second: { kind: 'construction', featureId: 'plane1', offset: 0 },
+        distance: 0,
+        axis: 'x',
+        angle: 0,
+      },
+      {
         id: 'offsetFace1',
         kind: 'offsetFace',
         name: 'Offset Face',
@@ -509,6 +546,7 @@ export function runCreateCommandTest(): TestResult[] {
     ]
     try {
       const document = testDocument()
+      document.timeline.push(...steps.filter((step) => step.kind === 'constructionPlane'))
       useStore.setState({ doc: document, activeSketch: null })
       for (const step of steps) {
         current = `${step.kind} reopens with its values`
