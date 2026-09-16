@@ -43,6 +43,12 @@ faces-only view cube, the marking menu and mouse schemes (§9).
 **A: assemblies.** Joints between snap points, as-built joints, joint origins, rigid groups, motion
 links, driving, dragging and animating joints, and motion studies (§10).
 
+**M: mesh.** The MESH tab: triangle mesh bodies that are inserted, prepared, cut and converted to
+solids (§11).
+
+**SF: surface and solid tools.** Loft, Sweep, Coil, Pipe, Thicken, Pattern, Mirror, Split Body and
+Scale on the SOLID tab, and the SURFACE tab (§12).
+
 ## 3. Document model v2
 
 Types live in `src/doc/types.ts`. Pure helpers every layer shares live in `src/doc/model.ts`
@@ -323,7 +329,8 @@ is Light, Dark or Match the system (`src/theme/theme.ts`, stored in `okc.theme.v
 reads its colours from the same tokens (`src/theme/palette.ts`) and redraws when the theme changes.
 Selection and pre-highlight are blue.
 
-**Icons and brand.** Full colour isometric icons live in `src/ui/icons` (solid, modify, sketch). Flat
+**Icons and brand.** Full colour isometric icons live in `src/ui/icons` (solid, modify, sketch,
+assemble, mesh, surface). Flat
 sketch icons carry the class `okc-icon-2d` so their line work lightens in the dark theme. The brand
 mark is a blue square with an open box, drawn in `src/ui/BrandMark.tsx`.
 
@@ -374,7 +381,61 @@ it. Dragging a jointed component with the gizmo slides it along its joints. Moti
 panel: joints with values at steps, a scrubber, play and loop; it poses the assembly while it is open
 and puts it back when it closes. Contact sets are not implemented.
 
-## 11. How the work is done
+## 11. Mesh (M)
+
+**Mesh bodies.** A mesh body is a body whose shape is a triangle mesh rather than OpenCascade B-rep.
+The algorithms in `src/mesh` are plain TypeScript and run under Node: STL, OBJ and 3MF reading and
+writing, welding, repair, a capped plane cut, Taubin smoothing, quadric error reduction, isotropic
+remeshing and a display tessellation. Inserted mesh data is stored once by content hash in
+`src/doc/meshData.ts`, outside the undo history; saved files, autosave and share links carry it as
+`meshData`, and the kernel receives each blob once. `BodyMesh.kind` is `solid`, `surface` or `mesh`,
+and a mesh also reports its loose pieces and whether it is watertight.
+
+**Display.** Mesh bodies are drawn with normals creased at 30° and with their boundary and feature
+edges (40°) as lines, so a faceted import still reads as a part.
+
+**Commands.** Insert Mesh (unit, Y is up, center, place on ground), Tessellate (coarse, medium,
+high), Repair (reorients triangles and can close holes), Remesh (edge length, keeping sharp edges,
+every vertex projected back onto the original surface), Reduce (by proportion, tolerance or face
+count), Smooth (strength and passes, without shrinking), Reverse Normal, Plane Cut (split, trim or
+trim the other side, with an optional fill), Separate, Combine and Convert Mesh (faceted gives one
+face per triangle, prismatic merges coplanar triangles into faces). Mesh bodies are listed under
+Mesh Bodies, move with Move and export to STL, 3MF and OBJ. Solid and surface commands refuse them
+and say to convert first. Face groups, Erase and Fill, mesh Shell and Direct Edit are not
+implemented.
+
+## 12. Surface and solid tools (SF)
+
+**Sketch chains.** `src/sketch/chains.ts` walks the curves of a sketch into connected runs, open or
+closed, ignoring construction geometry. Surfaces are built from those runs, and a path for Sweep or
+Pipe has to be exactly one of them.
+
+**Solid tools.** They run in `src/kernel/solidSteps.ts` before the other steps. Loft blends one closed
+profile from each picked sketch, in the order picked, smoothly or with straight sides. Sweep carries a
+profile along a path sketch. Coil takes a plane, a centre, a diameter, revolutions, a height and a
+circular, square or triangular section, and warns when the turns touch. Pipe runs a round, square or
+triangular section along a path sketch and can be hollow. Pattern copies bodies in rows and columns
+along X, Y and Z or around an axis, and Mirror copies them across a plane; every copy is a new body
+whose id is kept when the step is edited. Split Body cuts a body with a plane using two booleans
+against a half space and fails when the plane misses. Scale is uniform, about the middle of the
+picked bodies. The bundled kernel cannot do non-uniform scale.
+
+**Surfaces.** A body is a surface when its shape holds no solid; it draws from both sides, shows ▭ in
+the Browser and has no volume. Extrude, Revolve, Sweep and Loft have Surface commands that set a
+`surface` flag on the same feature and always make a new body; Extrude and Revolve Surface accept
+open sketch curves. Patch fills a closed outline. Offset makes a new surface a distance away. Thicken
+turns a surface into a solid on one side or both, with the usual operations. Stitch sews surfaces
+within a tolerance into the first one, makes a solid when they close all the way round and consumes
+the rest. Unstitch gives every face its own surface body; if the body gains faces upstream, the
+extra faces stay together in the last body with a warning. Reverse Normal turns surfaces inside out.
+
+**Ribbon.** The SOLID tab shows Extrude, Revolve, Sweep, Loft and Hole under CREATE and Fillet,
+Shell, Split Body and Move under MODIFY; everything else is in the group menus, and the whole ribbon
+fits a 1280 px window. The SURFACE tab shows Extrude, Revolve, Loft, Patch, Offset and Thicken, then
+Stitch, Unstitch and Reverse Normal. Trim, Extend, Ruled, Boundary Fill, Rib, Web, Emboss, Thread,
+Torus and Pattern on Path are not implemented.
+
+## 13. How the work is done
 
 - Agents never start other agents or workflows.
 - New and rewritten code has no comments. Touched files are formatted with Prettier.
@@ -411,3 +472,13 @@ and puts it back when it closes. Contact sets are not implemented.
   Drag the bearing with the gizmo and see it only turn. Animate the joint and click to stop. Make a
   Motion Study that turns it 180° over 60 steps, scrub to the middle and play. Add a Box, joint a part
   to its top face, make the box taller and see the part follow. Undo back through every step.
+- **M smoke test.** Insert a torus STL with Place on Ground. Plane Cut it on XY at its middle as a
+  split and see two watertight halves. Reduce one half to 50%, remesh the other at its average edge
+  length and smooth it. Convert one half as prismatic, Separate a two-piece mesh, Combine two meshes
+  and Reverse Normal one. Export the design as OBJ. Undo back through every step.
+- **SF smoke test.** On XY draw three connected lines, then on the SURFACE tab Extrude them 10 mm as
+  a surface and Thicken it 2 mm into a new body. On the SOLID tab loft a 20 mm square on XY into a
+  circle on a plane 20 mm up, sweep a circle along a bent path sketch, and make a Coil. Pattern a body
+  six times around Z, mirror it across YZ, split a box on XZ and scale a body by 2. Unstitch a box
+  into six surfaces, Stitch them back into a solid and Reverse Normal one of the surfaces first.
+  Double-click each step on the timeline, change a value and OK. Undo back through every step.
