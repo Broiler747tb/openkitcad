@@ -1038,15 +1038,9 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
         )
         return
       }
-      const profile = sketchToProfile(sketchFeature.sketch)
-      if (!profile.drawing) {
-        stage.report(
-          'error',
-          'That sketch does not enclose an area yet.',
-          profile.openChains > 0
-            ? `${profile.openChains} line(s) do not join up into a closed shape. Zoom in on the corners and drag the loose ends together.`
-            : 'Draw a closed shape - a rectangle or circle - before extruding.',
-        )
+      const profile = sketchToProfile(sketchFeature.sketch, feature.profiles)
+      if (!profile.ok) {
+        stage.report('error', profile.message, profile.hint)
         return
       }
       const frame =
@@ -1066,6 +1060,7 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
             featureId: feature.id,
             profile: face.wrapped,
             sketch: sketchFeature.sketch,
+            pieces: profile.pieces,
             frame: plane,
             vector: v3.scale(frame.normal, length),
           }),
@@ -1078,6 +1073,7 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
             featureId: feature.id,
             profile: face.wrapped,
             sketch: sketchFeature.sketch,
+            pieces: profile.pieces,
             frame,
             axisOrigin: frame.origin,
             axisDirection: feature.axis === 'x' ? frame.xDir : frame.yDir,

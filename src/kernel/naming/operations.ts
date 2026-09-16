@@ -1,6 +1,7 @@
 import type { Frame, Vec2, Vec3 } from '../../core/math'
 import type { Message_ProgressRange } from 'replicad-opencascadejs'
 import type { Sketch2D } from '../../sketch/types'
+import type { PieceSample } from './profileMatch'
 import type { ElementMap } from './elementMap'
 import {
   booleanHistory,
@@ -53,6 +54,7 @@ export interface ProfileInput {
   sketch: Sketch2D
   frame: Frame
   tolerance?: number
+  pieces?: readonly PieceSample[]
 }
 
 export type BooleanKind = 'fuse' | 'cut' | 'common'
@@ -251,7 +253,7 @@ function profileNames(
     profile = scratch.track(translated(oc, profile, offset))
     frame = { ...frame, origin: add(frame.origin, offset) }
   }
-  const names = nameProfile(oc, profile, input.sketch, frame, input.tolerance)
+  const names = nameProfile(oc, profile, input.sketch, frame, input.tolerance, input.pieces)
   scratch.track({ delete: () => disposeTopology(names.topology) })
   return names
 }

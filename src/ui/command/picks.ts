@@ -12,6 +12,21 @@ export function sketchPick(doc: OkcDocument, sketchId: string): SelectionPick | 
   return { kind: 'sketch', id: sketch.id, label: sketch.name || 'Sketch' }
 }
 
+export function profilePick(doc: OkcDocument, sketchId: string, key: string): SelectionPick | null {
+  const sketch = findFeature(doc, sketchId)
+  if (sketch?.kind !== 'sketch') return null
+  return {
+    kind: 'profile',
+    id: `${sketchId}|${key}`,
+    label: `Profile in ${sketch.name || 'Sketch'}`,
+    profile: { sketchId, key },
+  }
+}
+
+export function pickSketchId(pick: SelectionPick): string {
+  return pick.profile?.sketchId ?? pick.id
+}
+
 export function bodyPick(
   doc: OkcDocument,
   bodyId: string,

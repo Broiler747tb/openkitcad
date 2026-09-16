@@ -23,6 +23,7 @@ import type { Sketch2D } from '../../sketch/types'
 import { principalAxisFromInertia } from './axis'
 import {
   matchProfile,
+  type PieceSample,
   PROFILE_TOLERANCE,
   projectToFrame,
   type EdgeSample,
@@ -451,6 +452,7 @@ export function nameProfile(
   sketch: Sketch2D,
   frame: Frame,
   tolerance = PROFILE_TOLERANCE,
+  pieces: readonly PieceSample[] = [],
 ): OcProfileNames {
   const topology = exploreTopology(oc, shape)
   try {
@@ -471,7 +473,7 @@ export function nameProfile(
     if (offPlane > tolerance) {
       throw new Error(`The profile lies ${offPlane.toPrecision(3)} mm off its sketch plane`)
     }
-    const match = matchProfile(sketch, edges, vertices, tolerance)
+    const match = matchProfile(sketch, edges, vertices, tolerance, pieces)
     if (!match.ok) throw new Error(match.message)
     return {
       shape,

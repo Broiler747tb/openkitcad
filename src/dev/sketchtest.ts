@@ -1,5 +1,6 @@
 import { v2, type Vec2 } from '../core/math'
 import { closestPoint, curveOf, intersectEntities, pointLookup, tessellate } from '../sketch/curves'
+import { selectProfiles, sketchRegions } from '../sketch/regions'
 import { applySolve, solveSketch } from '../sketch/solver'
 import { emptySketch, type Constraint, type Sketch2D, type SketchEntity } from '../sketch/types'
 import type { TestResult } from './selftest'
@@ -243,6 +244,262 @@ export function runSketchTest(): TestResult[] {
         `${before.toFixed(3)} mm before, ${after.toFixed(3)} mm after, middle moved ${drift.toFixed(3)} mm, ${result.iterations} iterations`,
       )
     }
+  })
+
+  guard('regions', () => {
+    const rectangle = (d: Draft, x: number, y: number, w: number, h: number) => {
+      const corners = [
+        point(d, x, y),
+        point(d, x + w, y),
+        point(d, x + w, y + h),
+        point(d, x, y + h),
+      ]
+      return corners.map((p, i) =>
+        entity(d, { kind: 'line', p1: p, p2: corners[(i + 1) % 4], construction: false }),
+      )
+    }
+    const summary = (d: Draft) =>
+      sketchRegions(d.sketch)
+        .regions.map((region) => `${region.area.toFixed(2)}${region.solid ? 's' : 'h'}`)
+        .join(' ')
+
+    const plain = draft()
+    rectangle(plain, 0, 0, 40, 30)
+    check('a rectangle is one solid region', summary(plain) === '1200.00s', summary(plain))
+
+    const washer = draft()
+    rectangle(washer, 0, 0, 40, 30)
+    entity(washer, { kind: 'circle', c: point(washer, 20, 15), r: 5, construction: false })
+    const hole = (Math.PI * 25).toFixed(2)
+    check(
+      'a circle inside a rectangle makes a plate with a hole and a disc',
+      summary(washer) === `${(1200 - Math.PI * 25).toFixed(2)}s ${hole}h`,
+      summary(washer),
+    )
+
+    const overlap = draft()
+    rectangle(overlap, 0, 0, 30, 20)
+    rectangle(overlap, 20, 10, 30, 20)
+    check(
+      'two overlapping rectangles make three solid regions',
+      summary(overlap) === '500.00s 500.00s 100.00s',
+      summary(overlap),
+    )
+
+    const halves = draft()
+    entity(halves, { kind: 'circle', c: point(halves, 0, 0), r: 10, construction: false })
+    entity(halves, {
+      kind: 'line',
+      p1: point(halves, -15, 0),
+      p2: point(halves, 15, 0),
+      construction: false,
+    })
+    const half = ((Math.PI * 100) / 2).toFixed(2)
+    check(
+      'a line across a circle splits it into two halves and ignores the ends that stick out',
+      summary(halves) === `${half}s ${half}s`,
+      summary(halves),
+    )
+
+    const tailed = draft()
+    const edges = rectangle(tailed, 0, 0, 40, 30)
+    const corner = (byId(tailed, edges[1]) as { p2: string }).p2
+    const tail = entity(tailed, {
+      kind: 'line',
+      p1: corner,
+      p2: point(tailed, 60, 50),
+      construction: false,
+    })
+    const tailedRegions = sketchRegions(tailed.sketch)
+    check(
+      'a line hanging off a corner is left out of the profile',
+      summary(tailed) === '1200.00s' && tailedRegions.dangling.includes(tail),
+      `${summary(tailed)}, dangling ${tailedRegions.dangling.join(',')}`,
+    )
+
+    const bridged = draft()
+    rectangle(bridged, 0, 0, 40, 30)
+    const centre = point(bridged, 20, 15)
+    entity(bridged, { kind: 'circle', c: centre, r: 5, construction: false })
+    entity(bridged, {
+      kind: 'line',
+      p1: point(bridged, 25, 15),
+      p2: point(bridged, 40, 15),
+      construction: false,
+    })
+    check(
+      'a line joining a hole to the outline does not change the regions',
+      summary(bridged) === `${(1200 - Math.PI * 25).toFixed(2)}s ${hole}h`,
+      summary(bridged),
+    )
+
+    const keyed = draft()
+    const keyedEdges = rectangle(keyed, 0, 0, 40, 30)
+    const before = sketchRegions(keyed.sketch).regions[0].key
+    for (const p of keyed.sketch.points) {
+      p.x *= 2
+      p.y *= 1.5
+    }
+    const after = sketchRegions(keyed.sketch).regions[0].key
+    check(
+      'a region keeps its key when the sketch is resized',
+      before === after && keyedEdges.every((id) => before.includes(id)),
+      before,
+    )
+
+    const rounded = draft()
+    const r = 5
+    const p = (x: number, y: number) => point(rounded, x, y)
+    const a1 = p(r, 0)
+    const a2 = p(40 - r, 0)
+    const b1 = p(40, r)
+    const b2 = p(40, 30 - r)
+    const c1 = p(40 - r, 30)
+    const c2 = p(r, 30)
+    const d1 = p(0, 30 - r)
+    const d2 = p(0, r)
+    for (const [s, e] of [
+      [a1, a2],
+      [b1, b2],
+      [c1, c2],
+      [d1, d2],
+    ]) {
+      entity(rounded, { kind: 'line', p1: s, p2: e, construction: false })
+    }
+    for (const [cx, cy, s, e] of [
+      [40 - r, r, a2, b1],
+      [40 - r, 30 - r, b2, c1],
+      [r, 30 - r, c2, d1],
+      [r, r, d2, a1],
+    ] as Array<[number, number, string, string]>) {
+      entity(rounded, { kind: 'arc', c: p(cx, cy), p1: s, p2: e, ccw: true, construction: false })
+    }
+    const roundedArea = 1200 - (4 - Math.PI) * r * r
+    check(
+      'a rounded rectangle is one region with the corners taken off',
+      summary(rounded) === `${roundedArea.toFixed(2)}s`,
+      `${summary(rounded)}, expected ${roundedArea.toFixed(2)}s`,
+    )
+
+    const oval = draft()
+    entity(oval, {
+      kind: 'ellipse',
+      c: point(oval, 0, 0),
+      rx: 20,
+      ry: 10,
+      rotation: 30,
+      construction: false,
+    })
+    entity(oval, {
+      kind: 'line',
+      p1: point(oval, 0, -30),
+      p2: point(oval, 0, 30),
+      construction: false,
+    })
+    const ovalRegions = sketchRegions(oval.sketch).regions
+    const ovalArea = ovalRegions.reduce((sum, region) => sum + region.area, 0)
+    check(
+      'a line through a tilted ellipse splits it into two regions that add up to the ellipse',
+      ovalRegions.length === 2 && Math.abs(ovalArea - Math.PI * 200) < 0.2,
+      `${ovalRegions.length} regions, ${ovalArea.toFixed(3)} of ${(Math.PI * 200).toFixed(3)}`,
+    )
+
+    const sail = draft()
+    const s1 = point(sail, 0, 0)
+    const s2 = point(sail, 40, 0)
+    entity(sail, { kind: 'line', p1: s1, p2: s2, construction: false })
+    entity(sail, {
+      kind: 'spline',
+      mode: 'fit',
+      points: [s2, point(sail, 30, 15), point(sail, 10, 18), s1],
+      construction: false,
+    })
+    const sailRegions = sketchRegions(sail.sketch).regions
+    check(
+      'a spline closed off by a line makes one region',
+      sailRegions.length === 1 && sailRegions[0].solid && sailRegions[0].area > 300,
+      summary(sail),
+    )
+
+    const divided = draft()
+    rectangle(divided, 0, 0, 40, 30)
+    entity(divided, {
+      kind: 'line',
+      p1: point(divided, 15, -5),
+      p2: point(divided, 15, 35),
+      construction: false,
+    })
+    check(
+      'a line straight across a rectangle leaves both sides solid',
+      summary(divided) === '750.00s 450.00s',
+      summary(divided),
+    )
+
+    const loopsOf = (d: Draft, keys?: string[]) => {
+      const selection = selectProfiles(d.sketch, keys)
+      if (!selection.ok) return `failed ${selection.missing.length} missing`
+      return selection.loops
+        .map(
+          (loop) =>
+            `${loop.outer.area.toFixed(2)}/${loop.outer.pieces.length}` +
+            loop.holes.map((hole) => ` -${Math.abs(hole.area).toFixed(2)}`).join(''),
+        )
+        .join(' + ')
+    }
+    const halfKeys = sketchRegions(halves.sketch).regions.map((region) => region.key)
+    check(
+      'picking both halves of a circle profiles the whole disc as one circle',
+      loopsOf(halves, halfKeys) === `${(Math.PI * 100).toFixed(2)}/1`,
+      loopsOf(halves, halfKeys),
+    )
+    const washerKeys = sketchRegions(washer.sketch).regions.map((region) => region.key)
+    check(
+      'picking a plate and the disc in its hole profiles the plate without the hole',
+      loopsOf(washer, washerKeys) === '1200.00/4',
+      loopsOf(washer, washerKeys),
+    )
+    check(
+      'a sketch with no profile picked profiles the plate with its hole',
+      loopsOf(washer) === `1200.00/4 -${(Math.PI * 25).toFixed(2)}`,
+      loopsOf(washer),
+    )
+    const overlapKeys = sketchRegions(overlap.sketch).regions.map((region) => region.key)
+    check(
+      'picking all three overlap regions profiles their outline',
+      loopsOf(overlap, overlapKeys) === '1100.00/8',
+      loopsOf(overlap, overlapKeys),
+    )
+    const tailedEdge = draft()
+    const tailedSides = rectangle(tailedEdge, 0, 0, 40, 30)
+    entity(tailedEdge, {
+      kind: 'line',
+      p1: point(tailedEdge, 20, 0),
+      p2: point(tailedEdge, 20, -10),
+      construction: false,
+    })
+    const tailedLoop = selectProfiles(tailedEdge.sketch)
+    check(
+      'a stub touching the middle of an edge does not split that edge in the profile',
+      tailedLoop.ok &&
+        tailedLoop.loops[0].outer.pieces.length === 4 &&
+        tailedLoop.loops[0].outer.pieces.every((piece) => tailedSides.includes(piece.token)),
+      tailedLoop.ok
+        ? tailedLoop.loops[0].outer.pieces.map((piece) => piece.token).join(' ')
+        : 'no profile',
+    )
+    const checker = draft()
+    rectangle(checker, 0, 0, 10, 10)
+    rectangle(checker, 10, 10, 10, 10)
+    check(
+      'two squares touching at a corner stay two profiles',
+      loopsOf(checker) === '100.00/4 + 100.00/4',
+      loopsOf(checker),
+    )
+    check(
+      'a profile that no longer exists is reported missing',
+      loopsOf(plain, ['gone']) === 'failed 1 missing',
+      loopsOf(plain, ['gone']),
+    )
   })
 
   guard('curves', () => {

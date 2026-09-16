@@ -84,6 +84,7 @@ export interface SketchFeature extends FeatureBase {
 export interface ExtrudeFeature extends FeatureBase {
   kind: 'extrude'
   sketchId: string
+  profiles?: string[]
   distance: number
   symmetric: boolean
   reverse: boolean
@@ -94,6 +95,7 @@ export interface ExtrudeFeature extends FeatureBase {
 export interface RevolveFeature extends FeatureBase {
   kind: 'revolve'
   sketchId: string
+  profiles?: string[]
   angle: number
   axis: 'x' | 'y'
   result: BodyOperation

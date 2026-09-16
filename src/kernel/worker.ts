@@ -489,7 +489,9 @@ function run(
   const keys: string[] = []
   let chain = rootKey
   for (const feature of features) {
-    chain = hash(chain, canonicalJson(feature), canonicalJson(externalInputs(doc, feature)))
+    const { name: _name, ...shape } = feature
+    const geometry = feature.kind === 'sketch' ? { ...shape, visible: true } : shape
+    chain = hash(chain, canonicalJson(geometry), canonicalJson(externalInputs(doc, feature)))
     keys.push(chain)
   }
 

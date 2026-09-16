@@ -184,6 +184,14 @@ function addPick(
   const input = findInput(spec, id)
   if (input?.kind !== 'selection' || !acceptsPick(input, pick)) return state
   const current = picksOf(state, id)
+  const merged = input.merge?.(current, pick)
+  if (merged) {
+    const picks = uniquePicks(merged.filter((candidate) => acceptsPick(input, candidate)))
+    return {
+      ...withField(state, id, { kind: 'selection', picks: picks.slice(0, input.max) }),
+      active: id,
+    }
+  }
   const existing = current.some((candidate) => samePick(candidate, pick))
   let picks: SelectionPick[]
   if (existing) picks = current.filter((candidate) => !samePick(candidate, pick))

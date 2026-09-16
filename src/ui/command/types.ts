@@ -29,6 +29,7 @@ export interface SelectionPick {
   plane?: PlaneRef
   point?: Vec3
   normal?: Vec3
+  profile?: { sketchId: string; key: string }
 }
 
 export type CommandValue = SelectionPick[] | number | string | boolean
@@ -50,6 +51,7 @@ export interface SelectionInput<Id extends string = string> extends InputBase<Id
   clearable?: boolean
   prompt?: string
   fills?: (pick: SelectionPick) => Readonly<Record<string, number | string | boolean>>
+  merge?: (current: readonly SelectionPick[], pick: SelectionPick) => SelectionPick[] | null
 }
 
 export interface LengthInput<Id extends string = string> extends InputBase<Id> {

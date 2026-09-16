@@ -3,9 +3,8 @@ import { findBody, findFeature } from '../../../doc/model'
 import { frameFromPlaneRefLocal } from '../../../doc/planes'
 import { useStore } from '../../../doc/store'
 import type { BodyOperation, OkcDocument, PlaneRef, SketchFeature } from '../../../doc/types'
-import { sketchLoopSummary } from '../../../kernel/profile'
-import { entityPointIds } from '../../../sketch/curves'
-import { bodyPick, planePick } from '../picks'
+import { cachedRegions } from '../../../sketch/regions'
+import { bodyPick, pickSketchId, planePick, profilePick } from '../picks'
 import type { CommandContext, LooseCommandValues, SelectionPick } from '../types'
 
 export const OPERATIONS = [
@@ -60,8 +59,17 @@ export function operationProblem(values: LooseCommandValues): Record<string, str
 }
 
 export function sketchOf(doc: OkcDocument, picks: readonly SelectionPick[]): SketchFeature | null {
-  const feature = picks[0] ? findFeature(doc, picks[0].id) : undefined
+  const feature = picks[0] ? findFeature(doc, pickSketchId(picks[0])) : undefined
   return feature?.kind === 'sketch' ? feature : null
+}
+
+export function profileKeys(picks: readonly SelectionPick[]): string[] | undefined {
+  if (!picks.length || picks.some((pick) => !pick.profile)) return undefined
+  return picks.map((pick) => pick.profile!.key)
+}
+
+export function hasProfiles(sketch: SketchFeature): boolean {
+  return cachedRegions(sketch.sketch).regions.some((region) => region.solid)
 }
 
 export function profileProblem(
@@ -69,11 +77,55 @@ export function profileProblem(
   picks: readonly SelectionPick[],
 ): Record<string, string> | null {
   const sketch = sketchOf(doc, picks)
-  if (!sketch) return { profile: 'Pick a sketch.' }
-  if (!sketchLoopSummary(sketch.sketch).closedLoops) {
-    return { profile: 'That sketch has no closed shape yet.' }
+  if (!sketch) return { profile: 'Pick a profile.' }
+  if (new Set(picks.map(pickSketchId)).size > 1) {
+    return { profile: 'Pick profiles from one sketch.' }
+  }
+  const keys = profileKeys(picks)
+  if (!keys) {
+    return hasProfiles(sketch) ? null : { profile: 'That sketch has no closed shape yet.' }
+  }
+  const known = new Set(cachedRegions(sketch.sketch).regions.map((region) => region.key))
+  if (keys.some((key) => !known.has(key))) {
+    return { profile: 'A picked profile is gone from the sketch. Pick it again.' }
   }
   return null
+}
+
+export function mergeProfilePicks(
+  current: readonly SelectionPick[],
+  pick: SelectionPick,
+): SelectionPick[] | null {
+  const sketchId = pickSketchId(pick)
+  const own = current.filter((candidate) => pickSketchId(candidate) === sketchId)
+  if (pick.kind === 'sketch')
+    return own.some((candidate) => candidate.kind === 'sketch') ? [] : [pick]
+  if (!pick.profile) return null
+  const doc = useStore.getState().doc
+  const sketch = findFeature(doc, sketchId)
+  let picks = own
+  if (own.some((candidate) => candidate.kind === 'sketch') && sketch?.kind === 'sketch') {
+    picks = cachedRegions(sketch.sketch)
+      .regions.filter((region) => region.solid)
+      .flatMap((region) => profilePick(doc, sketchId, region.key) ?? [])
+  }
+  return picks.some((candidate) => candidate.id === pick.id)
+    ? picks.filter((candidate) => candidate.id !== pick.id)
+    : [...picks, pick]
+}
+
+export function profilePicksOf(
+  doc: OkcDocument,
+  sketchId: string,
+  profiles: readonly string[] | undefined,
+): SelectionPick[] {
+  if (!profiles) {
+    const sketch = findFeature(doc, sketchId)
+    return sketch?.kind === 'sketch'
+      ? [{ kind: 'sketch', id: sketch.id, label: sketch.name || 'Sketch' }]
+      : []
+  }
+  return profiles.flatMap((key) => profilePick(doc, sketchId, key) ?? [])
 }
 
 export function planeOf(picks: readonly SelectionPick[]): PlaneRef {
@@ -116,17 +168,15 @@ export function sketchFrame(sketch: SketchFeature): Frame | null {
   return frameFromPlaneRefLocal(sketch.plane, useStore.getState().planes.get(sketch.id))
 }
 
-export function profileCentre(sketch: SketchFeature): Vec2 {
-  const used = new Set(
-    sketch.sketch.entities
-      .filter((entity) => !entity.construction)
-      .flatMap((entity) => entityPointIds(entity)),
+export function profileCentre(sketch: SketchFeature, keys?: readonly string[]): Vec2 {
+  const regions = cachedRegions(sketch.sketch).regions.filter((region) =>
+    keys ? keys.includes(region.key) : region.solid,
   )
-  const points = sketch.sketch.points.filter((point) => used.has(point.id))
-  if (!points.length) return [0, 0]
+  const total = regions.reduce((sum, region) => sum + Math.abs(region.area), 0)
+  if (!regions.length || total <= 0) return [0, 0]
   return [
-    points.reduce((sum, point) => sum + point.x, 0) / points.length,
-    points.reduce((sum, point) => sum + point.y, 0) / points.length,
+    regions.reduce((sum, region) => sum + region.inside[0] * Math.abs(region.area), 0) / total,
+    regions.reduce((sum, region) => sum + region.inside[1] * Math.abs(region.area), 0) / total,
   ]
 }
 

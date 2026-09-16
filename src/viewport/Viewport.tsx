@@ -4,15 +4,25 @@ import {
   ViewportEngine,
   type HandleScreen,
   type ScreenLabel,
+  type SketchOverlay,
   type SubPick,
 } from './engine'
 import { resolveHandles, type ActiveHandle } from './handles'
-import { entityCentre, tessellate } from '../sketch/curves'
+import { entityCentre, pointLookup, tessellate } from '../sketch/curves'
+import { cachedRegions } from '../sketch/regions'
 import { findInput } from '../ui/command/state'
 import { formatAngle, formatLength } from '../ui/command/units'
 import { CommandHost } from '../ui/command/CommandHost'
 import { useCommand } from '../ui/command/session'
-import { acceptedKinds, bodyPick, commandPicks, elementPick, offerPick } from '../ui/command/picks'
+import {
+  acceptedKinds,
+  bodyPick,
+  commandPicks,
+  elementPick,
+  offerPick,
+  pickSketchId,
+  profilePick,
+} from '../ui/command/picks'
 import {
   activeSketchFeature,
   bodyInstance,
@@ -38,6 +48,7 @@ import type { Constraint, NewConstraint, Sketch2D } from '../sketch/types'
 import type { Body, Component, Feature, LengthUnit, Matrix4, Occurrence } from '../doc/types'
 import type { Instance } from '../kernel/types'
 import {
+  activeFeatures,
   featureCreatesBodies,
   featureModifiesBodies,
   findBody,
@@ -518,6 +529,59 @@ export function Viewport() {
     engineRef.current?.setSubHighlight(activeSketch ? [] : picks)
   }, [subSelection, activeSketch, instances, commandSession])
 
+  const pickedSketchKey = commandSession
+    ? [...new Set(commandPicks().map(pickSketchId))].sort().join(',')
+    : ''
+  const sketchOverlays = useMemo((): SketchOverlay[] => {
+    const referenced = new Set(pickedSketchKey ? pickedSketchKey.split(',') : [])
+    return activeFeatures(doc).flatMap((feature): SketchOverlay[] => {
+      if (feature.kind !== 'sketch' || feature.id === activeSketch?.featureId) return []
+      if (!feature.visible && !referenced.has(feature.id)) return []
+      const local = frameFromPlaneRefLocal(feature.plane, planes.get(feature.id))
+      if (!local) return []
+      const pts = pointLookup(feature.sketch)
+      const curves: Vec2[][] = []
+      const construction: Vec2[][] = []
+      for (const entity of feature.sketch.entities) {
+        if (entity.kind === 'point') continue
+        ;(entity.construction ? construction : curves).push(tessellate(entity, pts, 0.02))
+      }
+      return [
+        {
+          id: feature.id,
+          frame: transformFrame(local, componentMatrix(doc, feature.componentId)),
+          curves,
+          construction,
+          regions: cachedRegions(feature.sketch),
+          profiles: true,
+        },
+      ]
+    })
+  }, [doc, planes, activeSketch?.featureId, pickedSketchKey])
+  useEffect(() => {
+    engineRef.current?.setSketchOverlays(sketchOverlays)
+  }, [sketchOverlays])
+
+  const pickedProfiles = useMemo(() => {
+    const ids = new Set<string>()
+    if (!commandSession) return ids
+    for (const pick of commandPicks()) {
+      if (pick.profile) ids.add(pick.id)
+      else if (pick.kind === 'sketch') {
+        const feature = doc.timeline.find((candidate) => candidate.id === pick.id)
+        if (feature?.kind !== 'sketch') continue
+        for (const region of cachedRegions(feature.sketch).regions) {
+          if (region.solid) ids.add(`${feature.id}|${region.key}`)
+        }
+      }
+    }
+    return ids
+  }, [commandSession, doc])
+  const [hoveredProfile, setHoveredProfile] = useState<string | null>(null)
+  useEffect(() => {
+    engineRef.current?.setProfileHighlight(pickedProfiles, hoveredProfile)
+  }, [pickedProfiles, hoveredProfile, sketchOverlays])
+
   const activeHandles = useMemo(
     () =>
       commandSession && !activeSketch
@@ -883,6 +947,17 @@ export function Viewport() {
     }
     const hot = activeHandles.length ? engine.pickHandle(e.clientX, e.clientY) : null
     if (hot !== hotHandle) setHotHandle(hot)
+    const profile =
+      !hot && useCommand.getState().session && acceptedKinds().has('profile')
+        ? engine.pickProfile(e.clientX, e.clientY)
+        : null
+    const profileId = profile ? `${profile.sketchId}|${profile.key}` : null
+    if (profileId !== hoveredProfile) setHoveredProfile(profileId)
+    if (profile) {
+      if (store.hovered !== null) store.setHovered(null)
+      engine.setHoverPick(null)
+      return
+    }
     const hit = engine.pick(e.clientX, e.clientY)
     if ((hit?.instanceId ?? null) !== store.hovered) store.setHovered(hit?.instanceId ?? null)
     engine.setHoverPick(engine.pickSub(e.clientX, e.clientY))
@@ -996,6 +1071,10 @@ export function Viewport() {
     const store = useStore.getState()
     if (useCommand.getState().session) {
       const filter = acceptedKinds()
+      if (filter.has('profile')) {
+        const profile = engine.pickProfile(e.clientX, e.clientY)
+        if (profile && offerPick(profilePick(store.doc, profile.sketchId, profile.key))) return
+      }
       if (filter.has('edge') || filter.has('face')) {
         const sub = engine.pickSub(e.clientX, e.clientY)
         const kind = sub?.kind === 'edge' && filter.has('edge') ? 'edge' : 'face'

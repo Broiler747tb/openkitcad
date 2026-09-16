@@ -13,7 +13,7 @@ import {
 } from './specs/modify'
 import { holeCommand, pointOnFace, ventCommand } from './specs/placed'
 import { boxCommand, cylinderCommand, sphereCommand } from './specs/primitives'
-import { operationValues, planeValues, resultIds } from './specs/shared'
+import { operationValues, planeValues, profilePicksOf, resultIds } from './specs/shared'
 import { extrudeCommand, revolveCommand } from './specs/sketchBased'
 import type { AnyCommandSpec, SelectionPick } from './types'
 
@@ -118,9 +118,8 @@ function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, Comma
   switch (feature.kind) {
     case 'extrude':
     case 'revolve': {
-      const profile = sketchPick(doc, feature.sketchId)
       const shared = {
-        profile: profile ? [profile] : [],
+        profile: profilePicksOf(doc, feature.sketchId, feature.profiles),
         ...operationValues(doc, feature.result),
       }
       const initial =

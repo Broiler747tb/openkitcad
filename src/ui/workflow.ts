@@ -1,6 +1,6 @@
 import { newId, selectedBodyId, sketchTargetBody, useStore } from '../doc/store'
 import { objectActions, type ObjectAction } from './ObjectMenu'
-import { sketchLoopSummary } from '../kernel/profile'
+import { hasProfiles } from './command/specs/shared'
 import { findComponent, findFeature } from '../doc/model'
 import type { BodyOperation, Feature } from '../doc/types'
 
@@ -36,7 +36,7 @@ export function extrusionAction(revolve = false): ObjectAction | null {
     state.activeSketch?.featureId ??
     (state.selection.kind === 'feature' ? state.selection.id : undefined)
   const feature = featureId ? findFeature(state.doc, featureId) : undefined
-  if (feature?.kind !== 'sketch' || !sketchLoopSummary(feature.sketch).closedLoops) return null
+  if (feature?.kind !== 'sketch' || !hasProfiles(feature)) return null
   const component = findComponent(state.doc, feature.componentId)
   if (!component) return null
   const target = sketchTargetBody(state.doc, feature)

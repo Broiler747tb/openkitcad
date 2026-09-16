@@ -14,6 +14,13 @@ export interface VertexSample {
   edges: readonly number[]
 }
 
+export interface PieceSample {
+  entityId: string
+  token: string
+  start: Vec2
+  end: Vec2
+}
+
 export type ProfileMatch =
   | { ok: true; edges: string[]; vertices: string[] }
   | {
@@ -80,24 +87,48 @@ function count(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? '' : 's'}`
 }
 
+function pieceToken(
+  entityId: string,
+  sample: EdgeSample,
+  pieces: readonly PieceSample[],
+  tolerance: number,
+): string {
+  const own = pieces.filter((piece) => piece.entityId === entityId)
+  if (!own.length) return entityId
+  if (own.length === 1) return own[0].token
+  const start = sample.points[0]
+  const end = sample.points[sample.points.length - 1]
+  const near = (a: Vec2, b: Vec2) => distance(a, b) <= tolerance
+  const matching = own.filter(
+    (piece) =>
+      (near(start, piece.start) && near(end, piece.end)) ||
+      (near(start, piece.end) && near(end, piece.start)),
+  )
+  const tokens = [...new Set(matching.map((piece) => piece.token))]
+  return tokens.length === 1 ? tokens[0] : entityId
+}
+
 export function matchProfile(
   sketch: Sketch2D,
   edges: readonly EdgeSample[],
   vertices: readonly VertexSample[],
   tolerance = PROFILE_TOLERANCE,
+  pieces: readonly PieceSample[] = [],
 ): ProfileMatch {
   const points = new Map(sketch.points.map((point) => [point.id, [point.x, point.y] as Vec2]))
   const entities = sketch.entities.filter((entity) => !entity.construction)
   const byId = new Map(entities.map((entity) => [entity.id, entity]))
   const unmatched: number[] = []
   const ambiguous: Array<{ edge: number; entities: string[] }> = []
-  const edgeTokens = edges.map((sample, index) => {
+  const edgeEntities = edges.map((sample, index) => {
     const holders = entities.filter((entity) =>
       sample.points.every((q) => contains(entity, points, q, tolerance)),
     )
     if (holders.length === 1) return holders[0].id
     const exact = holders.filter((entity) => endsMatch(entity, points, sample, tolerance))
     if (exact.length === 1) return exact[0].id
+    const pieced = holders.filter((entity) => pieces.some((piece) => piece.entityId === entity.id))
+    if (pieced.length === 1) return pieced[0].id
     if (holders.length === 0) unmatched.push(index)
     else {
       ambiguous.push({
@@ -121,10 +152,14 @@ export function matchProfile(
     }
     return { ok: false, message: `${parts.join(', and ')}.`, unmatched, ambiguous }
   }
+  const edgeTokens = edgeEntities.map((id, index) =>
+    pieceToken(id, edges[index], pieces, tolerance),
+  )
   const vertexTokens = vertices.map((sample) => {
     const incident = [...new Set(sample.edges.map((edge) => edgeTokens[edge]))].sort(compareStrings)
+    const owners = [...new Set(sample.edges.map((edge) => edgeEntities[edge]))]
     const ids = new Set<string>()
-    for (const id of incident) {
+    for (const id of owners) {
       const entity = byId.get(id)
       const ends = entity ? entityEnds(entity) : null
       if (!ends) continue

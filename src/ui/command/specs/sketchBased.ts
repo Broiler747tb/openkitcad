@@ -2,9 +2,11 @@ import { frameToWorld, v3 } from '../../../core/math'
 import type { ExtrudeFeature, RevolveFeature } from '../../../doc/types'
 import { defineCommand, type LooseCommandValues } from '../types'
 import {
+  mergeProfilePicks,
   OPERATIONS,
   operationProblem,
   profileCentre,
+  profileKeys,
   profileProblem,
   resultOf,
   sketchFrame,
@@ -35,11 +37,11 @@ const PROFILE_INPUT = {
   id: 'profile',
   kind: 'selection',
   label: 'Profile',
-  hint: 'The closed sketch to use. Pick it in the Browser or on the timeline.',
-  filter: ['sketch'],
+  hint: 'Click the closed areas of a sketch to use. Picking a sketch in the Browser takes all of them.',
+  filter: ['profile', 'sketch'],
   min: 1,
-  max: 1,
-  prompt: 'Select a sketch',
+  prompt: 'Select profiles',
+  merge: mergeProfilePicks,
 } as const
 
 export const extrudeCommand = defineCommand({
@@ -89,6 +91,7 @@ export const extrudeCommand = defineCommand({
       name: context.editing?.name ?? 'Extrude',
       componentId: sketch.componentId,
       sketchId: sketch.id,
+      ...(profileKeys(values.profile) ? { profiles: profileKeys(values.profile) } : {}),
       distance: values.distance,
       symmetric: values.direction === 'symmetric',
       reverse: values.direction !== 'symmetric' && values.flip,
@@ -107,7 +110,10 @@ export const extrudeCommand = defineCommand({
         kind: 'arrow',
         input: 'distance',
         componentId: sketch.componentId,
-        anchor: { point: frameToWorld(frame, profileCentre(sketch)), direction },
+        anchor: {
+          point: frameToWorld(frame, profileCentre(sketch, profileKeys(values.profile))),
+          direction,
+        },
         scale: symmetric ? 0.5 : 1,
       },
     ]
@@ -155,6 +161,7 @@ export const revolveCommand = defineCommand({
       name: context.editing?.name ?? 'Revolve',
       componentId: sketch.componentId,
       sketchId: sketch.id,
+      ...(profileKeys(values.profile) ? { profiles: profileKeys(values.profile) } : {}),
       angle: values.angle,
       axis: values.axis,
       result: resultOf(values.operation, values.bodies, context),
@@ -165,7 +172,7 @@ export const revolveCommand = defineCommand({
     const sketch = sketchOf(context.doc, values.profile)
     const frame = sketch && sketchFrame(sketch)
     if (!sketch || !frame) return []
-    const [u, v] = profileCentre(sketch)
+    const [u, v] = profileCentre(sketch, profileKeys(values.profile))
     const alongX = values.axis === 'x'
     const offset = alongX ? v : u
     const radial = alongX ? frame.yDir : frame.xDir

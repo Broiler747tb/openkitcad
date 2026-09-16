@@ -355,6 +355,18 @@ function FeatureRow({
       {feature.kind === 'sketch' && (
         <button
           className="act"
+          title={feature.visible ? 'Hide' : 'Show'}
+          onClick={(e) => {
+            e.stopPropagation()
+            store.updateFeature(feature.id, { visible: !feature.visible })
+          }}
+        >
+          {feature.visible ? '◉' : '○'}
+        </button>
+      )}
+      {feature.kind === 'sketch' && (
+        <button
+          className="act"
           title="Edit Sketch"
           onClick={(e) => {
             e.stopPropagation()

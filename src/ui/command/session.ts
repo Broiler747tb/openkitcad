@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { userParts } from '../../catalogue'
-import { featureIndex, markerIndex } from '../../doc/model'
+import { featureIndex, findFeature, markerIndex } from '../../doc/model'
 import { parameterValues } from '../../doc/parameters'
 import {
   activeComponentOf,
@@ -173,6 +173,11 @@ export const useCommand = create<CommandStore>((set, get) => ({
     useStore.getState().commit((doc) => {
       if (!editing) {
         insertFeatures(doc, features)
+        for (const feature of features) {
+          if (feature.kind !== 'extrude' && feature.kind !== 'revolve') continue
+          const sketch = findFeature(doc, feature.sketchId)
+          if (sketch?.kind === 'sketch') sketch.visible = false
+        }
         return
       }
       replaceFeatureInDocument(doc, editing, features)

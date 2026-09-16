@@ -16,6 +16,7 @@ import { frameToWorld, v3 } from '../core/math'
 import type { Sketch2D } from '../sketch/types'
 import { usePreferences, type Preferences } from '../doc/preferences'
 import { tessellate } from '../sketch/curves'
+import { regionAt, type RegionResult } from '../sketch/regions'
 
 export interface ScreenLabel {
   id: string
@@ -53,6 +54,21 @@ export function elementKey(prefix: 'f' | 'e', name: string, id: number): string 
   return name ? `${prefix}:${name}` : `${prefix}#${id}`
 }
 
+export interface SketchOverlay {
+  id: string
+  frame: Frame
+  curves: Vec2[][]
+  construction: Vec2[][]
+  regions: RegionResult
+  profiles: boolean
+}
+
+export interface ProfileHit {
+  sketchId: string
+  key: string
+  distance: number
+}
+
 export interface WorldHandle {
   id: string
   kind: 'arrow' | 'arc'
@@ -69,6 +85,12 @@ export interface HandleScreen {
   y: number
 }
 
+const OVERLAY_LINE = 0x3d4b5c
+const OVERLAY_CONSTRUCTION = 0x9097a0
+const PROFILE_IDLE = 0xf1cf9b
+const PROFILE_HOVER = 0xf0a64a
+const PROFILE_PICKED = 0x4f9fe0
+const PROFILE_LIFT = 0.02
 const HANDLE = 0x1676c5
 const HANDLE_HOT = 0x46a3ec
 const HANDLE_GRAB_PX = 14
@@ -152,6 +174,13 @@ export class ViewportEngine {
   onLabels: ((labels: ScreenLabel[]) => void) | null = null
   onHandleScreens: ((handles: HandleScreen[]) => void) | null = null
   private handleGroup = new THREE.Group()
+  private sketchOverlayGroup = new THREE.Group()
+  private sketchOverlays: SketchOverlay[] = []
+  private profileMeshes = new Map<string, THREE.Mesh>()
+  private profileState: { picked: ReadonlySet<string>; hovered: string | null } = {
+    picked: new Set(),
+    hovered: null,
+  }
   private handles: WorldHandle[] = []
   private handleScreens: HandleScreen[] = []
 
@@ -190,6 +219,7 @@ export class ViewportEngine {
 
     this.scene.add(
       this.solidGroup,
+      this.sketchOverlayGroup,
       this.sketchGroup,
       this.overlayGroup,
       this.gridGroup,
@@ -570,6 +600,147 @@ export class ViewportEngine {
     }
     addPoints(locked, 0xffffff, 6)
     addPoints(free, UNDERDEFINED, 7)
+  }
+
+  setSketchOverlays(overlays: SketchOverlay[]) {
+    for (const child of [...this.sketchOverlayGroup.children]) {
+      this.sketchOverlayGroup.remove(child)
+      child.traverse((object) => {
+        ;(object as THREE.Mesh).geometry?.dispose?.()
+        const material = (object as THREE.Mesh).material as THREE.Material | undefined
+        material?.dispose?.()
+      })
+    }
+    this.profileMeshes.clear()
+    this.sketchOverlays = overlays
+    for (const overlay of overlays) {
+      const { frame } = overlay
+      const lift = v3.scale(frame.normal, PROFILE_LIFT)
+      const to3 = (p: Vec2) => new THREE.Vector3(...v3.add(frameToWorld(frame, p), lift))
+      const segments = (chains: Vec2[][]) => {
+        const points: THREE.Vector3[] = []
+        for (const chain of chains) {
+          for (let i = 0; i + 1 < chain.length; i++) points.push(to3(chain[i]), to3(chain[i + 1]))
+        }
+        return points
+      }
+      const solid = segments(overlay.curves)
+      if (solid.length) {
+        const line = new THREE.LineSegments(
+          new THREE.BufferGeometry().setFromPoints(solid),
+          new THREE.LineBasicMaterial({ color: OVERLAY_LINE }),
+        )
+        line.renderOrder = 4
+        this.sketchOverlayGroup.add(line)
+      }
+      const dashed = segments(overlay.construction)
+      if (dashed.length) {
+        const line = new THREE.LineSegments(
+          new THREE.BufferGeometry().setFromPoints(dashed),
+          new THREE.LineDashedMaterial({
+            color: OVERLAY_CONSTRUCTION,
+            dashSize: 1.6,
+            gapSize: 1.2,
+          }),
+        )
+        line.computeLineDistances()
+        line.renderOrder = 4
+        this.sketchOverlayGroup.add(line)
+      }
+      if (!overlay.profiles) continue
+      for (const region of overlay.regions.regions) {
+        const contour = region.outer.polygon.map((p) => new THREE.Vector2(p[0], p[1]))
+        const holes = region.holes.map((hole) =>
+          [...hole.polygon].reverse().map((p) => new THREE.Vector2(p[0], p[1])),
+        )
+        let triangles: number[][]
+        try {
+          triangles = THREE.ShapeUtils.triangulateShape(contour, holes)
+        } catch {
+          continue
+        }
+        const flat = [...contour, ...holes.flat()]
+        const positions = new Float32Array(flat.length * 3)
+        flat.forEach((p, i) => {
+          const world = to3([p.x, p.y])
+          positions[i * 3] = world.x
+          positions[i * 3 + 1] = world.y
+          positions[i * 3 + 2] = world.z
+        })
+        const geometry = new THREE.BufferGeometry()
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+        geometry.setIndex(triangles.flat())
+        const mesh = new THREE.Mesh(
+          geometry,
+          new THREE.MeshBasicMaterial({
+            color: PROFILE_IDLE,
+            transparent: true,
+            opacity: 0.32,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+            polygonOffset: true,
+            polygonOffsetFactor: -2,
+            polygonOffsetUnits: -2,
+          }),
+        )
+        mesh.renderOrder = 3
+        const id = `${overlay.id}|${region.key}`
+        mesh.userData.profileId = id
+        this.profileMeshes.set(id, mesh)
+        this.sketchOverlayGroup.add(mesh)
+      }
+    }
+    this.paintProfiles()
+  }
+
+  setProfileHighlight(picked: ReadonlySet<string>, hovered: string | null) {
+    this.profileState = { picked, hovered }
+    this.paintProfiles()
+  }
+
+  private paintProfiles() {
+    for (const [id, mesh] of this.profileMeshes) {
+      const material = mesh.material as THREE.MeshBasicMaterial
+      const picked = this.profileState.picked.has(id)
+      const hovered = this.profileState.hovered === id
+      material.color.setHex(picked ? PROFILE_PICKED : hovered ? PROFILE_HOVER : PROFILE_IDLE)
+      material.opacity = picked ? 0.5 : hovered ? 0.45 : 0.32
+    }
+  }
+
+  pickProfile(clientX: number, clientY: number): ProfileHit | null {
+    this.raycaster.setFromCamera(this.pointerToNdc(clientX, clientY), this.camera)
+    const ray = this.raycaster.ray
+    let best: ProfileHit | null = null
+    for (const overlay of this.sketchOverlays) {
+      if (!overlay.profiles || !overlay.regions.regions.length) continue
+      const normal = new THREE.Vector3(...overlay.frame.normal)
+      if (Math.abs(ray.direction.dot(normal)) < 0.02) continue
+      const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+        normal,
+        new THREE.Vector3(...overlay.frame.origin),
+      )
+      const point = new THREE.Vector3()
+      if (!ray.intersectPlane(plane, point)) continue
+      const d = point.clone().sub(new THREE.Vector3(...overlay.frame.origin))
+      const local: Vec2 = [
+        d.dot(new THREE.Vector3(...overlay.frame.xDir)),
+        d.dot(new THREE.Vector3(...overlay.frame.yDir)),
+      ]
+      const region = regionAt(overlay.regions, local)
+      if (!region) continue
+      const distance = point.distanceTo(ray.origin)
+      if (!best || distance < best.distance) {
+        best = { sketchId: overlay.id, key: region.key, distance }
+      }
+    }
+    if (!best) return null
+    const body = this.pick(clientX, clientY)
+    if (body) {
+      const hitDistance = new THREE.Vector3(...body.point).distanceTo(ray.origin)
+      if (hitDistance < best.distance - Math.max(0.05, best.distance * 1e-4)) return null
+    }
+    return best
   }
 
   /** Faint filled plane so the user can see what they are drawing on. */

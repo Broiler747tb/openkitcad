@@ -13,6 +13,7 @@ import type {
 import { emptyDocument } from '../doc/types'
 import { identityMatrix, multiplyMatrices, rotationMatrix, translationMatrix } from '../doc/model'
 import type { BodyMesh, EvaluateResult, KernelApi } from '../kernel/types'
+import { sketchRegions } from '../sketch/regions'
 import { applySolve, solveSketch } from '../sketch/solver'
 import { emptySketch, type Sketch2D } from '../sketch/types'
 import type { TestResult } from './selftest'
@@ -1422,6 +1423,256 @@ export async function runKernelTest(): Promise<TestResult[]> {
         edited.errors.length === 0 &&
           Math.abs((meshFor(edited, 'root|b')?.volume ?? 0) - 36000) < 0.5,
         `${meshFor(edited, 'root|b')?.volume.toFixed(1)} mm3, expected 36000 with no rounding`,
+      )
+    }
+
+    {
+      const sketchOf = (build: (s: Sketch2D) => void): Sketch2D => {
+        const s = emptySketch()
+        build(s)
+        return s
+      }
+      const halves = (radius: number) =>
+        sketchOf((s) => {
+          s.points.push(
+            { id: 'c', x: 0, y: 0 },
+            { id: 'a', x: -15, y: 0 },
+            { id: 'b', x: 15, y: 0 },
+          )
+          s.entities.push(
+            { id: 'ring', kind: 'circle', c: 'c', r: radius, construction: false },
+            { id: 'cut', kind: 'line', p1: 'a', p2: 'b', construction: false },
+          )
+        })
+      const keyWhere = (s: Sketch2D, test: (inside: [number, number]) => boolean) =>
+        sketchRegions(s).regions.find((region) => test(region.inside))?.key ?? 'none'
+      const profileDoc = (
+        name: string,
+        sketch: Sketch2D,
+        operation:
+          | { kind: 'extrude'; distance: number; profiles?: string[] }
+          | { kind: 'revolve'; angle: number; profiles?: string[] },
+      ) =>
+        makeDocument(
+          name,
+          [body('pb', 'Profiled')],
+          [
+            {
+              id: 'ps',
+              name: 'Sketch',
+              componentId: 'root',
+              kind: 'sketch',
+              plane: XY,
+              sketch,
+              visible: true,
+            },
+            operation.kind === 'extrude'
+              ? {
+                  id: 'pe',
+                  name: 'Extrude',
+                  componentId: 'root',
+                  kind: 'extrude',
+                  sketchId: 'ps',
+                  ...(operation.profiles ? { profiles: operation.profiles } : {}),
+                  distance: operation.distance,
+                  symmetric: false,
+                  reverse: false,
+                  result: { kind: 'newBody', bodyId: 'pb' },
+                }
+              : {
+                  id: 'pe',
+                  name: 'Revolve',
+                  componentId: 'root',
+                  kind: 'revolve',
+                  sketchId: 'ps',
+                  ...(operation.profiles ? { profiles: operation.profiles } : {}),
+                  angle: operation.angle,
+                  axis: 'x',
+                  result: { kind: 'newBody', bodyId: 'pb' },
+                },
+          ],
+        )
+      const volumeOf = (r: EvaluateResult) => meshFor(r, 'root|pb')?.volume ?? 0
+      const sideNames = (r: EvaluateResult) =>
+        (meshFor(r, 'root|pb')?.mesh.faceGroups ?? [])
+          .map((group) => group.name)
+          .filter((name) => name.includes(':side:'))
+          .sort()
+
+      const upper = halves(10)
+      const top = await evaluate(
+        profileDoc('half disc', upper, {
+          kind: 'extrude',
+          distance: 5,
+          profiles: [keyWhere(upper, ([, y]) => y > 0)],
+        }),
+      )
+      add(
+        'extruding one half of a split circle makes a half cylinder',
+        top.errors.length === 0 && Math.abs(volumeOf(top) - (Math.PI * 100 * 5) / 2) < 0.05,
+        top.errors.length ? errorText(top) : `${volumeOf(top).toFixed(3)} mm3`,
+      )
+      const grown = halves(12)
+      const topGrown = await evaluate(
+        profileDoc('half disc grown', grown, {
+          kind: 'extrude',
+          distance: 5,
+          profiles: [keyWhere(grown, ([, y]) => y > 0)],
+        }),
+      )
+      add(
+        'a split curve names its side faces by piece, and the names survive a resize',
+        sideNames(top).length === 2 &&
+          sideNames(top).every((name) => !name.includes('#')) &&
+          sideNames(top).join(' ') === sideNames(topGrown).join(' '),
+        `${sideNames(top).join(', ')} / ${sideNames(topGrown).join(', ')}`,
+      )
+      const both = await evaluate(
+        profileDoc('both halves', upper, {
+          kind: 'extrude',
+          distance: 5,
+          profiles: sketchRegions(upper).regions.map((region) => region.key),
+        }),
+      )
+      add(
+        'extruding both halves makes one whole cylinder',
+        both.errors.length === 0 && Math.abs(volumeOf(both) - Math.PI * 100 * 5) < 0.05,
+        both.errors.length ? errorText(both) : `${volumeOf(both).toFixed(3)} mm3`,
+      )
+      const ball = await evaluate(
+        profileDoc('ball', upper, {
+          kind: 'revolve',
+          angle: 360,
+          profiles: [keyWhere(upper, ([, y]) => y > 0)],
+        }),
+      )
+      add(
+        'revolving a half disc about its cut edge makes a ball',
+        ball.errors.length === 0 && Math.abs(volumeOf(ball) - (4 / 3) * Math.PI * 1000) < 0.5,
+        ball.errors.length ? errorText(ball) : `${volumeOf(ball).toFixed(2)} mm3`,
+      )
+
+      const plate = sketchOf((s) => {
+        s.points.push(
+          { id: 'p1', x: 0, y: 0 },
+          { id: 'p2', x: 40, y: 0 },
+          { id: 'p3', x: 40, y: 30 },
+          { id: 'p4', x: 0, y: 30 },
+          { id: 'c', x: 20, y: 15 },
+        )
+        s.entities.push(
+          { id: 'l1', kind: 'line', p1: 'p1', p2: 'p2', construction: false },
+          { id: 'l2', kind: 'line', p1: 'p2', p2: 'p3', construction: false },
+          { id: 'l3', kind: 'line', p1: 'p3', p2: 'p4', construction: false },
+          { id: 'l4', kind: 'line', p1: 'p4', p2: 'p1', construction: false },
+          { id: 'o', kind: 'circle', c: 'c', r: 5, construction: false },
+        )
+      })
+      const washer = await evaluate(profileDoc('washer', plate, { kind: 'extrude', distance: 4 }))
+      add(
+        'a sketch extruded without picked profiles keeps the hole in its plate',
+        washer.errors.length === 0 && Math.abs(volumeOf(washer) - (1200 - Math.PI * 25) * 4) < 0.05,
+        washer.errors.length ? errorText(washer) : `${volumeOf(washer).toFixed(3)} mm3`,
+      )
+      const plug = await evaluate(
+        profileDoc('plug', plate, {
+          kind: 'extrude',
+          distance: 4,
+          profiles: [keyWhere(plate, ([x, y]) => Math.hypot(x - 20, y - 15) < 5)],
+        }),
+      )
+      add(
+        'picking only the disc in the hole extrudes a plug',
+        plug.errors.length === 0 && Math.abs(volumeOf(plug) - Math.PI * 25 * 4) < 0.05,
+        plug.errors.length ? errorText(plug) : `${volumeOf(plug).toFixed(3)} mm3`,
+      )
+
+      const oval = sketchOf((s) => {
+        s.points.push({ id: 'c', x: 0, y: 0 }, { id: 'a', x: 0, y: -30 }, { id: 'b', x: 0, y: 30 })
+        s.entities.push(
+          { id: 'e', kind: 'ellipse', c: 'c', rx: 20, ry: 10, rotation: 30, construction: false },
+          { id: 'v', kind: 'line', p1: 'a', p2: 'b', construction: false },
+        )
+      })
+      const halfOval = await evaluate(
+        profileDoc('half oval', oval, {
+          kind: 'extrude',
+          distance: 2,
+          profiles: [keyWhere(oval, ([x]) => x > 0)],
+        }),
+      )
+      add(
+        'half of a tilted ellipse extrudes from an exact elliptical arc',
+        halfOval.errors.length === 0 && Math.abs(volumeOf(halfOval) - Math.PI * 200) < 0.01,
+        halfOval.errors.length ? errorText(halfOval) : `${volumeOf(halfOval).toFixed(4)} mm3`,
+      )
+      const tall = sketchOf((s) => {
+        s.points.push({ id: 'c', x: 0, y: 0 }, { id: 'a', x: -30, y: 0 }, { id: 'b', x: 30, y: 0 })
+        s.entities.push(
+          { id: 'e', kind: 'ellipse', c: 'c', rx: 8, ry: 16, rotation: 0, construction: false },
+          { id: 'h', kind: 'line', p1: 'a', p2: 'b', construction: false },
+        )
+      })
+      const tallHalf = await evaluate(
+        profileDoc('tall half', tall, {
+          kind: 'extrude',
+          distance: 1,
+          profiles: [keyWhere(tall, ([, y]) => y > 0)],
+        }),
+      )
+      add(
+        'an ellipse taller than it is wide splits at the right place',
+        tallHalf.errors.length === 0 &&
+          Math.abs(volumeOf(tallHalf) - (Math.PI * 8 * 16) / 2) < 0.01,
+        tallHalf.errors.length ? errorText(tallHalf) : `${volumeOf(tallHalf).toFixed(4)} mm3`,
+      )
+
+      const sail = sketchOf((s) => {
+        s.points.push(
+          { id: 's1', x: 0, y: 0 },
+          { id: 's2', x: 40, y: 0 },
+          { id: 's3', x: 30, y: 15 },
+          { id: 's4', x: 10, y: 18 },
+          { id: 'm1', x: 20, y: -5 },
+          { id: 'm2', x: 20, y: 40 },
+        )
+        s.entities.push(
+          { id: 'base', kind: 'line', p1: 's1', p2: 's2', construction: false },
+          {
+            id: 'curve',
+            kind: 'spline',
+            mode: 'fit',
+            points: ['s2', 's3', 's4', 's1'],
+            construction: false,
+          },
+          { id: 'mast', kind: 'line', p1: 'm1', p2: 'm2', construction: false },
+        )
+      })
+      const sailRegion = sketchRegions(sail).regions.find((region) => region.inside[0] > 20)
+      const halfSail = await evaluate(
+        profileDoc('half sail', sail, {
+          kind: 'extrude',
+          distance: 3,
+          profiles: [sailRegion?.key ?? 'none'],
+        }),
+      )
+      add(
+        'a spline cut by a line extrudes the piece on one side exactly',
+        halfSail.errors.length === 0 &&
+          !!sailRegion &&
+          Math.abs(volumeOf(halfSail) - sailRegion.area * 3) < 1e-3 * sailRegion.area,
+        halfSail.errors.length
+          ? errorText(halfSail)
+          : `${volumeOf(halfSail).toFixed(3)} mm3, region ${((sailRegion?.area ?? 0) * 3).toFixed(3)}`,
+      )
+
+      const lost = await evaluate(
+        profileDoc('lost', upper, { kind: 'extrude', distance: 5, profiles: ['nothing[here]+'] }),
+      )
+      add(
+        'a profile that no longer exists fails the step with a reason',
+        lost.errors.some((error) => error.featureId === 'pe' && error.message.includes('gone')),
+        errorText(lost) || 'no error',
       )
     }
   } catch (e) {
