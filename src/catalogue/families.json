@@ -109,6 +109,11 @@
     "category": "control",
     "summary": "Endless knobs with detents and a push switch."
   },
+  "stm32-pill": {
+    "name": "STM32 pill board",
+    "category": "mcu",
+    "summary": "Long STM32 boards with two 20-pin rows and an SWD header."
+  },
   "tft-display": {
     "name": "TFT colour display",
     "category": "display",

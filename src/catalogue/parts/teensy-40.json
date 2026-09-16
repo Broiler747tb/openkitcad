@@ -4,18 +4,156 @@
   "category": "mcu",
   "popularity": 47,
   "manufacturer": "PJRC",
-  "summary": "Very fast for its size. Popular for audio and USB work.",
-  "confidence": "approximate",
-  "source": "Outline is the published 1.4 x 0.7 inch board size. It has no mounting holes - it is designed to be soldered down or socketed.",
+  "summary": "Fast 600 MHz board, 35.6 x 17.8 mm. Pins on a 0.1 inch grid, no mounting holes.",
+  "confidence": "datasheet",
+  "source": "PJRC Teensy 4.0 published size (1.4 x 0.7 inch, 35.56 x 17.78 mm, every pin on the 0.1 inch grid) with pad positions and part outlines from the teensy.pretty KiCad footprint that follows it: two rows of 14 pins 15.24 mm apart, 5 pads across the far end, the micro USB socket sticking out 1.27 mm past the near end, the i.MX RT1062 processor 10.16 mm square and the program button at the far end. The 10 pads on the underside are not modelled. No mounting holes.",
+  "look": {
+    "colour": "#2b6d3a",
+    "components": [
+      {
+        "kind": "port",
+        "port": "micro-usb",
+        "x": -1.27,
+        "y": 8.89,
+        "facing": "-x",
+        "w": 7.62,
+        "h": 2.8,
+        "depth": 6.35,
+        "label": "micro USB"
+      },
+      {
+        "kind": "chip",
+        "x": 12.065,
+        "y": 3.81,
+        "w": 10.16,
+        "h": 10.16,
+        "height": 1.2,
+        "label": "i.MX RT1062"
+      },
+      {
+        "kind": "chip",
+        "x": 22.86,
+        "y": 10.795,
+        "w": 2.54,
+        "h": 3.175,
+        "height": 0.8,
+        "label": "Flash"
+      },
+      {
+        "kind": "box",
+        "x": 27.94,
+        "y": 7.62,
+        "w": 4.572,
+        "h": 2.54,
+        "height": 1.2,
+        "finish": "metal",
+        "colour": "#a3aab1",
+        "radius": 0.2,
+        "label": "Program button"
+      },
+      {
+        "kind": "cylinder",
+        "x": 30.226,
+        "y": 8.89,
+        "d": 1.6,
+        "height": 1.9,
+        "finish": "plastic",
+        "colour": "#f2f0ea",
+        "label": "Program button cap"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
       "shape": "rect",
-      "w": 35.6,
-      "h": 17.8
+      "w": 35.56,
+      "h": 17.78
     },
-    "thickness": 1.6
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": -1.27,
+        "y": 5.08,
+        "w": 6.35,
+        "h": 7.62,
+        "z": 1.6,
+        "height": 2.8,
+        "colour": "#b9c0c7",
+        "label": "micro USB"
+      },
+      {
+        "x": 12.065,
+        "y": 3.81,
+        "w": 10.16,
+        "h": 10.16,
+        "z": 1.6,
+        "height": 1.2,
+        "colour": "#20262c",
+        "label": "i.MX RT1062"
+      }
+    ]
   },
+  "connectors": [
+    {
+      "id": "usb",
+      "label": "micro USB",
+      "side": "-x",
+      "x": 0,
+      "y": 8.89,
+      "z": 1.6,
+      "width": 8.5,
+      "height": 3.5,
+      "protrusion": 1.27
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "gnd-12",
+      "label": "GND, 0 to 12",
+      "x": 1.27,
+      "y": 1.27,
+      "rows": 1,
+      "cols": 14,
+      "pitch": 2.54
+    },
+    {
+      "id": "vin-13",
+      "label": "VIN, GND, 3V3, 23 to 13",
+      "x": 1.27,
+      "y": 16.51,
+      "rows": 1,
+      "cols": 14,
+      "pitch": 2.54
+    },
+    {
+      "id": "end",
+      "label": "End pads",
+      "x": 34.29,
+      "y": 3.81,
+      "rows": 5,
+      "cols": 1,
+      "pitch": 2.54
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-under",
+      "label": "Pads on the underside",
+      "x": 0,
+      "y": 0,
+      "w": 35.56,
+      "h": 17.78,
+      "z": -1.5,
+      "height": 1.5
+    }
+  ],
+  "links": [
+    {
+      "label": "Product page",
+      "url": "https://www.pjrc.com/store/teensy40.html"
+    }
+  ],
   "tags": [
     "teensy",
     "4.0",

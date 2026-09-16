@@ -1,0 +1,318 @@
+{
+  "id": "weact-blackpill-f411",
+  "name": "WeAct BlackPill STM32F411 (V3.1)",
+  "category": "mcu",
+  "popularity": 50,
+  "family": "stm32-pill",
+  "variant": "WeAct BlackPill F411, USB-C",
+  "manufacturer": "WeAct Studio",
+  "summary": "STM32F411 board: 52.8 x 20.8 mm, two 20-pin rows 15.24 mm apart, USB-C, no mounting holes.",
+  "confidence": "datasheet",
+  "source": "WeAct MiniSTM32F4x1 V3.1 board shape drawing (github.com/WeActStudio/WeActStudio.MiniSTM32F4x1), scaled from its own 2.54 mm pin pitch: board 52.78 x 20.75 mm, two rows of 20 pins 15.24 mm apart starting 1.35 mm from the USB end, a 4-pin SWD header 45.8 mm along, the STM32F411 fitted at 45 degrees, NRST, BOOT0 and KEY buttons, the 25 MHz and 32.768 kHz crystals, and the flash chip on the underside. The USB-C overhang is not dimensioned and is shown at about 1.2 mm. No mounting holes.",
+  "look": {
+    "colour": "#141618",
+    "components": [
+      {
+        "kind": "port",
+        "port": "usb-c",
+        "x": -1.2,
+        "y": 10.375,
+        "facing": "-x",
+        "depth": 7.35,
+        "label": "USB-C"
+      },
+      {
+        "kind": "chip",
+        "x": 22.8,
+        "y": 6.875,
+        "w": 7.0,
+        "h": 7.0,
+        "height": 0.6,
+        "legs": "quad",
+        "turn": 45,
+        "label": "STM32F411CEU6"
+      },
+      {
+        "kind": "box",
+        "x": 12.6,
+        "y": 11.24,
+        "w": 5.0,
+        "h": 3.2,
+        "height": 1.6,
+        "finish": "metal",
+        "colour": "#a3aab1",
+        "radius": 0.2,
+        "label": "NRST button"
+      },
+      {
+        "kind": "cylinder",
+        "x": 15.1,
+        "y": 12.84,
+        "d": 2.4,
+        "height": 2.3,
+        "finish": "plastic",
+        "colour": "#d9ccb0",
+        "label": "NRST button cap"
+      },
+      {
+        "kind": "box",
+        "x": 12.6,
+        "y": 6.56,
+        "w": 5.0,
+        "h": 3.2,
+        "height": 1.6,
+        "finish": "metal",
+        "colour": "#a3aab1",
+        "radius": 0.2,
+        "label": "BOOT0 button"
+      },
+      {
+        "kind": "cylinder",
+        "x": 15.1,
+        "y": 8.16,
+        "d": 2.4,
+        "height": 2.3,
+        "finish": "plastic",
+        "colour": "#d9ccb0",
+        "label": "BOOT0 button cap"
+      },
+      {
+        "kind": "box",
+        "x": 38.38,
+        "y": 6.9,
+        "w": 5.0,
+        "h": 3.2,
+        "height": 1.6,
+        "finish": "metal",
+        "colour": "#a3aab1",
+        "radius": 0.2,
+        "label": "KEY button"
+      },
+      {
+        "kind": "cylinder",
+        "x": 40.88,
+        "y": 8.5,
+        "d": 2.4,
+        "height": 2.3,
+        "finish": "plastic",
+        "colour": "#d9ccb0",
+        "label": "KEY button cap"
+      },
+      {
+        "kind": "crystal",
+        "x": 34.19,
+        "y": 11.5,
+        "w": 2.5,
+        "h": 3.2,
+        "height": 0.8,
+        "label": "25 MHz crystal"
+      },
+      {
+        "kind": "box",
+        "x": 34.54,
+        "y": 7.16,
+        "w": 1.5,
+        "h": 3.2,
+        "height": 0.8,
+        "finish": "metal",
+        "colour": "#b9c0c7",
+        "label": "32.768 kHz crystal"
+      },
+      {
+        "kind": "chip",
+        "x": 9.07,
+        "y": 10.22,
+        "w": 2.9,
+        "h": 1.6,
+        "height": 1.1,
+        "label": "3.3 V regulator"
+      },
+      {
+        "kind": "chip",
+        "x": 12.51,
+        "y": 7.87,
+        "w": 5.3,
+        "h": 5.3,
+        "height": 1.8,
+        "legs": "dual",
+        "flip": true,
+        "z": 0,
+        "label": "SPI flash"
+      },
+      {
+        "kind": "led",
+        "x": 41.68,
+        "y": 15.4,
+        "colour": "#2f7bff",
+        "size": 1.6,
+        "label": "C13 LED"
+      },
+      {
+        "kind": "led",
+        "x": 41.68,
+        "y": 5.51,
+        "colour": "#2f7bff",
+        "size": 1.6,
+        "label": "Power LED"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 52.78,
+      "h": 20.75,
+      "cornerRadius": 0.43
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": -1.2,
+        "y": 5.905,
+        "w": 7.35,
+        "h": 8.94,
+        "z": 1.6,
+        "height": 3.26,
+        "colour": "#b9c0c7",
+        "label": "USB-C"
+      },
+      {
+        "x": 12.6,
+        "y": 6.56,
+        "w": 5.0,
+        "h": 7.88,
+        "z": 1.6,
+        "height": 2.3,
+        "colour": "#a3aab1",
+        "label": "NRST and BOOT0 buttons"
+      }
+    ]
+  },
+  "connectors": [
+    {
+      "id": "usb",
+      "label": "USB-C",
+      "side": "-x",
+      "x": 0,
+      "y": 10.375,
+      "z": 1.6,
+      "width": 9.4,
+      "height": 3.6,
+      "protrusion": 1.2
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "top",
+      "label": "5V to VB",
+      "x": 1.352,
+      "y": 17.995,
+      "rows": 1,
+      "cols": 20,
+      "pitch": 2.54,
+      "pins": [
+        "5V",
+        "G",
+        "3V3",
+        "B10",
+        "B2",
+        "B1",
+        "B0",
+        "A7",
+        "A6",
+        "A5",
+        "A4",
+        "A3",
+        "A2",
+        "A1",
+        "A0",
+        "R",
+        "C15",
+        "C14",
+        "C13",
+        "VB"
+      ]
+    },
+    {
+      "id": "bottom",
+      "label": "B12 to 3V3",
+      "x": 1.352,
+      "y": 2.755,
+      "rows": 1,
+      "cols": 20,
+      "pitch": 2.54,
+      "pins": [
+        "B12",
+        "B13",
+        "B14",
+        "B15",
+        "A8",
+        "A9",
+        "A10",
+        "A11",
+        "A12",
+        "A15",
+        "B3",
+        "B4",
+        "B5",
+        "B6",
+        "B7",
+        "B8",
+        "B9",
+        "5V",
+        "G",
+        "3V3"
+      ]
+    },
+    {
+      "id": "swd",
+      "label": "SWD",
+      "x": 45.81,
+      "y": 6.565,
+      "rows": 4,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "3V3",
+        "DIO",
+        "SCK",
+        "GND"
+      ]
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-under",
+      "label": "Solder side clearance",
+      "x": 0,
+      "y": 0,
+      "w": 52.78,
+      "h": 20.75,
+      "z": -2.5,
+      "height": 2.5
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      5,
+      3.3
+    ],
+    "currentTypical": 0.03,
+    "currentPeak": 0.1
+  },
+  "links": [
+    {
+      "label": "Design files",
+      "url": "https://github.com/WeActStudio/WeActStudio.MiniSTM32F4x1"
+    }
+  ],
+  "tags": [
+    "stm32",
+    "blackpill",
+    "f411",
+    "weact",
+    "microcontroller",
+    "usb-c"
+  ]
+}

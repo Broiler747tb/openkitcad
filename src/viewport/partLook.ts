@@ -7,6 +7,7 @@ import type {
   LookComponent,
   LookFacing,
   PartGeometry,
+  PinHeader,
   PortStyle,
 } from '../catalogue/types'
 
@@ -954,8 +955,13 @@ function boardLook(look: Look, part: CataloguePart, g: Geometry<'board'>) {
     }
   const components = part.look?.components ?? defaultBoardComponents(part, g)
   for (const component of components) drawComponent(look, component, g.thickness, 0)
-  if (!components.some((component) => component.kind === 'header'))
-    drawPads(look, part, g.thickness)
+  const fitted = components.filter((component) => component.kind === 'header')
+  drawPads(look, part, g.thickness, (header) =>
+    fitted.some(
+      (component) =>
+        Math.abs(component.x - header.x) < 0.05 && Math.abs(component.y - header.y) < 0.05,
+    ),
+  )
 }
 
 function defaultBoardComponents(part: CataloguePart, g: Geometry<'board'>): LookComponent[] {
@@ -991,8 +997,14 @@ function defaultBoardComponents(part: CataloguePart, g: Geometry<'board'>): Look
   return out
 }
 
-function drawPads(look: Look, part: CataloguePart, top: number) {
+function drawPads(
+  look: Look,
+  part: CataloguePart,
+  top: number,
+  covered: (header: PinHeader) => boolean,
+) {
   for (const header of part.pinHeaders ?? []) {
+    if (covered(header)) continue
     const pitch = header.pitch ?? 2.54
     for (let i = 0; i < header.rows * header.cols; i++) {
       const px = header.x + (i % header.cols) * pitch

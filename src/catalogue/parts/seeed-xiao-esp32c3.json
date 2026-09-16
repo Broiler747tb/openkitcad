@@ -1,21 +1,188 @@
 {
   "id": "seeed-xiao-esp32c3",
-  "name": "Seeed XIAO ESP32-C3",
+  "name": "Seeed Studio XIAO ESP32C3",
   "category": "mcu",
   "popularity": 66,
   "manufacturer": "Seeed Studio",
-  "summary": "Thumbnail-sized wifi board. No mounting holes, so it gets glued or soldered down.",
-  "confidence": "approximate",
-  "source": "Dimensions follow the commonly sold board. These are made by many suppliers to no common standard, so measure yours before cutting a panel. This one carries no mounting holes at all, which is worth knowing before designing a bracket for holes that are not there.",
+  "summary": "Thumb-sized ESP32-C3 board: 21 x 17.8 mm, 7 castellated pins per side, no mounting holes.",
+  "confidence": "datasheet",
+  "source": "Seeed Studio XIAO ESP32C3 footprint (Seeed OPL KiCad library, XIAO-ESP32-C3-DIP) and the top-layer DXF from the Seeed wiki: board 20.96 x 17.78 mm with 1.9 mm corners, two rows of 7 pins on a 2.54 mm grid 15.24 mm apart, castellated at the edge. The USB-C socket (9.0 mm wide) sticks out 1.51 mm past the short edge. The shield over the ESP32-C3 and flash and the two small buttons are placed from the DXF silkscreen. No mounting holes.",
+  "look": {
+    "colour": "#1b1d20",
+    "components": [
+      {
+        "kind": "port",
+        "port": "usb-c",
+        "x": -1.53,
+        "y": 8.885,
+        "facing": "-x",
+        "w": 9.0,
+        "h": 3.2,
+        "depth": 7.37,
+        "label": "USB-C"
+      },
+      {
+        "kind": "box",
+        "x": 6.98,
+        "y": 2.66,
+        "w": 10.29,
+        "h": 12.45,
+        "height": 1.8,
+        "finish": "metal",
+        "colour": "#c9ced3",
+        "label": "ESP32-C3 shield"
+      },
+      {
+        "kind": "box",
+        "x": 18.13,
+        "y": 11.83,
+        "w": 2.6,
+        "h": 3.0,
+        "height": 1.0,
+        "finish": "metal",
+        "colour": "#a3aab1",
+        "radius": 0.2,
+        "label": "Button"
+      },
+      {
+        "kind": "cylinder",
+        "x": 19.43,
+        "y": 13.33,
+        "d": 1.4,
+        "height": 1.7,
+        "finish": "plastic",
+        "colour": "#1d1f22",
+        "label": "Button cap"
+      },
+      {
+        "kind": "box",
+        "x": 18.13,
+        "y": 2.94,
+        "w": 2.6,
+        "h": 3.0,
+        "height": 1.0,
+        "finish": "metal",
+        "colour": "#a3aab1",
+        "radius": 0.2,
+        "label": "Button"
+      },
+      {
+        "kind": "cylinder",
+        "x": 19.43,
+        "y": 4.44,
+        "d": 1.4,
+        "height": 1.7,
+        "finish": "plastic",
+        "colour": "#1d1f22",
+        "label": "Button cap"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
       "shape": "rect",
-      "w": 21,
-      "h": 17.5
+      "w": 20.955,
+      "h": 17.78,
+      "cornerRadius": 1.905
     },
-    "thickness": 1.0
+    "thickness": 1.0,
+    "bumps": [
+      {
+        "x": -1.53,
+        "y": 4.385,
+        "w": 7.37,
+        "h": 9.0,
+        "z": 1.0,
+        "height": 3.2,
+        "colour": "#b9c0c7",
+        "label": "USB-C"
+      },
+      {
+        "x": 6.98,
+        "y": 2.66,
+        "w": 10.29,
+        "h": 12.45,
+        "z": 1.0,
+        "height": 1.8,
+        "colour": "#b9c0c7",
+        "label": "Shield"
+      }
+    ]
   },
+  "connectors": [
+    {
+      "id": "usb",
+      "label": "USB-C",
+      "side": "-x",
+      "x": 0,
+      "y": 8.885,
+      "z": 1.0,
+      "width": 9.4,
+      "height": 3.6,
+      "protrusion": 1.53
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "d0-d6",
+      "label": "D0 to D6",
+      "x": 2.921,
+      "y": 1.27,
+      "rows": 1,
+      "cols": 7,
+      "pitch": 2.54,
+      "pins": [
+        "D0",
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+        "D6"
+      ]
+    },
+    {
+      "id": "5v-d7",
+      "label": "5V to D7",
+      "x": 2.921,
+      "y": 16.51,
+      "rows": 1,
+      "cols": 7,
+      "pitch": 2.54,
+      "pins": [
+        "5V",
+        "GND",
+        "3V3",
+        "D10",
+        "D9",
+        "D8",
+        "D7"
+      ]
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-under",
+      "label": "Solder side clearance",
+      "x": 0,
+      "y": 0,
+      "w": 20.955,
+      "h": 17.78,
+      "z": -1.5,
+      "height": 1.5
+    }
+  ],
+  "links": [
+    {
+      "label": "Wiki",
+      "url": "https://wiki.seeedstudio.com/XIAO_ESP32C3_Getting_Started/"
+    },
+    {
+      "label": "KiCad footprint",
+      "url": "https://github.com/Seeed-Studio/OPL_Kicad_Library"
+    }
+  ],
   "tags": [
     "xiao",
     "seeed",

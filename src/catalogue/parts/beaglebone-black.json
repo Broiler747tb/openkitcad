@@ -4,46 +4,545 @@
   "category": "sbc",
   "popularity": 30,
   "manufacturer": "BeagleBoard.org",
-  "summary": "Older ARM board with a lot of GPIO and two real-time cores.",
-  "confidence": "approximate",
-  "source": "Outline is the published 86.4 x 53.3 mm board size. Hole positions are from the common mounting pattern and are worth checking against your own board before cutting.",
+  "summary": "86.4 x 54.6 mm Linux board. Its four holes are not on a rectangle - check before drilling.",
+  "confidence": "datasheet",
+  "source": "BeagleBone Black System Reference Manual, board and cape dimension figures, and the Rev C assembly drawing (github.com/beagleboard/beaglebone-black): board 3.40 x 2.15 inch (86.36 x 54.61 mm) with 0.25 inch corners at the Ethernet end and 0.5 inch corners at the far end, four 0.125 inch holes at (0.575, 0.125), (0.575, 2.025), (3.175, 0.25) and (3.175, 1.90) inch. P8 and P9 are 2 x 23 sockets starting 0.8 inch from the Ethernet end. The Ethernet jack, USB host socket, mini USB, micro HDMI, processor, eMMC, buttons and serial header are placed from the assembly drawing outlines; the DC jack and the microSD slot are placed from their reference labels and are approximate.",
+  "look": {
+    "colour": "#101214",
+    "components": [
+      {
+        "kind": "header",
+        "x": 20.32,
+        "y": 3.175,
+        "rows": 2,
+        "cols": 23,
+        "style": "female",
+        "height": 8.5,
+        "label": "P9 expansion header"
+      },
+      {
+        "kind": "header",
+        "x": 20.32,
+        "y": 48.895,
+        "rows": 2,
+        "cols": 23,
+        "style": "female",
+        "height": 8.5,
+        "label": "P8 expansion header"
+      },
+      {
+        "kind": "port",
+        "port": "rj45",
+        "x": -2.62,
+        "y": 29.84,
+        "facing": "-x",
+        "w": 15.9,
+        "h": 13.4,
+        "depth": 21.84,
+        "label": "Ethernet"
+      },
+      {
+        "kind": "port",
+        "port": "barrel",
+        "x": -1.0,
+        "y": 9.1,
+        "facing": "-x",
+        "w": 9.0,
+        "h": 11.0,
+        "depth": 14.0,
+        "label": "DC jack"
+      },
+      {
+        "kind": "port",
+        "port": "usb-a",
+        "x": 86.31,
+        "y": 16.81,
+        "facing": "+x",
+        "w": 13.1,
+        "h": 7.0,
+        "depth": 14.0,
+        "label": "USB host"
+      },
+      {
+        "kind": "port",
+        "port": "mini-usb",
+        "x": -0.51,
+        "y": 44.11,
+        "facing": "-x",
+        "flip": true,
+        "z": 0,
+        "w": 7.7,
+        "h": 3.9,
+        "depth": 7.0,
+        "label": "mini USB"
+      },
+      {
+        "kind": "port",
+        "port": "micro-hdmi",
+        "x": 87.02,
+        "y": 25.13,
+        "facing": "+x",
+        "flip": true,
+        "z": 0,
+        "w": 6.5,
+        "h": 3.4,
+        "depth": 7.5,
+        "label": "micro HDMI"
+      },
+      {
+        "kind": "port",
+        "port": "microsd",
+        "x": 86.36,
+        "y": 37.4,
+        "facing": "+x",
+        "flip": true,
+        "z": 0,
+        "w": 11.5,
+        "h": 1.9,
+        "depth": 11.0,
+        "label": "microSD slot"
+      },
+      {
+        "kind": "chip",
+        "x": 38.21,
+        "y": 21.7,
+        "w": 15.0,
+        "h": 15.0,
+        "height": 1.3,
+        "label": "AM3358 processor"
+      },
+      {
+        "kind": "chip",
+        "x": 23.34,
+        "y": 36.15,
+        "w": 13.0,
+        "h": 11.5,
+        "height": 1.2,
+        "label": "eMMC"
+      },
+      {
+        "kind": "header",
+        "x": 42.53,
+        "y": 7.62,
+        "rows": 1,
+        "cols": 6,
+        "height": 8.5,
+        "label": "Serial debug header"
+      },
+      {
+        "kind": "box",
+        "x": 5.18,
+        "y": 49.92,
+        "w": 5.5,
+        "h": 3.0,
+        "height": 1.6,
+        "finish": "metal",
+        "colour": "#a3aab1",
+        "radius": 0.2,
+        "label": "Power button"
+      },
+      {
+        "kind": "cylinder",
+        "x": 7.93,
+        "y": 51.42,
+        "d": 2.0,
+        "height": 2.3,
+        "finish": "plastic",
+        "colour": "#1d1f22",
+        "label": "Power button cap"
+      },
+      {
+        "kind": "box",
+        "x": 5.18,
+        "y": 40.4,
+        "w": 5.5,
+        "h": 3.0,
+        "height": 1.6,
+        "finish": "metal",
+        "colour": "#a3aab1",
+        "radius": 0.2,
+        "label": "Reset button"
+      },
+      {
+        "kind": "cylinder",
+        "x": 7.93,
+        "y": 41.9,
+        "d": 2.0,
+        "height": 2.3,
+        "finish": "plastic",
+        "colour": "#1d1f22",
+        "label": "Reset button cap"
+      },
+      {
+        "kind": "box",
+        "x": 72.79,
+        "y": 41.67,
+        "w": 5.5,
+        "h": 3.0,
+        "height": 1.6,
+        "finish": "metal",
+        "colour": "#a3aab1",
+        "radius": 0.2,
+        "label": "Boot button"
+      },
+      {
+        "kind": "cylinder",
+        "x": 75.54,
+        "y": 43.17,
+        "d": 2.0,
+        "height": 2.3,
+        "finish": "plastic",
+        "colour": "#1d1f22",
+        "label": "Boot button cap"
+      },
+      {
+        "kind": "led",
+        "x": 3.14,
+        "y": 47.24,
+        "colour": "#2f7bff",
+        "size": 1.4,
+        "label": "USR0 LED"
+      },
+      {
+        "kind": "led",
+        "x": 3.14,
+        "y": 45.33,
+        "colour": "#2f7bff",
+        "size": 1.4,
+        "label": "USR1 LED"
+      },
+      {
+        "kind": "led",
+        "x": 3.14,
+        "y": 43.42,
+        "colour": "#2f7bff",
+        "size": 1.4,
+        "label": "USR2 LED"
+      },
+      {
+        "kind": "led",
+        "x": 3.14,
+        "y": 41.52,
+        "colour": "#2f7bff",
+        "size": 1.4,
+        "label": "USR3 LED"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
-      "shape": "rect",
-      "w": 86.4,
-      "h": 53.3
+      "shape": "poly",
+      "points": [
+        [
+          73.66,
+          0.0
+        ],
+        [
+          78.52,
+          0.967
+        ],
+        [
+          82.64,
+          3.72
+        ],
+        [
+          85.393,
+          7.84
+        ],
+        [
+          86.36,
+          12.7
+        ],
+        [
+          86.36,
+          41.91
+        ],
+        [
+          85.393,
+          46.77
+        ],
+        [
+          82.64,
+          50.89
+        ],
+        [
+          78.52,
+          53.643
+        ],
+        [
+          73.66,
+          54.61
+        ],
+        [
+          6.35,
+          54.61
+        ],
+        [
+          3.92,
+          54.127
+        ],
+        [
+          1.86,
+          52.75
+        ],
+        [
+          0.483,
+          50.69
+        ],
+        [
+          0.0,
+          48.26
+        ],
+        [
+          0.0,
+          6.35
+        ],
+        [
+          0.483,
+          3.92
+        ],
+        [
+          1.86,
+          1.86
+        ],
+        [
+          3.92,
+          0.483
+        ],
+        [
+          6.35,
+          0.0
+        ]
+      ]
     },
-    "thickness": 1.6
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 19.05,
+        "y": 1.905,
+        "w": 58.42,
+        "h": 5.08,
+        "z": 1.6,
+        "height": 8.5,
+        "colour": "#1b1d20",
+        "label": "P9 expansion header"
+      },
+      {
+        "x": 19.05,
+        "y": 47.625,
+        "w": 58.42,
+        "h": 5.08,
+        "z": 1.6,
+        "height": 8.5,
+        "colour": "#1b1d20",
+        "label": "P8 expansion header"
+      },
+      {
+        "x": -2.62,
+        "y": 21.89,
+        "w": 21.84,
+        "h": 15.9,
+        "z": 1.6,
+        "height": 13.4,
+        "colour": "#b9c0c7",
+        "label": "Ethernet"
+      },
+      {
+        "x": 72.31,
+        "y": 10.26,
+        "w": 14.0,
+        "h": 13.1,
+        "z": 1.6,
+        "height": 7.0,
+        "colour": "#b9c0c7",
+        "label": "USB host"
+      },
+      {
+        "x": -1.0,
+        "y": 4.6,
+        "w": 14.0,
+        "h": 9.0,
+        "z": 1.6,
+        "height": 11.0,
+        "colour": "#1b1d20",
+        "label": "DC jack"
+      },
+      {
+        "x": -0.51,
+        "y": 40.26,
+        "w": 7.0,
+        "h": 7.7,
+        "z": -3.9,
+        "height": 3.9,
+        "colour": "#b9c0c7",
+        "label": "mini USB"
+      },
+      {
+        "x": 79.52,
+        "y": 21.88,
+        "w": 7.5,
+        "h": 6.5,
+        "z": -3.4,
+        "height": 3.4,
+        "colour": "#b9c0c7",
+        "label": "micro HDMI"
+      }
+    ]
   },
   "mountingHoles": [
     {
       "id": "h1",
-      "x": 4.6,
-      "y": 6.9,
-      "diameter": 3.2,
+      "x": 14.605,
+      "y": 3.175,
+      "diameter": 3.175,
       "screw": "M3"
     },
     {
       "id": "h2",
-      "x": 81.8,
-      "y": 6.9,
-      "diameter": 3.2,
+      "x": 14.605,
+      "y": 51.435,
+      "diameter": 3.175,
       "screw": "M3"
     },
     {
       "id": "h3",
-      "x": 4.6,
-      "y": 46.4,
-      "diameter": 3.2,
+      "x": 80.645,
+      "y": 6.35,
+      "diameter": 3.175,
       "screw": "M3"
     },
     {
       "id": "h4",
-      "x": 81.8,
-      "y": 46.4,
-      "diameter": 3.2,
+      "x": 80.645,
+      "y": 48.26,
+      "diameter": 3.175,
       "screw": "M3"
+    }
+  ],
+  "connectors": [
+    {
+      "id": "eth",
+      "label": "Ethernet",
+      "side": "-x",
+      "x": 0,
+      "y": 29.84,
+      "z": 1.6,
+      "width": 16.5,
+      "height": 14.0,
+      "protrusion": 2.62
+    },
+    {
+      "id": "power",
+      "label": "DC jack",
+      "side": "-x",
+      "x": 0,
+      "y": 9.1,
+      "z": 1.6,
+      "width": 9.5,
+      "height": 11.5,
+      "protrusion": 1.0
+    },
+    {
+      "id": "usb-mini",
+      "label": "mini USB",
+      "side": "-x",
+      "x": 0,
+      "y": 44.11,
+      "z": -4.4,
+      "width": 8.5,
+      "height": 4.4,
+      "protrusion": 0.51
+    },
+    {
+      "id": "usb-host",
+      "label": "USB host",
+      "side": "+x",
+      "x": 86.36,
+      "y": 16.81,
+      "z": 1.6,
+      "width": 14.0,
+      "height": 7.5,
+      "protrusion": 0
+    },
+    {
+      "id": "hdmi",
+      "label": "micro HDMI",
+      "side": "+x",
+      "x": 86.36,
+      "y": 25.13,
+      "z": -3.9,
+      "width": 7.2,
+      "height": 3.9,
+      "protrusion": 0.66
+    },
+    {
+      "id": "sd",
+      "label": "microSD card",
+      "side": "+x",
+      "x": 86.36,
+      "y": 37.4,
+      "z": -2.4,
+      "width": 12.0,
+      "height": 2.4,
+      "protrusion": 0
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "p9",
+      "label": "P9",
+      "x": 20.32,
+      "y": 3.175,
+      "rows": 2,
+      "cols": 23,
+      "pitch": 2.54
+    },
+    {
+      "id": "p8",
+      "label": "P8",
+      "x": 20.32,
+      "y": 48.895,
+      "rows": 2,
+      "cols": 23,
+      "pitch": 2.54
+    },
+    {
+      "id": "j1",
+      "label": "Serial debug",
+      "x": 42.53,
+      "y": 7.62,
+      "rows": 1,
+      "cols": 6,
+      "pitch": 2.54
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-under",
+      "label": "Solder side clearance",
+      "x": 0,
+      "y": 0,
+      "w": 86.36,
+      "h": 54.61,
+      "z": -4,
+      "height": 4
+    },
+    {
+      "id": "k-cape",
+      "label": "Cape stacking space",
+      "x": 0,
+      "y": 0,
+      "w": 86.36,
+      "h": 54.61,
+      "z": 1.6,
+      "height": 12
+    }
+  ],
+  "links": [
+    {
+      "label": "Design files and manual",
+      "url": "https://github.com/beagleboard/beaglebone-black"
     }
   ],
   "tags": [
