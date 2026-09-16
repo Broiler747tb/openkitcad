@@ -40,6 +40,9 @@ constraint panel, placed dimensions, the modify tools and projection (§8).
 **L: look and feel.** Light and dark themes on one token set, the icon set and brand mark, the
 faces-only view cube, the marking menu and mouse schemes (§9).
 
+**A: assemblies.** Joints between snap points, as-built joints, joint origins, rigid groups, motion
+links, driving, dragging and animating joints, and motion studies (§10).
+
 ## 3. Document model v2
 
 Types live in `src/doc/types.ts`. Pure helpers every layer shares live in `src/doc/model.ts`
@@ -335,7 +338,43 @@ Repeat reruns the last command or sketch tool.
 set the orbit, pan and zoom buttons per press, reverse the wheel for SolidWorks, and a right-button
 drag in the Onshape and Tinkercad schemes never opens the context menu.
 
-## 10. How the work is done
+## 10. Assemblies (A)
+
+**Solver.** `src/assembly` is a kinematic solver that knows nothing about the kernel. Every occurrence
+path is a node with a world pose; joints, as-built joints and rigid groups are edges between nodes,
+each joint carrying the degrees of freedom of its motion (rigid, revolute, slider, cylindrical,
+pin-slot, planar, ball) with limits, a lock and its current values. Grounded occurrences and the top
+design do not move. A solve drives chosen values, follows a drag in the free directions only and
+reports conflicts per joint. `fromDocument.ts` turns the timeline into solver input and writes the
+result back as occurrence transforms and joint values.
+
+**Joints in the document.** Joints, joint origins, rigid groups, motion links and motion studies are
+timeline features the kernel skips. A joint side is an occurrence path, the snap it came from (a
+named face or edge, a keypoint, or a joint origin) and a frame in that component's coordinates. The
+two frames meet face to face: component 1's Z points against component 2's, Flip turns it round,
+Angle turns about Z and Offset Z lifts along it. Creating or editing a joint moves whichever side is
+free, preferring component 1; editing keeps the driven values when the motion kind stays the same.
+Deleting a component deletes its joints and the links that use them, a rigid group loses the member
+and goes when fewer than two remain, and deleting a joint origin deletes the joints built on it.
+
+**Snap points.** Hovering while a snap input is active shows the snap glyph and its name. A flat face
+gives its area centroid with the outward normal; a round face gives its axis, at the end nearest the
+cursor or the middle; a round edge gives its centre, pointing along the face under the cursor; a
+straight edge gives its middle or the end near the cursor. Catalogue parts have no element names, so
+their faces and edges are found by id and the joint keeps only the frame.
+
+**Following geometry.** After every rebuild, joints and joint origins that snapped to a named face or
+edge look the snap up again, keep their X direction and re-solve, so a joint on the top of a box
+rides up when the box gets taller. Occurrence transforms reach the screen before the kernel answers.
+
+**Commands.** Joint (J), As-built Joint (Shift J), Joint Origin, Rigid Group, Drive Joints and Motion
+Link are command panels with previews. Ground and Unground are in the Browser and the context menu.
+The inspector for a joint drives each value, sets minimum and maximum limits, locks it and animates
+it. Dragging a jointed component with the gizmo slides it along its joints. Motion Study has its own
+panel: joints with values at steps, a scrubber, play and loop; it poses the assembly while it is open
+and puts it back when it closes. Contact sets are not implemented.
+
+## 11. How the work is done
 
 - Agents never start other agents or workflows.
 - New and rewritten code has no comments. Touched files are formatted with Prettier.
@@ -366,3 +405,9 @@ drag in the Onshape and Tinkercad schemes never opens the context menu.
 - **L smoke test.** Switch to Dark and back: panels, canvas, grid, sketch lines and dimensions follow.
   Click FRONT on the cube, then the house. Right-click the model and run Extrude from the ring, then
   Repeat. Choose the SolidWorks scheme and orbit with the middle button.
+- **A smoke test.** Insert a NEMA 17 stepper and a 608ZZ bearing and ground the stepper. Press J, pick
+  the bearing's bottom and the round boss on the motor, choose Revolute and OK: the bearing sits on
+  the boss around the shaft. Select the joint, drive it to 45°, give it a 135° maximum and try 200°.
+  Drag the bearing with the gizmo and see it only turn. Animate the joint and click to stop. Make a
+  Motion Study that turns it 180° over 60 steps, scrub to the middle and play. Add a Box, joint a part
+  to its top face, make the box taller and see the part follow. Undo back through every step.
