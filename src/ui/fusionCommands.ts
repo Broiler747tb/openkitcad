@@ -7,6 +7,7 @@ import { findBody, findOccurrence, multiplyMatrices, translationMatrix } from '.
 export const SHORTCUTS = [
   ['S', 'Command toolbox'],
   ['E', 'Extrude'],
+  ['Q', 'Press Pull'],
   ['F', 'Fillet'],
   ['H', 'Hole'],
   ['M', 'Move'],

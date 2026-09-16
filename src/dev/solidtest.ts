@@ -630,6 +630,105 @@ export async function runSolidTest(): Promise<TestResult[]> {
         }
       },
     )
+
+    const offsetFace = (id: string, distance: number): Feature => ({
+      id,
+      name: id,
+      componentId: 'root',
+      kind: 'offsetFace',
+      bodyId: 'cube',
+      faces: [{ bodyId: 'cube', kind: 'face', name: 'bx:+z' }],
+      distance,
+    })
+    await check(
+      'offset face pulls a face out and a later step still finds it',
+      doc([box('bx', 'cube', [0, 0], [10, 10, 10]), offsetFace('up', 5)], ['cube']),
+      (result) => {
+        const cube = meshFor(result, 'cube')
+        return {
+          pass: near(cube?.volume, 1500, 1e-3) && near(cube?.bounds[5], 15, 1e-6),
+          detail: `${cube?.volume.toFixed(3)} mm3, top at ${cube?.bounds[5]}`,
+        }
+      },
+    )
+    await check(
+      'a face that was offset can be pushed back in by name',
+      doc(
+        [box('bx', 'cube', [0, 0], [10, 10, 10]), offsetFace('up', 5), offsetFace('down', -8)],
+        ['cube'],
+      ),
+      (result) => {
+        const cube = meshFor(result, 'cube')
+        return {
+          pass: near(cube?.volume, 700, 1e-3) && near(cube?.bounds[5], 7, 1e-6),
+          detail: `${cube?.volume.toFixed(3)} mm3, top at ${cube?.bounds[5]}`,
+        }
+      },
+    )
+    try {
+      const curved = await evaluate(
+        doc(
+          [
+            {
+              id: 'cy',
+              name: 'cy',
+              componentId: 'root',
+              kind: 'cylinder',
+              plane: XY,
+              centre: [0, 0],
+              radius: 5,
+              height: 10,
+              result: { kind: 'newBody', bodyId: 'rod' },
+            },
+            {
+              id: 'push',
+              name: 'push',
+              componentId: 'root',
+              kind: 'offsetFace',
+              bodyId: 'rod',
+              faces: [{ bodyId: 'rod', kind: 'face', name: 'cy:side' }],
+              distance: 1,
+            },
+          ],
+          ['rod'],
+        ),
+      )
+      add(
+        'offset face refuses a curved face',
+        curved.errors.some((error) => error.featureId === 'push'),
+        errorText(curved),
+      )
+    } catch (error) {
+      add('offset face refuses a curved face', false, `threw: ${(error as Error).message}`)
+    }
+    await check(
+      'draft tilts a side face about the neutral plane',
+      doc(
+        [
+          box('bx', 'cube', [0, 0], [20, 20, 20]),
+          {
+            id: 'dr',
+            name: 'Draft',
+            componentId: 'root',
+            kind: 'draft',
+            bodyId: 'cube',
+            faces: [{ bodyId: 'cube', kind: 'face', name: 'bx:+x' }],
+            plane: XY,
+            angle: 10,
+            flip: false,
+          },
+        ],
+        ['cube'],
+      ),
+      (result) => {
+        const volume = meshFor(result, 'cube')?.volume ?? 0
+        const wedge = 0.5 * 20 * 20 * 20 * Math.tan((10 * Math.PI) / 180)
+        return {
+          pass: near(Math.abs(volume - 8000), wedge, 1),
+          detail: `${volume.toFixed(1)} mm3, wedge ${wedge.toFixed(1)}`,
+        }
+      },
+    )
   } catch (error) {
     add('solid test ran', false, `${(error as Error).message}`)
   } finally {

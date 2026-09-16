@@ -36,6 +36,7 @@ import { setGrounded, updateJoint } from './command/specs/assemble'
 import { animateJoint } from './jointAnimation'
 import { motionDofs } from '../assembly/motion'
 import { bodyPick, elementPick } from './command/picks'
+import { counted } from '../core/words'
 
 interface PromptField {
   label: string
@@ -87,7 +88,20 @@ const OBJECT_GROUPS: Array<[string, string[]]> = [
     ],
   ],
   ['Sketch on Body', ['sketch-on-face', 'sketch-on-top', 'edit-sketch']],
-  ['Modify', ['size', 'hollow', 'hollow-lid', 'round-picked', 'bevel-picked', 'round', 'bevel']],
+  [
+    'Modify',
+    [
+      'size',
+      'press-pull',
+      'draft',
+      'hollow',
+      'hollow-lid',
+      'round-picked',
+      'bevel-picked',
+      'round',
+      'bevel',
+    ],
+  ],
   [
     'Cut',
     [
@@ -392,6 +406,18 @@ function buildObjectActions(
         : []
     const thisBody = () => [bodyPick(doc, bodyId)].flatMap((pick) => pick ?? [])
     if (picked && onThis) {
+      out.push({
+        id: 'press-pull',
+        label: 'Press Pull',
+        hint: 'Pulls this face out or pushes it in',
+        run: () => startCommand('pressPull', { faces: facePicks() }),
+      })
+      out.push({
+        id: 'draft',
+        label: 'Draft',
+        hint: 'Tilts this face by an angle so the part comes out of a mould',
+        run: () => startCommand('draft', { faces: facePicks() }),
+      })
       out.push({
         id: 'hollow',
         label: 'Shell',
@@ -724,7 +750,7 @@ function buildObjectActions(
       out.push({
         id: 'holes',
         label: 'Mounting Holes',
-        hint: `${holes.length} holes, cut right through`,
+        hint: `${counted(holes.length, 'hole')}, cut right through`,
         run: () => add('holes'),
       })
       out.push({

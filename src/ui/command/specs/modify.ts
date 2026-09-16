@@ -1,10 +1,12 @@
 import type {
   ChamferFeature,
   CombineFeature,
+  DraftFeature,
   Feature,
   FilletFeature,
   LidFit,
   MoveFeature,
+  OffsetFaceFeature,
   ShellFeature,
 } from '../../../doc/types'
 import { v3 } from '../../../core/math'
@@ -12,11 +14,12 @@ import { findBody } from '../../../doc/model'
 import { useStore } from '../../../doc/store'
 import {
   defineCommand,
+  type AnyCommandSpec,
   type CommandContext,
   type CommandHandle,
   type SelectionPick,
 } from '../types'
-import { bodyIdsOf, componentOfBody, singleBody } from './shared'
+import { bodyIdsOf, componentOfBody, planeOf, singleBody } from './shared'
 
 const EDGES_INPUT = {
   id: 'edges',
@@ -424,5 +427,102 @@ export const moveCommand = defineCommand({
       componentId: found.component.id,
       anchor: { point, direction },
     }))
+  },
+})
+
+const MOVED_FACES_INPUT = {
+  id: 'faces',
+  kind: 'selection',
+  label: 'Faces',
+  hint: 'Flat faces on one body.',
+  filter: ['face'],
+  min: 1,
+  prompt: 'Select faces',
+} as const
+
+export const offsetFaceCommand = defineCommand({
+  id: 'offsetFace',
+  label: 'Offset Face',
+  hint: 'Moves flat faces in or out, stretching the faces around them.',
+  icon: '⇱',
+  inputs: [MOVED_FACES_INPUT, { id: 'distance', kind: 'length', label: 'Distance', default: 1 }],
+  validate(values, context) {
+    if (!values.distance) return { distance: 'This cannot be zero.' }
+    return singleBody(context.doc, values.faces, 'faces')
+  },
+  build(values, context) {
+    const bodyId = bodyIdsOf(values.faces)[0]
+    const feature: OffsetFaceFeature = {
+      id: context.editing?.id ?? context.id('offsetFace'),
+      kind: 'offsetFace',
+      name: context.editing?.name ?? 'Offset Face',
+      componentId:
+        context.editing?.componentId ?? componentOfBody(context.doc, bodyId, context.componentId),
+      bodyId,
+      faces: values.faces.flatMap((pick) => pick.face ?? []),
+      distance: values.distance,
+    }
+    return [feature]
+  },
+  handles(values, context) {
+    const face = values.faces.find((pick) => pick.face && pick.point && pick.normal)
+    if (!face?.face || !face.point || !face.normal) return []
+    return [
+      {
+        kind: 'arrow',
+        input: 'distance',
+        componentId: componentOfBody(context.doc, face.face.bodyId, context.componentId),
+        anchor: { point: face.point, direction: v3.norm(face.normal) },
+      },
+    ]
+  },
+})
+
+export const pressPullCommand: AnyCommandSpec = {
+  ...(offsetFaceCommand as unknown as AnyCommandSpec),
+  id: 'pressPull',
+  label: 'Press Pull',
+  hint: 'Pulls a face out or pushes it in. With edges picked it rounds them, and on a sketch it extrudes.',
+}
+
+export const draftCommand = defineCommand({
+  id: 'draft',
+  label: 'Draft',
+  hint: 'Tilts faces by an angle so a moulded or cast part slides out cleanly.',
+  icon: '◿',
+  inputs: [
+    {
+      id: 'plane',
+      kind: 'selection',
+      label: 'Plane',
+      hint: 'The faces pivot where they meet this plane and lean away from its normal.',
+      filter: ['face', 'plane'],
+      min: 1,
+      max: 1,
+      prompt: 'Select a plane',
+    },
+    MOVED_FACES_INPUT,
+    { id: 'flip', kind: 'toggle', label: 'Flip Pull Direction' },
+    { id: 'angle', kind: 'angle', label: 'Angle', default: 5, min: -60, max: 60 },
+  ],
+  validate(values, context) {
+    if (!values.angle) return { angle: 'This cannot be zero.' }
+    return singleBody(context.doc, values.faces, 'faces')
+  },
+  build(values, context) {
+    const bodyId = bodyIdsOf(values.faces)[0]
+    const feature: DraftFeature = {
+      id: context.editing?.id ?? context.id('draft'),
+      kind: 'draft',
+      name: context.editing?.name ?? 'Draft',
+      componentId:
+        context.editing?.componentId ?? componentOfBody(context.doc, bodyId, context.componentId),
+      bodyId,
+      faces: values.faces.flatMap((pick) => pick.face ?? []),
+      plane: planeOf(values.plane),
+      angle: values.angle,
+      flip: values.flip,
+    }
+    return [feature]
   },
 })

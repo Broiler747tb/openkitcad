@@ -108,6 +108,8 @@ export function featureModifiesBodies(feature: Feature): string[] {
       return feature.bodyIds.slice(0, 1)
     case 'splitBody':
     case 'unstitch':
+    case 'offsetFace':
+    case 'draft':
       return [feature.bodyId]
     case 'meshRepair':
     case 'meshReduce':

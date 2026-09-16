@@ -12,8 +12,8 @@ import { ViewCube } from './ViewCube'
 import { MarkingRing, recentCommand, rememberCommand, type MarkingItem } from '../ui/MarkingMenu'
 import { startCommand } from '../ui/command/commands'
 import { createSketchAction, resolveCommand } from '../ui/fusionCommands'
-import { ExtrudeIcon, HoleIcon } from '../ui/icons/solid'
-import { DeleteIcon, MoveCopyIcon as MoveIcon } from '../ui/icons/modify'
+import { HoleIcon } from '../ui/icons/solid'
+import { DeleteIcon, MoveCopyIcon as MoveIcon, PressPullIcon } from '../ui/icons/modify'
 import {
   CreateSketchIcon,
   FinishSketchIcon,
@@ -2226,10 +2226,10 @@ function solidMarkingItems(): Array<MarkingItem | null> {
       },
     },
     {
-      id: 'extrude',
-      label: 'Extrude',
-      icon: ExtrudeIcon,
-      run: () => runCommand('extrude', 'Extrude'),
+      id: 'pressPull',
+      label: 'Press Pull',
+      icon: PressPullIcon,
+      run: () => runCommand('pressPull', 'Press Pull'),
     },
     {
       id: 'undo',

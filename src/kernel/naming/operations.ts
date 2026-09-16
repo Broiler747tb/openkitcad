@@ -1,4 +1,4 @@
-import type { Frame, Vec2, Vec3 } from '../../core/math'
+import { v3, type Frame, type Vec2, type Vec3 } from '../../core/math'
 import type { Message_ProgressRange } from 'replicad-opencascadejs'
 import type { Sketch2D } from '../../sketch/types'
 import type { PieceSample } from './profileMatch'
@@ -8,6 +8,7 @@ import {
   disposeTopology,
   draftHistory,
   exploreTopology,
+  facePlane,
   filletHistory,
   isPlanarFace,
   isShapeType,
@@ -109,6 +110,11 @@ export interface DraftOptions extends BodyOptions {
   pullDirection: Vec3
   angle: number
   neutralPlane: { origin: Vec3; normal: Vec3 }
+}
+
+export interface MoveFacesOptions extends BodyOptions {
+  faces: readonly string[]
+  distance: number
 }
 
 export interface OffsetOptions extends BodyOptions {
@@ -467,6 +473,73 @@ export function draft(oc: OC, options: DraftOptions): NamedShape {
     return finish(oc, options.featureId, builder.Shape(), {
       inputs: [options.body.map],
       history: draftHistory(oc, builder, scratch),
+    })
+  } finally {
+    scratch.release()
+  }
+}
+
+export function moveFaces(oc: OC, options: MoveFacesOptions): NamedShape {
+  const faces = resolveElements(options.body.map, options.bodyId, 'face', options.faces)
+  if (!(Math.abs(options.distance) > 1e-9)) throw new Error('The offset distance cannot be zero')
+  const scratch = new Scratch()
+  try {
+    const planes = faces.map((face) => {
+      const plane = facePlane(oc, face.shape)
+      if (!plane) {
+        throw new Error(
+          `Offset Face moves flat faces only, and ${options.body.map.fullName(face.name)} is curved`,
+        )
+      }
+      return plane
+    })
+    const operation = scratch.track(
+      options.distance > 0 ? new oc.BRepAlgoAPI_Fuse_1() : new oc.BRepAlgoAPI_Cut_1(),
+    )
+    const argumentList = scratch.track(new oc.TopTools_ListOfShape_1())
+    scratch.track(argumentList.Append_1(options.body.shape))
+    const toolList = scratch.track(new oc.TopTools_ListOfShape_1())
+    faces.forEach((face, index) => {
+      const shift = vector(oc, v3.scale(planes[index].normal, options.distance), scratch)
+      const prism = scratch.track(new oc.BRepPrimAPI_MakePrism_1(face.shape, shift, false, true))
+      scratch.track(toolList.Append_1(scratch.track(prism.Shape())))
+    })
+    operation.SetArguments(argumentList)
+    operation.SetTools(toolList)
+    operation.SetRunParallel(false)
+    operation.SetToFillHistory(true)
+    build(oc, operation, 'Offset Face')
+    if (operation.HasErrors()) throw new Error('Offset Face failed')
+    operation.SimplifyResult(true, true, 1e-6)
+    const shape = operation.Shape()
+    const resultFaces = subShapes(oc, shape, 'TopAbs_FACE', scratch)
+    const moved = planes.map((plane) => {
+      const origin = v3.add(plane.origin, v3.scale(plane.normal, options.distance))
+      return resultFaces.filter((candidate) => {
+        const other = facePlane(oc, candidate)
+        return (
+          !!other &&
+          v3.dot(other.normal, plane.normal) > 1 - 1e-9 &&
+          Math.abs(v3.dot(v3.sub(other.origin, origin), plane.normal)) < 1e-6
+        )
+      })
+    })
+    const base = booleanHistory(oc, operation, scratch)
+    const pickedIndex = (candidate: OcShape) =>
+      faces.findIndex((face) => occShapeOps.same(face.shape, candidate))
+    return finish(oc, options.featureId, shape, {
+      inputs: [options.body.map],
+      history: {
+        modified: (candidate) => {
+          const index = pickedIndex(candidate)
+          return index >= 0 ? moved[index] : base.modified(candidate)
+        },
+        generated: (candidate) => (pickedIndex(candidate) >= 0 ? [] : base.generated(candidate)),
+        isDeleted: (candidate) =>
+          pickedIndex(candidate) >= 0
+            ? !moved[pickedIndex(candidate)].length
+            : base.isDeleted(candidate),
+      },
     })
   } finally {
     scratch.release()

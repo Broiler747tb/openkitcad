@@ -17,7 +17,9 @@ import { chainTangent, sketchChains } from '../sketch/chains'
 import {
   common,
   cut,
+  draft as namedDraft,
   loft as namedLoft,
+  moveFaces,
   nameShape,
   offsetFaces,
   sweep as namedSweep,
@@ -630,6 +632,53 @@ export function runSolidStep(feature: Feature, stage: SolidStage): boolean {
           body: { shape: source.shape.wrapped, map: source.map },
           faces: 'all',
           distance: feature.distance,
+        }),
+      )
+      return true
+    }
+
+    case 'offsetFace':
+    case 'draft': {
+      const body = stage.need(feature.bodyId)
+      if (!body) return true
+      if (!feature.faces.length) {
+        stage.report('error', 'No faces were picked.', 'Edit this step and pick faces to move.')
+        return true
+      }
+      if (feature.faces.some((ref) => ref.bodyId !== feature.bodyId || ref.kind !== 'face')) {
+        stage.report(
+          'error',
+          'A face picked for this step belongs to a different body.',
+          'Edit this step and pick faces on the body it changes.',
+        )
+        return true
+      }
+      const names = feature.faces.map((ref) => ref.name)
+      const target = { shape: body.shape.wrapped, map: body.map }
+      if (feature.kind === 'offsetFace') {
+        stage.set(
+          feature.bodyId,
+          moveFaces(oc, {
+            featureId: feature.id,
+            bodyId: feature.bodyId,
+            body: target,
+            faces: names,
+            distance: feature.distance,
+          }),
+        )
+        return true
+      }
+      const frame = stage.planeOf(feature.plane)
+      stage.set(
+        feature.bodyId,
+        namedDraft(oc, {
+          featureId: feature.id,
+          bodyId: feature.bodyId,
+          body: target,
+          faces: names,
+          pullDirection: feature.flip ? v3.scale(frame.normal, -1) : frame.normal,
+          angle: feature.angle,
+          neutralPlane: { origin: frame.origin, normal: frame.normal },
         }),
       )
       return true

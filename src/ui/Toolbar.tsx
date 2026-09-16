@@ -43,7 +43,7 @@ import {
   UnstitchIcon,
 } from './icons/surface'
 import { AsBuiltJointIcon, JointIcon, JointOriginIcon } from './icons/assemble'
-import { FilletIcon, MoveCopyIcon as SolidMoveIcon, ShellIcon, SplitBodyIcon } from './icons/modify'
+import { FilletIcon, MoveCopyIcon as SolidMoveIcon, PressPullIcon, ShellIcon } from './icons/modify'
 import {
   BreakIcon,
   CONSTRAINT_ICONS,
@@ -65,6 +65,9 @@ import {
 const RIBBON_MENUS = ['Line', 'Rectangle', 'Circle', 'Arc', 'Polygon', 'Slot', 'Spline']
 const WORKSPACES = ['solid', 'surface', 'mesh'] as const
 const DESIGN_COMMANDS = [
+  'pressPull',
+  'offsetFace',
+  'draft',
   'extrude',
   'revolve',
   'sweep',
@@ -141,6 +144,9 @@ const labels: Record<string, string> = {
   meshSeparate: 'Separate',
   meshCombine: 'Combine Meshes',
   meshConvert: 'Convert Mesh',
+  pressPull: 'Press Pull',
+  offsetFace: 'Offset Face',
+  draft: 'Draft',
   sweep: 'Sweep',
   loft: 'Loft',
   coil: 'Coil',
@@ -457,17 +463,23 @@ export function Toolbar({
       }
       const map: Record<string, string> = s.activeSketch
         ? { e: 'extrude', o: 'offset', x: 'construction', t: 'trim' }
-        : { e: 'extrude', f: 'fillet', m: 'move', h: 'hole', a: 'appearance', j: 'joint' }
+        : {
+            e: 'extrude',
+            f: 'fillet',
+            m: 'move',
+            h: 'hole',
+            a: 'appearance',
+            j: 'joint',
+            q: 'pressPull',
+          }
       if (map[k]) {
         e.preventDefault()
         invoke(map[k])
         return
       }
-      if (['q', 'p'].includes(k)) {
+      if (k === 'p') {
         e.preventDefault()
-        s.setStatus(
-          'This Fusion operation is not implemented in the current CAD kernel. Use S for available commands.',
-        )
+        s.setStatus('Project works inside a sketch. Create or edit a sketch first.')
       }
     }
     window.addEventListener('keydown', key)
@@ -958,24 +970,30 @@ export function Toolbar({
               'MODIFY',
               [
                 ...[
+                  'pressPull',
                   'fillet',
                   'chamfer',
                   'hollow',
+                  'draft',
+                  'offsetFace',
                   'combine',
                   'splitBody',
                   'scale',
                   'vent',
                   'move',
                   'appearance',
-                ].map(cmd),
+                ].map((id) => ({ ...cmd(id), group: 'Modify' })),
                 ...selected,
               ],
               <>
+                {tool(
+                  'Press Pull',
+                  <PressPullIcon className="okc-icon" />,
+                  () => invoke('pressPull'),
+                  'Q',
+                )}
                 {tool('Fillet', <FilletIcon className="okc-icon" />, () => invoke('fillet'), 'F')}
                 {tool('Shell', <ShellIcon className="okc-icon" />, () => invoke('hollow'))}
-                {tool('Split Body', <SplitBodyIcon className="okc-icon" />, () =>
-                  invoke('splitBody'),
-                )}
                 {tool('Move', <SolidMoveIcon className="okc-icon" />, () => invoke('move'), 'M')}
               </>,
             )}
@@ -1143,8 +1161,7 @@ function ShortcutDialog({ onClose }: { onClose: () => void }) {
         ))}
       </dl>
       <p className="hint">
-        Press Pull (Q), CAM and surface modelling are not implemented. Hole uses world XY
-        coordinates. Arc is in the Sketch toolbar.
+        Keys follow Fusion 360 wherever the command exists here. Press S to search every command.
       </p>
     </dialog>
   )

@@ -10,7 +10,7 @@ import {
   type SweepFeature,
 } from '../doc/types'
 import { emptySketch, type Sketch2D } from '../sketch/types'
-import { canEditInPanel, editFeature } from '../ui/command/commands'
+import { canEditInPanel, editFeature, startCommand } from '../ui/command/commands'
 import { useCommand } from '../ui/command/session'
 import {
   coilCommand,
@@ -472,6 +472,29 @@ export function runCreateCommandTest(): TestResult[] {
         bodyIds: ['b1', 'b2'],
       },
       {
+        id: 'offsetFace1',
+        kind: 'offsetFace',
+        name: 'Offset Face',
+        componentId: 'root',
+        bodyId: 'b1',
+        faces: [{ bodyId: 'b1', kind: 'face', name: 'bx:+z' }],
+        distance: -2.5,
+      },
+      {
+        id: 'draft1',
+        kind: 'draft',
+        name: 'Draft',
+        componentId: 'root',
+        bodyId: 'b1',
+        faces: [
+          { bodyId: 'b1', kind: 'face', name: 'bx:+x' },
+          { bodyId: 'b1', kind: 'face', name: 'bx:-x' },
+        ],
+        plane: { kind: 'named', name: 'XY', offset: 0 },
+        angle: 7,
+        flip: true,
+      },
+      {
         id: 'extrude1',
         kind: 'extrude',
         name: 'Extrude Surface',
@@ -504,6 +527,46 @@ export function runCreateCommandTest(): TestResult[] {
         )
         useCommand.getState().cancel()
       }
+    } finally {
+      useStore.setState(saved)
+    }
+  })
+
+  test('press pull picks the command that fits the selection', () => {
+    const saved = useStore.getState()
+    const sub = (kind: 'face' | 'edge', name: string) => ({
+      instanceId: 'i1',
+      bodyId: 'b1',
+      kind,
+      id: `${kind}:${name}`,
+      name,
+      point: [0, 0, 0] as [number, number, number],
+      normal: [0, 0, 1] as [number, number, number],
+    })
+    const launched = () => {
+      const id = useCommand.getState().session?.spec.id
+      useCommand.getState().cancel()
+      return id
+    }
+    try {
+      useStore.setState({
+        doc: testDocument(),
+        activeSketch: null,
+        selection: { kind: 'none' },
+        subSelection: [sub('edge', 'bx:+x|+z')],
+      })
+      startCommand('pressPull')
+      const edges = launched()
+      useStore.setState({ subSelection: [sub('face', 'bx:+z')] })
+      startCommand('pressPull')
+      const faces = launched()
+      useStore.setState({ subSelection: [], selection: { kind: 'feature', id: 'square' } })
+      startCommand('pressPull')
+      const sketch = launched()
+      check(
+        edges === 'fillet' && faces === 'pressPull' && sketch === 'extrude',
+        `edges ${edges}, faces ${faces}, sketch ${sketch}`,
+      )
     } finally {
       useStore.setState(saved)
     }

@@ -14,8 +14,11 @@ import { openMotionStudy } from '../MotionStudy'
 import {
   chamferCommand,
   combineCommand,
+  draftCommand,
   filletCommand,
   moveCommand,
+  offsetFaceCommand,
+  pressPullCommand,
   shellCommand,
   shellEditCommand,
 } from './specs/modify'
@@ -121,6 +124,9 @@ export const COMMANDS: Readonly<Record<string, AnyCommandSpec>> = {
   unstitch: spec(unstitchCommand),
   surfaceOffset: spec(surfaceOffsetCommand),
   reverseNormal: spec(reverseNormalCommand),
+  offsetFace: spec(offsetFaceCommand),
+  pressPull: pressPullCommand,
+  draft: spec(draftCommand),
   extrudeSurface: extrudeSurfaceCommand,
   revolveSurface: revolveSurfaceCommand,
   loftSurface: loftSurfaceCommand,
@@ -195,6 +201,10 @@ function startOptions(id: string): CommandStart {
     return sketch ? [sketchPick(doc, sketch.id)!] : []
   }
   switch (id) {
+    case 'offsetFace':
+    case 'pressPull':
+    case 'draft':
+      return { initial: { faces } }
     case 'loft':
     case 'loftSurface':
       return { initial: { sections: sketchPicks() } }
@@ -296,7 +306,16 @@ function startOptions(id: string): CommandStart {
   return {}
 }
 
+function pressPullTarget(): string {
+  const state = useStore.getState()
+  const doc = state.doc
+  if (selectedElements(doc, 'edge').length) return 'fillet'
+  if (!selectedElements(doc, 'face').length && selectedSketch(doc)) return 'extrude'
+  return 'pressPull'
+}
+
 export function startCommand(id: string, initial?: CommandStart['initial']): boolean {
+  if (id === 'pressPull' && !initial?.faces) id = pressPullTarget()
   const command = COMMANDS[id]
   if (!command) return false
   const options = startOptions(id)
@@ -331,6 +350,28 @@ function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, Comma
             }
       return [variantOf(feature.kind, feature.surface), { initial, ids: resultIds(feature.result) }]
     }
+    case 'offsetFace':
+      return [
+        COMMANDS.offsetFace,
+        {
+          initial: {
+            faces: feature.faces.flatMap((ref) => elementPick(doc, ref) ?? []),
+            distance: feature.distance,
+          },
+        },
+      ]
+    case 'draft':
+      return [
+        COMMANDS.draft,
+        {
+          initial: {
+            plane: planeValues(doc, feature.plane),
+            faces: feature.faces.flatMap((ref) => elementPick(doc, ref) ?? []),
+            angle: feature.angle,
+            flip: feature.flip,
+          },
+        },
+      ]
     case 'loft':
       return [
         variantOf('loft', feature.surface),

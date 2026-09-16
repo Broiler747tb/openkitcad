@@ -200,6 +200,32 @@ export function sampleEdge(oc: OC, edge: OcShape, samples = 5): Vec3[] {
   }
 }
 
+export function facePlane(oc: OC, face: OcShape): { origin: Vec3; normal: Vec3 } | null {
+  const cast = oc.TopoDS.Face_1(face)
+  const surface = new oc.BRepAdaptor_Surface_2(cast, true)
+  try {
+    if (surface.GetType() !== (oc.GeomAbs_SurfaceType.GeomAbs_Plane as unknown)) return null
+    const plane = surface.Plane()
+    const axis = plane.Axis()
+    const direction = axis.Direction()
+    const location = plane.Location()
+    const sign =
+      cast.Orientation_1() === (oc.TopAbs_Orientation.TopAbs_REVERSED as unknown) ? -1 : 1
+    const result = {
+      origin: [location.X(), location.Y(), location.Z()] as Vec3,
+      normal: [sign * direction.X(), sign * direction.Y(), sign * direction.Z()] as Vec3,
+    }
+    location.delete()
+    direction.delete()
+    axis.delete()
+    plane.delete()
+    return result
+  } finally {
+    surface.delete()
+    cast.delete()
+  }
+}
+
 export function isPlanarFace(oc: OC, face: OcShape): boolean {
   const cast = oc.TopoDS.Face_1(face)
   const surface = new oc.BRepAdaptor_Surface_2(cast, true)

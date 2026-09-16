@@ -243,6 +243,22 @@ export interface MoveFeature extends FeatureBase {
   rotation: Vec3
 }
 
+export interface OffsetFaceFeature extends FeatureBase {
+  kind: 'offsetFace'
+  bodyId: string
+  faces: ElementRef[]
+  distance: number
+}
+
+export interface DraftFeature extends FeatureBase {
+  kind: 'draft'
+  bodyId: string
+  faces: ElementRef[]
+  plane: PlaneRef
+  angle: number
+  flip: boolean
+}
+
 export interface LoftSection {
   sketchId: string
   profiles?: string[]
@@ -561,6 +577,8 @@ export type Feature =
   | ScaleFeature
   | StitchFeature
   | UnstitchFeature
+  | OffsetFaceFeature
+  | DraftFeature
   | SurfaceOffsetFeature
   | ReverseNormalFeature
 
@@ -687,6 +705,8 @@ export const FEATURE_LABEL: Record<FeatureKind, string> = {
   unstitch: 'Unstitch',
   surfaceOffset: 'Offset Surface',
   reverseNormal: 'Reverse Normal',
+  offsetFace: 'Offset Face',
+  draft: 'Draft',
 }
 
 export const FEATURE_HINT: Record<FeatureKind, string> = {
@@ -737,6 +757,8 @@ export const FEATURE_HINT: Record<FeatureKind, string> = {
   unstitch: 'Breaks a body into one surface per face.',
   surfaceOffset: 'A copy of a surface moved a set distance along its normal.',
   reverseNormal: 'Turns a surface inside out.',
+  offsetFace: 'Moves flat faces of a body in or out, stretching the faces around them.',
+  draft: 'Tilts faces by an angle so the part slides out of a mould.',
 }
 
 export const FEATURE_ICON: Record<FeatureKind, string> = {
@@ -787,4 +809,6 @@ export const FEATURE_ICON: Record<FeatureKind, string> = {
   unstitch: '⧣',
   surfaceOffset: '⧈',
   reverseNormal: '⇵',
+  offsetFace: '⇱',
+  draft: '◿',
 }
