@@ -279,3 +279,24 @@
     --okc-shadow-lg: 0 14px 40px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.4);
   }
 }
+
+:root {
+  --bg: var(--okc-surface-app);
+  --panel: var(--okc-surface-panel-raised);
+  --panel-2: var(--okc-surface-header);
+  --panel-3: var(--okc-surface-panel);
+  --line: var(--okc-line);
+  --line-soft: var(--okc-line-soft);
+  --text: var(--okc-text);
+  --text-dim: var(--okc-text-muted);
+  --text-faint: var(--okc-text-faint);
+  --accent: var(--okc-accent);
+  --accent-soft: var(--okc-accent-soft);
+  --accent-line: var(--okc-accent-line);
+  --ok: var(--okc-success);
+  --warn: var(--okc-warning);
+  --err: var(--okc-error);
+  --radius: 3px;
+  --font: var(--okc-font-ui);
+  --mono: var(--okc-font-mono);
+}

@@ -17,6 +17,7 @@ import type { Sketch2D } from '../sketch/types'
 import { usePreferences, type Preferences } from '../doc/preferences'
 import { tessellate } from '../sketch/curves'
 import { regionAt, type RegionResult } from '../sketch/regions'
+import { LIGHT_PALETTE, type ViewportPalette } from '../theme/palette'
 
 export interface ScreenLabel {
   id: string
@@ -93,15 +94,7 @@ export interface HandleScreen {
   y: number
 }
 
-const OVERLAY_LINE = 0x3d4b5c
-const DIMENSION_LINE = 0x2c5a8c
-const OVERLAY_CONSTRUCTION = 0x9097a0
-const PROFILE_IDLE = 0xf1cf9b
-const PROFILE_HOVER = 0xf0a64a
-const PROFILE_PICKED = 0x4f9fe0
 const PROFILE_LIFT = 0.02
-const HANDLE = 0x1676c5
-const HANDLE_HOT = 0x46a3ec
 const HANDLE_GRAB_PX = 14
 
 export interface GizmoPose {
@@ -140,16 +133,7 @@ interface InstanceObject {
  */
 const HOME_CAMERA: Vec3 = [-220, -180, 160]
 
-const ACCENT = 0xff9f2e
-const PREVIEW_CUT = 0xd4473d
-const ACCENT_DIM = 0xc4761c
-/** Pre-selection: what a click would take. */
-const HOVER = 0xffd9a0
-const SKETCH_LINE = 0xf2ede4
 const SKETCH_TESSELLATION_MM = 0.01
-const CONSTRUCTION = 0x6f7681
-/** Geometry that is not yet pinned down. */
-const UNDERDEFINED = 0x5aa9e6
 
 function matchesKey(instance: Instance, key: string | null): boolean {
   return !!key && (instance.id === key || instance.bodyId === key || instance.path.includes(key))
@@ -182,6 +166,9 @@ export class ViewportEngine {
   }
 
   private disposed = false
+  private palette: ViewportPalette = LIGHT_PALETTE
+  private hemisphere: THREE.HemisphereLight | null = null
+  private lastGrid: { preferences: Preferences; frame: Frame | null } | null = null
   labels: ScreenLabel[] = []
   onLabels: ((labels: ScreenLabel[]) => void) | null = null
   onHandleScreens: ((handles: HandleScreen[]) => void) | null = null
@@ -209,7 +196,7 @@ export class ViewportEngine {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2))
     this.renderer.localClippingEnabled = true
-    this.renderer.setClearColor(0xe8eaec, 1)
+    this.renderer.setClearColor(this.palette.background, 1)
     container.appendChild(this.renderer.domElement)
 
     this.camera = new THREE.PerspectiveCamera(38, 1, 0.5, 20000)
@@ -259,7 +246,12 @@ export class ViewportEngine {
   // -------------------------------------------------------------------------
 
   private buildLighting() {
-    this.scene.add(new THREE.HemisphereLight(0xdfe6ef, 0x24282d, 1.5))
+    this.hemisphere = new THREE.HemisphereLight(
+      this.palette.hemisphereSky,
+      this.palette.hemisphereGround,
+      1.5,
+    )
+    this.scene.add(this.hemisphere)
     const key = new THREE.DirectionalLight(0xffffff, 1.8)
     key.position.set(120, -180, 260)
     this.scene.add(key)
@@ -287,13 +279,32 @@ export class ViewportEngine {
       ])
       return new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: colour }))
     }
-    axes.add(axis([40, 0, 0], 0xd4574e))
-    axes.add(axis([0, 40, 0], 0x74b352))
-    axes.add(axis([0, 0, 40], 0x4d8fd6))
+    axes.add(axis([40, 0, 0], this.palette.axisX))
+    axes.add(axis([0, 40, 0], this.palette.axisY))
+    axes.add(axis([0, 0, 40], this.palette.axisZ))
     this.gridGroup.add(axes)
   }
 
+  setPalette(palette: ViewportPalette) {
+    this.palette = palette
+    this.renderer.setClearColor(palette.background, 1)
+    if (this.hemisphere) {
+      this.hemisphere.color.setHex(palette.hemisphereSky)
+      this.hemisphere.groundColor.setHex(palette.hemisphereGround)
+    }
+    for (const { outline, instance } of this.objects.values()) {
+      ;(outline.material as THREE.LineBasicMaterial).color.setHex(
+        instance.previewTool ? palette.previewCut : palette.bodyEdge,
+      )
+    }
+    if (this.lastGrid) this.setGridPreferences(this.lastGrid.preferences, this.lastGrid.frame)
+    this.paintProfiles()
+    this.refreshDimensions()
+    this.rebuildHighlight()
+  }
+
   setGridPreferences(p: Preferences, frame: Frame | null) {
+    this.lastGrid = { preferences: p, frame }
     for (const child of [...this.gridGroup.children]) {
       this.gridGroup.remove(child)
       child.traverse((obj) => {
@@ -345,13 +356,13 @@ export class ViewportEngine {
         const lines = (i * stride) % p.majorEvery === 0 ? major : minor
         lines.push(at, -half, 0, at, half, 0, -half, at, 0, half, at, 0)
       }
-      add(minor, 0xa9b4bf, p.gridOpacity)
-      add(major, 0x738597, Math.min(1, p.gridOpacity + 0.2))
+      add(minor, this.palette.gridMinor, p.gridOpacity)
+      add(major, this.palette.gridMajor, Math.min(1, p.gridOpacity + 0.2))
     }
     if (p.axesVisible) {
       const size = p.gridExtent / 2
-      add([-size, 0, 0, size, 0, 0], 0xc34d44, 0.8)
-      add([0, -size, 0, 0, size, 0], 0x598d46, 0.8)
+      add([-size, 0, 0, size, 0, 0], this.palette.axisX, 0.8)
+      add([0, -size, 0, 0, size, 0], this.palette.axisY, 0.8)
     }
     this.transform?.setTranslationSnap(p.moveSnap || null)
     this.transform?.setRotationSnap(p.angleSnap ? THREE.MathUtils.degToRad(p.angleSnap) : null)
@@ -420,7 +431,7 @@ export class ViewportEngine {
         const outline = new THREE.LineSegments(
           geometry.edges,
           new THREE.LineBasicMaterial({
-            color: tool ? PREVIEW_CUT : 0x1a1d21,
+            color: tool ? this.palette.previewCut : this.palette.bodyEdge,
             transparent: true,
             opacity: tool ? 0.6 : 0.85,
             clippingPlanes: this.sectionPlanes,
@@ -473,10 +484,10 @@ export class ViewportEngine {
     for (const { mesh, instance } of this.objects.values()) {
       const material = mesh.material as THREE.MeshStandardMaterial
       if (matchesKey(instance, selected)) {
-        material.emissive.setHex(ACCENT)
+        material.emissive.setHex(this.palette.selection)
         material.emissiveIntensity = 0.32
       } else if (matchesKey(instance, hovered)) {
-        material.emissive.setHex(ACCENT_DIM)
+        material.emissive.setHex(this.palette.selectionDim)
         material.emissiveIntensity = 0.16
       } else {
         material.emissive.setHex(0x000000)
@@ -573,7 +584,7 @@ export class ViewportEngine {
     if (points.length) {
       const segments = new THREE.LineSegments(
         new THREE.BufferGeometry().setFromPoints(points),
-        new THREE.LineBasicMaterial({ color: DIMENSION_LINE, depthTest: false }),
+        new THREE.LineBasicMaterial({ color: this.palette.dimension, depthTest: false }),
       )
       segments.renderOrder = 12
       this.dimensionGroup.add(segments)
@@ -648,10 +659,10 @@ export class ViewportEngine {
       this.sketchGroup.add(line)
     }
 
-    addLines(solid, SKETCH_LINE)
-    addLines(undefined3, UNDERDEFINED)
-    addLines(accent, ACCENT)
-    addLines(construction, CONSTRUCTION, true)
+    addLines(solid, this.palette.sketchLine)
+    addLines(undefined3, this.palette.sketchFree)
+    addLines(accent, this.palette.selection)
+    addLines(construction, this.palette.sketchConstruction, true)
 
     if (preview) {
       const segments = (chains: Vec2[][]) => {
@@ -661,8 +672,8 @@ export class ViewportEngine {
         }
         return points
       }
-      addLines(segments(preview.curves), ACCENT)
-      addLines(segments(preview.construction ?? []), CONSTRUCTION, true)
+      addLines(segments(preview.curves), this.palette.selection)
+      addLines(segments(preview.construction ?? []), this.palette.sketchConstruction, true)
     }
 
     // Sketch points, split by whether the solver still lets them move.
@@ -690,8 +701,8 @@ export class ViewportEngine {
       this.sketchGroup.add(points)
     }
     if (this.sketchDisplay.points || highlight.points.length) {
-      addPoints(this.sketchDisplay.points ? locked : [], 0xffffff, 6)
-      addPoints(this.sketchDisplay.points ? free : [], UNDERDEFINED, 7)
+      addPoints(this.sketchDisplay.points ? locked : [], this.palette.sketchPoint, 6)
+      addPoints(this.sketchDisplay.points ? free : [], this.palette.sketchFree, 7)
     }
   }
 
@@ -721,7 +732,7 @@ export class ViewportEngine {
       if (solid.length) {
         const line = new THREE.LineSegments(
           new THREE.BufferGeometry().setFromPoints(solid),
-          new THREE.LineBasicMaterial({ color: OVERLAY_LINE }),
+          new THREE.LineBasicMaterial({ color: this.palette.overlayLine }),
         )
         line.renderOrder = 4
         this.sketchOverlayGroup.add(line)
@@ -731,7 +742,7 @@ export class ViewportEngine {
         const line = new THREE.LineSegments(
           new THREE.BufferGeometry().setFromPoints(dashed),
           new THREE.LineDashedMaterial({
-            color: OVERLAY_CONSTRUCTION,
+            color: this.palette.overlayConstruction,
             dashSize: 1.6,
             gapSize: 1.2,
           }),
@@ -766,7 +777,7 @@ export class ViewportEngine {
         const mesh = new THREE.Mesh(
           geometry,
           new THREE.MeshBasicMaterial({
-            color: PROFILE_IDLE,
+            color: this.palette.profileIdle,
             transparent: true,
             opacity: 0.32,
             side: THREE.DoubleSide,
@@ -796,7 +807,13 @@ export class ViewportEngine {
       const material = mesh.material as THREE.MeshBasicMaterial
       const picked = this.profileState.picked.has(id)
       const hovered = this.profileState.hovered === id
-      material.color.setHex(picked ? PROFILE_PICKED : hovered ? PROFILE_HOVER : PROFILE_IDLE)
+      material.color.setHex(
+        picked
+          ? this.palette.profilePicked
+          : hovered
+            ? this.palette.profileHover
+            : this.palette.profileIdle,
+      )
       material.opacity = picked ? 0.5 : hovered ? 0.45 : 0.32
     }
   }
@@ -846,9 +863,9 @@ export class ViewportEngine {
     if (!frame) return
     const geometry = new THREE.PlaneGeometry(size, size)
     const material = new THREE.MeshBasicMaterial({
-      color: 0x2a3038,
+      color: this.palette.sketchPlane,
       transparent: true,
-      opacity: 0.35,
+      opacity: this.palette.sketchPlaneOpacity,
       side: THREE.DoubleSide,
       depthWrite: false,
     })
@@ -890,7 +907,7 @@ export class ViewportEngine {
       })
     }
     for (const handle of handles) {
-      const colour = handle.id === hot ? HANDLE_HOT : HANDLE
+      const colour = handle.id === hot ? this.palette.handleHot : this.palette.handle
       const tip = this.handleTip(handle)
       const material = () =>
         new THREE.MeshBasicMaterial({ color: colour, depthTest: false, transparent: true })
@@ -1494,7 +1511,7 @@ export class ViewportEngine {
         const mesh = new THREE.Mesh(
           geometry,
           new THREE.MeshBasicMaterial({
-            color: ACCENT,
+            color: this.palette.selection,
             transparent: true,
             opacity,
             side: THREE.DoubleSide,
@@ -1538,11 +1555,11 @@ export class ViewportEngine {
       }
 
       drawFaces(bucket.hoverFaces, 0.18)
-      drawEdges(bucket.hoverEdges, HOVER)
-      drawCorners(bucket.hoverCorners, HOVER, 8)
+      drawEdges(bucket.hoverEdges, this.palette.hover)
+      drawCorners(bucket.hoverCorners, this.palette.hover, 8)
       drawFaces(bucket.faces, 0.45)
-      drawEdges(bucket.edges, ACCENT)
-      drawCorners(bucket.corners, ACCENT, 9)
+      drawEdges(bucket.edges, this.palette.selection)
+      drawCorners(bucket.corners, this.palette.selection, 9)
       this.highlightGroup.add(holder)
     }
   }

@@ -9,6 +9,9 @@ import './android.css'
 import './ui/command/command.css'
 import './ui/timeline.css'
 import type { TestResult } from './dev/selftest'
+import { initTheme } from './theme/theme'
+
+initTheme()
 
 const root = createRoot(document.getElementById('root')!)
 const params = new URLSearchParams(location.search)

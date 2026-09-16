@@ -15,6 +15,7 @@ import { SKETCH_TOOL_MENUS, SKETCH_TOOLS } from '../sketch/tools/specs'
 import { CONSTRAINT_TOOLS } from '../sketch/constraintTools'
 import { startConstraintTool } from './sketchConstraints'
 import { moveCopyAction, rectangularPatternAction, scaleAction } from './sketchModify'
+import { THEME_LABEL, THEME_PREFERENCES, useTheme } from '../theme/theme'
 
 const SKETCH_MENU_ICONS: Record<string, string> = {
   Line: '╱',
@@ -65,6 +66,7 @@ export function Toolbar({
   const [pending, setPending] = useState<string | null>(null),
     [menu, setMenu] = useState<string | null>(null)
   const [variants, setVariants] = useState<Record<string, ToolId>>({})
+  const themeState = useTheme()
   const root = useRef<HTMLElement>(null)
   const sketch = activeSketchFeature(state)
   const creations = objectActions({ kind: 'none' }),
@@ -444,6 +446,20 @@ export function Toolbar({
         <button className="command-trigger" onClick={() => setPalette(true)}>
           Search commands <kbd>S</kbd>
         </button>
+        <label className="theme-picker" title="Colour theme">
+          <span aria-hidden="true">{themeState.theme === 'dark' ? '☾' : '☀'}</span>
+          <select
+            aria-label="Colour theme"
+            value={themeState.preference}
+            onChange={(e) => themeState.setTheme(e.target.value as typeof themeState.preference)}
+          >
+            {THEME_PREFERENCES.map((preference) => (
+              <option key={preference} value={preference}>
+                {THEME_LABEL[preference]}
+              </option>
+            ))}
+          </select>
+        </label>
         <button className="tb" onClick={() => setHelp(true)}>
           Shortcuts
         </button>

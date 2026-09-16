@@ -1,23 +1,4 @@
 /* Studio workspace: quiet surfaces, labelled tools and an uncluttered canvas. */
-:root {
-  --bg: #111d26;
-  --panel: #f6f7f4;
-  --panel-2: #eef0ec;
-  --panel-3: #ffffff;
-  --line: #d9dfd8;
-  --line-soft: #e5e8e2;
-  --text: #22352f;
-  --text-dim: #53665f;
-  --text-faint: #6e7c75;
-  --accent: #167256;
-  --accent-soft: #e1eee4;
-  --accent-line: #abcbbb;
-  --ok: #24754f;
-  --warn: #a36512;
-  --err: #b63636;
-  --radius: 8px;
-  color-scheme: light;
-}
 button:focus-visible,
 summary:focus-visible,
 a:focus-visible {
@@ -59,8 +40,8 @@ button:disabled {
 .brand .brand-mark {
   display: grid;
   place-items: center;
-  background: #193d32;
-  color: #caf0ce;
+  background: var(--okc-accent);
+  color: var(--okc-accent-soft);
   width: 30px;
   height: 32px;
   border-radius: 7px;
@@ -97,7 +78,7 @@ button:disabled {
   gap: 35px;
   margin-left: 16px;
   padding: 8px 12px;
-  background: #e9ede7;
+  background: var(--okc-surface-sunken);
   border: 1px solid var(--line);
   border-radius: 7px;
   color: var(--text-dim);
@@ -110,16 +91,16 @@ kbd {
   font: 10px var(--font);
 }
 .primary-button {
-  background: #17684f;
-  color: #fff;
-  border: 1px solid #17684f;
+  background: var(--okc-accent);
+  color: var(--okc-text-on-accent);
+  border: 1px solid var(--okc-accent);
   border-radius: 7px;
   padding: 9px 16px;
   font-weight: 600;
   white-space: nowrap;
 }
 .primary-button:hover {
-  background: #10523d;
+  background: var(--okc-accent);
 }
 .workspace-tabs {
   display: flex;
@@ -127,7 +108,7 @@ kbd {
   gap: 5px;
   padding: 0 17px;
   height: 39px;
-  background: #eef1eb;
+  background: var(--okc-surface-sunken);
 }
 .workspace-tabs > button:not(.tb) {
   align-self: stretch;
@@ -179,11 +160,11 @@ kbd {
 .tool-symbol {
   font: 23px/1 var(--font);
   height: 26px;
-  color: #496358;
+  color: var(--okc-text-muted);
 }
 .accent-tool {
-  background: #e6eee3;
-  color: #17684f;
+  background: var(--okc-surface-sunken);
+  color: var(--okc-accent-text);
 }
 .ribbon-guidance {
   display: flex;
@@ -304,7 +285,7 @@ select {
 }
 .btn {
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--okc-surface-panel);
   border-radius: 7px;
   padding: 10px 12px;
   margin-bottom: 7px;
@@ -364,7 +345,7 @@ select {
   border-radius: 7px;
   padding: 11px;
   border: 1px solid var(--line-soft);
-  background: #fff;
+  background: var(--okc-surface-panel);
 }
 .cat-type strong {
   font-size: 11px;
@@ -375,10 +356,10 @@ select {
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--okc-surface-panel);
 }
 .cat-item:hover {
-  background: #e5f0e7;
+  background: var(--okc-surface-sunken);
   border-color: var(--accent-line);
 }
 .cat-item strong {
@@ -415,11 +396,11 @@ select {
   position: relative;
   padding: 30px;
   width: min(100%, 750px);
-  color: #eaf1eb;
+  color: var(--okc-text-on-accent);
   pointer-events: none;
 }
 .workspace-welcome .eyebrow {
-  color: #9abbac;
+  color: var(--okc-text-faint);
 }
 .workspace-welcome h1 {
   font-weight: 500;
@@ -429,7 +410,7 @@ select {
   margin: 18px 0;
 }
 .workspace-welcome p {
-  color: #a4b4b6;
+  color: var(--okc-text-faint);
   font-size: 13px;
   line-height: 1.6;
   margin-bottom: 26px;
@@ -447,20 +428,20 @@ select {
   align-items: flex-start;
   padding: 18px 15px;
   gap: 9px;
-  border: 1px solid #455a5c;
-  background: #1d3038eb;
-  color: #e5efe9;
+  border: 1px solid var(--okc-line-strong);
+  background: var(--okc-surface-scrim);
+  color: var(--okc-text-on-accent);
   border-radius: 10px;
   min-height: 166px;
 }
 .start-cards button:hover {
-  border-color: #b5dcae;
-  background: #294339;
+  border-color: var(--okc-accent);
+  background: var(--okc-surface-tooltip);
   transform: translateY(-2px);
 }
 .start-cards button > span {
   font-size: 25px;
-  color: #c5e7b8;
+  color: var(--okc-accent-soft);
   line-height: 1;
   margin-bottom: 7px;
 }
@@ -470,17 +451,17 @@ select {
 }
 .start-cards small {
   font-size: 10px;
-  color: #a4b6b2;
+  color: var(--okc-text-faint);
   line-height: 1.6;
 }
 .start-cards b {
   font-size: 10px;
-  color: #a9c9b0;
+  color: var(--okc-text-disabled);
   margin-top: auto;
   font-weight: 400;
 }
 .welcome-tip {
-  color: #8caaa6;
+  color: var(--okc-text-faint);
   font-size: 10px;
   margin-top: 24px;
 }
@@ -495,16 +476,16 @@ select {
   transform: none;
   max-width: calc(100% - 24px);
   white-space: normal;
-  color: #dcf1df;
-  background: #203c35ed;
-  border-color: #487358;
+  color: var(--okc-accent-soft);
+  background: var(--okc-surface-tooltip);
+  border-color: var(--okc-line-strong);
   pointer-events: none;
   z-index: 4;
   padding: 12px 15px;
   flex-wrap: wrap;
 }
 .sketch-banner span {
-  color: #b5caba !important;
+  color: var(--okc-text-disabled) !important;
 }
 .statusbar {
   font-size: 10px;
@@ -531,7 +512,7 @@ select {
   overflow: auto;
 }
 .action-dialog::backdrop {
-  background: #07192380;
+  background: var(--okc-surface-scrim);
   backdrop-filter: blur(3px);
 }
 .action-dialog h2 {
@@ -663,20 +644,20 @@ select {
   font-size: 20px;
 }
 .overlay-centre {
-  color: #e9efea;
-  background: #11212ae8;
+  color: var(--okc-text-on-accent);
+  background: var(--okc-surface-scrim);
 }
 .overlay-centre [style] {
-  color: #b8c8c0 !important;
+  color: var(--okc-text-disabled) !important;
 }
 .view-cube {
-  background: #f6f7f4ed;
+  background: var(--okc-surface-overlay);
   color: var(--text);
   border-color: var(--line);
   border-radius: 8px;
 }
 .vp-label {
-  color: #e7e3db;
+  color: var(--okc-text-disabled);
 }
 .vp-prompt {
   color: var(--text);
@@ -782,7 +763,7 @@ select {
   }
 }
 .power-tools details {
-  border-top: 1px solid var(--border, #41464e);
+  border-top: 1px solid var(--border, var(--okc-line-strong));
   padding: 8px 0;
 }
 .power-tools summary {
@@ -819,5 +800,5 @@ select {
   padding: 12px;
   cursor: pointer;
   font-weight: 600;
-  border-top: 1px solid var(--border, #41464e);
+  border-top: 1px solid var(--border, var(--okc-line-strong));
 }

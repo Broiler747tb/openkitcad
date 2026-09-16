@@ -98,6 +98,8 @@ import {
 import { poseMatrix, poseOf } from '../doc/placement'
 import { CATEGORY_COLOUR, getPart } from '../catalogue'
 import { lengthLabel } from '../core/units'
+import { useTheme } from '../theme/theme'
+import { readPalette } from '../theme/palette'
 
 /** Snap radius in screen pixels. */
 const SNAP_PX = 11
@@ -286,6 +288,8 @@ function pasteClipboard(): boolean {
 
 export function Viewport() {
   const preferences = usePreferences((s) => s.values)
+  const { theme } = useTheme()
+  const [paletteVersion, setPaletteVersion] = useState(0)
   const mountRef = useRef<HTMLDivElement>(null)
   const engineRef = useRef<ViewportEngine | null>(null)
   const toolRef = useRef<ToolState>(emptyToolState())
@@ -626,7 +630,7 @@ export function Viewport() {
         },
       ]
     })
-  }, [doc, planes, activeSketch?.featureId, pickedSketchKey, showProfile])
+  }, [doc, planes, activeSketch?.featureId, pickedSketchKey, showProfile, paletteVersion])
   useEffect(() => {
     engineRef.current?.setSketchOverlays(sketchOverlays)
   }, [sketchOverlays])
@@ -732,6 +736,11 @@ export function Viewport() {
     return () => window.removeEventListener('okc:cancel', cancel)
   }, [])
 
+  useEffect(() => {
+    engineRef.current?.setPalette(readPalette())
+    setPaletteVersion((version) => version + 1)
+  }, [theme])
+
   // Redraw the sketch whenever it changes.
   useEffect(() => {
     const engine = engineRef.current
@@ -759,6 +768,7 @@ export function Viewport() {
     sketchStatus,
     tool,
     preferences.sketchShowDimensions,
+    paletteVersion,
   ])
 
   useEffect(() => {

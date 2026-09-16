@@ -7,33 +7,6 @@
  * readable.
  */
 
-:root {
-  --bg: #15171a;
-  --panel: #1b1e22;
-  --panel-2: #212529;
-  --panel-3: #272c31;
-  --line: #2e343b;
-  --line-soft: #23282d;
-
-  --text: #e7e3db;
-  --text-dim: #98a0a8;
-  --text-faint: #6d757d;
-
-  --accent: #ff9f2e;
-  --accent-soft: rgba(255, 159, 46, 0.14);
-  --accent-line: rgba(255, 159, 46, 0.4);
-
-  --ok: #6fbf73;
-  --warn: #e5ac48;
-  --err: #e4685e;
-
-  --radius: 5px;
-  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, sans-serif;
-  --mono: ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, monospace;
-
-  color-scheme: dark;
-}
-
 * {
   box-sizing: border-box;
 }
@@ -277,7 +250,7 @@ input[type='checkbox'] {
 
 .btn.primary {
   background: var(--accent);
-  color: #201400;
+  color: var(--okc-text);
   border-color: var(--accent);
   font-weight: 600;
   text-align: center;
@@ -285,7 +258,7 @@ input[type='checkbox'] {
 
 .btn.primary:hover {
   filter: brightness(1.08);
-  color: #201400;
+  color: var(--okc-text);
 }
 
 .btn small {
@@ -450,7 +423,7 @@ input[type='checkbox'] {
   transform: translate(-50%, -50%);
   padding: 1px 6px;
   border-radius: 3px;
-  background: rgba(21, 23, 26, 0.86);
+  background: var(--okc-surface-scrim);
   border: 1px solid var(--accent-line);
   color: var(--accent);
   font: 11.5px var(--mono);
@@ -459,8 +432,8 @@ input[type='checkbox'] {
 }
 
 .vp-label-measure {
-  border-color: #4d8fd6;
-  color: #8fc0f0;
+  border-color: var(--okc-accent);
+  color: var(--okc-prehighlight);
 }
 
 .vp-snap-hint {
@@ -468,7 +441,7 @@ input[type='checkbox'] {
   padding: 1px 6px;
   border-radius: 3px;
   background: var(--accent);
-  color: #1c1200;
+  color: var(--okc-text);
   font-size: 11px;
   font-weight: 600;
   pointer-events: none;
@@ -532,7 +505,7 @@ input[type='checkbox'] {
   padding: 0 3px 10px;
   border: 0;
   background: transparent;
-  color: var(--muted, #6b737b);
+  color: var(--muted, var(--okc-text-muted));
   font-size: 10px;
   cursor: pointer;
 }
@@ -575,10 +548,10 @@ input[type='checkbox'] {
   gap: 5px;
   transform: translate(10px, -50%);
   padding: 2px 7px;
-  border: 1px solid var(--line, #b9c0c7);
+  border: 1px solid var(--line, var(--okc-line));
   border-radius: 3px;
-  background: var(--panel, #fff);
-  color: var(--text, #1d2226);
+  background: var(--panel, var(--okc-surface-panel));
+  color: var(--text, var(--okc-text));
   font: 12px var(--mono);
   pointer-events: none;
   white-space: nowrap;
@@ -586,7 +559,7 @@ input[type='checkbox'] {
 }
 
 .vp-headsup-label {
-  color: var(--muted, #6b737b);
+  color: var(--muted, var(--okc-text-muted));
   font: 10.5px var(--sans, system-ui);
 }
 
@@ -628,7 +601,7 @@ input[type='checkbox'] {
   right: 10px;
   display: flex;
   gap: 3px;
-  background: rgba(27, 30, 34, 0.86);
+  background: var(--okc-surface-scrim);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 3px;
@@ -654,7 +627,7 @@ input[type='checkbox'] {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(27, 30, 34, 0.94);
+  background: var(--okc-surface-scrim);
   border: 1px solid var(--accent-line);
   border-radius: var(--radius);
   padding: 5px 8px 5px 12px;
@@ -667,7 +640,7 @@ input[type='checkbox'] {
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgba(21, 23, 26, 0.72);
+  background: var(--okc-surface-scrim);
   z-index: 50;
   text-align: center;
 }
@@ -761,15 +734,15 @@ input[type='checkbox'] {
 }
 
 .msg.error {
-  background: rgba(228, 104, 94, 0.09);
+  background: var(--okc-error);
   border-color: var(--err);
-  color: #f0a49d;
+  color: var(--okc-error);
 }
 
 .msg.warn {
-  background: rgba(229, 172, 72, 0.09);
+  background: var(--okc-warning);
   border-color: var(--warn);
-  color: #eccb8c;
+  color: var(--okc-warning);
 }
 
 .msg.info {
@@ -839,7 +812,7 @@ input[type='checkbox'] {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(10, 11, 13, 0.66);
+  background: var(--okc-surface-scrim);
   display: grid;
   place-items: center;
   z-index: 60;
@@ -902,7 +875,7 @@ input[type='checkbox'] {
 }
 
 .sketch-menu-item.danger:hover {
-  background: rgba(228, 104, 94, 0.12);
+  background: var(--okc-error);
   border-left-color: var(--err);
 }
 
@@ -913,10 +886,10 @@ input[type='checkbox'] {
 .vp-label-constraint {
   min-width: 15px;
   padding: 0 3px;
-  border-color: #9fb3c8;
+  border-color: var(--okc-line-strong);
   border-radius: 2px;
-  background: #f4f7fa;
-  color: #2f4a66;
+  background: var(--okc-surface-panel-raised);
+  color: var(--okc-accent-text);
   font: 600 10px/14px var(--sans, system-ui);
   text-align: center;
   cursor: pointer;
@@ -927,13 +900,13 @@ input[type='checkbox'] {
 .vp-label-constraint.selected {
   border-color: var(--accent);
   background: var(--accent);
-  color: #fff;
+  color: var(--okc-text-on-accent);
 }
 
 .vp-label-dimension {
   border-color: transparent;
-  background: rgba(244, 247, 250, 0.92);
-  color: #1d3f63;
+  background: var(--okc-surface-overlay);
+  color: var(--okc-accent-text);
   font: 600 11.5px var(--mono);
   cursor: grab;
   pointer-events: auto;
@@ -941,8 +914,8 @@ input[type='checkbox'] {
 
 .vp-label-dimension:hover {
   border-color: var(--accent);
-  background: #fff;
-  color: #10263d;
+  background: var(--okc-surface-panel);
+  color: var(--okc-accent-text);
 }
 
 /* The section list, and the panel of actions that opens beside it. */
@@ -1333,8 +1306,8 @@ input[type='checkbox'] {
 /* Delete stays red on hover: it is the one here that does not undo visually. */
 .quick[title*='Delete']:hover,
 .quick[title*='Remove']:hover {
-  background: rgba(228, 104, 94, 0.14);
-  border-color: rgba(228, 104, 94, 0.4);
+  background: var(--okc-error);
+  border-color: var(--okc-error);
   color: var(--err);
 }
 
@@ -1396,7 +1369,7 @@ input[type='checkbox'] {
     position: fixed;
     inset: 0;
     z-index: 35;
-    background: rgba(10, 11, 13, 0.5);
+    background: var(--okc-surface-scrim);
   }
 
   /* Two tabs at the bottom, within reach of a thumb rather than up by the
