@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   elementKey,
   ViewportEngine,
@@ -8,6 +8,7 @@ import {
   type SubPick,
 } from './engine'
 import { resolveHandles, type ActiveHandle } from './handles'
+import { ViewCube } from './ViewCube'
 import { entityCentre, pointLookup, tessellate } from '../sketch/curves'
 import { cachedRegions } from '../sketch/regions'
 import { findInput } from '../ui/command/state'
@@ -302,6 +303,15 @@ export function Viewport() {
   }
   const toolActionsRef = useRef<ToolActions | null>(null)
   const dimensionPreviewRef = useRef<NewDimension | null>(null)
+  const viewListenersRef = useRef(new Set<(view: number[]) => void>())
+  const subscribeView = useCallback((listener: (view: number[]) => void) => {
+    const engine = engineRef.current
+    if (engine) return engine.subscribeView(listener)
+    viewListenersRef.current.add(listener)
+    return () => {
+      viewListenersRef.current.delete(listener)
+    }
+  }, [])
   const draggingRef = useRef<{ pointId: string; moved: boolean } | null>(null)
   const penContactRef = useRef(false)
   const downRef = useRef<{ x: number; y: number } | null>(null)
@@ -387,6 +397,8 @@ export function Viewport() {
     if (!mountRef.current) return
     const engine = new ViewportEngine(mountRef.current)
     engineRef.current = engine
+    for (const listener of viewListenersRef.current) engine.subscribeView(listener)
+    viewListenersRef.current.clear()
     engine.onLabels = setLabels
     engine.onHandleScreens = setHandleScreens
     if (import.meta.env.DEV) (window as any).__okcEngine = engine
@@ -1991,7 +2003,7 @@ export function Viewport() {
         />
       )}
 
-      <ViewCube />
+      <ViewCube subscribe={subscribeView} />
     </div>
   )
 }
@@ -2173,20 +2185,4 @@ function sketchLabels(sketch: Sketch2D, frame: Frame) {
     })
   }
   return out
-}
-
-function ViewCube() {
-  return (
-    <div className="view-cube">
-      {(['top', 'front', 'right', 'iso'] as const).map((view) => (
-        <button
-          key={view}
-          title={view === 'iso' ? 'Three-quarter view' : `Look straight at the ${view}`}
-          onClick={() => window.dispatchEvent(new CustomEvent('okc:view', { detail: view }))}
-        >
-          {view === 'iso' ? '3D' : view[0].toUpperCase() + view.slice(1)}
-        </button>
-      ))}
-    </div>
-  )
 }

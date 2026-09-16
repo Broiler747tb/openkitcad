@@ -166,6 +166,15 @@ export class ViewportEngine {
   }
 
   private disposed = false
+  private viewListeners = new Set<(view: number[]) => void>()
+  private lastView = ''
+  private viewTween: {
+    from: THREE.Quaternion
+    to: THREE.Quaternion
+    target: THREE.Vector3
+    distance: number
+    start: number
+  } | null = null
   private palette: ViewportPalette = LIGHT_PALETTE
   private hemisphere: THREE.HemisphereLight | null = null
   private lastGrid: { preferences: Preferences; frame: Frame | null } | null = null
@@ -1619,7 +1628,7 @@ export class ViewportEngine {
     this.camera.lookAt(centre)
   }
 
-  setStandardView(view: 'top' | 'front' | 'right' | 'iso') {
+  setStandardView(view: string) {
     const target = this.controls.target.clone()
     const distance = this.camera.position.distanceTo(target) || 400
     const dirs: Record<string, [Vec3, Vec3]> = {
@@ -1627,26 +1636,77 @@ export class ViewportEngine {
         [0, 0, 1],
         [0, 1, 0],
       ],
+      bottom: [
+        [0, 0, -1],
+        [0, -1, 0],
+      ],
       front: [
         [0, -1, 0],
+        [0, 0, 1],
+      ],
+      back: [
+        [0, 1, 0],
         [0, 0, 1],
       ],
       right: [
         [1, 0, 0],
         [0, 0, 1],
       ],
-      // Matches HOME_CAMERA, so pressing 3D returns to the view you started at.
+      left: [
+        [-1, 0, 0],
+        [0, 0, 1],
+      ],
       iso: [
         [-0.72, -0.6, 0.55],
         [0, 0, 1],
       ],
     }
-    const [dir, up] = dirs[view]
-    this.camera.up.set(...up)
+    const chosen = dirs[view]
+    if (!chosen) return
+    const [dir, up] = chosen
+    const eye = target.clone().addScaledVector(new THREE.Vector3(...dir).normalize(), distance)
+    const goal = new THREE.Quaternion().setFromRotationMatrix(
+      new THREE.Matrix4().lookAt(eye, target, new THREE.Vector3(...up)),
+    )
+    this.viewTween = {
+      from: this.camera.quaternion.clone(),
+      to: goal,
+      target,
+      distance,
+      start: performance.now(),
+    }
+  }
+
+  subscribeView(listener: (view: number[]) => void): () => void {
+    this.viewListeners.add(listener)
+    listener(this.viewRotation())
+    return () => {
+      this.viewListeners.delete(listener)
+    }
+  }
+
+  private viewRotation(): number[] {
+    this.camera.updateMatrixWorld()
+    const e = this.camera.matrixWorldInverse.elements
+    return [e[0], e[4], e[8], e[1], e[5], e[9], e[2], e[6], e[10]]
+  }
+
+  private stepViewTween() {
+    const tween = this.viewTween
+    if (!tween) return false
+    const t = Math.min(1, (performance.now() - tween.start) / 260)
+    const eased = t * t * (3 - 2 * t)
+    const q = tween.from.clone().slerp(tween.to, eased)
+    this.camera.quaternion.copy(q)
     this.camera.position
-      .copy(target)
-      .addScaledVector(new THREE.Vector3(...dir).normalize(), distance)
-    this.camera.lookAt(target)
+      .copy(tween.target)
+      .add(new THREE.Vector3(0, 0, tween.distance).applyQuaternion(q))
+    this.camera.up.copy(new THREE.Vector3(0, 1, 0).applyQuaternion(q))
+    if (t >= 1) {
+      this.viewTween = null
+      this.camera.lookAt(tween.target)
+    }
+    return true
   }
 
   setControlsEnabled(enabled: boolean) {
@@ -1678,7 +1738,15 @@ export class ViewportEngine {
   private animate = () => {
     if (this.disposed) return
     requestAnimationFrame(this.animate)
-    this.controls.update()
+    if (!this.stepViewTween()) this.controls.update()
+    if (this.viewListeners.size) {
+      const view = this.viewRotation()
+      const key = view.map((v) => v.toFixed(4)).join(',')
+      if (key !== this.lastView) {
+        this.lastView = key
+        for (const listener of this.viewListeners) listener(view)
+      }
+    }
     this.scaleHandles()
     if (this.dimensionSource && this.dimensionPixel > 0) {
       const pixel = this.pixelSize(this.dimensionSource.frame.origin)

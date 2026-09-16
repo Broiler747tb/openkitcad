@@ -417,19 +417,6 @@
 .navigation-bar button:hover {
   background: var(--accent-soft);
 }
-.view-cube {
-  top: 16px;
-  right: 310px;
-  border-radius: 2px;
-  background: var(--okc-surface-overlay);
-}
-.inspector-empty .view-cube {
-  right: 20px;
-}
-.view-cube button {
-  border-radius: 0;
-  font-size: 11px;
-}
 .statusbar {
   padding: 3px 12px;
   font-size: 9px;
@@ -697,4 +684,80 @@
 .finish-sketch .okc-icon {
   width: 30px;
   height: 30px;
+}
+
+.view-cube {
+  position: absolute;
+  top: 14px;
+  right: 318px;
+  width: 96px;
+  height: 104px;
+  padding: 0;
+  display: block;
+  background: none;
+  border: 0;
+  z-index: var(--okc-z-cube);
+  pointer-events: none;
+}
+.inspector-empty .view-cube {
+  right: 24px;
+}
+.view-cube-home {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--okc-cube-border);
+  border-radius: var(--okc-radius-sm);
+  background: var(--okc-cube-face);
+  color: var(--okc-cube-text);
+  pointer-events: auto;
+  cursor: pointer;
+}
+.view-cube-home:hover {
+  background: var(--okc-cube-face-hover);
+}
+.view-cube-stage {
+  position: absolute;
+  left: 16px;
+  top: 20px;
+  width: 64px;
+  height: 64px;
+}
+.view-cube-body {
+  position: absolute;
+  left: 32px;
+  top: 32px;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+}
+.view-cube-face {
+  position: absolute;
+  left: -32px;
+  top: -32px;
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--okc-cube-border);
+  border-radius: 0;
+  background: var(--okc-cube-face);
+  color: var(--okc-cube-text);
+  font: 700 10px/1 var(--okc-font-ui);
+  letter-spacing: 0.4px;
+  backface-visibility: hidden;
+  pointer-events: auto;
+  cursor: pointer;
+  transform-origin: 50% 50%;
+}
+.view-cube-face:hover {
+  background: var(--okc-cube-face-hover);
+  border-color: var(--okc-accent);
+  color: var(--okc-accent-text);
 }
