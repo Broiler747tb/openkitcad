@@ -4,6 +4,7 @@ import { frameFromPlaneRefLocal } from '../../../doc/planes'
 import { useStore } from '../../../doc/store'
 import type { BodyOperation, OkcDocument, PlaneRef, SketchFeature } from '../../../doc/types'
 import { sketchLoopSummary } from '../../../kernel/profile'
+import { entityPointIds } from '../../../sketch/curves'
 import { bodyPick, planePick } from '../picks'
 import type { CommandContext, LooseCommandValues, SelectionPick } from '../types'
 
@@ -119,13 +120,7 @@ export function profileCentre(sketch: SketchFeature): Vec2 {
   const used = new Set(
     sketch.sketch.entities
       .filter((entity) => !entity.construction)
-      .flatMap((entity) =>
-        entity.kind === 'line'
-          ? [entity.p1, entity.p2]
-          : entity.kind === 'circle'
-            ? [entity.c]
-            : [entity.c, entity.p1, entity.p2],
-      ),
+      .flatMap((entity) => entityPointIds(entity)),
   )
   const points = sketch.sketch.points.filter((point) => used.has(point.id))
   if (!points.length) return [0, 0]

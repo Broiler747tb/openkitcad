@@ -46,7 +46,88 @@ export interface ArcEntity {
   construction: boolean
 }
 
-export type SketchEntity = LineEntity | CircleEntity | ArcEntity
+export interface PointEntity {
+  id: EntityId
+  kind: 'point'
+  p: PointId
+  construction: boolean
+}
+
+export interface EllipseEntity {
+  id: EntityId
+  kind: 'ellipse'
+  c: PointId
+  rx: number
+  ry: number
+  rotation: number
+  construction: boolean
+}
+
+export interface EllipticalArcEntity {
+  id: EntityId
+  kind: 'ellipticalArc'
+  c: PointId
+  p1: PointId
+  p2: PointId
+  rx: number
+  ry: number
+  rotation: number
+  ccw: boolean
+  construction: boolean
+}
+
+export interface SplineHandle {
+  dx: number
+  dy: number
+  k: number
+}
+
+export interface SplineEntity {
+  id: EntityId
+  kind: 'spline'
+  mode: 'fit' | 'control'
+  points: PointId[]
+  knots?: number[]
+  startHandle?: SplineHandle
+  endHandle?: SplineHandle
+  construction: boolean
+}
+
+export interface TextEntity {
+  id: EntityId
+  kind: 'text'
+  p: PointId
+  text: string
+  height: number
+  angle: number
+  font: string
+  construction: boolean
+}
+
+export type SketchEntity =
+  | LineEntity
+  | CircleEntity
+  | ArcEntity
+  | PointEntity
+  | EllipseEntity
+  | EllipticalArcEntity
+  | SplineEntity
+  | TextEntity
+
+export type EntityKind = SketchEntity['kind']
+
+export type SplineEnd = 'start' | 'end'
+
+export const ENTITY_LABELS: Record<EntityKind, string> = {
+  line: 'Line',
+  circle: 'Circle',
+  arc: 'Arc',
+  point: 'Point',
+  ellipse: 'Ellipse',
+  ellipticalArc: 'Elliptical arc',
+  spline: 'Spline',
+  text: 'Text',
+}
 
 /**
  * Constraint vocabulary. Deliberately small: every one of these can be
@@ -75,10 +156,42 @@ export type Constraint =
   | { id: ConstraintId; kind: 'distance'; a: PointId; b: PointId; value: number }
   | { id: ConstraintId; kind: 'distanceX'; a: PointId; b: PointId; value: number }
   | { id: ConstraintId; kind: 'distanceY'; a: PointId; b: PointId; value: number }
-  | { id: ConstraintId; kind: 'radius'; e: EntityId; value: number }
-  | { id: ConstraintId; kind: 'diameter'; e: EntityId; value: number }
+  | { id: ConstraintId; kind: 'radius'; e: EntityId; value: number; axis?: 'major' | 'minor' }
+  | { id: ConstraintId; kind: 'diameter'; e: EntityId; value: number; axis?: 'major' | 'minor' }
   /** Angle between two lines, in degrees. */
   | { id: ConstraintId; kind: 'angle'; a: EntityId; b: EntityId; value: number }
+  | { id: ConstraintId; kind: 'collinear'; a: EntityId; b: EntityId }
+  | { id: ConstraintId; kind: 'concentric'; a: EntityId; b: EntityId }
+  | { id: ConstraintId; kind: 'pointOnCurve'; p: PointId; e: EntityId }
+  | { id: ConstraintId; kind: 'tangentCurves'; a: EntityId; b: EntityId }
+  | {
+      id: ConstraintId
+      kind: 'smooth'
+      a: EntityId
+      aEnd: SplineEnd
+      b: EntityId
+      bEnd: SplineEnd
+    }
+  | {
+      id: ConstraintId
+      kind: 'symmetricEntities'
+      a: EntityId
+      b: EntityId
+      line: EntityId
+      flip: boolean
+    }
+  | { id: ConstraintId; kind: 'ellipseAxis'; line: EntityId; e: EntityId; axis: 'major' | 'minor' }
+  | {
+      id: ConstraintId
+      kind: 'fixShape'
+      e: EntityId
+      r?: number
+      rx?: number
+      ry?: number
+      rotation?: number
+      start?: SplineHandle
+      end?: SplineHandle
+    }
 
 export type ConstraintKind = Constraint['kind']
 
@@ -147,4 +260,12 @@ export const CONSTRAINT_LABELS: Record<ConstraintKind, string> = {
   radius: 'Radius',
   diameter: 'Diameter',
   angle: 'Angle',
+  collinear: 'In line',
+  concentric: 'Same centre',
+  pointOnCurve: 'On the curve',
+  tangentCurves: 'Smooth join',
+  smooth: 'Curvature match',
+  symmetricEntities: 'Mirrored',
+  ellipseAxis: 'Along the axis',
+  fixShape: 'Pinned',
 }

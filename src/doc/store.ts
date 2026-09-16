@@ -113,6 +113,7 @@ interface AppState {
     closed: boolean
     freePoints: string[]
     freeRadii: string[]
+    freeEntities: string[]
   } | null
 
   section: SectionState
@@ -1118,6 +1119,7 @@ export const useStore = create<AppState>((set, get) => ({
         closed: feature.sketch.entities.some((e) => !e.construction),
         freePoints: result.freePoints,
         freeRadii: result.freeRadii,
+        freeEntities: result.freeEntities,
       },
     })
     return result

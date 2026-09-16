@@ -15,6 +15,7 @@
  */
 import { draw, drawCircle, type Drawing } from 'replicad'
 import type { Vec2 } from '../core/math'
+import { entityEnds } from '../sketch/curves'
 import type { ArcEntity, Sketch2D, SketchEntity } from '../sketch/types'
 
 /** Points closer than this are treated as the same node, in mm. */
@@ -148,7 +149,8 @@ function findLoops(sketch: Sketch2D): { loops: Loop[]; openChains: number } {
   // Adjacency by welded position.
   const adjacency = new Map<string, Array<{ index: number; atStart: boolean }>>()
   const nodeOf = (e: SketchEntity, start: boolean): Node => {
-    const id = e.kind === 'line' || e.kind === 'arc' ? (start ? e.p1 : e.p2) : e.c
+    const [first, last] = entityEnds(e)!
+    const id = start ? first : last
     const p = pts.get(id)!
     return { key: nodeKey(p), p }
   }
@@ -207,15 +209,13 @@ function findLoops(sketch: Sketch2D): { loops: Loop[]; openChains: number } {
 }
 
 function stepStartId(step: Step): string {
-  const e = step.entity
-  if (e.kind === 'circle') return e.c
-  return step.reversed ? e.p2 : e.p1
+  const [first, last] = entityEnds(step.entity)!
+  return step.reversed ? last : first
 }
 
 function stepEndId(step: Step): string {
-  const e = step.entity
-  if (e.kind === 'circle') return e.c
-  return step.reversed ? e.p1 : e.p2
+  const [first, last] = entityEnds(step.entity)!
+  return step.reversed ? first : last
 }
 
 /**

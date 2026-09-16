@@ -31,6 +31,7 @@ if (params.has('selftest') || params.has('kerneltest')) {
       ['workshop', async () => (await import('./dev/powertest')).runPowerTest()],
       ['parameters', async () => (await import('./dev/parametertest')).runParameterTest()],
       ['commands', async () => (await import('./dev/commandtest')).runCommandTest()],
+      ['sketch', async () => (await import('./dev/sketchtest')).runSketchTest()],
     )
   }
   suites.push(

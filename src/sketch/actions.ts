@@ -13,6 +13,7 @@
 import { v2, type Vec2 } from '../core/math'
 import { findCorner, maxChamferDistance, maxFilletRadius } from './corner'
 import type { SketchTarget } from './inference'
+import { entityPointIds } from './curves'
 import type { NewConstraint, Sketch2D, SketchEntity } from './types'
 import {
   INSERTS,
@@ -620,12 +621,11 @@ export function sketchActions(
     let minX = Infinity
     let maxX = -Infinity
     for (const e of entities) {
-      const touching =
-        e.kind === 'line' ? [e.p1, e.p2] : e.kind === 'arc' ? [e.c, e.p1, e.p2] : [e.c]
-      for (const id of touching) {
+      for (const id of entityPointIds(e)) {
         const p = pts.get(id)
         if (!p) continue
-        const pad = e.kind === 'circle' ? e.r : 0
+        const pad =
+          e.kind === 'circle' ? e.r : e.kind === 'ellipse' ? Math.max(e.rx, e.ry) : 0
         minX = Math.min(minX, p[0] - pad)
         maxX = Math.max(maxX, p[0] + pad)
       }

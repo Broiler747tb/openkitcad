@@ -15,7 +15,7 @@ import type { Frame, Vec2, Vec3 } from '../core/math'
 import { frameToWorld, v3 } from '../core/math'
 import type { Sketch2D } from '../sketch/types'
 import { usePreferences, type Preferences } from '../doc/preferences'
-import { arcMidpoint } from '../kernel/profile'
+import { tessellate } from '../sketch/curves'
 
 export interface ScreenLabel {
   id: string
@@ -115,6 +115,7 @@ const ACCENT_DIM = 0xc4761c
 /** Pre-selection: what a click would take. */
 const HOVER = 0xffd9a0
 const SKETCH_LINE = 0xf2ede4
+const SKETCH_TESSELLATION_MM = 0.01
 const CONSTRUCTION = 0x6f7681
 /** Geometry that is not yet pinned down. */
 const UNDERDEFINED = 0x5aa9e6
@@ -509,37 +510,9 @@ export class ViewportEngine {
           : loose.entities.includes(entity.id)
             ? undefined3
             : solid
-      if (entity.kind === 'line') {
-        target.push(to3(pts.get(entity.p1)!), to3(pts.get(entity.p2)!))
-      } else if (entity.kind === 'circle') {
-        const c = pts.get(entity.c)!
-        let prev: Vec2 = [c[0] + entity.r, c[1]]
-        for (let i = 1; i <= 64; i++) {
-          const a = (i / 64) * Math.PI * 2
-          const next: Vec2 = [c[0] + entity.r * Math.cos(a), c[1] + entity.r * Math.sin(a)]
-          target.push(to3(prev), to3(next))
-          prev = next
-        }
-      } else {
-        const c = pts.get(entity.c)!
-        const p1 = pts.get(entity.p1)!
-        const p2 = pts.get(entity.p2)!
-        const mid = arcMidpoint(entity, pts)
-        const r = Math.hypot(p1[0] - c[0], p1[1] - c[1])
-        const a1 = Math.atan2(p1[1] - c[1], p1[0] - c[0])
-        const am = Math.atan2(mid[1] - c[1], mid[0] - c[0])
-        const a2 = Math.atan2(p2[1] - c[1], p2[0] - c[0])
-        const TAU = Math.PI * 2
-        const norm = (x: number) => ((x % TAU) + TAU) % TAU
-        const sweep = entity.ccw ? norm(a2 - a1) : -norm(a1 - a2)
-        void am
-        let prev = p1
-        for (let i = 1; i <= 48; i++) {
-          const a = a1 + (sweep * i) / 48
-          const next: Vec2 = [c[0] + r * Math.cos(a), c[1] + r * Math.sin(a)]
-          target.push(to3(prev), to3(next))
-          prev = next
-        }
+      const polyline = tessellate(entity, pts, SKETCH_TESSELLATION_MM)
+      for (let i = 0; i + 1 < polyline.length; i++) {
+        target.push(to3(polyline[i]), to3(polyline[i + 1]))
       }
     }
 

@@ -1,9 +1,9 @@
 import type { Vec2 } from '../core/math'
+import { entityLength, entityPointIds, pointLookup } from './curves'
 import type { Sketch2D, SketchEntity, Constraint } from './types'
 
 type Id = (prefix: string) => string
-export const pointIds = (e: SketchEntity): string[] =>
-  e.kind === 'circle' ? [e.c] : e.kind === 'arc' ? [e.c, e.p1, e.p2] : [e.p1, e.p2]
+export const pointIds = (e: SketchEntity): string[] => entityPointIds(e)
 export function constraintRefs(c: Constraint): string[] {
   return Object.entries(c)
     .filter(
@@ -114,15 +114,55 @@ export function copyTransformed(
       })
       remap.set(key, next)
     }
+    const turnHandle = (h: { dx: number; dy: number; k: number }) => ({
+      dx: (h.dx * cos - h.dy * sin) * scale,
+      dy: (h.dx * sin + h.dy * cos) * scale,
+      k: h.k / scale,
+    })
     for (const e of entities) {
-      const next = { ...e, id: id('e') }
-      if (next.kind === 'circle') {
-        next.c = remap.get(next.c)!
-        next.r *= scale
-      } else {
-        next.p1 = remap.get(next.p1)!
-        next.p2 = remap.get(next.p2)!
-        if (next.kind === 'arc') next.c = remap.get(next.c)!
+      const next = structuredClone(e)
+      next.id = id('e')
+      switch (next.kind) {
+        case 'circle':
+          next.c = remap.get(next.c)!
+          next.r *= scale
+          break
+        case 'line':
+          next.p1 = remap.get(next.p1)!
+          next.p2 = remap.get(next.p2)!
+          break
+        case 'arc':
+          next.p1 = remap.get(next.p1)!
+          next.p2 = remap.get(next.p2)!
+          next.c = remap.get(next.c)!
+          break
+        case 'point':
+          next.p = remap.get(next.p)!
+          break
+        case 'text':
+          next.p = remap.get(next.p)!
+          next.height *= scale
+          next.angle += angle * n
+          break
+        case 'ellipse':
+          next.c = remap.get(next.c)!
+          next.rx *= scale
+          next.ry *= scale
+          next.rotation += angle * n
+          break
+        case 'ellipticalArc':
+          next.c = remap.get(next.c)!
+          next.p1 = remap.get(next.p1)!
+          next.p2 = remap.get(next.p2)!
+          next.rx *= scale
+          next.ry *= scale
+          next.rotation += angle * n
+          break
+        case 'spline':
+          next.points = next.points.map((key) => remap.get(key)!)
+          if (next.startHandle) next.startHandle = turnHandle(next.startHandle)
+          if (next.endHandle) next.endHandle = turnHandle(next.endHandle)
+          break
       }
       s.entities.push(next)
       added.push(next.id)
@@ -134,9 +174,13 @@ export function copyTransformed(
 export function setFixed(s: Sketch2D, selected: string[], fixed: boolean, id: Id) {
   const entities = s.entities.filter((e) => selected.includes(e.id)),
     points = new Set(entities.flatMap(pointIds).filter((id) => id !== 'origin')),
-    circles = new Set(entities.filter((e) => e.kind === 'circle').map((e) => e.id))
+    circles = new Set(entities.filter((e) => e.kind === 'circle').map((e) => e.id)),
+    shaped = new Set(entities.map((e) => e.id))
   s.constraints = s.constraints.filter(
-    (c) => !(c.kind === 'fix' && points.has(c.p)) && !(c.kind === 'radius' && circles.has(c.e)),
+    (c) =>
+      !(c.kind === 'fix' && points.has(c.p)) &&
+      !(c.kind === 'radius' && circles.has(c.e)) &&
+      !(c.kind === 'fixShape' && shaped.has(c.e)),
   )
   if (!fixed) return
   for (const p of s.points)
@@ -144,6 +188,35 @@ export function setFixed(s: Sketch2D, selected: string[], fixed: boolean, id: Id
   for (const e of entities)
     if (e.kind === 'circle')
       s.constraints.push({ id: id('c'), kind: 'radius', e: e.id, value: e.r })
+  for (const e of entities) {
+    if (e.kind === 'ellipse' || e.kind === 'ellipticalArc') {
+      s.constraints.push({
+        id: id('c'),
+        kind: 'fixShape',
+        e: e.id,
+        rx: e.rx,
+        ry: e.ry,
+        rotation: e.rotation,
+      })
+    } else if (e.kind === 'spline' && (e.startHandle || e.endHandle)) {
+      s.constraints.push({
+        id: id('c'),
+        kind: 'fixShape',
+        e: e.id,
+        ...(e.startHandle ? { start: { ...e.startHandle } } : {}),
+        ...(e.endHandle ? { end: { ...e.endHandle } } : {}),
+      })
+    }
+  }
+}
+
+export function isFixed(s: Sketch2D, entityId: string): boolean {
+  const e = s.entities.find((x) => x.id === entityId)
+  if (!e) return false
+  const fixedPoints = new Set(
+    s.constraints.filter((c) => c.kind === 'fix').map((c) => (c as { p: string }).p),
+  )
+  return pointIds(e).every((p) => fixedPoints.has(p))
 }
 
 export function deleteGeometry(s: Sketch2D, selected: string[]) {
@@ -164,10 +237,16 @@ export function cleanUnusedPoints(s: Sketch2D) {
 
 export function geometryLength(s: Sketch2D, selected: string[]): number {
   const points = new Map(s.points.map((p) => [p.id, p]))
+  let lookup: ReturnType<typeof pointLookup> | null = null
   let total = 0
   for (const e of s.entities.filter((e) => selected.includes(e.id))) {
     if (e.kind === 'circle') {
       total += 2 * Math.PI * e.r
+      continue
+    }
+    if (e.kind !== 'line' && e.kind !== 'arc') {
+      lookup ??= pointLookup(s)
+      total += entityLength(e, lookup)
       continue
     }
     const a = points.get(e.p1)!,

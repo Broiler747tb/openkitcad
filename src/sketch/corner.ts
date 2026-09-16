@@ -24,6 +24,7 @@
  * three separate formulas.
  */
 import { v2, type Vec2 } from '../core/math'
+import { entityEnds, entityPointIds } from './curves'
 import type { ArcEntity, LineEntity, NewConstraint, Sketch2D, SketchEntity } from './types'
 
 /** Ends this close together are the same corner, in mm. */
@@ -253,10 +254,7 @@ function retarget(entity: CornerEntity, from: string, to: string): void {
 /** Drop corner points that nothing refers to any more. */
 function pruneDuplicates(sketch: Sketch2D, ids: string[]): void {
   for (const id of ids) {
-    const usedByEntity = sketch.entities.some(
-      (e) =>
-        (e.kind !== 'circle' && (e.p1 === id || e.p2 === id)) || (e.kind !== 'line' && e.c === id),
-    )
+    const usedByEntity = sketch.entities.some((e) => entityPointIds(e).includes(id))
     const usedByConstraint = sketch.constraints.some((c) => Object.values(c).includes(id))
     if (!usedByEntity && !usedByConstraint) {
       sketch.points = sketch.points.filter((p) => p.id !== id)
@@ -645,8 +643,9 @@ function describeRefusal(sketch: Sketch2D, pointId: string): string {
 
   let touching = 0
   for (const e of sketch.entities) {
-    if (e.construction || e.kind === 'circle') continue
-    for (const end of [e.p1, e.p2]) {
+    const ends = entityEnds(e)
+    if (e.construction || !ends) continue
+    for (const end of ends) {
       if (v2.dist(pts.get(end) ?? [1e9, 1e9], corner) <= WELD) touching++
     }
   }

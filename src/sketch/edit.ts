@@ -9,7 +9,13 @@
  * rectangles that will never quite line up.
  */
 import { v2, type Vec2 } from '../core/math'
-import type { LineEntity, NewConstraint, Sketch2D, SketchEntity } from './types'
+import type {
+  LineEntity,
+  NewConstraint,
+  Sketch2D,
+  SketchEntity,
+  SplineHandle as SketchSplineHandle,
+} from './types'
 
 export interface EditResult {
   ok: boolean
@@ -42,7 +48,7 @@ function crossings(sketch: Sketch2D, line: LineEntity, pts: Map<string, Vec2>): 
       continue
     }
 
-    // Circle or arc: solve |a + t*d - centre| = r.
+    if (other.kind !== 'circle' && other.kind !== 'arc') continue
     const centre = pts.get(other.c)!
     const radius = other.kind === 'circle' ? other.r : v2.dist(centre, pts.get(other.p1)!)
     const m = v2.sub(a, centre)
@@ -187,7 +193,7 @@ function crossingAngles(
       continue
     }
 
-    // Circle against circle.
+    if (other.kind !== 'circle' && other.kind !== 'arc') continue
     const c2 = pts.get(other.c)!
     const R2 = other.kind === 'circle' ? other.r : v2.dist(c2, pts.get(other.p1)!)
     const d = v2.dist(centre, c2)
@@ -221,7 +227,7 @@ export function trimRound(
   nextId: (prefix: string) => string,
 ): EditResult {
   const entity = sketch.entities.find((e) => e.id === entityId)
-  if (!entity || entity.kind === 'line') {
+  if (!entity || (entity.kind !== 'circle' && entity.kind !== 'arc')) {
     return { ok: false, message: 'That is not a circle or an arc.' }
   }
 
@@ -480,10 +486,85 @@ interface CopyPlan {
   entities: Map<string, string>
 }
 
+interface Placement {
+  point: (p: Vec2) => Vec2
+  vector: (v: Vec2) => Vec2
+  mirrored: boolean
+}
+
+function translation(dx: number, dy: number): Placement {
+  return { point: (p) => [p[0] + dx, p[1] + dy], vector: (v) => v, mirrored: false }
+}
+
+function turnedDegrees(placement: Placement, degrees: number): number {
+  const radians = (degrees * Math.PI) / 180
+  const [x, y] = placement.vector([Math.cos(radians), Math.sin(radians)])
+  return (Math.atan2(y, x) * 180) / Math.PI
+}
+
+function copyEntity(
+  entity: SketchEntity,
+  id: string,
+  point: (id: string) => string,
+  placement: Placement,
+): SketchEntity {
+  const sweep = (ccw: boolean) => (placement.mirrored ? !ccw : ccw)
+  switch (entity.kind) {
+    case 'line':
+      return { ...entity, id, p1: point(entity.p1), p2: point(entity.p2) }
+    case 'circle':
+      return { ...entity, id, c: point(entity.c) }
+    case 'arc':
+      return {
+        ...entity,
+        id,
+        c: point(entity.c),
+        p1: point(entity.p1),
+        p2: point(entity.p2),
+        ccw: sweep(entity.ccw),
+      }
+    case 'point':
+      return { ...entity, id, p: point(entity.p) }
+    case 'text':
+      return { ...entity, id, p: point(entity.p), angle: turnedDegrees(placement, entity.angle) }
+    case 'ellipse':
+      return {
+        ...entity,
+        id,
+        c: point(entity.c),
+        rotation: turnedDegrees(placement, entity.rotation),
+      }
+    case 'ellipticalArc':
+      return {
+        ...entity,
+        id,
+        c: point(entity.c),
+        p1: point(entity.p1),
+        p2: point(entity.p2),
+        rotation: turnedDegrees(placement, entity.rotation),
+        ccw: sweep(entity.ccw),
+      }
+    case 'spline': {
+      const handle = (h: SketchSplineHandle | undefined) => {
+        if (!h) return undefined
+        const [dx, dy] = placement.vector([h.dx, h.dy])
+        return { dx, dy, k: placement.mirrored ? -h.k : h.k }
+      }
+      return {
+        ...entity,
+        id,
+        points: entity.points.map(point),
+        startHandle: handle(entity.startHandle),
+        endHandle: handle(entity.endHandle),
+      }
+    }
+  }
+}
+
 function copyGeometry(
   sketch: Sketch2D,
   entityIds: string[],
-  place: (p: Vec2) => Vec2,
+  placement: Placement,
   nextId: (prefix: string) => string,
 ): CopyPlan {
   const pts = new Map<string, Vec2>()
@@ -494,7 +575,7 @@ function copyGeometry(
   const clonePoint = (id: string): string => {
     const existing = map.get(id)
     if (existing) return existing
-    const moved = place(pts.get(id)!)
+    const moved = placement.point(pts.get(id)!)
     const newId = nextId('p')
     sketch.points.push({ id: newId, x: moved[0], y: moved[1] })
     map.set(id, newId)
@@ -505,33 +586,7 @@ function copyGeometry(
   for (const entity of entities) {
     const id = nextId('e')
     entityMap.set(entity.id, id)
-    if (entity.kind === 'line') {
-      sketch.entities.push({
-        id,
-        kind: 'line',
-        p1: clonePoint(entity.p1),
-        p2: clonePoint(entity.p2),
-        construction: entity.construction,
-      })
-    } else if (entity.kind === 'circle') {
-      sketch.entities.push({
-        id,
-        kind: 'circle',
-        c: clonePoint(entity.c),
-        r: entity.r,
-        construction: entity.construction,
-      })
-    } else {
-      sketch.entities.push({
-        id,
-        kind: 'arc',
-        c: clonePoint(entity.c),
-        p1: clonePoint(entity.p1),
-        p2: clonePoint(entity.p2),
-        ccw: entity.ccw,
-        construction: entity.construction,
-      })
-    }
+    sketch.entities.push(copyEntity(entity, id, clonePoint, placement))
   }
 
   return { points: map, entities: entityMap }
@@ -547,7 +602,7 @@ function copyGeometry(
 function tieRadii(sketch: Sketch2D, plan: CopyPlan, add: (c: NewConstraint) => void): void {
   for (const [originalId, copyId] of plan.entities) {
     const original = sketch.entities.find((e) => e.id === originalId)
-    if (original?.kind === 'circle') {
+    if (original?.kind === 'circle' || original?.kind === 'ellipse') {
       add({ kind: 'equal', a: originalId, b: copyId })
     }
   }
@@ -581,7 +636,7 @@ export function linearPattern(
   const add = (c: NewConstraint) => sketch.constraints.push({ ...c, id: nextId('c') } as never)
 
   for (let k = 1; k < count; k++) {
-    const plan = copyGeometry(sketch, entityIds, (p) => [p[0] + dx * k, p[1] + dy * k], nextId)
+    const plan = copyGeometry(sketch, entityIds, translation(dx * k, dy * k), nextId)
     for (const [original, copy] of plan.points) {
       add({ kind: 'distanceX', a: original, b: copy, value: dx * k })
       add({ kind: 'distanceY', a: original, b: copy, value: dy * k })
@@ -613,7 +668,12 @@ export function mirrorEntities(
   const before = new Map<string, Vec2>()
   for (const p of sketch.points) before.set(p.id, [p.x, p.y])
 
-  const plan = copyGeometry(sketch, entityIds, reflect, nextId)
+  const plan = copyGeometry(
+    sketch,
+    entityIds,
+    { point: reflect, vector: reflect, mirrored: true },
+    nextId,
+  )
   for (const [original, copy] of plan.points) {
     const from = before.get(original)!
     const to = reflect(from)
@@ -699,7 +759,7 @@ export function offsetEntities(
       continue
     }
 
-    // Arc: same centre, endpoints pushed out or pulled in along their radials.
+    if (entity.kind !== 'arc') continue
     const centre = pts.get(entity.c)!
     const radius = v2.dist(centre, pts.get(entity.p1)!) + distance
     if (radius <= 0) continue
@@ -767,13 +827,14 @@ export function circularPattern(
     const angle = step * k
     const cos = Math.cos(angle)
     const sin = Math.sin(angle)
+    const turn = (v: Vec2): Vec2 => [v[0] * cos - v[1] * sin, v[0] * sin + v[1] * cos]
     const plan = copyGeometry(
       sketch,
       entityIds,
-      (p) => {
-        const rx = p[0] - centre[0]
-        const ry = p[1] - centre[1]
-        return [centre[0] + rx * cos - ry * sin, centre[1] + rx * sin + ry * cos]
+      {
+        point: (p) => v2.add(centre, turn(v2.sub(p, centre))),
+        vector: turn,
+        mirrored: false,
       },
       nextId,
     )

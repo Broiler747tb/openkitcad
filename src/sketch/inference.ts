@@ -10,6 +10,7 @@
  * so snapping feels the same whether zoomed to a whole machine or a 2 mm hole.
  */
 import { v2, type Vec2 } from '../core/math'
+import { closestPoint, distanceToEntity } from './curves'
 import type { Sketch2D, SketchEntity } from './types'
 
 export interface SnapResult {
@@ -19,7 +20,7 @@ export interface SnapResult {
   snapToPointId: string | null
   /** Constrain the new point onto this entity. */
   onEntityId: string | null
-  onEntityKind: 'line' | 'circle' | 'midpoint' | null
+  onEntityKind: 'line' | 'circle' | 'midpoint' | 'curve' | null
   /** Alignment with the point being drawn from. */
   align: 'horizontal' | 'vertical' | null
   /** Short phrase shown next to the cursor, e.g. "join" or "horizontal". */
@@ -75,10 +76,12 @@ export function hitTestSketch(
       d = distanceToSegment(cursor, pts.get(entity.p1)!, pts.get(entity.p2)!).d
     } else if (entity.kind === 'circle') {
       d = Math.abs(v2.dist(cursor, pts.get(entity.c)!) - entity.r)
-    } else {
+    } else if (entity.kind === 'arc') {
       const c = pts.get(entity.c)!
       const r = v2.dist(c, pts.get(entity.p1)!)
       d = Math.abs(v2.dist(cursor, c) - r)
+    } else {
+      d = distanceToEntity(entity, pts, cursor)
     }
     if (d < tolerance * 1.5 && (!best || d < best.d)) {
       best = { target: { kind: 'entity', id: entity.id }, d }
@@ -176,6 +179,15 @@ export function findSnap(sketch: Sketch2D, cursor: Vec2, options: SnapOptions): 
       if (d < tolerance && (!bestEdge || d < bestEdge.d)) {
         bestEdge = { entity, point: on, d }
       }
+    } else if (
+      entity.kind === 'ellipse' ||
+      entity.kind === 'ellipticalArc' ||
+      entity.kind === 'spline'
+    ) {
+      const near = closestPoint(entity, pts, cursor)
+      if (near.distance < tolerance && (!bestEdge || near.distance < bestEdge.d)) {
+        bestEdge = { entity, point: near.point, d: near.distance }
+      }
     }
   }
   if (bestEdge) {
@@ -183,7 +195,12 @@ export function findSnap(sketch: Sketch2D, cursor: Vec2, options: SnapOptions): 
       ...result,
       point: bestEdge.point,
       onEntityId: bestEdge.entity.id,
-      onEntityKind: bestEdge.entity.kind === 'line' ? 'line' : 'circle',
+      onEntityKind:
+        bestEdge.entity.kind === 'line'
+          ? 'line'
+          : bestEdge.entity.kind === 'circle'
+            ? 'circle'
+            : 'curve',
       hint: 'on edge',
     }
   }

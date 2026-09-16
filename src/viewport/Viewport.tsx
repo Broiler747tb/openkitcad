@@ -7,6 +7,7 @@ import {
   type SubPick,
 } from './engine'
 import { resolveHandles, type ActiveHandle } from './handles'
+import { entityCentre, tessellate } from '../sketch/curves'
 import { findInput } from '../ui/command/state'
 import { formatAngle, formatLength } from '../ui/command/units'
 import { CommandHost } from '../ui/command/CommandHost'
@@ -1449,21 +1450,14 @@ function selectionHighlight(selection: { kind: string; id: string }[]): {
  */
 function looseGeometry(
   sketch: Sketch2D,
-  status: { freePoints: string[]; freeRadii: string[] } | null,
+  status: { freePoints: string[]; freeEntities: string[] } | null,
 ): { points: string[]; entities: string[] } {
   if (!status) return { points: [], entities: [] }
-  const freePoints = new Set(status.freePoints)
-  const entities: string[] = []
-  for (const e of sketch.entities) {
-    const moves =
-      e.kind === 'line'
-        ? freePoints.has(e.p1) || freePoints.has(e.p2)
-        : e.kind === 'circle'
-          ? freePoints.has(e.c) || status.freeRadii.includes(e.id)
-          : freePoints.has(e.c) || freePoints.has(e.p1) || freePoints.has(e.p2)
-    if (moves) entities.push(e.id)
+  const free = new Set(status.freeEntities)
+  return {
+    points: status.freePoints,
+    entities: sketch.entities.filter((e) => free.has(e.id)).map((e) => e.id),
   }
-  return { points: status.freePoints, entities }
 }
 
 /** Short symbols for the constraints that carry no number. */
@@ -1500,7 +1494,10 @@ function sketchLabels(sketch: Sketch2D, frame: Frame, unit: LengthUnit) {
       const b = pts.get(entity.p2)
       return a && b ? v2.mid(a, b) : null
     }
-    return pts.get(entity.c) ?? null
+    const centre = entityCentre(entity)
+    if (centre) return pts.get(centre) ?? null
+    const polyline = tessellate(entity, pts, 0.1)
+    return polyline[Math.floor(polyline.length / 2)] ?? null
   }
 
   // Spread glyphs that land on the same spot so they do not stack up.
