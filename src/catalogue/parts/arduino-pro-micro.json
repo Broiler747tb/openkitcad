@@ -1,20 +1,188 @@
 {
   "id": "arduino-pro-micro",
-  "name": "Arduino Pro Micro (32U4)",
+  "name": "Pro Micro 5V/16MHz (SparkFun DEV-12640)",
   "category": "mcu",
   "popularity": 61,
-  "summary": "Small board that can pretend to be a keyboard or mouse.",
-  "confidence": "approximate",
-  "source": "Dimensions follow the commonly sold board. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Most of these have no mounting holes; they are soldered into a board or held by their headers.",
+  "manufacturer": "SparkFun",
+  "summary": "ATmega32U4 board that can act as a USB keyboard or mouse. 33 x 17.8 mm, no mounting holes.",
+  "confidence": "datasheet",
+  "source": "SparkFun Pro Micro v13 Eagle board file (github.com/sparkfun/Pro_Micro): board 17.78 x 33.02 mm, two rows of 12 pins 15.24 mm apart on a 2.54 mm grid starting 1.27 mm from the far end, micro USB centred on the near end sticking out about 1 mm, the ATmega32U4 fitted at 45 degrees. No mounting holes. The many clones copy this layout, usually on a black board.",
+  "look": {
+    "colour": "#b3202a",
+    "components": [
+      {
+        "kind": "port",
+        "port": "micro-usb",
+        "x": -1.03,
+        "y": 8.89,
+        "facing": "-x",
+        "w": 7.5,
+        "h": 2.8,
+        "depth": 5.5,
+        "label": "micro USB"
+      },
+      {
+        "kind": "chip",
+        "x": 15.55,
+        "y": 5.39,
+        "w": 7.0,
+        "h": 7.0,
+        "height": 0.9,
+        "legs": "quad",
+        "turn": 45,
+        "label": "ATmega32U4"
+      },
+      {
+        "kind": "chip",
+        "x": 9.77,
+        "y": 7.64,
+        "w": 2.8,
+        "h": 3.0,
+        "height": 1.1,
+        "label": "3.3 V regulator"
+      },
+      {
+        "kind": "crystal",
+        "x": 29.26,
+        "y": 6.39,
+        "w": 3.2,
+        "h": 5.0,
+        "height": 1.0,
+        "label": "16 MHz crystal"
+      },
+      {
+        "kind": "box",
+        "x": 8.67,
+        "y": 3.87,
+        "w": 5.0,
+        "h": 2.4,
+        "height": 1.6,
+        "finish": "plastic",
+        "colour": "#e0a82e",
+        "label": "10 µF capacitor"
+      },
+      {
+        "kind": "box",
+        "x": 8.72,
+        "y": 11.52,
+        "w": 5.0,
+        "h": 2.4,
+        "height": 1.6,
+        "finish": "plastic",
+        "colour": "#e0a82e",
+        "label": "10 µF capacitor"
+      },
+      {
+        "kind": "box",
+        "x": 7.24,
+        "y": 7.39,
+        "w": 2.03,
+        "h": 3.0,
+        "height": 0.9,
+        "finish": "chip",
+        "colour": "#3b3e43",
+        "label": "Fuse"
+      },
+      {
+        "kind": "led",
+        "x": 7.92,
+        "y": 5.09,
+        "colour": "#e23b3b",
+        "size": 1.2,
+        "label": "Power LED"
+      },
+      {
+        "kind": "led",
+        "x": 28.2,
+        "y": 13.21,
+        "colour": "#39d06b",
+        "size": 1.2,
+        "label": "RX LED"
+      },
+      {
+        "kind": "led",
+        "x": 28.2,
+        "y": 4.57,
+        "colour": "#ffd23a",
+        "size": 1.2,
+        "label": "TX LED"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
       "shape": "rect",
-      "w": 33,
-      "h": 18
+      "w": 33.02,
+      "h": 17.78
     },
-    "thickness": 1.6
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": -1.03,
+        "y": 5.14,
+        "w": 5.5,
+        "h": 7.5,
+        "z": 1.6,
+        "height": 2.8,
+        "colour": "#b9c0c7",
+        "label": "micro USB"
+      },
+      {
+        "x": 14.1,
+        "y": 3.94,
+        "w": 9.9,
+        "h": 9.9,
+        "z": 1.6,
+        "height": 0.9,
+        "colour": "#20262c",
+        "label": "ATmega32U4"
+      }
+    ]
   },
+  "connectors": [
+    {
+      "id": "usb",
+      "label": "micro USB",
+      "side": "-x",
+      "x": 0,
+      "y": 8.89,
+      "z": 1.6,
+      "width": 8.5,
+      "height": 3.5,
+      "protrusion": 1.03
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "jp7",
+      "label": "Pin row",
+      "x": 3.81,
+      "y": 1.27,
+      "rows": 1,
+      "cols": 12,
+      "pitch": 2.54
+    },
+    {
+      "id": "jp6",
+      "label": "Pin row",
+      "x": 3.81,
+      "y": 16.51,
+      "rows": 1,
+      "cols": 12,
+      "pitch": 2.54
+    }
+  ],
+  "links": [
+    {
+      "label": "Product page",
+      "url": "https://www.sparkfun.com/products/12640"
+    },
+    {
+      "label": "Design files",
+      "url": "https://github.com/sparkfun/Pro_Micro"
+    }
+  ],
   "tags": [
     "pro-micro",
     "32u4",

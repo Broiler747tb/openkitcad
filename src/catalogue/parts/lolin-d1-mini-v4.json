@@ -1,0 +1,325 @@
+{
+  "id": "lolin-d1-mini-v4",
+  "name": "LOLIN D1 mini v4.0.0 (USB-C)",
+  "category": "mcu",
+  "popularity": 58,
+  "family": "d1-mini",
+  "variant": "LOLIN v4.0.0, USB-C, 2 holes",
+  "manufacturer": "WEMOS / LOLIN",
+  "summary": "Current LOLIN D1 mini: 34.3 x 25.4 mm, USB-C, two 2 mm holes at the aerial end.",
+  "confidence": "datasheet",
+  "source": "LOLIN D1 mini v4.0.0 dimension drawing (wemos.cc), scaled from its own 2.54 mm pin pitch: board 25.40 x 34.30 mm with 4 mm corners at the aerial end and a small notch by the USB end, two 2.0 mm holes 20.4 mm apart 3.3 mm from the aerial end, two rows of 8 pins 22.86 mm apart whose centre line is 17.70 mm from the USB end. USB-C on the short edge and the side reset button on the corner. Older v3 boards and most clones use an ESP-12F module and have no holes.",
+  "look": {
+    "colour": "#1b1d20",
+    "components": [
+      {
+        "kind": "header",
+        "x": 8.815,
+        "y": 1.27,
+        "rows": 1,
+        "cols": 8,
+        "height": 8.5,
+        "flip": true,
+        "label": "Pin row"
+      },
+      {
+        "kind": "header",
+        "x": 8.815,
+        "y": 24.13,
+        "rows": 1,
+        "cols": 8,
+        "height": 8.5,
+        "flip": true,
+        "label": "Pin row"
+      },
+      {
+        "kind": "chip",
+        "x": 18.52,
+        "y": 7.68,
+        "w": 5.0,
+        "h": 5.0,
+        "height": 0.9,
+        "label": "ESP8266EX"
+      },
+      {
+        "kind": "chip",
+        "x": 11.05,
+        "y": 3.23,
+        "w": 3.9,
+        "h": 10.0,
+        "height": 1.75,
+        "legs": "dual",
+        "label": "USB serial chip"
+      },
+      {
+        "kind": "chip",
+        "x": 19.15,
+        "y": 16.71,
+        "w": 3.9,
+        "h": 4.9,
+        "height": 1.75,
+        "legs": "dual",
+        "label": "Flash"
+      },
+      {
+        "kind": "crystal",
+        "x": 19.76,
+        "y": 2.95,
+        "w": 2.5,
+        "h": 3.2,
+        "height": 0.8,
+        "label": "Crystal"
+      },
+      {
+        "kind": "port",
+        "port": "usb-c",
+        "x": 0.0,
+        "y": 12.7,
+        "facing": "-x",
+        "depth": 7.35,
+        "label": "USB-C"
+      },
+      {
+        "kind": "box",
+        "x": 0.8,
+        "y": 0.0,
+        "w": 6.0,
+        "h": 3.0,
+        "height": 1.8,
+        "finish": "metal",
+        "colour": "#a3aab1",
+        "label": "Reset button"
+      },
+      {
+        "kind": "box",
+        "x": 3.0,
+        "y": -0.6,
+        "z": 1.9,
+        "w": 1.6,
+        "h": 0.6,
+        "height": 1.2,
+        "finish": "plastic",
+        "colour": "#1d1f22",
+        "label": "Reset button cap"
+      },
+      {
+        "kind": "antenna",
+        "x": 29.3,
+        "y": 5.4,
+        "w": 4.5,
+        "h": 15.0,
+        "label": "Printed aerial"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "poly",
+      "points": [
+        [
+          0.0,
+          1.0
+        ],
+        [
+          0.076,
+          0.617
+        ],
+        [
+          0.293,
+          0.293
+        ],
+        [
+          0.617,
+          0.076
+        ],
+        [
+          1.0,
+          0.0
+        ],
+        [
+          30.3,
+          0.0
+        ],
+        [
+          31.831,
+          0.304
+        ],
+        [
+          33.128,
+          1.172
+        ],
+        [
+          33.996,
+          2.469
+        ],
+        [
+          34.3,
+          4.0
+        ],
+        [
+          34.3,
+          21.4
+        ],
+        [
+          33.996,
+          22.931
+        ],
+        [
+          33.128,
+          24.228
+        ],
+        [
+          31.831,
+          25.096
+        ],
+        [
+          30.3,
+          25.4
+        ],
+        [
+          7.7,
+          25.4
+        ],
+        [
+          6.8,
+          23.502
+        ],
+        [
+          1.0,
+          23.502
+        ],
+        [
+          0.617,
+          23.426
+        ],
+        [
+          0.293,
+          23.209
+        ],
+        [
+          0.076,
+          22.885
+        ],
+        [
+          0.0,
+          22.502
+        ]
+      ]
+    },
+    "thickness": 1.0,
+    "bumps": [
+      {
+        "x": 0.0,
+        "y": 8.23,
+        "w": 7.35,
+        "h": 8.94,
+        "z": 1.0,
+        "height": 3.26,
+        "colour": "#b9c0c7",
+        "label": "USB-C"
+      },
+      {
+        "x": 11.05,
+        "y": 3.23,
+        "w": 3.9,
+        "h": 10.0,
+        "z": 1.0,
+        "height": 1.75,
+        "colour": "#20262c",
+        "label": "USB serial chip"
+      }
+    ]
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 31.005,
+      "y": 2.5,
+      "diameter": 2.0,
+      "screw": "M2"
+    },
+    {
+      "id": "h2",
+      "x": 31.005,
+      "y": 22.9,
+      "diameter": 2.0,
+      "screw": "M2"
+    }
+  ],
+  "connectors": [
+    {
+      "id": "usb",
+      "label": "USB-C",
+      "side": "-x",
+      "x": 0,
+      "y": 12.7,
+      "z": 1.0,
+      "width": 9.2,
+      "height": 3.5,
+      "protrusion": 0
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "right",
+      "label": "Pin row",
+      "x": 8.815,
+      "y": 1.27,
+      "rows": 1,
+      "cols": 8,
+      "pitch": 2.54
+    },
+    {
+      "id": "left",
+      "label": "Pin row",
+      "x": 8.815,
+      "y": 24.13,
+      "rows": 1,
+      "cols": 8,
+      "pitch": 2.54
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-under",
+      "label": "Header pins below",
+      "x": 7.5,
+      "y": 0,
+      "w": 20.4,
+      "h": 25.4,
+      "z": -8.5,
+      "height": 8.5
+    },
+    {
+      "id": "k-antenna",
+      "label": "Aerial: keep metal away",
+      "x": 28.5,
+      "y": 4.5,
+      "w": 5.8,
+      "h": 16.4,
+      "z": -3,
+      "height": 8
+    }
+  ],
+  "links": [
+    {
+      "label": "Product page",
+      "url": "https://www.wemos.cc/en/latest/d1/d1_mini.html"
+    },
+    {
+      "label": "Dimension drawing",
+      "url": "https://www.wemos.cc/en/latest/_static/files/dim_d1_mini_v4.0.0.pdf"
+    }
+  ],
+  "tags": [
+    "wemos",
+    "lolin",
+    "d1",
+    "mini",
+    "esp8266",
+    "wifi",
+    "mcu",
+    "usb-c"
+  ]
+}

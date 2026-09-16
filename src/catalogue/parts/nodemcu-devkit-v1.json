@@ -1,20 +1,21 @@
 {
-  "id": "nodemcu-esp8266",
-  "name": "NodeMCU v3, wide (generic LoLin)",
+  "id": "nodemcu-devkit-v1",
+  "name": "NodeMCU DevKit 1.0 (ESP-12E)",
   "category": "mcu",
-  "popularity": 77,
+  "popularity": 70,
   "family": "nodemcu",
-  "variant": "NodeMCU v3, 31 mm wide (generic)",
-  "summary": "The wide NodeMCU clone. Its rows are 27.9 mm apart, so it covers most of a small breadboard.",
-  "confidence": "approximate",
-  "source": "There is no published drawing for this board; it is the widely sold LoLin-style clone. Measured values: board about 58 x 31 mm with four 3 mm corner holes, two rows of 15 pins 27.94 mm apart, an ESP-12E module at the far end, micro USB and CH340 serial chip at the near end. Sellers differ by a millimetre or two.",
+  "variant": "NodeMCU DevKit 1.0, 25.4 mm wide",
+  "manufacturer": "NodeMCU team",
+  "summary": "The original NodeMCU: 48.2 x 25.4 mm, fits a breadboard, four 3 mm corner holes.",
+  "confidence": "datasheet",
+  "source": "NodeMCU DevKit 1.0 reference design (github.com/nodemcu/nodemcu-devkit-v1.0), PCB layout page of the design PDF, scaled from its own 2.54 mm pin pitch: board 25.40 x 48.21 mm with corners rounded about the holes, four 3.0 mm holes 2.28 mm in from each corner, two rows of 15 pins 22.86 mm apart, and the ESP-12E module flush with the far end. Clones sold as \"NodeMCU v2\" or \"Amica\" follow this layout.",
   "look": {
     "colour": "#1d2226",
     "components": [
       {
         "kind": "header",
-        "x": 11.22,
-        "y": 1.53,
+        "x": 6.33,
+        "y": 1.27,
         "rows": 1,
         "cols": 15,
         "height": 8.5,
@@ -23,8 +24,8 @@
       },
       {
         "kind": "header",
-        "x": 11.22,
-        "y": 29.47,
+        "x": 6.33,
+        "y": 24.13,
         "rows": 1,
         "cols": 15,
         "height": 8.5,
@@ -33,10 +34,10 @@
       },
       {
         "kind": "module",
-        "x": 32.0,
-        "y": 7.17,
-        "w": 24.0,
-        "h": 16.0,
+        "x": 23.98,
+        "y": 4.37,
+        "w": 24.2,
+        "h": 16.66,
         "height": 3.1,
         "antenna": "+x",
         "antennaLength": 5.66,
@@ -45,8 +46,8 @@
       {
         "kind": "port",
         "port": "micro-usb",
-        "x": -0.5,
-        "y": 15.5,
+        "x": 0.2,
+        "y": 12.72,
         "facing": "-x",
         "w": 7.5,
         "h": 2.8,
@@ -55,8 +56,8 @@
       },
       {
         "kind": "box",
-        "x": 3.0,
-        "y": 21.0,
+        "x": 5.73,
+        "y": 15.72,
         "w": 3.5,
         "h": 6.0,
         "height": 1.6,
@@ -67,8 +68,8 @@
       },
       {
         "kind": "cylinder",
-        "x": 4.75,
-        "y": 24.0,
+        "x": 7.48,
+        "y": 18.72,
         "z": 3.2,
         "d": 2.2,
         "height": 0.8,
@@ -78,8 +79,8 @@
       },
       {
         "kind": "box",
-        "x": 3.0,
-        "y": 4.0,
+        "x": 5.73,
+        "y": 5.3,
         "w": 3.5,
         "h": 6.0,
         "height": 1.6,
@@ -90,8 +91,8 @@
       },
       {
         "kind": "cylinder",
-        "x": 4.75,
-        "y": 7.0,
+        "x": 7.48,
+        "y": 8.3,
         "z": 3.2,
         "d": 2.2,
         "height": 0.8,
@@ -101,18 +102,17 @@
       },
       {
         "kind": "chip",
-        "x": 13.0,
-        "y": 10.5,
-        "w": 10.0,
-        "h": 3.9,
-        "height": 1.75,
-        "legs": "dual",
-        "label": "CH340G USB serial chip"
+        "x": 9.32,
+        "y": 6.95,
+        "w": 5.0,
+        "h": 5.0,
+        "height": 0.9,
+        "label": "CP2102 USB serial chip"
       },
       {
         "kind": "chip",
-        "x": 13.5,
-        "y": 18.0,
+        "x": 16.64,
+        "y": 9.62,
         "w": 6.5,
         "h": 3.5,
         "height": 1.6,
@@ -124,25 +124,25 @@
     "kind": "board",
     "outline": {
       "shape": "rect",
-      "w": 58,
-      "h": 31,
-      "cornerRadius": 1
+      "w": 48.21,
+      "h": 25.4,
+      "cornerRadius": 2.28
     },
     "thickness": 1.6,
     "bumps": [
       {
-        "x": 32.0,
-        "y": 7.17,
-        "w": 24.0,
-        "h": 16.0,
+        "x": 23.98,
+        "y": 4.37,
+        "w": 24.2,
+        "h": 16.66,
         "z": 1.6,
         "height": 3.1,
         "colour": "#b9c0c7",
         "label": "ESP-12E"
       },
       {
-        "x": -0.5,
-        "y": 11.75,
+        "x": 0.2,
+        "y": 8.97,
         "w": 5.3,
         "h": 7.5,
         "z": 1.6,
@@ -155,30 +155,30 @@
   "mountingHoles": [
     {
       "id": "h1",
-      "x": 2,
-      "y": 2,
-      "diameter": 3,
+      "x": 2.28,
+      "y": 2.28,
+      "diameter": 3.0,
       "screw": "M3"
     },
     {
       "id": "h2",
-      "x": 56,
-      "y": 2,
-      "diameter": 3,
+      "x": 45.93,
+      "y": 2.28,
+      "diameter": 3.0,
       "screw": "M3"
     },
     {
       "id": "h3",
-      "x": 2,
-      "y": 29,
-      "diameter": 3,
+      "x": 2.28,
+      "y": 23.12,
+      "diameter": 3.0,
       "screw": "M3"
     },
     {
       "id": "h4",
-      "x": 56,
-      "y": 29,
-      "diameter": 3,
+      "x": 45.93,
+      "y": 23.12,
+      "diameter": 3.0,
       "screw": "M3"
     }
   ],
@@ -188,19 +188,19 @@
       "label": "micro USB",
       "side": "-x",
       "x": 0,
-      "y": 15.5,
+      "y": 12.72,
       "z": 1.6,
       "width": 8.5,
       "height": 3.5,
-      "protrusion": 0.5
+      "protrusion": 0
     }
   ],
   "pinHeaders": [
     {
       "id": "j2",
       "label": "Pin row",
-      "x": 11.22,
-      "y": 1.53,
+      "x": 6.33,
+      "y": 1.27,
       "rows": 1,
       "cols": 15,
       "pitch": 2.54
@@ -208,8 +208,8 @@
     {
       "id": "j1",
       "label": "Pin row",
-      "x": 11.22,
-      "y": 29.47,
+      "x": 6.33,
+      "y": 24.13,
       "rows": 1,
       "cols": 15,
       "pitch": 2.54
@@ -221,10 +221,26 @@
       "label": "Header pins below",
       "x": 0,
       "y": 0,
-      "w": 58,
-      "h": 31,
+      "w": 48.21,
+      "h": 25.4,
       "z": -8.5,
       "height": 8.5
+    },
+    {
+      "id": "k-antenna",
+      "label": "Antenna: keep metal away",
+      "x": 42.55,
+      "y": 4.37,
+      "w": 5.66,
+      "h": 16.66,
+      "z": 1.6,
+      "height": 10
+    }
+  ],
+  "links": [
+    {
+      "label": "Design files",
+      "url": "https://github.com/nodemcu/nodemcu-devkit-v1.0"
     }
   ],
   "tags": [
@@ -233,8 +249,6 @@
     "wifi",
     "lua",
     "mcu",
-    "lolin",
-    "v3",
-    "generic"
+    "amica"
   ]
 }

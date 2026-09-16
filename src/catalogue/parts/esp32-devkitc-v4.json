@@ -1,0 +1,287 @@
+{
+  "id": "esp32-devkitc-v4",
+  "name": "ESP32-DevKitC V4 (Espressif)",
+  "category": "mcu",
+  "popularity": 86,
+  "family": "esp32-devkit",
+  "variant": "Espressif DevKitC V4, 38-pin",
+  "manufacturer": "Espressif",
+  "summary": "Espressif's own ESP32 board: 27.9 x 48.3 mm, two 19-pin rows 25.4 mm apart, no mounting holes.",
+  "confidence": "datasheet",
+  "source": "Espressif ESP32-DevKitC V4 dimension drawing: board 27.94 x 48.26 mm, two rows of 19 pins on a 2.54 mm grid 25.40 mm apart, the first pin 1.30 mm and the last 1.29 mm from the ends. The module is 18.00 mm wide and its antenna end overhangs the board by 6.04 mm. Espressif draws the WROVER outline; the common WROOM-32E module uses the same pads and overhang and is 25.5 mm long, which is what the look shows. Component positions are read off the same drawing. There are no mounting holes; headers come soldered underneath.",
+  "look": {
+    "colour": "#1d2226",
+    "components": [
+      {
+        "kind": "header",
+        "x": 1.29,
+        "y": 1.27,
+        "rows": 1,
+        "cols": 19,
+        "height": 8.5,
+        "flip": true,
+        "label": "Pins CLK to GND"
+      },
+      {
+        "kind": "header",
+        "x": 1.29,
+        "y": 26.67,
+        "rows": 1,
+        "cols": 19,
+        "height": 8.5,
+        "flip": true,
+        "label": "Pins 5V to 3V3"
+      },
+      {
+        "kind": "module",
+        "x": 28.8,
+        "y": 4.97,
+        "w": 25.5,
+        "h": 18.0,
+        "height": 3.1,
+        "antenna": "+x",
+        "antennaLength": 6.5,
+        "label": "ESP32-WROOM-32E"
+      },
+      {
+        "kind": "port",
+        "port": "micro-usb",
+        "x": -1.32,
+        "y": 13.97,
+        "facing": "-x",
+        "w": 7.5,
+        "h": 2.8,
+        "depth": 6.78,
+        "label": "micro USB"
+      },
+      {
+        "kind": "box",
+        "x": 0.26,
+        "y": 19.64,
+        "w": 6.4,
+        "h": 3.3,
+        "height": 1.6,
+        "finish": "metal",
+        "colour": "#a3aab1",
+        "radius": 0.2,
+        "label": "EN button"
+      },
+      {
+        "kind": "cylinder",
+        "x": 3.46,
+        "y": 21.29,
+        "z": 3.2,
+        "d": 2.2,
+        "height": 0.8,
+        "finish": "plastic",
+        "colour": "#1d1f22",
+        "label": "EN button cap"
+      },
+      {
+        "kind": "box",
+        "x": 0.26,
+        "y": 4.59,
+        "w": 6.4,
+        "h": 3.3,
+        "height": 1.6,
+        "finish": "metal",
+        "colour": "#a3aab1",
+        "radius": 0.2,
+        "label": "Boot button"
+      },
+      {
+        "kind": "cylinder",
+        "x": 3.46,
+        "y": 6.24,
+        "z": 3.2,
+        "d": 2.2,
+        "height": 0.8,
+        "finish": "plastic",
+        "colour": "#1d1f22",
+        "label": "Boot button cap"
+      },
+      {
+        "kind": "chip",
+        "x": 9.96,
+        "y": 11.94,
+        "w": 5.0,
+        "h": 5.0,
+        "height": 0.9,
+        "label": "CP2102N USB serial chip"
+      },
+      {
+        "kind": "chip",
+        "x": 16.11,
+        "y": 12.19,
+        "w": 6.5,
+        "h": 3.5,
+        "height": 1.6,
+        "label": "3.3 V regulator"
+      },
+      {
+        "kind": "led",
+        "x": 8.06,
+        "y": 19.14,
+        "colour": "#e23b3b",
+        "size": 1.6,
+        "label": "Power LED"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 48.26,
+      "h": 27.94,
+      "cornerRadius": 1
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 28.8,
+        "y": 4.97,
+        "w": 25.5,
+        "h": 18.0,
+        "z": 1.6,
+        "height": 3.1,
+        "colour": "#b9c0c7",
+        "label": "ESP32-WROOM-32E"
+      },
+      {
+        "x": -1.32,
+        "y": 10.22,
+        "w": 6.78,
+        "h": 7.5,
+        "z": 1.6,
+        "height": 2.8,
+        "colour": "#b9c0c7",
+        "label": "micro USB"
+      }
+    ]
+  },
+  "connectors": [
+    {
+      "id": "usb",
+      "label": "micro USB",
+      "side": "-x",
+      "x": 0,
+      "y": 13.97,
+      "z": 1.6,
+      "width": 8.5,
+      "height": 3.5,
+      "protrusion": 1.32
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "right",
+      "label": "CLK to GND",
+      "x": 1.29,
+      "y": 1.27,
+      "rows": 1,
+      "cols": 19,
+      "pitch": 2.54,
+      "pins": [
+        "CLK",
+        "D0",
+        "D1",
+        "15",
+        "2",
+        "0",
+        "4",
+        "16",
+        "17",
+        "5",
+        "18",
+        "19",
+        "GND",
+        "21",
+        "RX",
+        "TX",
+        "22",
+        "23",
+        "GND"
+      ]
+    },
+    {
+      "id": "left",
+      "label": "5V to 3V3",
+      "x": 1.29,
+      "y": 26.67,
+      "rows": 1,
+      "cols": 19,
+      "pitch": 2.54,
+      "pins": [
+        "5V",
+        "CMD",
+        "D3",
+        "D2",
+        "13",
+        "GND",
+        "12",
+        "14",
+        "27",
+        "26",
+        "25",
+        "33",
+        "32",
+        "35",
+        "34",
+        "VN",
+        "VP",
+        "EN",
+        "3V3"
+      ]
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-under",
+      "label": "Header pins below",
+      "x": 0,
+      "y": 0,
+      "w": 48.26,
+      "h": 27.94,
+      "z": -8.5,
+      "height": 8.5
+    },
+    {
+      "id": "k-antenna",
+      "label": "Antenna: keep metal away",
+      "x": 48.26,
+      "y": 4.97,
+      "w": 6.04,
+      "h": 18.0,
+      "z": -5,
+      "height": 15
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      5,
+      3.3
+    ],
+    "currentTypical": 0.08,
+    "currentPeak": 0.5,
+    "note": "WiFi transmit bursts pull around 500 mA. A weak supply causes brownout reboots."
+  },
+  "links": [
+    {
+      "label": "User guide",
+      "url": "https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp32-devkitc/user_guide.html"
+    },
+    {
+      "label": "Dimension drawing",
+      "url": "https://dl.espressif.com/dl/schematics/esp32_devkitc_v4_dimensions.pdf"
+    }
+  ],
+  "tags": [
+    "esp32",
+    "wifi",
+    "bluetooth",
+    "microcontroller",
+    "devkitc",
+    "espressif"
+  ]
+}

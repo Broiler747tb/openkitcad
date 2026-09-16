@@ -34,6 +34,16 @@
     "category": "display",
     "summary": "HD44780 text displays with a backlight."
   },
+  "d1-mini": {
+    "name": "D1 mini",
+    "category": "mcu",
+    "summary": "Small ESP8266 boards with 8-pin rows and a shield system."
+  },
+  "esp32-devkit": {
+    "name": "ESP32 dev board",
+    "category": "mcu",
+    "summary": "ESP32 boards with a WROOM module, USB and two rows of pins."
+  },
   "hdmi-port": {
     "name": "HDMI port",
     "category": "connector",
@@ -58,6 +68,11 @@
     "name": "MPU-6050 motion sensor",
     "category": "sensor",
     "summary": "Accelerometer and gyro boards on I2C."
+  },
+  "nodemcu": {
+    "name": "NodeMCU",
+    "category": "mcu",
+    "summary": "ESP8266 boards with an ESP-12 module and USB serial."
   },
   "oled-display": {
     "name": "OLED display",

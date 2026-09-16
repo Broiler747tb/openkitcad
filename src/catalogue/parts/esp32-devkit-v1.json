@@ -1,35 +1,243 @@
 {
   "id": "esp32-devkit-v1",
-  "name": "ESP32 DevKit V1 (30-pin)",
+  "name": "ESP32 DevKit V1, 30-pin (generic)",
   "category": "mcu",
   "popularity": 94,
+  "family": "esp32-devkit",
+  "variant": "DOIT DevKit V1, 30-pin (generic)",
   "manufacturer": "Various",
-  "summary": "The common 30-pin ESP32 dev board. Sizes vary between makers - measure yours.",
+  "summary": "The cheap 30-pin ESP32 board sold by many makers. Sizes vary a little - measure yours.",
   "confidence": "approximate",
-  "source": "There is no single official drawing for this board: it is a widely cloned design and the outline varies by about 1-2 mm between sellers, with some revisions having no mounting holes at all. Values here match the common DOIT 30-pin board. Measure your own before committing to a panel cut.",
-  "geometry": {
-    "kind": "board",
-    "outline": { "shape": "rect", "w": 51.5, "h": 28.5, "cornerRadius": 1.5 },
-    "thickness": 1.6,
-    "bumps": [
-      { "x": 14, "y": 8.5, "w": 18, "h": 16, "z": 1.6, "height": 3.2, "colour": "#a8adb3", "label": "ESP32-WROOM-32" },
-      { "x": 0, "y": 10.5, "w": 8, "h": 8, "z": 1.6, "height": 2.8, "colour": "#8b9096", "label": "micro USB" },
-      { "x": 1.5, "y": 0, "w": 48, "h": 2.6, "z": 1.6, "height": 8.5, "colour": "#111417", "label": "Header" },
-      { "x": 1.5, "y": 25.9, "w": 48, "h": 2.6, "z": 1.6, "height": 8.5, "colour": "#111417", "label": "Header" }
+  "source": "There is no published drawing for this board: it is the widely cloned DOIT design and outlines vary by about 1 mm between sellers. Measured values: board about 51.5 x 28.5 mm, two rows of 15 pins on a 2.54 mm grid 25.4 mm apart, a WROOM-32 module at the far end that stays on the board, micro USB with EN and BOOT buttons at the near end. For exact numbers use the Espressif DevKitC V4 version.",
+  "look": {
+    "colour": "#1d2226",
+    "components": [
+      {
+        "kind": "header",
+        "x": 7.97,
+        "y": 1.55,
+        "rows": 1,
+        "cols": 15,
+        "height": 8.5,
+        "flip": true,
+        "label": "Pins 3V3 to D15"
+      },
+      {
+        "kind": "header",
+        "x": 7.97,
+        "y": 26.95,
+        "rows": 1,
+        "cols": 15,
+        "height": 8.5,
+        "flip": true,
+        "label": "Pins VIN to D13"
+      },
+      {
+        "kind": "module",
+        "x": 25.0,
+        "y": 5.25,
+        "w": 25.5,
+        "h": 18.0,
+        "height": 3.1,
+        "antenna": "+x",
+        "antennaLength": 6.5,
+        "label": "ESP32-WROOM-32"
+      },
+      {
+        "kind": "port",
+        "port": "micro-usb",
+        "x": -1.0,
+        "y": 14.25,
+        "facing": "-x",
+        "w": 7.5,
+        "h": 2.8,
+        "depth": 5.5,
+        "label": "micro USB"
+      },
+      {
+        "kind": "box",
+        "x": 1.5,
+        "y": 20.2,
+        "w": 3.5,
+        "h": 4.5,
+        "height": 1.6,
+        "finish": "metal",
+        "colour": "#a3aab1",
+        "radius": 0.2,
+        "label": "EN button"
+      },
+      {
+        "kind": "cylinder",
+        "x": 3.25,
+        "y": 22.45,
+        "z": 3.2,
+        "d": 2.2,
+        "height": 0.8,
+        "finish": "plastic",
+        "colour": "#1d1f22",
+        "label": "EN button cap"
+      },
+      {
+        "kind": "box",
+        "x": 1.5,
+        "y": 3.8,
+        "w": 3.5,
+        "h": 4.5,
+        "height": 1.6,
+        "finish": "metal",
+        "colour": "#a3aab1",
+        "radius": 0.2,
+        "label": "BOOT button"
+      },
+      {
+        "kind": "cylinder",
+        "x": 3.25,
+        "y": 6.05,
+        "z": 3.2,
+        "d": 2.2,
+        "height": 0.8,
+        "finish": "plastic",
+        "colour": "#1d1f22",
+        "label": "BOOT button cap"
+      },
+      {
+        "kind": "chip",
+        "x": 9.0,
+        "y": 11.75,
+        "w": 5.0,
+        "h": 5.0,
+        "height": 0.9,
+        "label": "CP2102 USB serial chip"
+      },
+      {
+        "kind": "chip",
+        "x": 16.0,
+        "y": 12.5,
+        "w": 6.5,
+        "h": 3.5,
+        "height": 1.6,
+        "label": "3.3 V regulator"
+      },
+      {
+        "kind": "led",
+        "x": 20.0,
+        "y": 8.0,
+        "colour": "#e23b3b",
+        "size": 1.6,
+        "label": "Power LED"
+      },
+      {
+        "kind": "led",
+        "x": 20.0,
+        "y": 20.5,
+        "colour": "#2f7bff",
+        "size": 1.6,
+        "label": "Blue LED"
+      }
     ]
   },
-  "keepouts": [
-    { "id": "k-under", "label": "Header pins below", "x": 0, "y": 0, "w": 51.5, "h": 28.5, "z": -3.5, "height": 3.5 },
-    { "id": "k-antenna", "label": "Antenna - keep metal away", "x": 32, "y": 8.5, "w": 18, "h": 16, "z": 1.6, "height": 10 }
-  ],
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 51.5,
+      "h": 28.5,
+      "cornerRadius": 1.5
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 25.0,
+        "y": 5.25,
+        "w": 25.5,
+        "h": 18.0,
+        "z": 1.6,
+        "height": 3.1,
+        "colour": "#b9c0c7",
+        "label": "ESP32-WROOM-32"
+      },
+      {
+        "x": -1.0,
+        "y": 10.5,
+        "w": 5.5,
+        "h": 7.5,
+        "z": 1.6,
+        "height": 2.8,
+        "colour": "#b9c0c7",
+        "label": "micro USB"
+      }
+    ]
+  },
   "connectors": [
-    { "id": "usb", "label": "micro USB", "side": "-x", "x": 0, "y": 14.25, "z": 1.6, "width": 8, "height": 3.2, "protrusion": 1.5 }
+    {
+      "id": "usb",
+      "label": "micro USB",
+      "side": "-x",
+      "x": 0,
+      "y": 14.25,
+      "z": 1.6,
+      "width": 8.5,
+      "height": 3.5,
+      "protrusion": 1.0
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "right",
+      "label": "Pins 3V3 to D15",
+      "x": 7.97,
+      "y": 1.55,
+      "rows": 1,
+      "cols": 15,
+      "pitch": 2.54
+    },
+    {
+      "id": "left",
+      "label": "Pins VIN to D13",
+      "x": 7.97,
+      "y": 26.95,
+      "rows": 1,
+      "cols": 15,
+      "pitch": 2.54
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-under",
+      "label": "Header pins below",
+      "x": 0,
+      "y": 0,
+      "w": 51.5,
+      "h": 28.5,
+      "z": -8.5,
+      "height": 8.5
+    },
+    {
+      "id": "k-antenna",
+      "label": "Antenna: keep metal away",
+      "x": 44.0,
+      "y": 5.25,
+      "w": 7.5,
+      "h": 18.0,
+      "z": 1.6,
+      "height": 10
+    }
   ],
   "electrical": {
-    "voltage": [5, 3.3],
+    "voltage": [
+      5,
+      3.3
+    ],
     "currentTypical": 0.08,
     "currentPeak": 0.5,
     "note": "WiFi transmit bursts pull around 500 mA. A weak supply causes brownout reboots."
   },
-  "tags": ["esp32", "wifi", "bluetooth", "microcontroller", "doit"]
+  "tags": [
+    "esp32",
+    "wifi",
+    "bluetooth",
+    "microcontroller",
+    "doit",
+    "generic"
+  ]
 }
