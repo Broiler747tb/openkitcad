@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { elementKey, ViewportEngine, type ScreenLabel, type SubPick } from './engine'
+import {
+  elementKey,
+  ViewportEngine,
+  type HandleScreen,
+  type ScreenLabel,
+  type SubPick,
+} from './engine'
+import { resolveHandles, type ActiveHandle } from './handles'
+import { findInput } from '../ui/command/state'
+import { formatAngle, formatLength } from '../ui/command/units'
 import { CommandHost } from '../ui/command/CommandHost'
 import { useCommand } from '../ui/command/session'
 import { acceptedKinds, bodyPick, commandPicks, elementPick, offerPick } from '../ui/command/picks'
@@ -246,6 +255,9 @@ export function Viewport() {
     }
   }
   const [labels, setLabels] = useState<ScreenLabel[]>([])
+  const [handleScreens, setHandleScreens] = useState<HandleScreen[]>([])
+  const [hotHandle, setHotHandle] = useState<string | null>(null)
+  const handleDragRef = useRef<ActiveHandle | null>(null)
   const [cursorHint, setCursorHint] = useState<{ x: number; y: number; text: string } | null>(null)
   const [prompt, setPrompt] = useState<DimensionPrompt | null>(null)
   useEffect(() => {
@@ -321,6 +333,7 @@ export function Viewport() {
     const engine = new ViewportEngine(mountRef.current)
     engineRef.current = engine
     engine.onLabels = setLabels
+    engine.onHandleScreens = setHandleScreens
     if (import.meta.env.DEV) (window as any).__okcEngine = engine
 
     engine.onGizmoChange = (pose) => {
@@ -503,6 +516,42 @@ export function Viewport() {
       : subSelection
     engineRef.current?.setSubHighlight(activeSketch ? [] : picks)
   }, [subSelection, activeSketch, instances, commandSession])
+
+  const activeHandles = useMemo(
+    () =>
+      commandSession && !activeSketch
+        ? resolveHandles(commandSession, doc, committedInstances, committedMeshes)
+        : [],
+    [commandSession, activeSketch, doc, committedInstances, committedMeshes, planes],
+  )
+  useEffect(() => {
+    engineRef.current?.setHandles(activeHandles, hotHandle)
+  }, [activeHandles, hotHandle])
+
+  function dragHandle(handle: ActiveHandle, e: React.PointerEvent) {
+    const engine = engineRef.current
+    const session = useCommand.getState().session
+    const input = session ? findInput(session.spec, handle.input) : undefined
+    if (!engine || !input || (input.kind !== 'length' && input.kind !== 'angle')) return
+    const preferences = usePreferences.getState().values
+    const step = e.altKey ? 0 : handle.kind === 'arc' ? preferences.angleSnap : preferences.moveSnap
+    let value =
+      handle.kind === 'arc'
+        ? engine.arcAngle(e.clientX, e.clientY, handle)
+        : engine.arrowParameter(e.clientX, e.clientY, handle.origin, handle.direction)
+    if (value === null) return
+    if (handle.kind === 'arrow') value /= handle.scale
+    if (step) value = Math.round(value / step) * step
+    if (input.min !== undefined) {
+      value = Math.max(value, input.exclusiveMin ? input.min + (step || 0.01) : input.min)
+    }
+    if (input.max !== undefined) value = Math.min(value, input.max)
+    useCommand.getState().dispatch({
+      type: 'text',
+      id: handle.input,
+      text: input.kind === 'angle' ? formatAngle(value) : formatLength(value, doc.units),
+    })
+  }
 
   useEffect(() => {
     engineRef.current?.setSection(section.enabled, section.axis, section.position, section.flipped)
@@ -827,6 +876,12 @@ export function Viewport() {
       return
     }
 
+    if (handleDragRef.current) {
+      dragHandle(handleDragRef.current, e)
+      return
+    }
+    const hot = activeHandles.length ? engine.pickHandle(e.clientX, e.clientY) : null
+    if (hot !== hotHandle) setHotHandle(hot)
     const hit = engine.pick(e.clientX, e.clientY)
     if ((hit?.instanceId ?? null) !== store.hovered) store.setHovered(hit?.instanceId ?? null)
     engine.setHoverPick(engine.pickSub(e.clientX, e.clientY))
@@ -883,6 +938,16 @@ export function Viewport() {
       return
     }
 
+    const grabbed = activeHandles.find(
+      (handle) => handle.id === engine.pickHandle(e.clientX, e.clientY),
+    )
+    if (grabbed) {
+      handleDragRef.current = grabbed
+      engine.setControlsEnabled(false)
+      ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+      return
+    }
+
     // Outside sketch mode, left-drag orbits and a left *click* selects. Which
     // one this turns out to be is only known on release, so just remember where
     // it started. Selecting on press instead - the original behaviour - meant
@@ -893,6 +958,12 @@ export function Viewport() {
 
   const onPointerUp = (e: React.PointerEvent) => {
     const engine = engineRef.current
+    if (handleDragRef.current) {
+      handleDragRef.current = null
+      downRef.current = null
+      engine?.setControlsEnabled(true)
+      return
+    }
     const drag = draggingRef.current
     if (drag) {
       draggingRef.current = null
@@ -1270,6 +1341,31 @@ export function Viewport() {
         }}
       />
 
+      {handleScreens.map((screen) => {
+        const handle = activeHandles.find((candidate) => candidate.id === screen.id)
+        const field = handle ? commandSession?.state.fields[handle.input] : undefined
+        if (!handle || !field || !('text' in field)) return null
+        return (
+          <input
+            key={screen.id}
+            className="okc-handle-value"
+            style={{ left: screen.x + 18, top: screen.y - 34 }}
+            value={field.text}
+            spellCheck={false}
+            aria-label={handle.input}
+            onFocus={(e) => e.currentTarget.select()}
+            onPointerDown={(e) => e.stopPropagation()}
+            onChange={(e) =>
+              useCommand
+                .getState()
+                .dispatch({ type: 'text', id: handle.input, text: e.target.value })
+            }
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === 'Escape') e.currentTarget.blur()
+            }}
+          />
+        )
+      })}
       {labels.map((label) => (
         <div
           key={label.id}

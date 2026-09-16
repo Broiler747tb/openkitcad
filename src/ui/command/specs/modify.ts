@@ -7,7 +7,15 @@ import type {
   MoveFeature,
   ShellFeature,
 } from '../../../doc/types'
-import { defineCommand, type CommandContext, type SelectionPick } from '../types'
+import { v3 } from '../../../core/math'
+import { findBody } from '../../../doc/model'
+import { useStore } from '../../../doc/store'
+import {
+  defineCommand,
+  type CommandContext,
+  type CommandHandle,
+  type SelectionPick,
+} from '../types'
 import { bodyIdsOf, componentOfBody, singleBody } from './shared'
 
 const EDGES_INPUT = {
@@ -19,6 +27,23 @@ const EDGES_INPUT = {
   min: 1,
   prompt: 'Select edges',
 } as const
+
+function edgeHandles(
+  context: CommandContext,
+  picks: readonly SelectionPick[],
+  input: string,
+): CommandHandle[] {
+  const edge = picks.find((pick) => pick.edge)?.edge
+  if (!edge) return []
+  return [
+    {
+      kind: 'arrow',
+      input,
+      componentId: componentOfBody(context.doc, edge.bodyId, context.componentId),
+      anchor: { edge },
+    },
+  ]
+}
 
 function edgeTarget(context: CommandContext, picks: readonly SelectionPick[]) {
   const bodyId = bodyIdsOf(picks)[0]
@@ -63,6 +88,9 @@ export const filletCommand = defineCommand({
     }
     return [feature]
   },
+  handles(values, context) {
+    return edgeHandles(context, values.edges, 'radius')
+  },
 })
 
 export const chamferCommand = defineCommand({
@@ -96,6 +124,9 @@ export const chamferCommand = defineCommand({
     }
     return [feature]
   },
+  handles(values, context) {
+    return edgeHandles(context, values.edges, 'distance')
+  },
 })
 
 const FACES_INPUT = {
@@ -118,6 +149,22 @@ const THICKNESS_INPUT = {
   exclusiveMin: true,
   field: 'thickness',
 } as const
+
+function thicknessHandles(
+  context: CommandContext,
+  picks: readonly SelectionPick[],
+): CommandHandle[] {
+  const face = picks.find((pick) => pick.face && pick.point && pick.normal)
+  if (!face?.face || !face.point || !face.normal) return []
+  return [
+    {
+      kind: 'arrow',
+      input: 'thickness',
+      componentId: componentOfBody(context.doc, face.face.bodyId, context.componentId),
+      anchor: { point: face.point, direction: v3.scale(v3.norm(face.normal), -1) },
+    },
+  ]
+}
 
 function shellFeature(
   values: { faces: readonly SelectionPick[]; thickness: number },
@@ -217,6 +264,9 @@ export const shellCommand = defineCommand({
     }
     return features
   },
+  handles(values, context) {
+    return thicknessHandles(context, values.faces)
+  },
 })
 
 export const shellEditCommand = defineCommand({
@@ -230,6 +280,9 @@ export const shellEditCommand = defineCommand({
   },
   build(values, context) {
     return [shellFeature(values, context)]
+  },
+  handles(values, context) {
+    return thicknessHandles(context, values.faces)
   },
 })
 
@@ -346,5 +399,30 @@ export const moveCommand = defineCommand({
       rotation: [values.rx, values.ry, values.rz],
     }
     return [feature]
+  },
+  handles(values, context) {
+    const bodyId = bodyIdsOf(values.bodies)[0]
+    const found = bodyId ? findBody(context.doc, bodyId) : undefined
+    if (!found) return []
+    const state = useStore.getState()
+    const instance = state.instances.find((candidate) => candidate.bodyId === bodyId)
+    const bounds = instance ? state.meshes.get(instance.meshKey)?.bounds : undefined
+    if (!bounds) return []
+    const point: [number, number, number] = [
+      (bounds[0] + bounds[3]) / 2,
+      (bounds[1] + bounds[4]) / 2,
+      (bounds[2] + bounds[5]) / 2,
+    ]
+    const axes: Array<[string, [number, number, number]]> = [
+      ['dx', [1, 0, 0]],
+      ['dy', [0, 1, 0]],
+      ['dz', [0, 0, 1]],
+    ]
+    return axes.map(([input, direction]) => ({
+      kind: 'arrow',
+      input,
+      componentId: found.component.id,
+      anchor: { point, direction },
+    }))
   },
 })

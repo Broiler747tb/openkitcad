@@ -128,6 +128,28 @@ export interface CommandContext {
   editingFeatureId?: string
 }
 
+export type HandleAnchor = { point: Vec3; direction: Vec3 } | { edge: ElementRef }
+
+export interface ArrowHandle {
+  kind: 'arrow'
+  input: string
+  componentId: string
+  anchor: HandleAnchor
+  scale?: number
+}
+
+export interface ArcHandle {
+  kind: 'arc'
+  input: string
+  componentId: string
+  centre: Vec3
+  axis: Vec3
+  start: Vec3
+  radius: number
+}
+
+export type CommandHandle = ArrowHandle | ArcHandle
+
 export type CommandValidation<Id extends string = string> =
   string | Partial<Record<Id, string>> | null | undefined
 
@@ -139,6 +161,7 @@ export interface CommandSpec<I extends readonly CommandInput[] = readonly Comman
   inputs: I
   build(values: CommandValues<I>, context: CommandContext): Feature[]
   validate?(values: CommandValues<I>, context: CommandContext): CommandValidation<I[number]['id']>
+  handles?(values: CommandValues<I>, context: CommandContext): CommandHandle[]
 }
 
 export type AnyCommandSpec = CommandSpec<readonly CommandInput[]>

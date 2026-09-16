@@ -3,6 +3,8 @@ import { emptyDocument, type ExtrudeFeature, type Feature, type OkcDocument } fr
 import { emptySketch } from '../sketch/types'
 import { filletCommand, shellCommand } from '../ui/command/specs/modify'
 import { holeCommand } from '../ui/command/specs/placed'
+import { boxCommand } from '../ui/command/specs/primitives'
+import { resolveHandles } from '../viewport/handles'
 import { extrudeCommand } from '../ui/command/specs/sketchBased'
 import { createCommandState, evaluateCommand, reduceCommand } from '../ui/command/state'
 import type { AnyCommandSpec, CommandContext } from '../ui/command/types'
@@ -239,6 +241,43 @@ export function runCommandTest(): TestResult[] {
       placed.source.positions[0].join() === '12,7' &&
       placed.plane.kind === 'face',
     JSON.stringify(placed),
+  )
+
+  const box = boxCommand as unknown as AnyCommandSpec
+  const boxContext = contextFor(boxed)
+  const boxState = createCommandState(box, boxContext, { length: 40, width: 30, height: 20 })
+  const handles = resolveHandles(
+    { spec: box, state: boxState, context: boxContext, links: {}, serial: 0 },
+    boxed,
+    [],
+    new Map(),
+  )
+  const height = handles.find((handle) => handle.input === 'height')
+  check(
+    'a box shows a drag arrow for each of its sizes',
+    handles.map((handle) => handle.input).join() === 'height,length,width' &&
+      height?.origin.join() === '20,15,0' &&
+      height.direction.join() === '0,0,1' &&
+      height.length === 20,
+    JSON.stringify(
+      handles.map(({ input, origin, direction, length }) => ({ input, origin, direction, length })),
+    ),
+  )
+  const symmetric = createCommandState(spec, context, {
+    profile: [{ kind: 'sketch', id: 's1', label: 'Sketch1' }],
+    direction: 'symmetric',
+    distance: 8,
+  })
+  const [distance] = resolveHandles(
+    { spec, state: symmetric, context, links: {}, serial: 0 },
+    doc,
+    [],
+    new Map(),
+  )
+  check(
+    'a symmetric extrude arrow reaches half the distance from the middle of the profile',
+    distance?.length === 4 && distance.scale === 0.5 && distance.origin.join() === '10,5,0',
+    JSON.stringify(distance),
   )
 
   return results

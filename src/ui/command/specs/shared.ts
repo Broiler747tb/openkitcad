@@ -1,4 +1,7 @@
+import { makeFrame, NAMED_FRAMES, v3, type Frame, type Vec2 } from '../../../core/math'
 import { findBody, findFeature } from '../../../doc/model'
+import { frameFromPlaneRefLocal } from '../../../doc/planes'
+import { useStore } from '../../../doc/store'
 import type { BodyOperation, OkcDocument, PlaneRef, SketchFeature } from '../../../doc/types'
 import { sketchLoopSummary } from '../../../kernel/profile'
 import { bodyPick, planePick } from '../picks'
@@ -106,4 +109,41 @@ export function placementComponent(
   const face = picks[0]?.face
   if (context.editing) return context.editing.componentId
   return face ? componentOfBody(context.doc, face.bodyId, context.componentId) : context.componentId
+}
+
+export function sketchFrame(sketch: SketchFeature): Frame | null {
+  return frameFromPlaneRefLocal(sketch.plane, useStore.getState().planes.get(sketch.id))
+}
+
+export function profileCentre(sketch: SketchFeature): Vec2 {
+  const used = new Set(
+    sketch.sketch.entities
+      .filter((entity) => !entity.construction)
+      .flatMap((entity) =>
+        entity.kind === 'line'
+          ? [entity.p1, entity.p2]
+          : entity.kind === 'circle'
+            ? [entity.c]
+            : [entity.c, entity.p1, entity.p2],
+      ),
+  )
+  const points = sketch.sketch.points.filter((point) => used.has(point.id))
+  if (!points.length) return [0, 0]
+  return [
+    points.reduce((sum, point) => sum + point.x, 0) / points.length,
+    points.reduce((sum, point) => sum + point.y, 0) / points.length,
+  ]
+}
+
+export function pickedFrame(picks: readonly SelectionPick[], featureId?: string): Frame | null {
+  const pick = picks[0]
+  if (!pick) return NAMED_FRAMES.XY
+  if (pick.face) {
+    if (pick.point && pick.normal) {
+      const normal = v3.norm(pick.normal)
+      return makeFrame(v3.scale(normal, v3.dot(pick.point, normal)), normal)
+    }
+    return featureId ? (useStore.getState().planes.get(featureId) ?? null) : null
+  }
+  return pick.plane ? frameFromPlaneRefLocal(pick.plane, undefined) : NAMED_FRAMES.XY
 }

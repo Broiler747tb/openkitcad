@@ -12,7 +12,7 @@ import type { FastenerGhost } from './ghosts'
 import type { BodyMesh, Instance } from '../kernel/types'
 import type { Matrix4 } from '../doc/types'
 import type { Frame, Vec2, Vec3 } from '../core/math'
-import { frameToWorld } from '../core/math'
+import { frameToWorld, v3 } from '../core/math'
 import type { Sketch2D } from '../sketch/types'
 import { usePreferences, type Preferences } from '../doc/preferences'
 import { arcMidpoint } from '../kernel/profile'
@@ -52,6 +52,26 @@ export interface SubPick {
 export function elementKey(prefix: 'f' | 'e', name: string, id: number): string {
   return name ? `${prefix}:${name}` : `${prefix}#${id}`
 }
+
+export interface WorldHandle {
+  id: string
+  kind: 'arrow' | 'arc'
+  origin: Vec3
+  direction: Vec3
+  length: number
+  start?: Vec3
+  radius?: number
+}
+
+export interface HandleScreen {
+  id: string
+  x: number
+  y: number
+}
+
+const HANDLE = 0x1676c5
+const HANDLE_HOT = 0x46a3ec
+const HANDLE_GRAB_PX = 14
 
 export interface GizmoPose {
   position: Vec3
@@ -129,6 +149,10 @@ export class ViewportEngine {
   private disposed = false
   labels: ScreenLabel[] = []
   onLabels: ((labels: ScreenLabel[]) => void) | null = null
+  onHandleScreens: ((handles: HandleScreen[]) => void) | null = null
+  private handleGroup = new THREE.Group()
+  private handles: WorldHandle[] = []
+  private handleScreens: HandleScreen[] = []
 
   constructor(private container: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
@@ -169,6 +193,7 @@ export class ViewportEngine {
       this.overlayGroup,
       this.gridGroup,
       this.highlightGroup,
+      this.handleGroup,
     )
     this.buildLighting()
     this.buildGrid()
@@ -612,6 +637,168 @@ export class ViewportEngine {
     at: Vec3
     kind: ScreenLabel['kind']
   }> = []
+
+  // -------------------------------------------------------------------------
+  // Command handles
+  // -------------------------------------------------------------------------
+
+  setHandles(handles: WorldHandle[], hot: string | null) {
+    this.handles = handles
+    for (const child of [...this.handleGroup.children]) {
+      this.handleGroup.remove(child)
+      child.traverse((object) => {
+        const mesh = object as THREE.Mesh
+        mesh.geometry?.dispose?.()
+        ;(mesh.material as THREE.Material | undefined)?.dispose?.()
+      })
+    }
+    for (const handle of handles) {
+      const colour = handle.id === hot ? HANDLE_HOT : HANDLE
+      const tip = this.handleTip(handle)
+      const material = () =>
+        new THREE.MeshBasicMaterial({ color: colour, depthTest: false, transparent: true })
+      const points = this.handlePath(handle)
+      for (let i = 0; i + 1 < points.length; i++) {
+        const shaft = new THREE.Mesh(
+          new THREE.CylinderGeometry(1.5, 1.5, 1, 8).translate(0, 0.5, 0),
+          material(),
+        )
+        const from = new THREE.Vector3(...points[i])
+        const along = new THREE.Vector3(...points[i + 1]).sub(from)
+        shaft.position.copy(from)
+        if (along.lengthSq() > 1e-12) {
+          shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), along.clone().normalize())
+        }
+        shaft.renderOrder = 20
+        shaft.userData = { shaftAt: points[i], shaftLength: along.length() }
+        this.handleGroup.add(shaft)
+      }
+      const knob = new THREE.Mesh(
+        handle.kind === 'arrow'
+          ? new THREE.ConeGeometry(7, 22, 24).translate(0, -11, 0)
+          : new THREE.SphereGeometry(7, 16, 12),
+        material(),
+      )
+      knob.position.set(...tip)
+      if (handle.kind === 'arrow') {
+        const pointing = new THREE.Vector3(...handle.direction).multiplyScalar(
+          handle.length < 0 ? -1 : 1,
+        )
+        knob.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), pointing.normalize())
+      }
+      knob.renderOrder = 21
+      knob.userData = { handleId: handle.id, scaleAt: tip }
+      this.handleGroup.add(knob)
+    }
+    this.scaleHandles()
+  }
+
+  private handleTip(handle: WorldHandle): Vec3 {
+    if (handle.kind === 'arrow') {
+      return v3.add(handle.origin, v3.scale(handle.direction, handle.length))
+    }
+    return this.arcPoint(handle, handle.length)
+  }
+
+  private arcPoint(handle: WorldHandle, degrees: number): Vec3 {
+    const axis = new THREE.Vector3(...handle.direction).normalize()
+    const start = new THREE.Vector3(...(handle.start ?? [1, 0, 0]))
+      .multiplyScalar(handle.radius ?? 10)
+      .applyAxisAngle(axis, (degrees * Math.PI) / 180)
+    return [handle.origin[0] + start.x, handle.origin[1] + start.y, handle.origin[2] + start.z]
+  }
+
+  private handlePath(handle: WorldHandle): Vec3[] {
+    if (handle.kind === 'arrow') return [handle.origin, this.handleTip(handle)]
+    const steps = Math.max(8, Math.ceil(Math.abs(handle.length) / 5))
+    return Array.from({ length: steps + 1 }, (_, i) =>
+      this.arcPoint(handle, (handle.length * i) / steps),
+    )
+  }
+
+  private scaleHandles() {
+    for (const child of this.handleGroup.children) {
+      const at = child.userData.scaleAt as Vec3 | undefined
+      if (at) child.scale.setScalar(this.pixelSize(at))
+      const shaftAt = child.userData.shaftAt as Vec3 | undefined
+      if (shaftAt) {
+        const thickness = this.pixelSize(shaftAt)
+        child.scale.set(thickness, child.userData.shaftLength as number, thickness)
+      }
+    }
+  }
+
+  private screenOf(point: Vec3): [number, number] | null {
+    const rect = this.renderer.domElement.getBoundingClientRect()
+    const projected = new THREE.Vector3(...point).project(this.camera)
+    if (projected.z > 1) return null
+    return [((projected.x + 1) / 2) * rect.width, ((1 - projected.y) / 2) * rect.height]
+  }
+
+  pickHandle(clientX: number, clientY: number): string | null {
+    const rect = this.renderer.domElement.getBoundingClientRect()
+    const x = clientX - rect.left
+    const y = clientY - rect.top
+    let best: { id: string; distance: number } | null = null
+    for (const handle of this.handles) {
+      const screen = this.screenOf(this.handleTip(handle))
+      if (!screen) continue
+      const distance = Math.hypot(screen[0] - x, screen[1] - y)
+      if (distance < HANDLE_GRAB_PX && (!best || distance < best.distance)) {
+        best = { id: handle.id, distance }
+      }
+    }
+    return best?.id ?? null
+  }
+
+  arrowParameter(clientX: number, clientY: number, origin: Vec3, direction: Vec3): number | null {
+    this.raycaster.setFromCamera(this.pointerToNdc(clientX, clientY), this.camera)
+    const ray = this.raycaster.ray
+    const d = new THREE.Vector3(...direction).normalize()
+    const w = new THREE.Vector3(...origin).sub(ray.origin)
+    const b = d.dot(ray.direction)
+    const denominator = 1 - b * b
+    if (denominator < 1e-9) return null
+    return (b * w.dot(ray.direction) - w.dot(d)) / denominator
+  }
+
+  arcAngle(clientX: number, clientY: number, handle: WorldHandle): number | null {
+    this.raycaster.setFromCamera(this.pointerToNdc(clientX, clientY), this.camera)
+    const axis = new THREE.Vector3(...handle.direction).normalize()
+    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+      axis,
+      new THREE.Vector3(...handle.origin),
+    )
+    const hit = new THREE.Vector3()
+    if (!this.raycaster.ray.intersectPlane(plane, hit)) return null
+    const radial = hit.sub(new THREE.Vector3(...handle.origin))
+    const start = new THREE.Vector3(...(handle.start ?? [1, 0, 0]))
+    const angle = Math.atan2(
+      new THREE.Vector3().crossVectors(start, radial).dot(axis),
+      start.dot(radial),
+    )
+    const degrees = (angle * 180) / Math.PI
+    return degrees <= 0 ? degrees + 360 : degrees
+  }
+
+  private projectHandles() {
+    if (!this.onHandleScreens) return
+    const next = this.handles.flatMap((handle) => {
+      const screen = this.screenOf(this.handleTip(handle))
+      return screen ? [{ id: handle.id, x: screen[0], y: screen[1] }] : []
+    })
+    const moved =
+      next.length !== this.handleScreens.length ||
+      next.some(
+        (screen, i) =>
+          screen.id !== this.handleScreens[i].id ||
+          Math.abs(screen.x - this.handleScreens[i].x) > 0.5 ||
+          Math.abs(screen.y - this.handleScreens[i].y) > 0.5,
+      )
+    if (!moved) return
+    this.handleScreens = next
+    this.onHandleScreens(next)
+  }
 
   // -------------------------------------------------------------------------
   // Move / turn gizmo
@@ -1232,7 +1419,9 @@ export class ViewportEngine {
     if (this.disposed) return
     requestAnimationFrame(this.animate)
     this.controls.update()
+    this.scaleHandles()
     this.renderer.render(this.scene, this.camera)
+    this.projectHandles()
 
     if (this.onLabels) {
       const rect = this.renderer.domElement.getBoundingClientRect()

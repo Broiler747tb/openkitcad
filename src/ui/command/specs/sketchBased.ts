@@ -1,6 +1,15 @@
+import { frameToWorld, v3 } from '../../../core/math'
 import type { ExtrudeFeature, RevolveFeature } from '../../../doc/types'
 import { defineCommand, type LooseCommandValues } from '../types'
-import { OPERATIONS, operationProblem, profileProblem, resultOf, sketchOf } from './shared'
+import {
+  OPERATIONS,
+  operationProblem,
+  profileCentre,
+  profileProblem,
+  resultOf,
+  sketchFrame,
+  sketchOf,
+} from './shared'
 
 export const OPERATION_INPUTS = [
   {
@@ -87,6 +96,22 @@ export const extrudeCommand = defineCommand({
     }
     return [feature]
   },
+  handles(values, context) {
+    const sketch = sketchOf(context.doc, values.profile)
+    const frame = sketch && sketchFrame(sketch)
+    if (!sketch || !frame) return []
+    const symmetric = values.direction === 'symmetric'
+    const direction = !symmetric && values.flip ? v3.scale(frame.normal, -1) : frame.normal
+    return [
+      {
+        kind: 'arrow',
+        input: 'distance',
+        componentId: sketch.componentId,
+        anchor: { point: frameToWorld(frame, profileCentre(sketch)), direction },
+        scale: symmetric ? 0.5 : 1,
+      },
+    ]
+  },
 })
 
 export const revolveCommand = defineCommand({
@@ -135,5 +160,25 @@ export const revolveCommand = defineCommand({
       result: resultOf(values.operation, values.bodies, context),
     }
     return [feature]
+  },
+  handles(values, context) {
+    const sketch = sketchOf(context.doc, values.profile)
+    const frame = sketch && sketchFrame(sketch)
+    if (!sketch || !frame) return []
+    const [u, v] = profileCentre(sketch)
+    const alongX = values.axis === 'x'
+    const offset = alongX ? v : u
+    const radial = alongX ? frame.yDir : frame.xDir
+    return [
+      {
+        kind: 'arc',
+        input: 'angle',
+        componentId: sketch.componentId,
+        centre: frameToWorld(frame, alongX ? [u, 0] : [0, v]),
+        axis: alongX ? frame.xDir : frame.yDir,
+        start: v3.scale(radial, offset < 0 ? -1 : 1),
+        radius: Math.abs(offset) || 10,
+      },
+    ]
   },
 })

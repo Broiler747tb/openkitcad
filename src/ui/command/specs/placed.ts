@@ -1,7 +1,7 @@
-import { frameToLocal, makeFrame, v3 } from '../../../core/math'
+import { frameToLocal, frameToWorld, makeFrame, v3 } from '../../../core/math'
 import type { HoleFeature, HoleStyle, VentFeature, VentShape } from '../../../doc/types'
 import { defineCommand, type CommandContext, type SelectionPick } from '../types'
-import { componentOfBody } from './shared'
+import { componentOfBody, pickedFrame } from './shared'
 
 const FACE_INPUT = {
   id: 'face',
@@ -147,6 +147,32 @@ export const holeCommand = defineCommand({
       feature.fastener = context.editing.fastener
     }
     return [feature]
+  },
+  handles(values, context) {
+    const face = values.face[0]?.face
+    const frame = face && pickedFrame(values.face, context.editing?.id)
+    if (!face || !frame) return []
+    const componentId = componentOfBody(context.doc, face.bodyId, context.componentId)
+    const point = frameToWorld(frame, [values.x, values.y])
+    return [
+      {
+        kind: 'arrow',
+        input: 'diameter',
+        componentId,
+        anchor: { point, direction: frame.xDir },
+        scale: 0.5,
+      },
+      ...(values.extent === 'distance'
+        ? [
+            {
+              kind: 'arrow' as const,
+              input: 'depth',
+              componentId,
+              anchor: { point, direction: v3.scale(frame.normal, -1) },
+            },
+          ]
+        : []),
+    ]
   },
 })
 

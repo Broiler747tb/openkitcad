@@ -1,7 +1,8 @@
+import { frameToWorld, v3, type Frame } from '../../../core/math'
 import type { BoxFeature, CylinderFeature, SphereFeature } from '../../../doc/types'
 import { defineCommand } from '../types'
 import { OPERATION_INPUTS } from './sketchBased'
-import { operationProblem, placementComponent, planeOf, resultOf } from './shared'
+import { operationProblem, pickedFrame, placementComponent, planeOf, resultOf } from './shared'
 
 const PLANE_INPUT = {
   id: 'plane',
@@ -13,6 +14,10 @@ const PLANE_INPUT = {
   max: 1,
   prompt: 'XY plane',
 } as const
+
+function onPlane(frame: Frame, u: number, v: number, up = 0) {
+  return v3.add(frameToWorld(frame, [u, v]), v3.scale(frame.normal, up))
+}
 
 const nonZero = (value: number, input: string) =>
   value === 0 ? { [input]: 'This cannot be zero.' } : null
@@ -75,6 +80,32 @@ export const boxCommand = defineCommand({
     }
     return [feature]
   },
+  handles(values, context) {
+    const frame = pickedFrame(values.plane, context.editing?.id)
+    if (!frame) return []
+    const componentId = placementComponent(context, values.plane)
+    const { x, y, length, width, height } = values
+    return [
+      {
+        kind: 'arrow',
+        input: 'height',
+        componentId,
+        anchor: { point: onPlane(frame, x + length / 2, y + width / 2), direction: frame.normal },
+      },
+      {
+        kind: 'arrow',
+        input: 'length',
+        componentId,
+        anchor: { point: onPlane(frame, x, y + width / 2, height / 2), direction: frame.xDir },
+      },
+      {
+        kind: 'arrow',
+        input: 'width',
+        componentId,
+        anchor: { point: onPlane(frame, x + length / 2, y, height / 2), direction: frame.yDir },
+      },
+    ]
+  },
 })
 
 export const cylinderCommand = defineCommand({
@@ -114,6 +145,29 @@ export const cylinderCommand = defineCommand({
     }
     return [feature]
   },
+  handles(values, context) {
+    const frame = pickedFrame(values.plane, context.editing?.id)
+    if (!frame) return []
+    const componentId = placementComponent(context, values.plane)
+    return [
+      {
+        kind: 'arrow',
+        input: 'height',
+        componentId,
+        anchor: { point: onPlane(frame, values.x, values.y), direction: frame.normal },
+      },
+      {
+        kind: 'arrow',
+        input: 'diameter',
+        componentId,
+        anchor: {
+          point: onPlane(frame, values.x, values.y, values.height / 2),
+          direction: frame.xDir,
+        },
+        scale: 0.5,
+      },
+    ]
+  },
 })
 
 export const sphereCommand = defineCommand({
@@ -150,5 +204,18 @@ export const sphereCommand = defineCommand({
       result: resultOf(values.operation, values.bodies, context),
     }
     return [feature]
+  },
+  handles(values, context) {
+    const frame = pickedFrame(values.plane, context.editing?.id)
+    if (!frame) return []
+    return [
+      {
+        kind: 'arrow',
+        input: 'diameter',
+        componentId: placementComponent(context, values.plane),
+        anchor: { point: onPlane(frame, values.x, values.y), direction: frame.normal },
+        scale: 0.5,
+      },
+    ]
   },
 })
