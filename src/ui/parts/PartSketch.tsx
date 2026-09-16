@@ -301,23 +301,10 @@ function drawing(part: CataloguePart): Drawing {
   }
 }
 
-export function sketchSpan(part: CataloguePart): number {
-  const [x0, y0, x1, y1] = drawing(part).box
-  return Math.max(x1 - x0, y1 - y0)
-}
-
-export function PartSketch({
-  part,
-  className,
-  span,
-}: {
-  part: CataloguePart
-  className?: string
-  span?: number
-}) {
+export function PartSketch({ part, className }: { part: CataloguePart; className?: string }) {
   const { box, content } = drawing(part)
   const [x0, y0, x1, y1] = box
-  const size = Math.max(span ?? 0, x1 - x0, y1 - y0) * 1.12
+  const size = Math.max(x1 - x0, y1 - y0) * 1.12
   const cx = (x0 + x1) / 2
   const cy = (y0 + y1) / 2
   return (
