@@ -18,6 +18,13 @@ import { usePreferences, type Preferences } from '../doc/preferences'
 import { tessellate } from '../sketch/curves'
 import { regionAt, type RegionResult } from '../sketch/regions'
 import { LIGHT_PALETTE, type ViewportPalette } from '../theme/palette'
+import {
+  DEFAULT_MOUSE_SCHEME,
+  MOUSE_SCHEMES,
+  modifiersOf,
+  resolveDrag,
+  type MouseScheme,
+} from '../ui/mouse/schemes'
 
 export interface ScreenLabel {
   id: string
@@ -166,6 +173,10 @@ export class ViewportEngine {
   }
 
   private disposed = false
+  private mouseScheme: MouseScheme = MOUSE_SCHEMES[DEFAULT_MOUSE_SCHEME]
+  private navigationEnabled = true
+  private rightDrag: { x: number; y: number; moved: boolean } | null = null
+  private rightDragged = false
   private viewListeners = new Set<(view: number[]) => void>()
   private lastView = ''
   private viewTween: {
@@ -229,10 +240,44 @@ export class ViewportEngine {
     this.renderer.domElement.addEventListener(
       'pointerdown',
       (event) => {
-        if (event.button === 1) this.controls.enableRotate = event.shiftKey
+        if (event.pointerType !== 'mouse') return
+        const bit = event.button === 0 ? 1 : event.button === 1 ? 4 : event.button === 2 ? 2 : 0
+        const action = resolveDrag(this.mouseScheme, bit, modifiersOf(event))
+        const modified = event.ctrlKey || event.metaKey || event.shiftKey
+        const mouse =
+          action === 'orbit'
+            ? modified
+              ? THREE.MOUSE.PAN
+              : THREE.MOUSE.ROTATE
+            : action === 'pan'
+              ? modified
+                ? THREE.MOUSE.ROTATE
+                : THREE.MOUSE.PAN
+              : action === 'zoom'
+                ? THREE.MOUSE.DOLLY
+                : null
+        this.controls.enableRotate = this.navigationEnabled
+        this.controls.mouseButtons = {
+          LEFT: event.button === 0 ? mouse : null,
+          MIDDLE: event.button === 1 ? mouse : null,
+          RIGHT: event.button === 2 ? mouse : null,
+        } as typeof this.controls.mouseButtons
+        this.rightDrag =
+          event.button === 2 && action !== 'none'
+            ? { x: event.clientX, y: event.clientY, moved: false }
+            : null
+        if (event.button === 2) this.rightDragged = false
       },
       { capture: true },
     )
+    this.renderer.domElement.addEventListener('pointermove', (event) => {
+      const drag = this.rightDrag
+      if (!drag || drag.moved) return
+      if (Math.hypot(event.clientX - drag.x, event.clientY - drag.y) > 4) {
+        drag.moved = true
+        this.rightDragged = true
+      }
+    })
 
     this.scene.add(
       this.solidGroup,
@@ -1710,7 +1755,20 @@ export class ViewportEngine {
   }
 
   setControlsEnabled(enabled: boolean) {
+    this.navigationEnabled = enabled
     this.controls.enableRotate = enabled
+  }
+
+  setMouseScheme(scheme: MouseScheme) {
+    this.mouseScheme = scheme
+    this.controls.zoomSpeed = scheme.wheelForward === 'out' ? -1 : 1
+  }
+
+  consumeRightDrag(): boolean {
+    const dragged = this.rightDragged
+    this.rightDragged = false
+    this.rightDrag = null
+    return dragged
   }
 
   setFingerNavigation(orbit: boolean) {

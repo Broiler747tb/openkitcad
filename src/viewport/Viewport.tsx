@@ -101,6 +101,8 @@ import { CATEGORY_COLOUR, getPart } from '../catalogue'
 import { lengthLabel } from '../core/units'
 import { useTheme } from '../theme/theme'
 import { readPalette } from '../theme/palette'
+import { useMouseScheme } from '../ui/mouse/preference'
+import { mouseScheme } from '../ui/mouse/schemes'
 
 /** Snap radius in screen pixels. */
 const SNAP_PX = 11
@@ -290,6 +292,7 @@ function pasteClipboard(): boolean {
 export function Viewport() {
   const preferences = usePreferences((s) => s.values)
   const { theme } = useTheme()
+  const schemeId = useMouseScheme((s) => s.scheme)
   const [paletteVersion, setPaletteVersion] = useState(0)
   const mountRef = useRef<HTMLDivElement>(null)
   const engineRef = useRef<ViewportEngine | null>(null)
@@ -747,6 +750,10 @@ export function Viewport() {
     window.addEventListener('okc:cancel', cancel)
     return () => window.removeEventListener('okc:cancel', cancel)
   }, [])
+
+  useEffect(() => {
+    engineRef.current?.setMouseScheme(mouseScheme(schemeId))
+  }, [schemeId])
 
   useEffect(() => {
     engineRef.current?.setPalette(readPalette())
@@ -1767,6 +1774,7 @@ export function Viewport() {
         onPointerLeave={cancelHold}
         onContextMenu={(e) => {
           e.preventDefault()
+          if (engineRef.current?.consumeRightDrag()) return
           if (!activeSketch) {
             const engine = engineRef.current
             if (!engine) return

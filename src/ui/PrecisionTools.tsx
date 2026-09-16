@@ -4,10 +4,19 @@ import { activeSketchFeature, useStore } from '../doc/store'
 import { sketchActions } from '../sketch/actions'
 import { chooseSketchAction } from './ActionDialog'
 import { quantity } from '../core/quantity'
+import { useMouseScheme } from './mouse/preference'
+import {
+  MOUSE_SCHEME_ORDER,
+  MOUSE_SCHEMES,
+  schemeSummary,
+  type MouseSchemeId,
+} from './mouse/schemes'
 
 export function GridSettings() {
   const { values: p, set, reset } = usePreferences()
   const [open, setOpen] = useState(false)
+  const { scheme, setScheme } = useMouseScheme()
+  const summary = schemeSummary(MOUSE_SCHEMES[scheme])
   const check = (key: keyof Preferences, label: string) => (
     <label className="precision-check">
       <input
@@ -51,6 +60,24 @@ export function GridSettings() {
               ×
             </button>
           </div>
+          <label className="precision-number">
+            Pan, zoom and orbit like
+            <select
+              aria-label="Navigation scheme"
+              value={scheme}
+              onChange={(e) => setScheme(e.target.value as MouseSchemeId)}
+            >
+              {MOUSE_SCHEME_ORDER.map((id) => (
+                <option key={id} value={id}>
+                  {MOUSE_SCHEMES[id].label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <small>
+            Orbit: {summary.orbit.join(' or ')}. Pan: {summary.pan.join(' or ')}. Zoom:{' '}
+            {summary.zoom.join(' or ')}.
+          </small>
           <div className="precision-presets">
             {[0.1, 0.5, 1, 5, 10].map((step) => (
               <button key={step} onClick={() => set({ gridStep: step })}>
