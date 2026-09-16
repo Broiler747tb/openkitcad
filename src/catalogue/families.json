@@ -64,6 +64,11 @@
     "category": "connector",
     "summary": "The socket a kettle lead plugs into, plain or with a fuse."
   },
+  "micro-servo": {
+    "name": "Micro servo",
+    "category": "motor",
+    "summary": "9 to 13 g hobby servos with two mounting tabs."
+  },
   "mpu6050-board": {
     "name": "MPU-6050 motion sensor",
     "category": "sensor",

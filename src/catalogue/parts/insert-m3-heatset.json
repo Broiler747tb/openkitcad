@@ -1,13 +1,14 @@
 {
   "id": "insert-m3-heatset",
-  "name": "M3 heat-set insert",
+  "name": "M3 heat-set insert (CNC Kitchen M3 x 5.7)",
   "category": "fastener",
   "popularity": 95,
   "family": "heat-set-insert",
-  "variant": "M3",
-  "summary": "Brass insert melted into a printed part. Needs a 4.0 mm pilot hole.",
-  "confidence": "approximate",
-  "source": "Matches the widely used M3 x 5.7 x 4.6 knurled insert (the CNC Kitchen recommended size). Insert dimensions vary noticeably between suppliers - check yours, and always test-fit one before printing a whole enclosure.",
+  "variant": "M3 x 5.7",
+  "manufacturer": "CNC Kitchen",
+  "summary": "Brass insert melted into a printed part. Needs a 4 mm hole at least 6.7 mm deep.",
+  "confidence": "datasheet",
+  "source": "CNC Kitchen metric insert table: M3 x 5.7 is 5.7 mm long and 4.6 mm across the knurl, wants a 4 mm hole at least 6.7 mm deep and at least 1.6 mm of plastic around the hole. Other brands of the same nominal size differ by a few tenths, so test-fit one before printing a whole enclosure.",
   "geometry": {
     "kind": "insert",
     "thread": "M3",
@@ -15,5 +16,23 @@
     "length": 5.7,
     "pilotDiameter": 4.0
   },
-  "tags": ["m3", "insert", "heatset", "threaded", "brass", "fastener"]
+  "links": [
+    {
+      "label": "Product page",
+      "url": "https://cnckitchen.store/products/heat-set-insert-m3-x-5-7-100-pieces"
+    },
+    {
+      "label": "Dimension table",
+      "url": "https://cdn.shopify.com/s/files/1/0654/4821/4767/files/table_metric.png"
+    }
+  ],
+  "tags": [
+    "m3",
+    "insert",
+    "heatset",
+    "threaded",
+    "brass",
+    "fastener",
+    "cnc kitchen"
+  ]
 }

@@ -1,26 +1,38 @@
 {
   "id": "insert-m5-heatset",
-  "name": "M5 heat-set insert",
+  "name": "M5 heat-set insert (CNC Kitchen M5 x 9.5)",
   "category": "fastener",
   "popularity": 41,
   "family": "heat-set-insert",
-  "variant": "M5",
-  "summary": "Brass insert melted into a printed part. Needs a 5.8 mm pilot hole.",
-  "confidence": "approximate",
-  "source": "Matches the commonly sold knurled insert in this size. Insert dimensions vary noticeably between suppliers - check yours, and always test-fit one before printing a whole enclosure. These are the same figures the app uses when it sizes an insert hole for you.",
+  "variant": "M5 x 9.5",
+  "manufacturer": "CNC Kitchen",
+  "summary": "Brass insert melted into a printed part. Needs a 6.5 mm hole at least 10.5 mm deep.",
+  "confidence": "datasheet",
+  "source": "CNC Kitchen metric insert table: M5 x 9.5 is 9.5 mm long and 7.1 mm across the knurl, wants a 6.5 mm hole at least 10.5 mm deep and at least 2.6 mm of plastic around the hole. Other brands of the same nominal size differ by a few tenths, so test-fit one before printing a whole enclosure.",
   "geometry": {
     "kind": "insert",
     "thread": "M5",
-    "outerDiameter": 6.4,
+    "outerDiameter": 7.1,
     "length": 9.5,
-    "pilotDiameter": 5.8
+    "pilotDiameter": 6.5
   },
+  "links": [
+    {
+      "label": "Product page",
+      "url": "https://cnckitchen.store/products/heat-set-insert-m5-x-9-5-50-pieces"
+    },
+    {
+      "label": "Dimension table",
+      "url": "https://cdn.shopify.com/s/files/1/0654/4821/4767/files/table_metric.png"
+    }
+  ],
   "tags": [
     "m5",
     "insert",
     "heatset",
     "threaded",
     "brass",
-    "fastener"
+    "fastener",
+    "cnc kitchen"
   ]
 }

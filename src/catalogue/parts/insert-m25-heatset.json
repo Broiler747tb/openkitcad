@@ -1,26 +1,38 @@
 {
   "id": "insert-m25-heatset",
-  "name": "M2.5 heat-set insert",
+  "name": "M2.5 heat-set insert (CNC Kitchen M2.5 x 4)",
   "category": "fastener",
   "popularity": 71,
   "family": "heat-set-insert",
-  "variant": "M2.5",
-  "summary": "Brass insert melted into a printed part. Needs a 3.6 mm pilot hole.",
-  "confidence": "approximate",
-  "source": "Matches the commonly sold knurled insert in this size. Insert dimensions vary noticeably between suppliers - check yours, and always test-fit one before printing a whole enclosure. These are the same figures the app uses when it sizes an insert hole for you.",
+  "variant": "M2.5 x 4",
+  "manufacturer": "CNC Kitchen",
+  "summary": "Brass insert melted into a printed part. Needs a 4 mm hole at least 5 mm deep.",
+  "confidence": "datasheet",
+  "source": "CNC Kitchen metric insert table: M2.5 x 4 is 4 mm long and 4.6 mm across the knurl, wants a 4 mm hole at least 5 mm deep and at least 1.6 mm of plastic around the hole. Other brands of the same nominal size differ by a few tenths, so test-fit one before printing a whole enclosure.",
   "geometry": {
     "kind": "insert",
     "thread": "M2.5",
-    "outerDiameter": 4.0,
-    "length": 4.6,
-    "pilotDiameter": 3.6
+    "outerDiameter": 4.6,
+    "length": 4.0,
+    "pilotDiameter": 4.0
   },
+  "links": [
+    {
+      "label": "Product page",
+      "url": "https://cnckitchen.store/products/gewindeeinsatz-threaded-insert-m2-5-standard-100-stk-pcs"
+    },
+    {
+      "label": "Dimension table",
+      "url": "https://cdn.shopify.com/s/files/1/0654/4821/4767/files/table_metric.png"
+    }
+  ],
   "tags": [
-    "m25",
+    "m2.5",
     "insert",
     "heatset",
     "threaded",
     "brass",
-    "fastener"
+    "fastener",
+    "cnc kitchen"
   ]
 }

@@ -1,0 +1,38 @@
+{
+  "id": "insert-m3-heatset-short",
+  "name": "M3 short heat-set insert (CNC Kitchen M3 x 3)",
+  "category": "fastener",
+  "popularity": 64,
+  "family": "heat-set-insert",
+  "variant": "M3 x 3, short",
+  "manufacturer": "CNC Kitchen",
+  "summary": "Brass insert melted into a printed part. Needs a 4 mm hole at least 4 mm deep.",
+  "confidence": "datasheet",
+  "source": "CNC Kitchen metric insert table: M3 x 3 is 3 mm long and 4.6 mm across the knurl, wants a 4 mm hole at least 4 mm deep and at least 1.6 mm of plastic around the hole. The short version is for thin walls and lids. Other brands of the same nominal size differ by a few tenths, so test-fit one before printing a whole enclosure.",
+  "geometry": {
+    "kind": "insert",
+    "thread": "M3",
+    "outerDiameter": 4.6,
+    "length": 3.0,
+    "pilotDiameter": 4.0
+  },
+  "links": [
+    {
+      "label": "Product page",
+      "url": "https://cnckitchen.store/products/heat-set-insert-m3-x-3-short-version-100-pieces"
+    },
+    {
+      "label": "Dimension table",
+      "url": "https://cdn.shopify.com/s/files/1/0654/4821/4767/files/table_metric.png"
+    }
+  ],
+  "tags": [
+    "m3",
+    "insert",
+    "heatset",
+    "threaded",
+    "brass",
+    "fastener",
+    "cnc kitchen"
+  ]
+}
