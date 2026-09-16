@@ -1,10 +1,12 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
+import './theme/tokens.css'
 import './styles.css'
 import './workspace.css'
 import './fusion.css'
 import './android.css'
+import './ui/command/command.css'
 import type { TestResult } from './dev/selftest'
 
 const root = createRoot(document.getElementById('root')!)
@@ -27,6 +29,7 @@ if (params.has('selftest') || params.has('kerneltest')) {
       ['precision', async () => (await import('./dev/precisiontest')).runPrecisionTest()],
       ['workshop', async () => (await import('./dev/powertest')).runPowerTest()],
       ['parameters', async () => (await import('./dev/parametertest')).runParameterTest()],
+      ['commands', async () => (await import('./dev/commandtest')).runCommandTest()],
     )
   }
   suites.push(

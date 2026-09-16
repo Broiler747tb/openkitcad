@@ -3,6 +3,8 @@ import { useStore } from '../doc/store'
 import { FEATURE_HINT, FEATURE_ICON, FEATURE_LABEL } from '../doc/types'
 import { findComponent, markerIndex } from '../doc/model'
 import { GridSettings } from './PrecisionTools'
+import { editFeature } from './command/commands'
+import { offerPick, sketchPick } from './command/picks'
 
 export function Timeline({ onEdit }: { onEdit: () => void }) {
   const state = useStore()
@@ -17,7 +19,7 @@ export function Timeline({ onEdit }: { onEdit: () => void }) {
   function edit() {
     if (!selected) return
     if (selected.kind === 'sketch') state.openSketch(selected.id)
-    else onEdit()
+    else if (!editFeature(selected)) onEdit()
   }
   const markerSlot = (
     <span
@@ -67,11 +69,14 @@ export function Timeline({ onEdit }: { onEdit: () => void }) {
                   aria-label={`${where}${f.name || FEATURE_LABEL[f.kind]} ${i + 1}`}
                   aria-pressed={state.selection.id === f.id}
                   title={`${where}${f.name || FEATURE_LABEL[f.kind]} (${FEATURE_LABEL[f.kind]})${f.suppressed ? ' · suppressed' : ''}${rolledBack ? ' · rolled back' : ''}${failed.has(f.id) ? ' · failed' : ''}\n${FEATURE_HINT[f.kind]}\nDouble-click to edit`}
-                  onClick={() => state.select({ kind: 'feature', id: f.id })}
+                  onClick={() => {
+                    if (offerPick(sketchPick(doc, f.id))) return
+                    state.select({ kind: 'feature', id: f.id })
+                  }}
                   onDoubleClick={() => {
                     state.select({ kind: 'feature', id: f.id })
                     if (f.kind === 'sketch') state.openSketch(f.id)
-                    else onEdit()
+                    else if (!editFeature(f)) onEdit()
                   }}
                 >
                   <span>{FEATURE_ICON[f.kind]}</span>

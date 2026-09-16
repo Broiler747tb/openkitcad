@@ -868,9 +868,12 @@ export function emptySnapshot(key: string): Snapshot {
   }
 }
 
+export type ToolCapture = (shape: any, kind: 'cut' | 'intersect', owned: boolean) => void
+
 export interface FeatureContext {
   doc: OkcDocument
   available: (featureId: string) => boolean
+  capture?: ToolCapture
 }
 
 interface Stage {
@@ -985,6 +988,7 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
     set(id, operation(oc, { featureId: feature.id, target: namedOf(target), tools }))
   }
   const cutWith = (id: string, target: BodyState, solid: any, role: string) => {
+    ctx.capture?.(solid.clone(), 'cut', true)
     const shaped = tool(solid, role)
     try {
       combineInto(id, target, 'cut', [shaped])
@@ -998,6 +1002,9 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
       return
     }
     try {
+      if (result.kind !== 'join') {
+        ctx.capture?.(cast(solid.shape), result.kind === 'cut' ? 'cut' : 'intersect', true)
+      }
       if (result.kind === 'join') {
         const target = need(result.bodyId)
         if (target) combineInto(result.bodyId, target, 'fuse', [solid])
@@ -1356,6 +1363,11 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
         .filter((id) => id !== feature.bodyId)
         .map((id) => [id, need(id)] as const)
       if (!tools.length || tools.some(([, tool]) => !tool)) return
+      if (feature.operation !== 'join') {
+        for (const [, state] of tools) {
+          ctx.capture?.(state!.shape, feature.operation === 'cut' ? 'cut' : 'intersect', false)
+        }
+      }
       combineInto(
         feature.bodyId,
         target,

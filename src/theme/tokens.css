@@ -1,0 +1,281 @@
+:root {
+  --okc-font-ui:
+    'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --okc-font-mono: ui-monospace, 'Cascadia Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  --okc-font-size-xs: 10px;
+  --okc-font-size-sm: 11px;
+  --okc-font-size-md: 12px;
+  --okc-font-size-lg: 13px;
+  --okc-font-size-xl: 15px;
+  --okc-font-size-title: 11px;
+  --okc-font-weight-regular: 400;
+  --okc-font-weight-medium: 500;
+  --okc-font-weight-bold: 600;
+  --okc-line-height: 1.4;
+
+  --okc-radius-xs: 2px;
+  --okc-radius-sm: 3px;
+  --okc-radius-md: 5px;
+  --okc-radius-lg: 8px;
+  --okc-radius-pill: 999px;
+
+  --okc-space-1: 2px;
+  --okc-space-2: 4px;
+  --okc-space-3: 6px;
+  --okc-space-4: 8px;
+  --okc-space-5: 12px;
+  --okc-space-6: 16px;
+
+  --okc-control-height: 24px;
+  --okc-row-height: 30px;
+  --okc-panel-width: 300px;
+
+  --okc-z-cube: 20;
+  --okc-z-hud: 30;
+  --okc-z-panel: 40;
+  --okc-z-menu: 60;
+
+  --okc-motion-fast: 90ms;
+  --okc-motion-medium: 160ms;
+  --okc-ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+
+  --okc-surface-app: #eceff2;
+  --okc-surface-canvas-top: #f8fafc;
+  --okc-surface-canvas-bottom: #d9e0e7;
+  --okc-surface-panel: #ffffff;
+  --okc-surface-panel-raised: #fbfcfd;
+  --okc-surface-header: #f0f3f6;
+  --okc-surface-sunken: #f5f7f9;
+  --okc-surface-toolbar: #f3f5f7;
+  --okc-surface-overlay: rgba(255, 255, 255, 0.94);
+  --okc-surface-tooltip: #27313a;
+  --okc-surface-scrim: rgba(20, 28, 36, 0.28);
+
+  --okc-text: #1d2831;
+  --okc-text-muted: #52606c;
+  --okc-text-faint: #84919c;
+  --okc-text-disabled: #a9b3bc;
+  --okc-text-on-accent: #ffffff;
+  --okc-text-on-tooltip: #f2f5f7;
+  --okc-text-link: #1466ad;
+
+  --okc-line: #cdd5dc;
+  --okc-line-strong: #a7b2bc;
+  --okc-line-soft: #e3e8ec;
+  --okc-focus-ring: rgba(22, 118, 197, 0.45);
+
+  --okc-accent: #1676c5;
+  --okc-accent-hover: #1369b1;
+  --okc-accent-active: #0f5a99;
+  --okc-accent-soft: rgba(22, 118, 197, 0.12);
+  --okc-accent-line: rgba(22, 118, 197, 0.5);
+  --okc-accent-text: #1466ad;
+
+  --okc-selection: #1a86e0;
+  --okc-selection-soft: rgba(26, 134, 224, 0.22);
+  --okc-hover: rgba(22, 118, 197, 0.08);
+  --okc-hover-strong: rgba(22, 118, 197, 0.16);
+  --okc-prehighlight: #5aaef0;
+
+  --okc-preview: #2f8fdc;
+  --okc-preview-soft: rgba(47, 143, 220, 0.28);
+  --okc-preview-cut: #d4473d;
+  --okc-preview-cut-soft: rgba(212, 71, 61, 0.26);
+
+  --okc-error: #c7372c;
+  --okc-error-soft: rgba(199, 55, 44, 0.1);
+  --okc-warning: #a86400;
+  --okc-warning-soft: rgba(230, 150, 20, 0.14);
+  --okc-success: #2b7f3d;
+  --okc-success-soft: rgba(43, 127, 61, 0.12);
+
+  --okc-sketch-constrained: #151d25;
+  --okc-sketch-free: #1676c5;
+  --okc-sketch-construction: #cf7520;
+  --okc-sketch-overconstrained: #c7372c;
+  --okc-sketch-dimension: #3a4650;
+  --okc-sketch-point: #1d2831;
+  --okc-sketch-profile: rgba(242, 176, 58, 0.28);
+
+  --okc-grid-minor: rgba(60, 80, 100, 0.12);
+  --okc-grid-major: rgba(60, 80, 100, 0.26);
+  --okc-axis-x: #d6433a;
+  --okc-axis-y: #3c9739;
+  --okc-axis-z: #2f6fd0;
+
+  --okc-cube-face: #f2f4f6;
+  --okc-cube-face-hover: #d3e6f7;
+  --okc-cube-face-active: #b8d7f1;
+  --okc-cube-border: #98a5b0;
+  --okc-cube-text: #394550;
+  --okc-cube-shade: #0b1a28;
+
+  --okc-shadow-sm: 0 1px 2px rgba(16, 24, 32, 0.12);
+  --okc-shadow-md: 0 4px 14px rgba(16, 24, 32, 0.16), 0 1px 3px rgba(16, 24, 32, 0.1);
+  --okc-shadow-lg: 0 12px 36px rgba(16, 24, 32, 0.22), 0 2px 6px rgba(16, 24, 32, 0.12);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --okc-surface-app: #1b1e22;
+  --okc-surface-canvas-top: #2d3238;
+  --okc-surface-canvas-bottom: #15181b;
+  --okc-surface-panel: #25292e;
+  --okc-surface-panel-raised: #2b3036;
+  --okc-surface-header: #2f343a;
+  --okc-surface-sunken: #1c1f23;
+  --okc-surface-toolbar: #23272b;
+  --okc-surface-overlay: rgba(37, 41, 46, 0.95);
+  --okc-surface-tooltip: #e8ecef;
+  --okc-surface-scrim: rgba(0, 0, 0, 0.45);
+
+  --okc-text: #e5e9ed;
+  --okc-text-muted: #a6b0b9;
+  --okc-text-faint: #78838d;
+  --okc-text-disabled: #58616a;
+  --okc-text-on-accent: #ffffff;
+  --okc-text-on-tooltip: #1a2025;
+  --okc-text-link: #6cb4f0;
+
+  --okc-line: #3a4148;
+  --okc-line-strong: #545d66;
+  --okc-line-soft: #2e3439;
+  --okc-focus-ring: rgba(80, 160, 230, 0.55);
+
+  --okc-accent: #2f86d4;
+  --okc-accent-hover: #4396de;
+  --okc-accent-active: #2475bd;
+  --okc-accent-soft: rgba(58, 143, 217, 0.18);
+  --okc-accent-line: rgba(58, 143, 217, 0.6);
+  --okc-accent-text: #7dbdf2;
+
+  --okc-selection: #4aa3ec;
+  --okc-selection-soft: rgba(74, 163, 236, 0.3);
+  --okc-hover: rgba(255, 255, 255, 0.06);
+  --okc-hover-strong: rgba(255, 255, 255, 0.11);
+  --okc-prehighlight: #7cc0f5;
+
+  --okc-preview: #52a8ee;
+  --okc-preview-soft: rgba(82, 168, 238, 0.32);
+  --okc-preview-cut: #ef6a5f;
+  --okc-preview-cut-soft: rgba(239, 106, 95, 0.3);
+
+  --okc-error: #f07266;
+  --okc-error-soft: rgba(239, 106, 95, 0.16);
+  --okc-warning: #e7a94a;
+  --okc-warning-soft: rgba(231, 169, 74, 0.16);
+  --okc-success: #66c078;
+  --okc-success-soft: rgba(98, 189, 116, 0.16);
+
+  --okc-sketch-constrained: #eef2f5;
+  --okc-sketch-free: #5aacef;
+  --okc-sketch-construction: #eb9a4a;
+  --okc-sketch-overconstrained: #f07266;
+  --okc-sketch-dimension: #c3ccd4;
+  --okc-sketch-point: #e5e9ed;
+  --okc-sketch-profile: rgba(240, 180, 70, 0.22);
+
+  --okc-grid-minor: rgba(200, 215, 230, 0.08);
+  --okc-grid-major: rgba(200, 215, 230, 0.18);
+  --okc-axis-x: #ef6a5f;
+  --okc-axis-y: #6cc46a;
+  --okc-axis-z: #5a9bf0;
+
+  --okc-cube-face: #363c43;
+  --okc-cube-face-hover: #2f4f6c;
+  --okc-cube-face-active: #2d5f8c;
+  --okc-cube-border: #5a646e;
+  --okc-cube-text: #d3dae0;
+  --okc-cube-shade: #000000;
+
+  --okc-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --okc-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.35);
+  --okc-shadow-lg: 0 14px 40px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+
+    --okc-surface-app: #1b1e22;
+    --okc-surface-canvas-top: #2d3238;
+    --okc-surface-canvas-bottom: #15181b;
+    --okc-surface-panel: #25292e;
+    --okc-surface-panel-raised: #2b3036;
+    --okc-surface-header: #2f343a;
+    --okc-surface-sunken: #1c1f23;
+    --okc-surface-toolbar: #23272b;
+    --okc-surface-overlay: rgba(37, 41, 46, 0.95);
+    --okc-surface-tooltip: #e8ecef;
+    --okc-surface-scrim: rgba(0, 0, 0, 0.45);
+
+    --okc-text: #e5e9ed;
+    --okc-text-muted: #a6b0b9;
+    --okc-text-faint: #78838d;
+    --okc-text-disabled: #58616a;
+    --okc-text-on-accent: #ffffff;
+    --okc-text-on-tooltip: #1a2025;
+    --okc-text-link: #6cb4f0;
+
+    --okc-line: #3a4148;
+    --okc-line-strong: #545d66;
+    --okc-line-soft: #2e3439;
+    --okc-focus-ring: rgba(80, 160, 230, 0.55);
+
+    --okc-accent: #2f86d4;
+    --okc-accent-hover: #4396de;
+    --okc-accent-active: #2475bd;
+    --okc-accent-soft: rgba(58, 143, 217, 0.18);
+    --okc-accent-line: rgba(58, 143, 217, 0.6);
+    --okc-accent-text: #7dbdf2;
+
+    --okc-selection: #4aa3ec;
+    --okc-selection-soft: rgba(74, 163, 236, 0.3);
+    --okc-hover: rgba(255, 255, 255, 0.06);
+    --okc-hover-strong: rgba(255, 255, 255, 0.11);
+    --okc-prehighlight: #7cc0f5;
+
+    --okc-preview: #52a8ee;
+    --okc-preview-soft: rgba(82, 168, 238, 0.32);
+    --okc-preview-cut: #ef6a5f;
+    --okc-preview-cut-soft: rgba(239, 106, 95, 0.3);
+
+    --okc-error: #f07266;
+    --okc-error-soft: rgba(239, 106, 95, 0.16);
+    --okc-warning: #e7a94a;
+    --okc-warning-soft: rgba(231, 169, 74, 0.16);
+    --okc-success: #66c078;
+    --okc-success-soft: rgba(98, 189, 116, 0.16);
+
+    --okc-sketch-constrained: #eef2f5;
+    --okc-sketch-free: #5aacef;
+    --okc-sketch-construction: #eb9a4a;
+    --okc-sketch-overconstrained: #f07266;
+    --okc-sketch-dimension: #c3ccd4;
+    --okc-sketch-point: #e5e9ed;
+    --okc-sketch-profile: rgba(240, 180, 70, 0.22);
+
+    --okc-grid-minor: rgba(200, 215, 230, 0.08);
+    --okc-grid-major: rgba(200, 215, 230, 0.18);
+    --okc-axis-x: #ef6a5f;
+    --okc-axis-y: #6cc46a;
+    --okc-axis-z: #5a9bf0;
+
+    --okc-cube-face: #363c43;
+    --okc-cube-face-hover: #2f4f6c;
+    --okc-cube-face-active: #2d5f8c;
+    --okc-cube-border: #5a646e;
+    --okc-cube-text: #d3dae0;
+    --okc-cube-shade: #000000;
+
+    --okc-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --okc-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.35);
+    --okc-shadow-lg: 0 14px 40px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.4);
+  }
+}

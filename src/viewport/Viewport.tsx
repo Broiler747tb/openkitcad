@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ViewportEngine, type ScreenLabel } from './engine'
+import { elementKey, ViewportEngine, type ScreenLabel, type SubPick } from './engine'
+import { CommandHost } from '../ui/command/CommandHost'
+import { useCommand } from '../ui/command/session'
+import { acceptedKinds, bodyPick, commandPicks, elementPick, offerPick } from '../ui/command/picks'
 import {
   activeSketchFeature,
   bodyInstance,
@@ -55,6 +58,7 @@ const HOLD_SLOP_PX = 12
 const round = (n: number) => Math.round(n * 1000) / 1000
 
 const NEGATIVE_COLOUR = '#4a5560'
+const PREVIEW_CUT_COLOUR = '#d4473d'
 
 interface DimensionPrompt {
   x: number
@@ -256,8 +260,16 @@ export function Viewport() {
   }, [prompt])
   const [, forceRender] = useState(0)
 
-  const instances = useStore((s) => s.instances)
-  const meshes = useStore((s) => s.meshes)
+  const committedInstances = useStore((s) => s.instances)
+  const committedMeshes = useStore((s) => s.meshes)
+  const commandPreview = useCommand((s) => s.preview)
+  const commandSession = useCommand((s) => s.session)
+  const instances = commandPreview?.instances ?? committedInstances
+  const meshes = useMemo(
+    () =>
+      commandPreview ? new Map([...committedMeshes, ...commandPreview.meshes]) : committedMeshes,
+    [committedMeshes, commandPreview],
+  )
   const showPlacements = useStore((s) => s.showPlacements)
   const hovered = useStore((s) => s.hovered)
   const selection = useStore((s) => s.selection)
@@ -383,6 +395,7 @@ export function Viewport() {
     const engine = engineRef.current
     if (!engine) return
     const colourOf = (instance: Instance) => {
+      if (instance.previewTool) return PREVIEW_CUT_COLOUR
       if (instance.negative) return NEGATIVE_COLOUR
       if (instance.kind === 'catalogue') {
         const component = findComponent(doc, instance.componentId)
@@ -470,8 +483,26 @@ export function Viewport() {
   }, [hovered, selection])
 
   useEffect(() => {
-    engineRef.current?.setSubHighlight(activeSketch ? [] : subSelection)
-  }, [subSelection, activeSketch, instances])
+    const picks: SubPick[] = commandSession
+      ? commandPicks().flatMap((pick) => {
+          const ref = pick.face ?? pick.edge
+          const instance =
+            pick.instanceId ?? instances.find((candidate) => candidate.bodyId === ref?.bodyId)?.id
+          if (!ref || !instance) return []
+          return [
+            {
+              instanceId: instance,
+              bodyId: ref.bodyId,
+              kind: ref.kind,
+              id: elementKey(ref.kind === 'face' ? 'f' : 'e', ref.name, -1),
+              name: ref.name,
+              point: [0, 0, 0],
+            },
+          ]
+        })
+      : subSelection
+    engineRef.current?.setSubHighlight(activeSketch ? [] : picks)
+  }, [subSelection, activeSketch, instances, commandSession])
 
   useEffect(() => {
     engineRef.current?.setSection(section.enabled, section.axis, section.position, section.flipped)
@@ -891,6 +922,34 @@ export function Viewport() {
     if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > CLICK_SLOP_PX) return
 
     const store = useStore.getState()
+    if (useCommand.getState().session) {
+      const filter = acceptedKinds()
+      if (filter.has('edge') || filter.has('face')) {
+        const sub = engine.pickSub(e.clientX, e.clientY)
+        const kind = sub?.kind === 'edge' && filter.has('edge') ? 'edge' : 'face'
+        const face = kind === 'face' ? engine.pick(e.clientX, e.clientY) : null
+        const picked =
+          kind === 'edge' && sub
+            ? elementPick(
+                store.doc,
+                { bodyId: sub.bodyId, kind: 'edge', name: sub.name },
+                sub.instanceId,
+              )
+            : face && face.kind === 'body' && filter.has('face')
+              ? elementPick(
+                  store.doc,
+                  { bodyId: face.bodyId, kind: 'face', name: face.faceName },
+                  face.instanceId,
+                )
+              : null
+        if (offerPick(picked)) return
+      }
+      if (filter.has('body')) {
+        const hit = engine.pick(e.clientX, e.clientY)
+        if (hit?.kind === 'body') offerPick(bodyPick(store.doc, hit.bodyId, hit.instanceId))
+      }
+      return
+    }
     const hit = engine.pick(e.clientX, e.clientY)
 
     if (store.tool === 'measure') {
@@ -1081,6 +1140,7 @@ export function Viewport() {
 
   return (
     <div className="viewport">
+      <CommandHost />
       <div
         ref={mountRef}
         className="viewport-canvas"

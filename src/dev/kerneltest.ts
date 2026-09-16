@@ -1,6 +1,7 @@
 import * as Comlink from 'comlink'
 import type {
   Body,
+  BodyOperation,
   Component,
   Feature,
   LidFit,
@@ -97,7 +98,7 @@ function boxFeature(
   bodyId: string,
   origin: [number, number],
   size: [number, number, number],
-  extra: { componentId?: string; plane?: PlaneRef; name?: string } = {},
+  extra: { componentId?: string; plane?: PlaneRef; name?: string; result?: BodyOperation } = {},
 ): Feature {
   return {
     id,
@@ -109,7 +110,7 @@ function boxFeature(
     width: size[0],
     depth: size[1],
     height: size[2],
-    result: { kind: 'newBody', bodyId },
+    result: extra.result ?? { kind: 'newBody', bodyId },
   }
 }
 
@@ -1353,6 +1354,74 @@ export async function runKernelTest(): Promise<TestResult[]> {
         'hollowing through a face a fillet blends into says why it failed',
         !!blendError && blendError.message.includes('rounded edge'),
         blendError?.message ?? errorText(blended) ?? 'no error',
+      )
+    }
+
+    {
+      const block = makeDocument(
+        'preview',
+        [body('b', 'Block')],
+        [boxFeature('bx', 'b', [0, 0], [40, 30, 20])],
+      )
+      const cutter = boxFeature('cx', 'b', [10, 10], [10, 10, 30], {
+        plane: { kind: 'named', name: 'XY', offset: -5 },
+        result: { kind: 'cut', bodyIds: ['b'] },
+      })
+      const first = await kernel.preview({ doc: block, features: [cutter], insertAt: 1 }, [])
+      const second = await kernel.preview({ doc: block, features: [cutter], insertAt: 1 }, [])
+      const toolsOf = (r: EvaluateResult) => r.instances.filter((i) => i.previewTool === 'cut')
+      const cutVolume = meshFor(first, 'root|b')?.volume ?? 0
+      add(
+        'a cut preview shows the cut body and the tool that cuts it',
+        first.errors.length === 0 &&
+          Math.abs(cutVolume - (24000 - 2000)) < 0.5 &&
+          toolsOf(first).length === 1 &&
+          first.meshes.some((mesh) => mesh.key === toolsOf(first)[0].meshKey),
+        `${cutVolume.toFixed(1)} mm3, ${toolsOf(first).length} tool(s)` +
+          (first.errors.length ? ` (${errorText(first)})` : ''),
+      )
+      add(
+        'previewing the same step twice still shows its tool',
+        toolsOf(second).length === 1 && second.instances.every((i) => i.preview),
+        `${toolsOf(second).length} tool(s)`,
+      )
+      const committed = await evaluate(block)
+      add(
+        'a preview does not change the next build',
+        Math.abs((meshFor(committed, 'root|b')?.volume ?? 0) - 24000) < 0.5 &&
+          committed.instances.every((i) => !i.preview && !i.previewTool),
+        `${meshFor(committed, 'root|b')?.volume.toFixed(1)} mm3`,
+      )
+      const rounded = makeDocument(
+        'edit preview',
+        [body('b', 'Block')],
+        [
+          boxFeature('bx', 'b', [0, 0], [40, 30, 20]),
+          {
+            id: 'fl',
+            name: 'Round',
+            componentId: 'root',
+            kind: 'fillet',
+            bodyId: 'b',
+            radius: 1,
+            edges: [],
+          },
+        ],
+      )
+      const edited = await kernel.preview(
+        {
+          doc: rounded,
+          features: [boxFeature('bx', 'b', [0, 0], [40, 30, 30])],
+          insertAt: 0,
+          replaceFeatureId: 'bx',
+        },
+        [],
+      )
+      add(
+        'editing a step previews it with the steps after it rolled back',
+        edited.errors.length === 0 &&
+          Math.abs((meshFor(edited, 'root|b')?.volume ?? 0) - 36000) < 0.5,
+        `${meshFor(edited, 'root|b')?.volume.toFixed(1)} mm3, expected 36000 with no rounding`,
       )
     }
   } catch (e) {

@@ -31,6 +31,7 @@ import {
   externalInputs,
   transformShape,
   type Snapshot,
+  type ToolCapture,
 } from './build'
 import {
   cut as namedCut,
@@ -73,6 +74,7 @@ function ensureOC(): Promise<void> {
 const MESH_TOLERANCE = 0.02
 const MESH_ANGULAR_TOLERANCE = 12
 const NEGATIVE_COLOUR = '#4a5560'
+const PREVIEW_CUT_COLOUR = '#d4473d'
 const SNAPSHOT_CAP = 128
 const TESSELLATION_CAP = 256
 const PART_CAP = 64
@@ -463,7 +465,21 @@ interface Pipeline {
   evictedOwners: MapOwner[]
 }
 
-function run(doc: OkcDocument, knownMeshKeys: string[], preview: boolean): Pipeline {
+interface CapturedTool {
+  featureId: string
+  componentId: string
+  key: string
+  shape: any
+  kind: 'cut' | 'intersect'
+  owned: boolean
+}
+
+function run(
+  doc: OkcDocument,
+  knownMeshKeys: string[],
+  preview: boolean,
+  pending: ReadonlySet<string> = new Set(),
+): Pipeline {
   const t0 = performance.now()
   setCustomParts(doc.customParts ?? [])
 
@@ -477,8 +493,9 @@ function run(doc: OkcDocument, knownMeshKeys: string[], preview: boolean): Pipel
     keys.push(chain)
   }
 
+  const firstPending = features.findIndex((feature) => pending.has(feature.id))
   let start = -1
-  for (let i = keys.length - 1; i >= 0; i--) {
+  for (let i = (firstPending >= 0 ? firstPending : keys.length) - 1; i >= 0; i--) {
     if (snapshots.has(keys[i])) {
       start = i
       break
@@ -486,11 +503,24 @@ function run(doc: OkcDocument, knownMeshKeys: string[], preview: boolean): Pipel
   }
   let snapshot = start >= 0 ? snapshots.get(keys[start])! : emptySnapshot(rootKey)
   let misses = 0
+  const tools: CapturedTool[] = []
   for (let i = start + 1; i < features.length; i++) {
     const index = i
+    const feature = features[i]
+    const capture: ToolCapture | undefined = pending.has(feature.id)
+      ? (shape, kind, owned) =>
+          tools.push({
+            featureId: feature.id,
+            componentId: feature.componentId,
+            key: hash('tool', keys[index], String(tools.length)),
+            shape,
+            kind,
+            owned,
+          })
+      : undefined
     snapshot = evaluateFeature(
-      { doc, available: (id) => (position.get(id) ?? Infinity) < index },
-      features[i],
+      { doc, available: (id) => (position.get(id) ?? Infinity) < index, capture },
+      feature,
       keys[i],
       snapshot,
     )
@@ -604,25 +634,11 @@ function run(doc: OkcDocument, knownMeshKeys: string[], preview: boolean): Pipel
   const broken = new Set<string>()
   const meshes: BodyMesh[] = []
   const transfer: Transferable[] = []
-  for (const entry of built.values()) {
-    const key = entry.instance.meshKey
-    if (known.has(key) || sent.has(key) || broken.has(key)) continue
-    let tessellation = tessellations.get(key)
-    if (!tessellation) {
-      try {
-        tessellation = tessellate(entry.local, entry.map, entry.references)
-        tessellations.set(key, tessellation)
-      } catch (e) {
-        broken.add(key)
-        errors.push({
-          featureId: entry.featureId,
-          bodyId: entry.instance.bodyId,
-          severity: 'error',
-          message: `Built, but could not be displayed: ${(e as Error)?.message}`,
-        })
-        continue
-      }
-    }
+  const send = (
+    key: string,
+    tessellation: Tessellation,
+    owner: { bodyId: string; componentId: string; name: string; colour: string },
+  ) => {
     sent.add(key)
     const mesh: MeshData = {
       vertices: tessellation.mesh.vertices.slice(),
@@ -642,14 +658,37 @@ function run(doc: OkcDocument, knownMeshKeys: string[], preview: boolean): Pipel
     )
     meshes.push({
       key,
-      bodyId: entry.instance.bodyId,
-      componentId: entry.instance.componentId,
-      name: entry.name,
-      colour: entry.colour,
+      ...owner,
       mesh,
       edges,
       volume: tessellation.volume,
       bounds: [...tessellation.bounds],
+    })
+  }
+  for (const entry of built.values()) {
+    const key = entry.instance.meshKey
+    if (known.has(key) || sent.has(key) || broken.has(key)) continue
+    let tessellation = tessellations.get(key)
+    if (!tessellation) {
+      try {
+        tessellation = tessellate(entry.local, entry.map, entry.references)
+        tessellations.set(key, tessellation)
+      } catch (e) {
+        broken.add(key)
+        errors.push({
+          featureId: entry.featureId,
+          bodyId: entry.instance.bodyId,
+          severity: 'error',
+          message: `Built, but could not be displayed: ${(e as Error)?.message}`,
+        })
+        continue
+      }
+    }
+    send(key, tessellation, {
+      bodyId: entry.instance.bodyId,
+      componentId: entry.instance.componentId,
+      name: entry.name,
+      colour: entry.colour,
     })
   }
 
@@ -660,6 +699,46 @@ function run(doc: OkcDocument, knownMeshKeys: string[], preview: boolean): Pipel
       continue
     }
     instances.push(preview ? { ...entry.instance, preview: true } : { ...entry.instance })
+  }
+
+  try {
+    tools.forEach((tool, index) => {
+      let tessellation = tessellations.get(tool.key)
+      if (!tessellation) {
+        try {
+          tessellation = tessellate(tool.shape)
+        } catch {
+          return
+        }
+        tessellations.set(tool.key, tessellation)
+      }
+      if (!known.has(tool.key) && !sent.has(tool.key)) {
+        send(tool.key, tessellation, {
+          bodyId: tool.featureId,
+          componentId: tool.componentId,
+          name: tool.kind,
+          colour: PREVIEW_CUT_COLOUR,
+        })
+      }
+      for (const node of expandInstances(doc)) {
+        if (node.componentId !== tool.componentId) continue
+        instances.push({
+          id: `${instanceId(node.path, tool.featureId)}~tool${index}`,
+          kind: 'body',
+          path: node.path,
+          componentId: tool.componentId,
+          bodyId: tool.featureId,
+          meshKey: tool.key,
+          matrix: node.matrix,
+          visible: node.visible,
+          negative: false,
+          preview: true,
+          previewTool: tool.kind,
+        })
+      }
+    })
+  } finally {
+    for (const tool of tools) if (tool.owned) tool.shape.delete()
   }
 
   const evictedSnapshots = snapshots.evict()
@@ -805,7 +884,12 @@ const api: KernelApi = {
     doc.marker = null
     doc.groups = []
     resolveParameters(doc, true)
-    const out = run(doc, knownMeshKeys, true)
+    const out = run(
+      doc,
+      knownMeshKeys,
+      true,
+      new Set(request.features.map((feature) => feature.id)),
+    )
     release([...out.evicted, ...liveShapes(out.live)], [...out.evictedOwners, ...out.live.values()])
     return Comlink.transfer(out.result, out.transfer)
   },

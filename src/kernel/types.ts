@@ -38,6 +38,7 @@ export interface Instance {
   visible: boolean
   negative: boolean
   preview?: boolean
+  previewTool?: 'cut' | 'intersect'
 }
 
 export interface KernelError {

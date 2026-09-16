@@ -1,0 +1,377 @@
+.okc-cmd {
+  position: absolute;
+  top: var(--okc-space-5);
+  right: var(--okc-space-5);
+  z-index: var(--okc-z-panel);
+  width: var(--okc-panel-width);
+  max-width: calc(100% - 2 * var(--okc-space-5));
+  display: flex;
+  flex-direction: column;
+  background: var(--okc-surface-panel);
+  color: var(--okc-text);
+  border: 1px solid var(--okc-line);
+  border-radius: var(--okc-radius-md);
+  box-shadow: var(--okc-shadow-md);
+  font: var(--okc-font-size-md) / var(--okc-line-height) var(--okc-font-ui);
+  overflow: hidden;
+  user-select: none;
+}
+
+.okc-cmd-title {
+  display: flex;
+  align-items: center;
+  gap: var(--okc-space-3);
+  height: 30px;
+  padding: 0 var(--okc-space-2) 0 var(--okc-space-5);
+  background: var(--okc-surface-header);
+  border-bottom: 1px solid var(--okc-line-soft);
+  border-top: 2px solid var(--okc-accent);
+  cursor: grab;
+  touch-action: none;
+}
+
+.okc-cmd-title:active {
+  cursor: grabbing;
+}
+
+.okc-cmd[data-collapsed='true'] .okc-cmd-title {
+  border-bottom-color: transparent;
+}
+
+.okc-cmd-icon {
+  color: var(--okc-accent);
+  font-size: var(--okc-font-size-lg);
+}
+
+.okc-cmd-name {
+  flex: 1;
+  font-size: var(--okc-font-size-title);
+  font-weight: var(--okc-font-weight-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.okc-cmd-collapse {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: var(--okc-radius-sm);
+  background: transparent;
+  color: var(--okc-text-muted);
+  cursor: pointer;
+}
+
+.okc-cmd-collapse:hover {
+  background: var(--okc-hover-strong);
+  color: var(--okc-text);
+}
+
+.okc-cmd-hint {
+  margin: 0;
+  padding: var(--okc-space-3) var(--okc-space-5);
+  font-size: var(--okc-font-size-sm);
+  color: var(--okc-text-muted);
+  border-bottom: 1px solid var(--okc-line-soft);
+  user-select: text;
+}
+
+.okc-cmd-body {
+  display: flex;
+  flex-direction: column;
+  padding: var(--okc-space-3) var(--okc-space-5);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.okc-cmd-row {
+  display: grid;
+  grid-template-columns: minmax(84px, 40%) 1fr;
+  align-items: center;
+  column-gap: var(--okc-space-4);
+  min-height: var(--okc-row-height);
+}
+
+.okc-cmd-label {
+  color: var(--okc-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.okc-cmd-control {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.okc-cmd-error {
+  grid-column: 2;
+  margin: 0 0 var(--okc-space-2);
+  font-size: var(--okc-font-size-sm);
+  color: var(--okc-error);
+}
+
+.okc-cmd-number {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.okc-cmd-input,
+.okc-cmd-dropdown {
+  flex: 1;
+  min-width: 0;
+  height: var(--okc-control-height);
+  padding: 0 var(--okc-space-3);
+  background: var(--okc-surface-sunken);
+  color: var(--okc-text);
+  border: 1px solid var(--okc-line);
+  border-radius: var(--okc-radius-sm);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  transition:
+    border-color var(--okc-motion-fast) var(--okc-ease),
+    box-shadow var(--okc-motion-fast) var(--okc-ease);
+}
+
+.okc-cmd-input:hover,
+.okc-cmd-dropdown:hover {
+  border-color: var(--okc-line-strong);
+}
+
+.okc-cmd-input:focus,
+.okc-cmd-dropdown:focus {
+  border-color: var(--okc-accent);
+  box-shadow: 0 0 0 2px var(--okc-focus-ring);
+}
+
+.okc-cmd-row[data-invalid='true'] .okc-cmd-input {
+  border-color: var(--okc-error);
+  background: var(--okc-error-soft);
+}
+
+.okc-cmd-stepper {
+  display: flex;
+  flex-direction: column;
+  margin-left: var(--okc-space-1);
+}
+
+.okc-cmd-stepper button {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 12px;
+  padding: 0;
+  border: 1px solid var(--okc-line);
+  background: var(--okc-surface-panel-raised);
+  color: var(--okc-text-muted);
+  cursor: pointer;
+}
+
+.okc-cmd-stepper button:first-child {
+  border-radius: var(--okc-radius-xs) var(--okc-radius-xs) 0 0;
+  border-bottom-width: 0;
+}
+
+.okc-cmd-stepper button:last-child {
+  border-radius: 0 0 var(--okc-radius-xs) var(--okc-radius-xs);
+}
+
+.okc-cmd-stepper button:hover {
+  background: var(--okc-hover-strong);
+  color: var(--okc-text);
+}
+
+.okc-cmd-selection {
+  display: flex;
+  flex: 1;
+  gap: var(--okc-space-2);
+  min-width: 0;
+}
+
+.okc-cmd-pick {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--okc-space-3);
+  min-width: 0;
+  height: var(--okc-control-height);
+  padding: 0 var(--okc-space-3);
+  background: var(--okc-surface-sunken);
+  color: var(--okc-text-muted);
+  border: 1px solid var(--okc-line);
+  border-radius: var(--okc-radius-sm);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.okc-cmd-pick span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.okc-cmd-pick[data-state='filled'] {
+  color: var(--okc-text);
+}
+
+.okc-cmd-pick:hover {
+  border-color: var(--okc-line-strong);
+}
+
+.okc-cmd-pick[aria-pressed='true'] {
+  border-color: var(--okc-accent);
+  background: var(--okc-accent-soft);
+  color: var(--okc-accent-text);
+}
+
+.okc-cmd-pick[data-state='waiting'] svg {
+  animation: okc-cmd-wait 1.2s var(--okc-ease) infinite;
+}
+
+@keyframes okc-cmd-wait {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.okc-cmd-clear {
+  display: grid;
+  place-items: center;
+  width: var(--okc-control-height);
+  height: var(--okc-control-height);
+  padding: 0;
+  border: 1px solid var(--okc-line);
+  border-radius: var(--okc-radius-sm);
+  background: var(--okc-surface-panel-raised);
+  color: var(--okc-text-muted);
+  cursor: pointer;
+}
+
+.okc-cmd-clear:hover {
+  color: var(--okc-error);
+  border-color: var(--okc-error);
+}
+
+.okc-cmd-segments {
+  display: flex;
+  flex: 1;
+  border: 1px solid var(--okc-line);
+  border-radius: var(--okc-radius-sm);
+  overflow: hidden;
+}
+
+.okc-cmd-segments button {
+  flex: 1;
+  height: calc(var(--okc-control-height) - 2px);
+  padding: 0 var(--okc-space-2);
+  border: 0;
+  border-left: 1px solid var(--okc-line);
+  background: var(--okc-surface-sunken);
+  color: var(--okc-text-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.okc-cmd-segments button:first-child {
+  border-left: 0;
+}
+
+.okc-cmd-segments button:hover {
+  background: var(--okc-hover-strong);
+}
+
+.okc-cmd-segments button[aria-checked='true'] {
+  background: var(--okc-accent);
+  color: var(--okc-text-on-accent);
+}
+
+.okc-cmd-checkbox {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--okc-accent);
+}
+
+.okc-cmd-message {
+  margin: 0 var(--okc-space-5) var(--okc-space-3);
+  padding: var(--okc-space-3) var(--okc-space-4);
+  border-radius: var(--okc-radius-sm);
+  font-size: var(--okc-font-size-sm);
+  user-select: text;
+}
+
+.okc-cmd-message[data-tone='warning'] {
+  background: var(--okc-warning-soft);
+  color: var(--okc-warning);
+}
+
+.okc-cmd-message[data-tone='error'] {
+  background: var(--okc-error-soft);
+  color: var(--okc-error);
+}
+
+.okc-cmd-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--okc-space-3);
+  padding: var(--okc-space-4) var(--okc-space-5);
+  border-top: 1px solid var(--okc-line-soft);
+  background: var(--okc-surface-panel-raised);
+}
+
+.okc-cmd-button {
+  min-width: 68px;
+  height: 26px;
+  padding: 0 var(--okc-space-5);
+  border-radius: var(--okc-radius-sm);
+  font: inherit;
+  font-weight: var(--okc-font-weight-medium);
+  cursor: pointer;
+}
+
+.okc-cmd-ok {
+  border: 1px solid var(--okc-accent);
+  background: var(--okc-accent);
+  color: var(--okc-text-on-accent);
+}
+
+.okc-cmd-ok:hover:not(:disabled) {
+  background: var(--okc-accent-hover);
+}
+
+.okc-cmd-ok:active:not(:disabled) {
+  background: var(--okc-accent-active);
+}
+
+.okc-cmd-ok:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.okc-cmd-cancel {
+  border: 1px solid var(--okc-line);
+  background: var(--okc-surface-panel);
+  color: var(--okc-text);
+}
+
+.okc-cmd-cancel:hover {
+  background: var(--okc-hover-strong);
+}
+
+.okc-cmd-button:focus-visible,
+.okc-cmd-pick:focus-visible,
+.okc-cmd-clear:focus-visible,
+.okc-cmd-collapse:focus-visible,
+.okc-cmd-segments button:focus-visible {
+  outline: 2px solid var(--okc-focus-ring);
+  outline-offset: 1px;
+}

@@ -49,7 +49,7 @@ export interface SubPick {
   length?: number
 }
 
-function elementKey(prefix: 'f' | 'e', name: string, id: number): string {
+export function elementKey(prefix: 'f' | 'e', name: string, id: number): string {
   return name ? `${prefix}:${name}` : `${prefix}#${id}`
 }
 
@@ -90,6 +90,7 @@ interface InstanceObject {
 const HOME_CAMERA: Vec3 = [-220, -180, 160]
 
 const ACCENT = 0xff9f2e
+const PREVIEW_CUT = 0xd4473d
 const ACCENT_DIM = 0xc4761c
 /** Pre-selection: what a click would take. */
 const HOVER = 0xffd9a0
@@ -321,21 +322,29 @@ export class ViewportEngine {
 
       let entry = this.objects.get(instance.id)
       if (!entry) {
+        const tool = !!instance.previewTool
         const material = new THREE.MeshStandardMaterial({
           roughness: 0.62,
           metalness: 0.08,
           clippingPlanes: this.sectionPlanes,
           side: THREE.DoubleSide,
         })
-        this.applyOpacity(material)
+        if (tool) {
+          material.transparent = true
+          material.opacity = 0.42
+          material.depthWrite = false
+        } else {
+          this.applyOpacity(material)
+        }
         const mesh = new THREE.Mesh(geometry.surface, material)
         mesh.matrixAutoUpdate = false
+        mesh.renderOrder = tool ? 4 : 0
         const outline = new THREE.LineSegments(
           geometry.edges,
           new THREE.LineBasicMaterial({
-            color: 0x1a1d21,
+            color: tool ? PREVIEW_CUT : 0x1a1d21,
             transparent: true,
-            opacity: 0.85,
+            opacity: tool ? 0.6 : 0.85,
             clippingPlanes: this.sectionPlanes,
           }),
         )
@@ -406,7 +415,8 @@ export class ViewportEngine {
 
   setOpacity(dimmed: boolean) {
     this.dimmed = dimmed
-    for (const { mesh } of this.objects.values()) {
+    for (const { mesh, instance } of this.objects.values()) {
+      if (instance.previewTool) continue
       this.applyOpacity(mesh.material as THREE.MeshStandardMaterial)
     }
   }
@@ -782,7 +792,9 @@ export class ViewportEngine {
   }
 
   private pickables(): THREE.Mesh[] {
-    return [...this.objects.values()].map((entry) => entry.mesh)
+    return [...this.objects.values()]
+      .filter((entry) => !entry.instance.previewTool)
+      .map((entry) => entry.mesh)
   }
 
   pick(clientX: number, clientY: number): PickResult | null {
@@ -847,7 +859,9 @@ export class ViewportEngine {
       return [((p.x + 1) / 2) * rect.width, ((1 - p.y) / 2) * rect.height]
     }
 
-    const bodies = [...this.objects.values()].filter((entry) => entry.instance.kind === 'body')
+    const bodies = [...this.objects.values()].filter(
+      (entry) => entry.instance.kind === 'body' && !entry.instance.previewTool,
+    )
 
     const VERTEX_PX = 9
     let bestVertex: { entry: InstanceObject; pos: Vec3; d: number } | null = null

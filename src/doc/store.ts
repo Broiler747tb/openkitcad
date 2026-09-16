@@ -162,6 +162,7 @@ interface AppState {
     patch: Partial<Feature>,
     opts?: { transient?: boolean },
   ) => void
+  replaceFeature: (featureId: string, features: Feature[]) => void
   removeFeature: (featureId: string, opts?: { withDependents?: boolean }) => boolean
   moveFeature: (featureId: string, toIndex: number) => boolean
   setMarker: (index: number | null) => void
@@ -208,6 +209,14 @@ export function insertFeatures(
   const at = markerIndex(doc)
   doc.timeline.splice(at, 0, ...features)
   if (doc.marker !== null) doc.marker = at + features.length
+  addCreatedBodies(doc, features, bodies)
+}
+
+export function addCreatedBodies(
+  doc: OkcDocument,
+  features: Feature[],
+  bodies: Record<string, Partial<Body>> = {},
+): void {
   for (const feature of features) {
     const component = findComponent(doc, feature.componentId)
     if (!component) continue
@@ -222,6 +231,33 @@ export function insertFeatures(
       })
     }
   }
+}
+
+export function replaceFeatureInDocument(
+  doc: OkcDocument,
+  featureId: string,
+  features: Feature[],
+): void {
+  const index = featureIndex(doc, featureId)
+  if (index < 0) return
+  const before = featureCreatesBodies(doc.timeline[index])
+  doc.timeline.splice(index, 1, ...features)
+  if (doc.marker !== null && doc.marker > index) doc.marker += features.length - 1
+  const kept = new Set(features.flatMap(featureCreatesBodies))
+  for (const bodyId of before) {
+    if (kept.has(bodyId)) continue
+    for (const component of doc.components) {
+      component.bodies = component.bodies.filter((body) => body.id !== bodyId)
+    }
+  }
+  const replacement = features.find((feature) => feature.id === featureId)
+  doc.bindings = doc.bindings.filter(
+    (link) =>
+      link.featureId !== featureId ||
+      (!!replacement &&
+        typeof (replacement as unknown as Record<string, unknown>)[link.field] === 'number'),
+  )
+  addCreatedBodies(doc, features)
 }
 
 export function nextBodyName(doc: OkcDocument, base = 'Body'): string {
@@ -895,6 +931,10 @@ export const useStore = create<AppState>((set, get) => ({
         mergeKey: `feature:${featureId}:${Object.keys(patch).join(',')}`,
       },
     )
+  },
+
+  replaceFeature(featureId, features) {
+    get().commit((d) => replaceFeatureInDocument(d, featureId, features))
   },
 
   removeFeature(featureId, opts) {

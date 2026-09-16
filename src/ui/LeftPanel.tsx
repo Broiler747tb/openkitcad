@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { editFeature } from './command/commands'
+import { bodyPick, offerPick, sketchPick } from './command/picks'
 import { useStore } from '../doc/store'
 import {
   FEATURE_ICON,
@@ -263,7 +265,10 @@ function BodyBranch({ body, failed }: { body: Body; failed: Set<string> }) {
         className={`tree-item tree-body ${
           selection.kind === 'body' && selection.id === body.id ? 'selected' : ''
         }`}
-        onClick={() => store.select({ kind: 'body', id: body.id })}
+        onClick={() => {
+          if (offerPick(bodyPick(store.doc, body.id))) return
+          store.select({ kind: 'body', id: body.id })
+        }}
         onMouseEnter={() => store.setHovered(body.id)}
         onMouseLeave={() => store.setHovered(null)}
       >
@@ -333,9 +338,13 @@ function FeatureRow({
   return (
     <div
       className={`tree-item tree-feature ${selected ? 'selected' : ''} ${failed ? 'error' : ''}`}
-      onClick={() => store.select({ kind: 'feature', id: feature.id })}
+      onClick={() => {
+        if (offerPick(sketchPick(doc, feature.id))) return
+        store.select({ kind: 'feature', id: feature.id })
+      }}
       onDoubleClick={() => {
         if (feature.kind === 'sketch') store.openSketch(feature.id)
+        else editFeature(feature)
       }}
       title={feature.kind === 'sketch' ? 'Double-click to edit this sketch' : undefined}
     >

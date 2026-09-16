@@ -10,6 +10,7 @@ import { sketchActions } from '../sketch/actions'
 import { createSketchAction, resolveCommand, SHORTCUTS, toggleVisibility } from './fusionCommands'
 import { powerActions } from './PowerTools'
 import { ParametersDialog } from './ParametersDialog'
+import { startCommand } from './command/commands'
 
 const sketchTools: Array<[ToolId, string, string, string]> = [
   ['line', 'Line', '╱', 'L'],
@@ -89,6 +90,10 @@ export function Toolbar({
       ]
   function invoke(id: string) {
     setMenu(null)
+    if (startCommand(id)) {
+      setPending(null)
+      return
+    }
     const a = resolveCommand(id)
     if (a) {
       setPending(null)
