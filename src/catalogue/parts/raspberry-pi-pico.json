@@ -8,7 +8,114 @@
   "manufacturer": "Raspberry Pi Ltd",
   "summary": "51 x 21 mm RP2040 microcontroller board with four 2.1 mm corner holes.",
   "confidence": "datasheet",
-  "source": "Outline, thickness and the four mounting holes are from the Raspberry Pi Pico datasheet (hole pattern 47 x 11.4 mm, 2.1 mm diameter). Applies to Pico, Pico H, Pico W and Pico 2.",
+  "source": "Raspberry Pi Pico datasheet, figure 3 (Raspberry Pi Ltd), with positions read from its vector geometry: board 51 x 21 mm and 1 mm thick, four 2.1 mm holes 2 mm from the short edges and 4.8 mm from the long edges (47 x 11.4 mm pattern), 40 castellated pins on a 2.54 mm grid in two rows 17.78 mm apart starting 1.37 mm from the USB end. The micro USB socket overhangs the short edge by 1.3 mm. The same board is sold as Pico H with headers fitted. Small passives are left out.",
+  "look": {
+    "colour": "#1f6f4a",
+    "components": [
+      {
+        "kind": "port",
+        "port": "micro-usb",
+        "x": -0.69,
+        "y": 10.52,
+        "facing": "-x",
+        "w": 7.5,
+        "h": 2.6,
+        "depth": 5.33,
+        "label": "micro USB"
+      },
+      {
+        "kind": "box",
+        "x": -1.3,
+        "y": 6.49,
+        "w": 0.61,
+        "h": 8.04,
+        "height": 2.6,
+        "finish": "metal",
+        "label": "micro USB flange"
+      },
+      {
+        "kind": "box",
+        "x": 9.82,
+        "y": 5.33,
+        "w": 4.38,
+        "h": 3.37,
+        "height": 1.5,
+        "finish": "plastic",
+        "colour": "#f2f0ea",
+        "radius": 0.2,
+        "label": "BOOTSEL button"
+      },
+      {
+        "kind": "cylinder",
+        "x": 12.02,
+        "y": 7.02,
+        "z": 2.5,
+        "d": 2.4,
+        "height": 0.5,
+        "finish": "plastic",
+        "colour": "#f7f6f2",
+        "label": "BOOTSEL cap"
+      },
+      {
+        "kind": "chip",
+        "x": 22.5,
+        "y": 7.0,
+        "w": 7.0,
+        "h": 7.0,
+        "height": 0.9,
+        "label": "RP2040"
+      },
+      {
+        "kind": "chip",
+        "x": 17.6,
+        "y": 5.71,
+        "w": 3.0,
+        "h": 2.02,
+        "height": 0.6,
+        "label": "Flash"
+      },
+      {
+        "kind": "crystal",
+        "x": 33.37,
+        "y": 6.63,
+        "w": 2.39,
+        "h": 3.2,
+        "height": 0.8,
+        "label": "12 MHz crystal"
+      },
+      {
+        "kind": "chip",
+        "x": 9.65,
+        "y": 12.16,
+        "w": 2.51,
+        "h": 2.51,
+        "height": 0.8,
+        "label": "Buck-boost regulator"
+      },
+      {
+        "kind": "box",
+        "x": 9.65,
+        "y": 15.51,
+        "w": 2.51,
+        "h": 2.02,
+        "height": 1.0,
+        "finish": "chip",
+        "colour": "#3b3e43",
+        "label": "Inductor"
+      },
+      {
+        "kind": "box",
+        "x": 5.21,
+        "y": 15.51,
+        "w": 2.8,
+        "h": 2.02,
+        "height": 0.9,
+        "finish": "chip",
+        "colour": "#2a2c30",
+        "label": "Schottky diode"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
@@ -20,24 +127,24 @@
     "thickness": 1.0,
     "bumps": [
       {
-        "x": 20,
-        "y": 6.5,
-        "w": 7,
-        "h": 7,
-        "z": 1.0,
-        "height": 0.9,
-        "colour": "#20262c",
-        "label": "RP2040"
-      },
-      {
-        "x": 0,
-        "y": 6.5,
-        "w": 8,
-        "h": 8,
+        "x": -1.3,
+        "y": 6.49,
+        "w": 5.94,
+        "h": 8.04,
         "z": 1.0,
         "height": 2.6,
         "colour": "#8b9096",
         "label": "micro USB"
+      },
+      {
+        "x": 9.82,
+        "y": 5.33,
+        "w": 4.38,
+        "h": 3.37,
+        "z": 1.0,
+        "height": 2.0,
+        "colour": "#f2f0ea",
+        "label": "BOOTSEL button"
       }
     ]
   },
@@ -71,40 +178,19 @@
       "screw": "M2"
     }
   ],
-  "keepouts": [
-    {
-      "id": "k-under",
-      "label": "Solder side clearance",
-      "x": 0,
-      "y": 0,
-      "w": 51,
-      "h": 21,
-      "z": -2,
-      "height": 2
-    }
-  ],
   "connectors": [
     {
       "id": "usb",
       "label": "micro USB",
       "side": "-x",
       "x": 0,
-      "y": 10.5,
+      "y": 10.52,
       "z": 1.0,
-      "width": 8,
-      "height": 3,
-      "protrusion": 1.2
+      "width": 8.0,
+      "height": 3.0,
+      "protrusion": 1.3
     }
   ],
-  "electrical": {
-    "voltage": [
-      5,
-      3.3
-    ],
-    "currentTypical": 0.03,
-    "currentPeak": 0.1,
-    "note": "Powered over USB, or 1.8-5.5 V into VSYS."
-  },
   "pinHeaders": [
     {
       "id": "pins-1-20",
@@ -125,9 +211,30 @@
       "pitch": 2.54
     }
   ],
+  "keepouts": [
+    {
+      "id": "k-under",
+      "label": "Solder side clearance",
+      "x": 0,
+      "y": 0,
+      "w": 51,
+      "h": 21,
+      "z": -2,
+      "height": 2
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      5,
+      3.3
+    ],
+    "currentTypical": 0.03,
+    "currentPeak": 0.1,
+    "note": "Powered over USB, or 1.8-5.5 V into VSYS."
+  },
   "links": [
     {
-      "label": "Datasheet",
+      "label": "Pico datasheet",
       "url": "https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf"
     }
   ],

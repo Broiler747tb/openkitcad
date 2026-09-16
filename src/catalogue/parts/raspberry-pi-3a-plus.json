@@ -8,15 +8,276 @@
   "manufacturer": "Raspberry Pi",
   "summary": "Short full-size Pi. Same 40-pin header, two thirds the length.",
   "confidence": "datasheet",
-  "source": "Outline and hole pattern are the published Raspberry Pi mechanical specification: holes 3.5 mm in from the edges, 58 mm apart along the board and 49 mm across, for M2.5 screws. Height above the board depends on which connectors are fitted and is not included.",
+  "source": "Raspberry Pi 3 Model A+ mechanical drawing (Raspberry Pi Ltd): board 65 x 56 mm with 3 mm corners, four 2.7 mm holes on a 58 x 49 mm pattern, 40-pin header centred 32.5 mm along the top hole line, micro USB power at 10.6 mm, HDMI at 32 mm and audio at 53.5 mm along the bottom edge, one USB-A socket centred 31.5 mm up the right edge. Heights: header 8.5, USB 7, HDMI 6.5, audio 6, camera and display connectors 5.5 mm. The A+ drawing is sketchy about part outlines, so shapes shared with the 3B+ use the 3B+ drawing, which has the same dimensioned positions.",
+  "look": {
+    "colour": "#1f6f4a",
+    "components": [
+      {
+        "kind": "header",
+        "x": 8.37,
+        "y": 51.23,
+        "rows": 2,
+        "cols": 20,
+        "height": 8.5,
+        "label": "40-pin GPIO"
+      },
+      {
+        "kind": "port",
+        "port": "micro-usb",
+        "x": 10.62,
+        "y": -0.64,
+        "facing": "-y",
+        "w": 7.48,
+        "h": 2.8,
+        "depth": 5.31,
+        "label": "micro USB power"
+      },
+      {
+        "kind": "port",
+        "port": "hdmi",
+        "x": 32.02,
+        "y": -1.52,
+        "facing": "-y",
+        "w": 14.47,
+        "h": 6.5,
+        "depth": 12.14,
+        "label": "HDMI"
+      },
+      {
+        "kind": "port",
+        "port": "jack-35",
+        "x": 53.52,
+        "y": -2.55,
+        "facing": "-y",
+        "w": 6.99,
+        "h": 6.0,
+        "depth": 15.01,
+        "label": "Audio and video jack"
+      },
+      {
+        "kind": "box",
+        "x": 43.57,
+        "y": 0.27,
+        "w": 2.85,
+        "h": 22.38,
+        "height": 4.2,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "label": "Camera connector"
+      },
+      {
+        "kind": "box",
+        "x": 43.82,
+        "y": 1.07,
+        "z": 5.6,
+        "w": 2.35,
+        "h": 20.78,
+        "height": 1.3,
+        "finish": "plastic",
+        "colour": "#c9a46a",
+        "label": "Camera connector latch"
+      },
+      {
+        "kind": "box",
+        "x": 46.42,
+        "y": 4.78,
+        "w": 1.1,
+        "h": 13.4,
+        "height": 4.8,
+        "finish": "plastic",
+        "colour": "#c9a46a",
+        "label": "Camera connector latch ears"
+      },
+      {
+        "kind": "box",
+        "x": 2.62,
+        "y": 16.77,
+        "w": 2.85,
+        "h": 22.41,
+        "height": 4.2,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "label": "Display connector"
+      },
+      {
+        "kind": "box",
+        "x": 2.87,
+        "y": 17.57,
+        "z": 5.6,
+        "w": 2.35,
+        "h": 20.81,
+        "height": 1.3,
+        "finish": "plastic",
+        "colour": "#c9a46a",
+        "label": "Display connector latch"
+      },
+      {
+        "kind": "box",
+        "x": 1.52,
+        "y": 21.27,
+        "w": 1.1,
+        "h": 13.41,
+        "height": 4.8,
+        "finish": "plastic",
+        "colour": "#c9a46a",
+        "label": "Display connector latch ears"
+      },
+      {
+        "kind": "box",
+        "x": 20.01,
+        "y": 24.48,
+        "w": 13.97,
+        "h": 14.01,
+        "height": 1.8,
+        "finish": "metal",
+        "colour": "#c9ced3",
+        "radius": 0.4,
+        "label": "BCM2837B0 processor"
+      },
+      {
+        "kind": "box",
+        "x": 6.61,
+        "y": 36.13,
+        "w": 10.5,
+        "h": 13.21,
+        "height": 1.4,
+        "finish": "metal",
+        "colour": "#c9ced3",
+        "label": "Wireless shield"
+      },
+      {
+        "kind": "led",
+        "x": 1.12,
+        "y": 7.87,
+        "colour": "#e23b3b",
+        "size": 1.2,
+        "label": "Power LED"
+      },
+      {
+        "kind": "led",
+        "x": 1.12,
+        "y": 11.46,
+        "colour": "#39d06b",
+        "size": 1.2,
+        "label": "Activity LED"
+      },
+      {
+        "kind": "port",
+        "port": "usb-a",
+        "x": 65.29,
+        "y": 31.5,
+        "facing": "+x",
+        "w": 13.14,
+        "h": 7.0,
+        "depth": 14.3,
+        "label": "USB 2.0"
+      },
+      {
+        "kind": "port",
+        "port": "microsd",
+        "x": 0.3,
+        "y": 28.0,
+        "facing": "-x",
+        "flip": true,
+        "z": 0,
+        "w": 11.5,
+        "h": 1.4,
+        "depth": 11.0,
+        "label": "microSD slot"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
       "shape": "rect",
       "w": 65,
-      "h": 56
+      "h": 56,
+      "cornerRadius": 3
     },
-    "thickness": 1.4
+    "thickness": 1.4,
+    "bumps": [
+      {
+        "x": 7.11,
+        "y": 49.95,
+        "w": 50.82,
+        "h": 5.0,
+        "z": 1.4,
+        "height": 8.5,
+        "colour": "#111417",
+        "label": "40-pin header"
+      },
+      {
+        "x": 20.01,
+        "y": 24.48,
+        "w": 13.97,
+        "h": 14.01,
+        "z": 1.4,
+        "height": 1.8,
+        "colour": "#20262c",
+        "label": "BCM2837B0 processor"
+      },
+      {
+        "x": 6.88,
+        "y": -0.64,
+        "w": 7.48,
+        "h": 5.31,
+        "z": 1.4,
+        "height": 2.8,
+        "colour": "#8b9096",
+        "label": "micro USB"
+      },
+      {
+        "x": 24.79,
+        "y": -1.52,
+        "w": 14.47,
+        "h": 12.14,
+        "z": 1.4,
+        "height": 6.5,
+        "colour": "#8b9096",
+        "label": "HDMI"
+      },
+      {
+        "x": 50.03,
+        "y": -2.55,
+        "w": 6.99,
+        "h": 15.01,
+        "z": 1.4,
+        "height": 6.0,
+        "colour": "#20262c",
+        "label": "Audio jack"
+      },
+      {
+        "x": 43.57,
+        "y": 0.27,
+        "w": 3.94,
+        "h": 22.38,
+        "z": 1.4,
+        "height": 5.5,
+        "colour": "#20262c",
+        "label": "Camera connector"
+      },
+      {
+        "x": 1.53,
+        "y": 16.77,
+        "w": 3.94,
+        "h": 22.41,
+        "z": 1.4,
+        "height": 5.5,
+        "colour": "#20262c",
+        "label": "Display connector"
+      },
+      {
+        "x": 50.99,
+        "y": 24.93,
+        "w": 14.3,
+        "h": 13.14,
+        "z": 1.4,
+        "height": 7.0,
+        "colour": "#8b9096",
+        "label": "USB"
+      }
+    ]
   },
   "mountingHoles": [
     {
@@ -46,6 +307,102 @@
       "y": 52.5,
       "diameter": 2.7,
       "screw": "M2.5"
+    }
+  ],
+  "connectors": [
+    {
+      "id": "pwr",
+      "label": "micro USB power",
+      "side": "-y",
+      "x": 10.62,
+      "y": 0,
+      "z": 1.4,
+      "width": 8.0,
+      "height": 3.0,
+      "protrusion": 0.64
+    },
+    {
+      "id": "hdmi",
+      "label": "HDMI",
+      "side": "-y",
+      "x": 32.02,
+      "y": 0,
+      "z": 1.4,
+      "width": 15.5,
+      "height": 7.0,
+      "protrusion": 1.52
+    },
+    {
+      "id": "av",
+      "label": "3.5 mm A/V jack",
+      "side": "-y",
+      "x": 53.52,
+      "y": 0,
+      "z": 1.4,
+      "width": 7.0,
+      "height": 6.0,
+      "protrusion": 2.55
+    },
+    {
+      "id": "usb",
+      "label": "USB 2.0",
+      "side": "+x",
+      "x": 65,
+      "y": 31.5,
+      "z": 1.4,
+      "width": 14.0,
+      "height": 7.5,
+      "protrusion": 0.29
+    },
+    {
+      "id": "sd",
+      "label": "microSD card",
+      "side": "-x",
+      "x": 0,
+      "y": 28.0,
+      "z": -2.0,
+      "width": 12.0,
+      "height": 2.0,
+      "protrusion": 0
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "gpio",
+      "label": "40-pin GPIO",
+      "x": 8.37,
+      "y": 51.23,
+      "rows": 2,
+      "cols": 20,
+      "pitch": 2.54
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-under",
+      "label": "Solder side clearance",
+      "x": 0,
+      "y": 0,
+      "w": 65,
+      "h": 56,
+      "z": -2.5,
+      "height": 2.5
+    },
+    {
+      "id": "k-gpio",
+      "label": "GPIO header and HAT socket",
+      "x": 7.11,
+      "y": 49.98,
+      "w": 50.81,
+      "h": 5.0,
+      "z": 1.4,
+      "height": 16
+    }
+  ],
+  "links": [
+    {
+      "label": "Mechanical drawing",
+      "url": "https://datasheets.raspberrypi.com/rpi3/raspberry-pi-3-a-plus-mechanical-drawing.pdf"
     }
   ],
   "tags": [

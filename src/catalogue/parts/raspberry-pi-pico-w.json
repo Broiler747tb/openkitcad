@@ -8,15 +8,156 @@
   "manufacturer": "Raspberry Pi",
   "summary": "A Pico with wifi. Same board, same holes, aerial at one end.",
   "confidence": "datasheet",
-  "source": "Outline and the 47 x 11.4 mm hole pattern are the published Pico mechanical specification, for M2 screws. Keep metal away from the aerial end.",
+  "source": "Raspberry Pi Pico W datasheet, figure 3 (Raspberry Pi Ltd), with positions read from its vector geometry: board 51 x 21 mm and 1 mm thick, four 2.1 mm holes 2 mm from the short edges and 4.8 mm from the long edges (47 x 11.4 mm pattern), 40 castellated pins on a 2.54 mm grid in two rows 17.78 mm apart starting 1.37 mm from the USB end. The micro USB socket overhangs the short edge by 1.3 mm. The wireless aerial is printed on the far end; the datasheet asks for a 14 x 9 mm cutout with nothing close to it, which is the keep-out here.",
+  "look": {
+    "colour": "#1f6f4a",
+    "components": [
+      {
+        "kind": "port",
+        "port": "micro-usb",
+        "x": -0.69,
+        "y": 10.52,
+        "facing": "-x",
+        "w": 7.5,
+        "h": 2.6,
+        "depth": 5.33,
+        "label": "micro USB"
+      },
+      {
+        "kind": "box",
+        "x": -1.3,
+        "y": 6.49,
+        "w": 0.61,
+        "h": 8.04,
+        "height": 2.6,
+        "finish": "metal",
+        "label": "micro USB flange"
+      },
+      {
+        "kind": "box",
+        "x": 9.82,
+        "y": 5.33,
+        "w": 4.38,
+        "h": 3.37,
+        "height": 1.5,
+        "finish": "plastic",
+        "colour": "#f2f0ea",
+        "radius": 0.2,
+        "label": "BOOTSEL button"
+      },
+      {
+        "kind": "cylinder",
+        "x": 12.02,
+        "y": 7.02,
+        "z": 2.5,
+        "d": 2.4,
+        "height": 0.5,
+        "finish": "plastic",
+        "colour": "#f7f6f2",
+        "label": "BOOTSEL cap"
+      },
+      {
+        "kind": "chip",
+        "x": 20.49,
+        "y": 7.02,
+        "w": 6.97,
+        "h": 7.0,
+        "height": 0.9,
+        "label": "RP2040"
+      },
+      {
+        "kind": "box",
+        "x": 32.62,
+        "y": 4.42,
+        "w": 10.39,
+        "h": 12.19,
+        "height": 1.2,
+        "finish": "metal",
+        "colour": "#c9ced3",
+        "label": "CYW43439 wireless shield"
+      },
+      {
+        "kind": "chip",
+        "x": 15.82,
+        "y": 5.69,
+        "w": 2.01,
+        "h": 3.01,
+        "height": 0.6,
+        "label": "Flash"
+      },
+      {
+        "kind": "crystal",
+        "x": 29.22,
+        "y": 4.22,
+        "w": 2.42,
+        "h": 3.22,
+        "height": 0.8,
+        "label": "Crystal"
+      },
+      {
+        "kind": "chip",
+        "x": 9.39,
+        "y": 10.71,
+        "w": 3.13,
+        "h": 4.13,
+        "height": 0.8,
+        "label": "Buck-boost regulator"
+      },
+      {
+        "kind": "box",
+        "x": 9.68,
+        "y": 15.52,
+        "w": 2.51,
+        "h": 2.01,
+        "height": 1.0,
+        "finish": "chip",
+        "colour": "#3b3e43",
+        "label": "Inductor"
+      },
+      {
+        "kind": "box",
+        "x": 5.22,
+        "y": 15.52,
+        "w": 2.8,
+        "h": 2.01,
+        "height": 0.9,
+        "finish": "chip",
+        "colour": "#2a2c30",
+        "label": "Schottky diode"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
       "shape": "rect",
       "w": 51,
-      "h": 21
+      "h": 21,
+      "cornerRadius": 2
     },
-    "thickness": 1.0
+    "thickness": 1.0,
+    "bumps": [
+      {
+        "x": -1.3,
+        "y": 6.49,
+        "w": 5.94,
+        "h": 8.04,
+        "z": 1.0,
+        "height": 2.6,
+        "colour": "#8b9096",
+        "label": "micro USB"
+      },
+      {
+        "x": 9.82,
+        "y": 5.33,
+        "w": 4.38,
+        "h": 3.37,
+        "z": 1.0,
+        "height": 2.0,
+        "colour": "#f2f0ea",
+        "label": "BOOTSEL button"
+      }
+    ]
   },
   "mountingHoles": [
     {
@@ -46,6 +187,67 @@
       "y": 16.2,
       "diameter": 2.1,
       "screw": "M2"
+    }
+  ],
+  "connectors": [
+    {
+      "id": "usb",
+      "label": "micro USB",
+      "side": "-x",
+      "x": 0,
+      "y": 10.52,
+      "z": 1.0,
+      "width": 8.0,
+      "height": 3.0,
+      "protrusion": 1.3
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "pins-1-20",
+      "label": "Pins 1 to 20",
+      "x": 1.37,
+      "y": 1.61,
+      "rows": 1,
+      "cols": 20,
+      "pitch": 2.54
+    },
+    {
+      "id": "pins-21-40",
+      "label": "Pins 21 to 40",
+      "x": 1.37,
+      "y": 19.39,
+      "rows": 1,
+      "cols": 20,
+      "pitch": 2.54
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-under",
+      "label": "Solder side clearance",
+      "x": 0,
+      "y": 0,
+      "w": 51,
+      "h": 21,
+      "z": -2,
+      "height": 2
+    },
+    {
+      "id": "k-antenna",
+      "label": "Aerial: keep metal away",
+      "x": 42,
+      "y": 3.5,
+      "w": 9,
+      "h": 14,
+      "z": -3,
+      "height": 7
+    }
+  ],
+  "links": [
+    {
+      "label": "Pico W datasheet",
+      "url": "https://datasheets.raspberrypi.com/picow/pico-w-datasheet.pdf"
     }
   ],
   "tags": [

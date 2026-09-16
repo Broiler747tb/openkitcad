@@ -6,50 +6,588 @@
   "manufacturer": "Raspberry Pi Ltd",
   "summary": "The most common Pi. 85 x 56 mm, four M2.5 holes on a 58 x 49 mm pattern.",
   "confidence": "datasheet",
-  "source": "Outline, board thickness and the four M2.5 mounting holes are from the official Raspberry Pi 4B mechanical drawing. Connector positions along the edges are approximate to about 1 mm - check them against your own board before cutting a panel.",
+  "source": "Raspberry Pi 4 Model B mechanical drawing (Raspberry Pi Ltd), with positions read from the drawing's own vector geometry: board 85 x 56 mm with 3 mm corners, four 2.7 mm holes on a 58 x 49 mm pattern, 40-pin header centred 32.5 mm along the top hole line. Bottom edge: USB-C centred at 11.2 mm, micro HDMI at 26.0 and 39.5 mm, audio jack at 54.0 mm. Right edge: USB 2.0 pair centred 9.0 mm, USB 3.0 pair 27.0 mm, Ethernet 45.75 mm, all standing 3 mm past the board. Heights above the board from the drawing: USB 16, Ethernet 13.5, header 8.5, audio 6, camera and display connectors 5.5, USB-C 3.2, micro HDMI 3.0, processor lid 2.4 mm. The microSD slot is on the underside at the left edge; its position is not on the drawing and is approximate.",
+  "look": {
+    "colour": "#1f6f4a",
+    "components": [
+      {
+        "kind": "header",
+        "x": 8.37,
+        "y": 51.23,
+        "rows": 2,
+        "cols": 20,
+        "height": 8.5,
+        "label": "40-pin GPIO"
+      },
+      {
+        "kind": "box",
+        "x": 21.76,
+        "y": 24.98,
+        "w": 15.0,
+        "h": 15.0,
+        "height": 2.4,
+        "finish": "metal",
+        "colour": "#c9ced3",
+        "radius": 0.5,
+        "label": "BCM2711 processor"
+      },
+      {
+        "kind": "chip",
+        "x": 39.05,
+        "y": 24.98,
+        "w": 11.51,
+        "h": 15.0,
+        "height": 1.2,
+        "label": "RAM"
+      },
+      {
+        "kind": "chip",
+        "x": 55.52,
+        "y": 19.98,
+        "w": 8.0,
+        "h": 8.02,
+        "height": 0.9,
+        "label": "VL805 USB 3.0 controller"
+      },
+      {
+        "kind": "chip",
+        "x": 55.52,
+        "y": 34.98,
+        "w": 5.99,
+        "h": 6.01,
+        "height": 0.9,
+        "label": "Ethernet PHY"
+      },
+      {
+        "kind": "chip",
+        "x": 7.39,
+        "y": 9.69,
+        "w": 5.0,
+        "h": 5.0,
+        "height": 0.9,
+        "label": "Power management chip"
+      },
+      {
+        "kind": "box",
+        "x": 6.61,
+        "y": 36.1,
+        "w": 10.79,
+        "h": 13.0,
+        "height": 1.4,
+        "finish": "metal",
+        "colour": "#c9ced3",
+        "label": "Wireless shield"
+      },
+      {
+        "kind": "port",
+        "port": "rj45",
+        "x": 88.03,
+        "y": 45.74,
+        "facing": "+x",
+        "w": 15.52,
+        "h": 13.5,
+        "depth": 21.37,
+        "label": "Ethernet"
+      },
+      {
+        "kind": "port",
+        "port": "usb-a-stack",
+        "x": 88.02,
+        "y": 26.98,
+        "facing": "+x",
+        "w": 13.14,
+        "h": 16.0,
+        "depth": 17.5,
+        "colour": "#1f5fd6",
+        "label": "USB 3.0 pair"
+      },
+      {
+        "kind": "port",
+        "port": "usb-a-stack",
+        "x": 88.02,
+        "y": 8.99,
+        "facing": "+x",
+        "w": 13.14,
+        "h": 16.0,
+        "depth": 17.71,
+        "label": "USB 2.0 pair"
+      },
+      {
+        "kind": "port",
+        "port": "usb-c",
+        "x": 11.21,
+        "y": -1.26,
+        "facing": "-y",
+        "w": 8.66,
+        "h": 3.2,
+        "depth": 7.4,
+        "label": "USB-C power"
+      },
+      {
+        "kind": "port",
+        "port": "micro-hdmi",
+        "x": 26.01,
+        "y": -0.85,
+        "facing": "-y",
+        "w": 6.2,
+        "h": 3.0,
+        "depth": 7.36,
+        "label": "micro HDMI 0"
+      },
+      {
+        "kind": "box",
+        "x": 22.405,
+        "y": -1.45,
+        "w": 7.21,
+        "h": 0.6,
+        "height": 3.0,
+        "finish": "metal",
+        "label": "micro HDMI flange"
+      },
+      {
+        "kind": "port",
+        "port": "micro-hdmi",
+        "x": 39.51,
+        "y": -0.85,
+        "facing": "-y",
+        "w": 6.2,
+        "h": 3.0,
+        "depth": 7.36,
+        "label": "micro HDMI 1"
+      },
+      {
+        "kind": "box",
+        "x": 35.905,
+        "y": -1.45,
+        "w": 7.21,
+        "h": 0.6,
+        "height": 3.0,
+        "finish": "metal",
+        "label": "micro HDMI flange"
+      },
+      {
+        "kind": "port",
+        "port": "jack-35",
+        "x": 54.01,
+        "y": -2.52,
+        "facing": "-y",
+        "w": 6.98,
+        "h": 6.0,
+        "depth": 15.0,
+        "label": "Audio and video jack"
+      },
+      {
+        "kind": "box",
+        "x": 45.06,
+        "y": 0.29,
+        "w": 2.85,
+        "h": 22.4,
+        "height": 4.2,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "label": "Camera connector"
+      },
+      {
+        "kind": "box",
+        "x": 45.31,
+        "y": 1.09,
+        "z": 5.6,
+        "w": 2.35,
+        "h": 20.8,
+        "height": 1.3,
+        "finish": "plastic",
+        "colour": "#c9a46a",
+        "label": "Camera connector latch"
+      },
+      {
+        "kind": "box",
+        "x": 47.91,
+        "y": 4.77,
+        "w": 1.1,
+        "h": 13.41,
+        "height": 4.8,
+        "finish": "plastic",
+        "colour": "#c9a46a",
+        "label": "Camera connector latch ears"
+      },
+      {
+        "kind": "box",
+        "x": 2.6,
+        "y": 16.78,
+        "w": 2.85,
+        "h": 22.41,
+        "height": 4.2,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "label": "Display connector"
+      },
+      {
+        "kind": "box",
+        "x": 2.85,
+        "y": 17.58,
+        "z": 5.6,
+        "w": 2.35,
+        "h": 20.81,
+        "height": 1.3,
+        "finish": "plastic",
+        "colour": "#c9a46a",
+        "label": "Display connector latch"
+      },
+      {
+        "kind": "box",
+        "x": 1.5,
+        "y": 21.28,
+        "w": 1.1,
+        "h": 13.41,
+        "height": 4.8,
+        "finish": "plastic",
+        "colour": "#c9a46a",
+        "label": "Display connector latch ears"
+      },
+      {
+        "kind": "header",
+        "x": 60.24,
+        "y": 45.07,
+        "rows": 2,
+        "cols": 2,
+        "height": 8.5,
+        "label": "PoE header"
+      },
+      {
+        "kind": "led",
+        "x": 1.09,
+        "y": 7.88,
+        "colour": "#e23b3b",
+        "size": 1.2,
+        "label": "Power LED"
+      },
+      {
+        "kind": "led",
+        "x": 1.09,
+        "y": 11.49,
+        "colour": "#39d06b",
+        "size": 1.2,
+        "label": "Activity LED"
+      },
+      {
+        "kind": "port",
+        "port": "microsd",
+        "x": 0.3,
+        "y": 22.6,
+        "facing": "-x",
+        "flip": true,
+        "z": 0,
+        "w": 11.5,
+        "h": 1.4,
+        "depth": 11.0,
+        "label": "microSD slot"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
-    "outline": { "shape": "rect", "w": 85, "h": 56, "cornerRadius": 3 },
+    "outline": {
+      "shape": "rect",
+      "w": 85,
+      "h": 56,
+      "cornerRadius": 3
+    },
     "thickness": 1.4,
     "bumps": [
-      { "x": 23, "y": 24, "w": 15, "h": 15, "z": 1.4, "height": 2.4, "colour": "#20262c", "label": "BCM2711" },
-      { "x": 3.5, "y": 47, "w": 51, "h": 5.5, "z": 1.4, "height": 8.5, "colour": "#111417", "label": "40-pin header" },
-      { "x": 66, "y": 2, "w": 17, "h": 15, "z": 1.4, "height": 13.5, "colour": "#8b9096", "label": "USB 2.0" },
-      { "x": 66, "y": 20, "w": 17, "h": 15, "z": 1.4, "height": 13.5, "colour": "#8b9096", "label": "USB 3.0" },
-      { "x": 66, "y": 38, "w": 17, "h": 16, "z": 1.4, "height": 13.5, "colour": "#8b9096", "label": "Ethernet" }
+      {
+        "x": 7.11,
+        "y": 49.98,
+        "w": 50.81,
+        "h": 5.0,
+        "z": 1.4,
+        "height": 8.5,
+        "colour": "#111417",
+        "label": "40-pin header"
+      },
+      {
+        "x": 21.76,
+        "y": 24.98,
+        "w": 15.0,
+        "h": 15.0,
+        "z": 1.4,
+        "height": 2.4,
+        "colour": "#20262c",
+        "label": "BCM2711 processor"
+      },
+      {
+        "x": 39.05,
+        "y": 24.98,
+        "w": 11.51,
+        "h": 15.0,
+        "z": 1.4,
+        "height": 1.2,
+        "colour": "#20262c",
+        "label": "RAM"
+      },
+      {
+        "x": 66.66,
+        "y": 37.98,
+        "w": 21.37,
+        "h": 15.52,
+        "z": 1.4,
+        "height": 13.5,
+        "colour": "#8b9096",
+        "label": "Ethernet"
+      },
+      {
+        "x": 70.52,
+        "y": 20.41,
+        "w": 17.5,
+        "h": 13.14,
+        "z": 1.4,
+        "height": 16.0,
+        "colour": "#8b9096",
+        "label": "USB 3.0 pair"
+      },
+      {
+        "x": 70.31,
+        "y": 2.42,
+        "w": 17.71,
+        "h": 13.14,
+        "z": 1.4,
+        "height": 16.0,
+        "colour": "#8b9096",
+        "label": "USB 2.0 pair"
+      },
+      {
+        "x": 6.88,
+        "y": -1.26,
+        "w": 8.66,
+        "h": 7.4,
+        "z": 1.4,
+        "height": 3.2,
+        "colour": "#8b9096",
+        "label": "USB-C"
+      },
+      {
+        "x": 22.91,
+        "y": -1.45,
+        "w": 6.2,
+        "h": 7.96,
+        "z": 1.4,
+        "height": 3.0,
+        "colour": "#8b9096",
+        "label": "micro HDMI 0"
+      },
+      {
+        "x": 36.41,
+        "y": -1.45,
+        "w": 6.2,
+        "h": 7.96,
+        "z": 1.4,
+        "height": 3.0,
+        "colour": "#8b9096",
+        "label": "micro HDMI 1"
+      },
+      {
+        "x": 50.52,
+        "y": -2.52,
+        "w": 6.98,
+        "h": 15.0,
+        "z": 1.4,
+        "height": 6.0,
+        "colour": "#20262c",
+        "label": "Audio jack"
+      },
+      {
+        "x": 45.06,
+        "y": 0.29,
+        "w": 3.95,
+        "h": 22.4,
+        "z": 1.4,
+        "height": 5.5,
+        "colour": "#20262c",
+        "label": "Camera connector"
+      },
+      {
+        "x": 1.51,
+        "y": 16.78,
+        "w": 3.94,
+        "h": 22.41,
+        "z": 1.4,
+        "height": 5.5,
+        "colour": "#20262c",
+        "label": "Display connector"
+      }
     ]
   },
   "mountingHoles": [
-    { "id": "h1", "x": 3.5, "y": 3.5, "diameter": 2.7, "screw": "M2.5" },
-    { "id": "h2", "x": 61.5, "y": 3.5, "diameter": 2.7, "screw": "M2.5" },
-    { "id": "h3", "x": 3.5, "y": 52.5, "diameter": 2.7, "screw": "M2.5" },
-    { "id": "h4", "x": 61.5, "y": 52.5, "diameter": 2.7, "screw": "M2.5" }
-  ],
-  "keepouts": [
-    { "id": "k-under", "label": "Solder side clearance", "x": 0, "y": 0, "w": 85, "h": 56, "z": -2.5, "height": 2.5 },
-    { "id": "k-gpio", "label": "GPIO header + hat space", "x": 3.5, "y": 45, "w": 51, "h": 9, "z": 1.4, "height": 16 }
+    {
+      "id": "h1",
+      "x": 3.5,
+      "y": 3.5,
+      "diameter": 2.7,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h2",
+      "x": 61.5,
+      "y": 3.5,
+      "diameter": 2.7,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h3",
+      "x": 3.5,
+      "y": 52.5,
+      "diameter": 2.7,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h4",
+      "x": 61.5,
+      "y": 52.5,
+      "diameter": 2.7,
+      "screw": "M2.5"
+    }
   ],
   "connectors": [
-    { "id": "usbc", "label": "USB-C power", "side": "-y", "x": 11.2, "y": 0, "z": 1.4, "width": 9.2, "height": 3.4, "protrusion": 1.5 },
-    { "id": "hdmi0", "label": "micro HDMI 0", "side": "-y", "x": 26, "y": 0, "z": 1.4, "width": 7.2, "height": 3.4, "protrusion": 1.5 },
-    { "id": "hdmi1", "label": "micro HDMI 1", "side": "-y", "x": 39.5, "y": 0, "z": 1.4, "width": 7.2, "height": 3.4, "protrusion": 1.5 },
-    { "id": "av", "label": "3.5 mm A/V jack", "side": "-y", "x": 54, "y": 0, "z": 1.4, "width": 7, "height": 6, "protrusion": 2 },
-    { "id": "usb2", "label": "USB 2.0 (pair)", "side": "+x", "x": 85, "y": 9.5, "z": 1.4, "width": 15.5, "height": 16.5, "protrusion": 2 },
-    { "id": "usb3", "label": "USB 3.0 (pair)", "side": "+x", "x": 85, "y": 27.5, "z": 1.4, "width": 15.5, "height": 16.5, "protrusion": 2 },
-    { "id": "eth", "label": "Ethernet", "side": "+x", "x": 85, "y": 45.75, "z": 1.4, "width": 16, "height": 14, "protrusion": 2 },
-    { "id": "sd", "label": "microSD card", "side": "-x", "x": 0, "y": 22.6, "z": 0, "width": 12, "height": 2, "protrusion": 0 }
+    {
+      "id": "usbc",
+      "label": "USB-C power",
+      "side": "-y",
+      "x": 11.21,
+      "y": 0,
+      "z": 1.4,
+      "width": 9.2,
+      "height": 3.4,
+      "protrusion": 1.26
+    },
+    {
+      "id": "hdmi0",
+      "label": "micro HDMI 0",
+      "side": "-y",
+      "x": 26.01,
+      "y": 0,
+      "z": 1.4,
+      "width": 7.2,
+      "height": 3.4,
+      "protrusion": 1.45
+    },
+    {
+      "id": "hdmi1",
+      "label": "micro HDMI 1",
+      "side": "-y",
+      "x": 39.51,
+      "y": 0,
+      "z": 1.4,
+      "width": 7.2,
+      "height": 3.4,
+      "protrusion": 1.45
+    },
+    {
+      "id": "av",
+      "label": "3.5 mm A/V jack",
+      "side": "-y",
+      "x": 54.01,
+      "y": 0,
+      "z": 1.4,
+      "width": 7.0,
+      "height": 6.0,
+      "protrusion": 2.52
+    },
+    {
+      "id": "usb2",
+      "label": "USB 2.0 (pair)",
+      "side": "+x",
+      "x": 85,
+      "y": 8.99,
+      "z": 1.4,
+      "width": 15.5,
+      "height": 16.5,
+      "protrusion": 3.02
+    },
+    {
+      "id": "usb3",
+      "label": "USB 3.0 (pair)",
+      "side": "+x",
+      "x": 85,
+      "y": 26.98,
+      "z": 1.4,
+      "width": 15.5,
+      "height": 16.5,
+      "protrusion": 3.02
+    },
+    {
+      "id": "eth",
+      "label": "Ethernet",
+      "side": "+x",
+      "x": 85,
+      "y": 45.74,
+      "z": 1.4,
+      "width": 16.0,
+      "height": 14.0,
+      "protrusion": 3.03
+    },
+    {
+      "id": "sd",
+      "label": "microSD card",
+      "side": "-x",
+      "x": 0,
+      "y": 22.6,
+      "z": -2.0,
+      "width": 12.0,
+      "height": 2.0,
+      "protrusion": 0
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "gpio",
+      "label": "40-pin GPIO",
+      "x": 8.37,
+      "y": 51.23,
+      "rows": 2,
+      "cols": 20,
+      "pitch": 2.54
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-under",
+      "label": "Solder side clearance",
+      "x": 0,
+      "y": 0,
+      "w": 85,
+      "h": 56,
+      "z": -2.5,
+      "height": 2.5
+    },
+    {
+      "id": "k-gpio",
+      "label": "GPIO header and HAT socket",
+      "x": 7.11,
+      "y": 49.98,
+      "w": 50.81,
+      "h": 5.0,
+      "z": 1.4,
+      "height": 16
+    }
   ],
   "electrical": {
-    "voltage": [5],
+    "voltage": [
+      5
+    ],
     "currentTypical": 1.25,
     "currentPeak": 3,
     "note": "Needs a 5 V 3 A supply. Undervoltage warnings are the usual cause of odd crashes."
   },
-  "pinHeaders": [
-    { "id": "gpio", "label": "40-pin GPIO", "x": 3.5, "y": 49.0, "rows": 2, "cols": 20, "pitch": 2.54 }
-  ],
   "links": [
-    { "label": "Mechanical drawing", "url": "https://datasheets.raspberrypi.com/rpi4/raspberry-pi-4-mechanical-drawing.pdf" }
+    {
+      "label": "Mechanical drawing",
+      "url": "https://datasheets.raspberrypi.com/rpi4/raspberry-pi-4-mechanical-drawing.pdf"
+    }
   ],
-  "tags": ["pi", "raspberry", "sbc", "linux", "computer"]
+  "tags": [
+    "pi",
+    "raspberry",
+    "sbc",
+    "linux",
+    "computer"
+  ]
 }

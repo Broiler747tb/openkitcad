@@ -8,44 +8,263 @@
   "manufacturer": "Raspberry Pi",
   "summary": "The small one. Same footprint as a Zero 2 W but a lot slower.",
   "confidence": "datasheet",
-  "source": "Outline and the 58 x 23 mm hole pattern are the published Raspberry Pi Zero mechanical specification, 3.5 mm in from each edge for M2.5 screws.",
+  "source": "Raspberry Pi Zero W mechanical drawing (Raspberry Pi Ltd), with positions read from its vector geometry: board 65 x 30 mm with 3 mm corners, four 2.75 mm holes 3.5 mm in from the corners on a 58 x 23 mm pattern, 40-pin header holes centred 32.5 mm along the top hole line (no header fitted). Bottom edge: mini HDMI at 12.4 mm, micro USB data at 41.4 mm and micro USB power at 54 mm. The microSD slot is on the top at the left edge and the camera connector at the right edge. Small parts are left out.",
+  "look": {
+    "colour": "#1f6f4a",
+    "components": [
+      {
+        "kind": "chip",
+        "x": 19.74,
+        "y": 7.02,
+        "w": 12.01,
+        "h": 11.99,
+        "height": 1.2,
+        "label": "BCM2835 processor with RAM"
+      },
+      {
+        "kind": "port",
+        "port": "mini-hdmi",
+        "x": 12.41,
+        "y": -0.56,
+        "facing": "-y",
+        "w": 10.87,
+        "h": 3.2,
+        "depth": 7.48,
+        "label": "mini HDMI"
+      },
+      {
+        "kind": "port",
+        "port": "micro-usb",
+        "x": 41.41,
+        "y": -0.61,
+        "facing": "-y",
+        "w": 7.51,
+        "h": 2.6,
+        "depth": 5.31,
+        "label": "micro USB data"
+      },
+      {
+        "kind": "port",
+        "port": "micro-usb",
+        "x": 54.02,
+        "y": -0.61,
+        "facing": "-y",
+        "w": 7.51,
+        "h": 2.6,
+        "depth": 5.31,
+        "label": "micro USB power"
+      },
+      {
+        "kind": "port",
+        "port": "microsd",
+        "x": 1.67,
+        "y": 16.89,
+        "facing": "-x",
+        "w": 12.0,
+        "h": 1.4,
+        "depth": 11.45,
+        "label": "microSD slot"
+      },
+      {
+        "kind": "box",
+        "x": 61.62,
+        "y": 6.93,
+        "w": 3.39,
+        "h": 16.12,
+        "height": 1.5,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "label": "Camera connector"
+      },
+      {
+        "kind": "box",
+        "x": 64.2,
+        "y": 7.2,
+        "z": 2.9,
+        "w": 1.2,
+        "h": 15.6,
+        "height": 0.5,
+        "finish": "plastic",
+        "colour": "#3a2f25",
+        "label": "Camera connector latch"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
       "shape": "rect",
       "w": 65,
-      "h": 30
+      "h": 30,
+      "cornerRadius": 3
     },
-    "thickness": 1.4
+    "thickness": 1.4,
+    "bumps": [
+      {
+        "x": 6.98,
+        "y": -0.56,
+        "w": 10.87,
+        "h": 7.48,
+        "z": 1.4,
+        "height": 3.2,
+        "colour": "#8b9096",
+        "label": "mini HDMI"
+      },
+      {
+        "x": 37.66,
+        "y": -0.61,
+        "w": 7.51,
+        "h": 5.31,
+        "z": 1.4,
+        "height": 2.6,
+        "colour": "#8b9096",
+        "label": "micro USB data"
+      },
+      {
+        "x": 50.26,
+        "y": -0.61,
+        "w": 7.51,
+        "h": 5.31,
+        "z": 1.4,
+        "height": 2.6,
+        "colour": "#8b9096",
+        "label": "micro USB power"
+      },
+      {
+        "x": 1.67,
+        "y": 10.89,
+        "w": 11.45,
+        "h": 12.0,
+        "z": 1.4,
+        "height": 1.4,
+        "colour": "#8b9096",
+        "label": "microSD slot"
+      },
+      {
+        "x": 61.62,
+        "y": 6.93,
+        "w": 3.39,
+        "h": 16.12,
+        "z": 1.4,
+        "height": 2.0,
+        "colour": "#20262c",
+        "label": "Camera connector"
+      }
+    ]
   },
   "mountingHoles": [
     {
       "id": "h1",
       "x": 3.5,
       "y": 3.5,
-      "diameter": 2.7,
+      "diameter": 2.75,
       "screw": "M2.5"
     },
     {
       "id": "h2",
       "x": 61.5,
       "y": 3.5,
-      "diameter": 2.7,
+      "diameter": 2.75,
       "screw": "M2.5"
     },
     {
       "id": "h3",
       "x": 3.5,
       "y": 26.5,
-      "diameter": 2.7,
+      "diameter": 2.75,
       "screw": "M2.5"
     },
     {
       "id": "h4",
       "x": 61.5,
       "y": 26.5,
-      "diameter": 2.7,
+      "diameter": 2.75,
       "screw": "M2.5"
+    }
+  ],
+  "connectors": [
+    {
+      "id": "pwr",
+      "label": "micro USB power",
+      "side": "-y",
+      "x": 54.02,
+      "y": 0,
+      "z": 1.4,
+      "width": 8.0,
+      "height": 3.0,
+      "protrusion": 0.61
+    },
+    {
+      "id": "usb",
+      "label": "micro USB data",
+      "side": "-y",
+      "x": 41.41,
+      "y": 0,
+      "z": 1.4,
+      "width": 8.0,
+      "height": 3.0,
+      "protrusion": 0.61
+    },
+    {
+      "id": "hdmi",
+      "label": "mini HDMI",
+      "side": "-y",
+      "x": 12.41,
+      "y": 0,
+      "z": 1.4,
+      "width": 11.5,
+      "height": 4.0,
+      "protrusion": 0.56
+    },
+    {
+      "id": "sd",
+      "label": "microSD card",
+      "side": "-x",
+      "x": 0,
+      "y": 16.89,
+      "z": 1.4,
+      "width": 12.0,
+      "height": 2.0,
+      "protrusion": 0
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "gpio",
+      "label": "40-pin GPIO",
+      "x": 8.37,
+      "y": 25.23,
+      "rows": 2,
+      "cols": 20,
+      "pitch": 2.54
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-under",
+      "label": "Solder side clearance",
+      "x": 0,
+      "y": 0,
+      "w": 65,
+      "h": 30,
+      "z": -2,
+      "height": 2
+    },
+    {
+      "id": "k-gpio",
+      "label": "GPIO header space",
+      "x": 7.12,
+      "y": 23.98,
+      "w": 50.79,
+      "h": 5.01,
+      "z": 1.4,
+      "height": 14
+    }
+  ],
+  "links": [
+    {
+      "label": "Mechanical drawing",
+      "url": "https://datasheets.raspberrypi.com/rpizero/raspberry-pi-zero-w-mechanical-drawing.pdf"
     }
   ],
   "tags": [
