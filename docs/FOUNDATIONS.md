@@ -232,16 +232,35 @@ builder reports.
 
 ## 7. Command panel and timeline (F3)
 
-Commands are declarative: an id, a label, a hint, typed inputs (selection with a filter and a
-count, length, angle, integer, choice, toggle) and a pure `build(values) => Feature[]`. The panel
-floats at the top right of the canvas, drags and collapses to its title bar, with OK and Cancel
-at the bottom; Enter commits and Escape cancels. Every input change requests a debounced preview,
-and the viewport shows the preview scene until the command closes. Lengths get a drag arrow in the
-viewport with a value box beside it. Editing a feature opens its command with its values and
-previews with `replaceFeatureId`.
+Commands are declarative (`src/ui/command/specs`): an id, a Fusion label, a plain hint, typed inputs
+(selection with a filter and a count, length, angle, integer, choice, toggle) and a pure
+`build(values, context) => Feature[]`, with optional `validate` and `handles`. The context carries
+the document, the unit, stable ids for the session and the step being edited. The panel floats at
+the top right of the canvas, drags and collapses to its title bar, with OK and Cancel at the
+bottom; Enter commits and Escape cancels. A choice or toggle moves selection to the first visible
+selection input still missing picks, and a pick goes to whichever visible input accepts its kind.
 
-The timeline gets a draggable marker, reordering validated by `canMoveFeature`, contiguous
-groups, and a context menu with Edit, Suppress, Roll Back To Here, Group and Delete.
+**Preview.** Every input change requests a debounced `preview`. The worker re-evaluates the pending
+steps instead of reading them from the cache and returns the tools of cutting steps as instances
+flagged `previewTool`, drawn as a see-through red volume that cannot be picked. The viewport shows
+the preview scene until the command closes. Editing a step reopens its command with its values,
+keeps its id, its name and the bodies it makes, previews with `replaceFeatureId`, and replaces the
+step in place in one undo step. A parameter link survives an edit only while its field still shows
+the linked expression.
+
+**Handles.** A command declares arrows (anchored at a point with a direction, or on a named edge)
+and arcs against a length or angle input, in component space. Arrows keep a constant screen size,
+ignore the depth of the model, snap to the move and angle steps (Alt drags freely) and respect the
+input's limits. A value box sits beside each tip and takes typing.
+
+**Timeline.** Playback buttons (start, back, play, forward, end), then the steps as icons. The
+marker drags between steps and rolls the design back as it moves; marker moves merge into one
+undo step. Steps drag to reorder, validated by `canMoveFeature`, with a drop line that turns red
+where the move is not allowed. Shift-click selects a range; the right-click menu has Edit Feature,
+Suppress Features, Roll History Marker Here, Group Selected and Delete. Groups are ranges stored in
+`doc.groups`, shown as a bracket or folded into one icon, and dropped when a move or a delete breaks
+them. Failed steps are red, warnings amber, rolled-back and suppressed steps faded, and while a step
+is being edited the steps after it fade too.
 
 ## 8. How the work is done
 
@@ -261,3 +280,8 @@ groups, and a context menu with Edit, Suppress, Roll Back To Here, Group and Del
   circle into a new body, round a picked vertical edge, and hollow the box through the top face
   with a ledge lid. Make the box 35 mm tall: the circle body, the rounding and the lid follow with
   no errors. Undo and redo.
+- **F3 smoke test.** Sketch a rectangle and extrude it from the toolbar; drag the distance arrow and
+  watch the preview follow before OK. Sketch a circle on top and extrude it as a cut, checking the red
+  tool before OK. Double-click the first extrude on the timeline, change its distance and OK. Drag
+  the marker back one step and forward again, drag a step to a new place, try to drag a fillet
+  before its body and see it refused, group two steps and expand the group.

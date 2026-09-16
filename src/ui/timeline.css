@@ -1,0 +1,217 @@
+.design-timeline.tl {
+  display: flex;
+  align-items: center;
+  gap: var(--okc-space-5);
+  padding: var(--okc-space-3) var(--okc-space-5);
+  background: var(--okc-surface-toolbar);
+  border-top: 1px solid var(--okc-line);
+  font: var(--okc-font-size-md) / var(--okc-line-height) var(--okc-font-ui);
+  color: var(--okc-text);
+}
+
+.tl-playback {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--okc-space-1);
+  padding-right: var(--okc-space-5);
+  border-right: 1px solid var(--okc-line);
+}
+
+.tl-playback button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--okc-radius-sm);
+  background: transparent;
+  color: var(--okc-text-muted);
+  font-size: var(--okc-font-size-md);
+  cursor: pointer;
+}
+
+.tl-playback button:hover:not(:disabled) {
+  background: var(--okc-hover-strong);
+  color: var(--okc-text);
+}
+
+.tl-playback button:disabled {
+  color: var(--okc-text-disabled);
+  cursor: default;
+}
+
+.tl-strip {
+  display: flex;
+  flex: 1;
+  align-items: flex-end;
+  gap: 3px;
+  min-width: 0;
+  min-height: 38px;
+  overflow-x: auto;
+  padding: 2px 2px 4px;
+}
+
+.tl-empty {
+  align-self: center;
+  color: var(--okc-text-faint);
+}
+
+.tl-step,
+.tl-group-closed {
+  position: relative;
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--okc-line);
+  border-bottom: 3px solid var(--okc-accent-line);
+  border-radius: var(--okc-radius-xs);
+  background: var(--okc-surface-panel);
+  color: var(--okc-accent-text);
+  font-size: 15px;
+  line-height: 1;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.tl-step.tl-sketch {
+  border-bottom-color: var(--okc-sketch-construction);
+  color: var(--okc-sketch-construction);
+}
+
+.tl-step:hover,
+.tl-group-closed:hover {
+  border-color: var(--okc-line-strong);
+  background: var(--okc-hover);
+}
+
+.tl-step.selected,
+.tl-step.ranged {
+  border-color: var(--okc-selection);
+  background: var(--okc-selection-soft);
+}
+
+.tl-step.editing {
+  box-shadow: 0 0 0 2px var(--okc-accent);
+}
+
+.tl-step.warned {
+  border-bottom-color: var(--okc-warning);
+}
+
+.tl-step.failed,
+.tl-group-closed.failed {
+  border-color: var(--okc-error);
+  border-bottom-color: var(--okc-error);
+  background: var(--okc-error-soft);
+  color: var(--okc-error);
+}
+
+.tl-step.rolled-back,
+.tl-group-closed.rolled-back {
+  opacity: 0.38;
+}
+
+.tl-step.suppressed::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  background: linear-gradient(
+    to top right,
+    transparent calc(50% - 1px),
+    var(--okc-text-muted) calc(50% - 1px),
+    var(--okc-text-muted) calc(50% + 1px),
+    transparent calc(50% + 1px)
+  );
+}
+
+.tl-group-closed {
+  width: 38px;
+  grid-auto-flow: column;
+  gap: 2px;
+  cursor: pointer;
+}
+
+.tl-group-count {
+  font-size: var(--okc-font-size-xs);
+  color: var(--okc-text-muted);
+}
+
+.tl-group-open {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 1px;
+  padding: 0 2px 2px;
+  border: 1px solid var(--okc-accent-line);
+  border-top-width: 2px;
+  border-radius: var(--okc-radius-sm);
+}
+
+.tl-group-label {
+  align-self: flex-start;
+  padding: 0 var(--okc-space-2);
+  border: 0;
+  background: transparent;
+  color: var(--okc-text-muted);
+  font: inherit;
+  font-size: var(--okc-font-size-xs);
+  cursor: pointer;
+}
+
+.tl-group-steps {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.tl-marker {
+  position: relative;
+  flex-shrink: 0;
+  width: 6px;
+  height: 34px;
+  margin: 0 1px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.tl-marker::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  bottom: 0;
+  left: 2px;
+  width: 2px;
+  background: var(--okc-text);
+}
+
+.tl-marker::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -2px;
+  width: 10px;
+  height: 8px;
+  border-radius: 2px 2px 0 0;
+  background: var(--okc-text);
+  clip-path: polygon(0 0, 100% 0, 100% 55%, 50% 100%, 0 55%);
+}
+
+.tl-marker:focus-visible {
+  outline: 2px solid var(--okc-focus-ring);
+}
+
+.tl-drop {
+  flex-shrink: 0;
+  width: 2px;
+  height: 30px;
+  background: var(--okc-accent);
+}
+
+.tl-drop.invalid {
+  background: var(--okc-error);
+}

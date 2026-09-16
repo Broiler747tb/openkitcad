@@ -16,6 +16,7 @@ import {
 } from './types'
 import {
   canMoveFeature,
+  timelineGroups,
   childOccurrences,
   expandInstances,
   featureCreatesBodies,
@@ -166,6 +167,9 @@ interface AppState {
   removeFeature: (featureId: string, opts?: { withDependents?: boolean }) => boolean
   moveFeature: (featureId: string, toIndex: number) => boolean
   setMarker: (index: number | null) => void
+  groupSteps: (firstId: string, lastId: string) => string | null
+  ungroup: (groupId: string) => void
+  toggleGroup: (groupId: string) => void
 
   gizmoMode: 'translate' | 'rotate'
   setGizmoMode: (mode: 'translate' | 'rotate') => void
@@ -967,6 +971,8 @@ export const useStore = create<AppState>((set, get) => ({
       const index = featureIndex(d, featureId)
       const [moved] = d.timeline.splice(index, 1)
       d.timeline.splice(toIndex, 0, moved)
+      const kept = new Set(timelineGroups(d).map((span) => span.group.id))
+      d.groups = d.groups.filter((group) => kept.has(group.id))
     })
     return true
   },
@@ -975,9 +981,55 @@ export const useStore = create<AppState>((set, get) => ({
     const doc = get().doc
     const next = index === null || index >= doc.timeline.length ? null : Math.max(0, index)
     if (next === doc.marker) return
-    get().commit((d) => {
-      d.marker = next
+    get().commit(
+      (d) => {
+        d.marker = next
+      },
+      { mergeKey: 'marker' },
+    )
+  },
+
+  groupSteps(firstId, lastId) {
+    const state = get()
+    const a = featureIndex(state.doc, firstId)
+    const b = featureIndex(state.doc, lastId)
+    if (a < 0 || b < 0 || a === b) return null
+    const start = Math.min(a, b)
+    const end = Math.max(a, b)
+    if (timelineGroups(state.doc).some((span) => start <= span.end && end >= span.start)) {
+      state.setStatus('Those steps overlap a group that already exists.')
+      return null
+    }
+    const names = new Set(state.doc.groups.map((group) => group.name))
+    let n = state.doc.groups.length + 1
+    while (names.has(`Group${n}`)) n++
+    const id = newId('group')
+    state.commit((d) => {
+      d.groups.push({
+        id,
+        name: `Group${n}`,
+        firstId: d.timeline[start].id,
+        lastId: d.timeline[end].id,
+        collapsed: true,
+      })
     })
+    return id
+  },
+
+  ungroup(groupId) {
+    get().commit((d) => {
+      d.groups = d.groups.filter((group) => group.id !== groupId)
+    })
+  },
+
+  toggleGroup(groupId) {
+    get().commit(
+      (d) => {
+        const group = d.groups.find((candidate) => candidate.id === groupId)
+        if (group) group.collapsed = !group.collapsed
+      },
+      { mergeKey: `group:${groupId}` },
+    )
   },
 
   gizmoMode: 'translate',

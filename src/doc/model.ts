@@ -8,6 +8,7 @@ import type {
   Matrix4,
   Occurrence,
   OkcDocument,
+  TimelineGroup,
 } from './types'
 
 export function markerIndex(doc: OkcDocument): number {
@@ -321,4 +322,22 @@ export function isElementRef(value: unknown): value is ElementRef {
 
 export function remapElementName(name: string, ids: ReadonlyMap<string, string>): string {
   return name.replace(/[^:|&#]+/g, (token) => ids.get(token) ?? token)
+}
+
+export interface GroupSpan {
+  group: TimelineGroup
+  start: number
+  end: number
+}
+
+export function timelineGroups(doc: OkcDocument): GroupSpan[] {
+  const spans: GroupSpan[] = []
+  for (const group of doc.groups) {
+    const start = featureIndex(doc, group.firstId)
+    const end = featureIndex(doc, group.lastId)
+    if (start < 0 || end <= start) continue
+    if (spans.some((span) => start <= span.end && end >= span.start)) continue
+    spans.push({ group, start, end })
+  }
+  return spans.sort((a, b) => a.start - b.start)
 }

@@ -12,6 +12,7 @@ import {
   placementMatrix,
   remapElementName,
   rotationMatrix,
+  timelineGroups,
   transformPoint,
   translationMatrix,
   wouldCreateCycle,
@@ -120,6 +121,20 @@ export function runModelTest(): TestResult[] {
       !isElementRef({ bodyId: 'b', kind: 'named', name: 'XY' }) &&
       !isElementRef({ id: 'b', kind: 'face', name: 'Sketch' }),
     'edge ref, named plane, feature',
+  )
+
+  const grouped = { ...emptyDocument('Groups'), timeline }
+  grouped.groups = [
+    { id: 'g1', name: 'Group1', firstId: 's1', lastId: 'e1', collapsed: true },
+    { id: 'g2', name: 'Group2', firstId: 'e1', lastId: 'f1', collapsed: true },
+    { id: 'g3', name: 'Group3', firstId: 'f1', lastId: 's1', collapsed: false },
+    { id: 'g4', name: 'Group4', firstId: 'gone', lastId: 's2', collapsed: false },
+  ]
+  const spans = timelineGroups(grouped)
+  check(
+    'timeline groups ignore overlapping, reversed and dangling ranges',
+    spans.map((span) => `${span.group.id}:${span.start}-${span.end}`).join() === 'g1:0-1',
+    spans.map((span) => `${span.group.id}:${span.start}-${span.end}`).join(),
   )
 
   return results

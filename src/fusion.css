@@ -411,94 +411,6 @@
   z-index: 10;
   min-width: 0;
 }
-.timeline-label {
-  width: 90px;
-  font-size: 9px;
-  letter-spacing: 1px;
-  padding-top: 15px;
-  color: #515c65;
-  flex-shrink: 0;
-}
-.timeline-label small {
-  display: block;
-  font-size: 9px;
-  letter-spacing: 0;
-  color: #90979e;
-  margin-top: 5px;
-}
-.timeline-track {
-  display: flex;
-  align-items: stretch;
-  overflow: auto;
-  gap: 12px;
-  flex: 1;
-}
-.timeline-body {
-  position: relative;
-  display: flex;
-  align-items: end;
-  flex-shrink: 0;
-  padding: 16px 7px 2px;
-  gap: 3px;
-  border-right: 1px solid #cbd2d9;
-}
-.timeline-body > span {
-  position: absolute;
-  top: 0;
-  left: 9px;
-  font-size: 9px;
-  color: #727c86;
-  max-width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-}
-.timeline-feature {
-  position: relative;
-  width: 33px;
-  height: 37px;
-  border: 1px solid #c5ccd4;
-  border-bottom: 3px solid #7a9db9;
-  background: #fff;
-  border-radius: 2px;
-  color: #447193;
-}
-.timeline-feature > span {
-  font-size: 19px;
-}
-.timeline-feature small {
-  position: absolute;
-  bottom: 0;
-  right: 2px;
-  font-size: 7px;
-}
-.timeline-feature.selected {
-  background: #d0e8fa;
-  border-color: #2181c9;
-}
-.timeline-feature.suppressed {
-  opacity: 0.4;
-}
-.timeline-feature.failed {
-  border-color: #cf4343;
-}
-.timeline-actions {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 4px;
-  padding-left: 8px;
-  border-left: 1px solid #d0d5da;
-}
-.timeline-actions button {
-  padding: 3px 8px;
-  background: #e7ebef;
-  font-size: 10px;
-}
-.timeline-empty {
-  align-self: center;
-  color: #87919b;
-  font-size: 11px;
-}
 .navigation-bar {
   grid-area: main;
   align-self: end;
@@ -707,18 +619,12 @@
   .view-cube {
     right: 12px;
   }
-  .timeline-label {
-    display: none;
-  }
   .navigation-bar {
     margin-bottom: 55px;
   }
   .panel-left,
   .panel-right {
     max-height: calc(100% - 230px);
-  }
-  .timeline-actions {
-    display: none;
   }
 }
 .parameters-dialog {

@@ -7,6 +7,7 @@ import './workspace.css'
 import './fusion.css'
 import './android.css'
 import './ui/command/command.css'
+import './ui/timeline.css'
 import type { TestResult } from './dev/selftest'
 
 const root = createRoot(document.getElementById('root')!)
