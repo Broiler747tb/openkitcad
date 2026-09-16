@@ -103,6 +103,7 @@ export interface RevolveFeature extends FeatureBase {
   profiles?: string[]
   angle: number
   axis: 'x' | 'y'
+  axisLine?: string
   result: BodyOperation
 }
 

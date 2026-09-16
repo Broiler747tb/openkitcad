@@ -466,6 +466,11 @@ as translucent squares that highlight under the pointer, and a click selects one
 waiting Plane input or to Create Sketch. The Origin planes in the Browser also hand themselves to a
 waiting command instead of always starting a sketch.
 
+**Revolve about a line.** Revolve (and Revolve Surface) take an Axis: a straight line in the
+profile's own sketch, usually a construction centreline, picked in the view with a hover label, or
+the sketch X or Y axis when nothing is picked. The step stores the line's id (`axisLine`), so moving
+the line in the sketch moves the axis.
+
 **Tidying.** Counts read "1 body" and "2 bodies" (`src/core/words.ts`). The Inspector hides while a
 command panel is open, and surface bodies no longer offer edge rounding. The Shortcuts dialog no
 longer claims surfaces and Press Pull are missing, and P outside a sketch says Project needs one.

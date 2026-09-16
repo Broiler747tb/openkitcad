@@ -3,6 +3,7 @@ import { selectedBodyId, sketchTargetBody, useStore } from '../../doc/store'
 import type { Feature, OkcDocument, PlaneRef, SketchFeature } from '../../doc/types'
 import {
   bodyPick,
+  curvePick,
   elementPick,
   featurePick,
   jointSnapPick,
@@ -355,6 +356,9 @@ function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, Comma
           : {
               ...shared,
               surface: feature.surface === true,
+              axisLine: feature.axisLine
+                ? [curvePick(doc, feature.sketchId, feature.axisLine)].flatMap((pick) => pick ?? [])
+                : [],
               axis: feature.axis,
               angle: feature.angle,
             }

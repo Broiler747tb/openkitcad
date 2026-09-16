@@ -30,8 +30,25 @@ export function profilePick(doc: OkcDocument, sketchId: string, key: string): Se
   }
 }
 
+export function curvePick(
+  doc: OkcDocument,
+  sketchId: string,
+  entityId: string,
+): SelectionPick | null {
+  const sketch = findFeature(doc, sketchId)
+  if (sketch?.kind !== 'sketch') return null
+  const entity = sketch.sketch.entities.find((candidate) => candidate.id === entityId)
+  if (!entity) return null
+  return {
+    kind: 'sketchCurve',
+    id: `${sketchId}|${entityId}`,
+    label: `${entity.kind === 'line' ? 'Line' : 'Curve'} in ${sketch.name || 'Sketch'}`,
+    curve: { sketchId, entityId },
+  }
+}
+
 export function pickSketchId(pick: SelectionPick): string {
-  return pick.profile?.sketchId ?? pick.id
+  return pick.profile?.sketchId ?? pick.curve?.sketchId ?? pick.id
 }
 
 export function bodyPick(

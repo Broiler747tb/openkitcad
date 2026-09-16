@@ -36,6 +36,7 @@ import {
   featurePick,
   occurrencePick,
   offerPick,
+  curvePick,
   pickSketchId,
   planePick,
   profilePick,
@@ -690,6 +691,7 @@ export function Viewport() {
             frame: transformFrame(local, componentMatrix(doc, feature.componentId)),
             curves: [],
             construction: [],
+            lines: [],
             regions: cachedRegions(feature.sketch),
             profiles: true,
           },
@@ -701,9 +703,15 @@ export function Viewport() {
       const pts = pointLookup(feature.sketch)
       const curves: Vec2[][] = []
       const construction: Vec2[][] = []
+      const lines: Array<{ id: string; a: Vec2; b: Vec2 }> = []
       for (const entity of feature.sketch.entities) {
         if (entity.kind === 'point') continue
         ;(entity.construction ? construction : curves).push(tessellate(entity, pts, 0.02))
+        if (entity.kind === 'line') {
+          const a = pts.get(entity.p1)
+          const b = pts.get(entity.p2)
+          if (a && b) lines.push({ id: entity.id, a, b })
+        }
       }
       return [
         {
@@ -711,6 +719,7 @@ export function Viewport() {
           frame: transformFrame(local, componentMatrix(doc, feature.componentId)),
           curves,
           construction,
+          lines,
           regions: cachedRegions(feature.sketch),
           profiles: true,
         },
@@ -1282,6 +1291,16 @@ export function Viewport() {
         ? glyphFeature.id
         : null
     if (joint !== hotJoint) setHotJoint(joint)
+    const curve =
+      !hot && useCommand.getState().session && acceptedKinds().has('sketchCurve')
+        ? engine.pickOverlayLine(e.clientX, e.clientY)
+        : null
+    if (curve) {
+      const pick = curvePick(store.doc, curve.sketchId, curve.entityId)
+      setCursorHint(pick ? { x: e.clientX, y: e.clientY, text: pick.label } : null)
+    } else if (cursorHint && acceptedKinds().has('sketchCurve')) {
+      setCursorHint(null)
+    }
     const profile =
       !hot && useCommand.getState().session && acceptedKinds().has('profile')
         ? engine.pickProfile(e.clientX, e.clientY)
@@ -1595,6 +1614,10 @@ export function Viewport() {
         const hit = engine.pick(e.clientX, e.clientY)
         const id = hit?.path[hit.path.length - 1]
         if (id && offerPick(occurrencePick(store.doc, id, hit.instanceId))) return
+      }
+      if (filter.has('sketchCurve')) {
+        const line = engine.pickOverlayLine(e.clientX, e.clientY)
+        if (line && offerPick(curvePick(store.doc, line.sketchId, line.entityId))) return
       }
       if (filter.has('profile')) {
         const profile = engine.pickProfile(e.clientX, e.clientY)

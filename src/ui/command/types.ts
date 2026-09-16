@@ -39,6 +39,7 @@ export interface SelectionPick {
   point?: Vec3
   normal?: Vec3
   profile?: { sketchId: string; key: string }
+  curve?: { sketchId: string; entityId: string }
   joint?: {
     occurrencePath: string[]
     ref: ElementRef | null

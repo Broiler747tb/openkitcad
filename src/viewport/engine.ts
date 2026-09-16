@@ -67,6 +67,7 @@ export interface SketchOverlay {
   frame: Frame
   curves: Vec2[][]
   construction: Vec2[][]
+  lines: ReadonlyArray<{ id: string; a: Vec2; b: Vec2 }>
   regions: RegionResult
   profiles: boolean
 }
@@ -883,6 +884,50 @@ export class ViewportEngine {
       )
       material.opacity = picked ? 0.5 : hovered ? 0.45 : 0.32
     }
+  }
+
+  pickOverlayLine(
+    clientX: number,
+    clientY: number,
+    tolerance = 7,
+  ): { sketchId: string; entityId: string } | null {
+    this.raycaster.setFromCamera(this.pointerToNdc(clientX, clientY), this.camera)
+    const ray = this.raycaster.ray
+    let best: { sketchId: string; entityId: string; gap: number } | null = null
+    for (const overlay of this.sketchOverlays) {
+      if (!overlay.lines.length) continue
+      const normal = new THREE.Vector3(...overlay.frame.normal)
+      if (Math.abs(ray.direction.dot(normal)) < 0.02) continue
+      const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+        normal,
+        new THREE.Vector3(...overlay.frame.origin),
+      )
+      const point = new THREE.Vector3()
+      if (!ray.intersectPlane(plane, point)) continue
+      const d = point.clone().sub(new THREE.Vector3(...overlay.frame.origin))
+      const local: Vec2 = [
+        d.dot(new THREE.Vector3(...overlay.frame.xDir)),
+        d.dot(new THREE.Vector3(...overlay.frame.yDir)),
+      ]
+      const limit = tolerance * this.pixelSize([point.x, point.y, point.z])
+      for (const line of overlay.lines) {
+        const ab: Vec2 = [line.b[0] - line.a[0], line.b[1] - line.a[1]]
+        const length = ab[0] * ab[0] + ab[1] * ab[1]
+        if (length < 1e-18) continue
+        const t = Math.min(
+          1,
+          Math.max(0, ((local[0] - line.a[0]) * ab[0] + (local[1] - line.a[1]) * ab[1]) / length),
+        )
+        const gap = Math.hypot(
+          local[0] - (line.a[0] + ab[0] * t),
+          local[1] - (line.a[1] + ab[1] * t),
+        )
+        if (gap <= limit && (!best || gap < best.gap)) {
+          best = { sketchId: overlay.id, entityId: line.id, gap }
+        }
+      }
+    }
+    return best ? { sketchId: best.sketchId, entityId: best.entityId } : null
   }
 
   pickProfile(clientX: number, clientY: number): ProfileHit | null {

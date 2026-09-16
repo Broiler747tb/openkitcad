@@ -472,6 +472,17 @@ export function runCreateCommandTest(): TestResult[] {
         bodyIds: ['b1', 'b2'],
       },
       {
+        id: 'revolve1',
+        kind: 'revolve',
+        name: 'Revolve',
+        componentId: 'root',
+        sketchId: 'square',
+        angle: 270,
+        axis: 'x',
+        axisLine: 'l3',
+        result: { kind: 'newBody', bodyId: 'turned' },
+      },
+      {
         id: 'torus1',
         kind: 'torus',
         name: 'Torus',

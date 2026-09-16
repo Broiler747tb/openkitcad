@@ -14,7 +14,16 @@ import {
   sketchCircle,
   type Drawing,
 } from 'replicad'
-import { frameToLocal, makeFrame, v3, type Frame, type Vec2, type Vec3 } from '../core/math'
+import {
+  frameToLocal,
+  frameToWorld,
+  makeFrame,
+  v3,
+  type Frame,
+  type Vec2,
+  type Vec3,
+} from '../core/math'
+import type { Sketch2D } from '../sketch/types'
 import type {
   BodyOperation,
   ElementRef,
@@ -189,6 +198,23 @@ export function frameFromPlaneRef(
     )
   }
   return faceFrame(state, ref.face, ref.offset)
+}
+
+export function revolveAxis(
+  sketch: Sketch2D,
+  frame: Frame,
+  feature: { axis: 'x' | 'y'; axisLine?: string },
+): { origin: Vec3; direction: Vec3 } | null {
+  if (!feature.axisLine) {
+    return { origin: frame.origin, direction: feature.axis === 'x' ? frame.xDir : frame.yDir }
+  }
+  const line = sketch.entities.find((entity) => entity.id === feature.axisLine)
+  if (line?.kind !== 'line') return null
+  const p1 = sketch.points.find((point) => point.id === line.p1)
+  const p2 = sketch.points.find((point) => point.id === line.p2)
+  if (!p1 || !p2 || Math.hypot(p2.x - p1.x, p2.y - p1.y) < 1e-9) return null
+  const origin = frameToWorld(frame, [p1.x, p1.y])
+  return { origin, direction: v3.norm(v3.sub(frameToWorld(frame, [p2.x, p2.y]), origin)) }
 }
 
 export function toReplicadPlane(frame: Frame, offset = 0): Plane {
@@ -1218,7 +1244,29 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
           stage.report('error', 'A surface is always a new body.', 'Set the operation to New Body.')
           return
         }
-        const chains = sketchChains(sketchFeature.sketch)
+        const chains = sketchChains(sketchFeature.sketch).filter(
+          (chain) =>
+            feature.kind !== 'revolve' ||
+            !feature.axisLine ||
+            chain.pieces.some((piece) => piece.entityId !== feature.axisLine),
+        )
+        const surfaceAxis =
+          feature.kind === 'revolve'
+            ? revolveAxis(
+                sketchFeature.sketch,
+                stage.planes.get(sketchFeature.id) ??
+                  frameFromPlaneRef(sketchFeature.plane, stage.bodies, stage.planes),
+                feature,
+              )
+            : null
+        if (feature.kind === 'revolve' && !surfaceAxis) {
+          stage.report(
+            'error',
+            'The line this revolves around is gone from the sketch.',
+            'Edit this step and pick another axis.',
+          )
+          return
+        }
         if (!chains.length) {
           stage.report(
             'error',
@@ -1252,10 +1300,9 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
               owned.push(vector, prism)
               assembler.Add(compound, prism.Shape())
             } else {
-              const axisDirection = feature.axis === 'x' ? plane.xDir : plane.yDir
               const axis = new ocAny.gp_Ax1_2(
-                new ocAny.gp_Pnt_3(...plane.origin),
-                new ocAny.gp_Dir_4(...axisDirection),
+                new ocAny.gp_Pnt_3(...surfaceAxis!.origin),
+                new ocAny.gp_Dir_4(...surfaceAxis!.direction),
               )
               const angle = feature.angle > 0 && feature.angle < 360 ? feature.angle : 360
               const revolution = new ocAny.BRepPrimAPI_MakeRevol_1(
@@ -1307,6 +1354,15 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
           }),
         )
       } else {
+        const axis = revolveAxis(sketchFeature.sketch, frame, feature)
+        if (!axis) {
+          stage.report(
+            'error',
+            'The line this revolves around is gone from the sketch.',
+            'Edit this step and pick another axis.',
+          )
+          return
+        }
         const face = profileFace(profile.drawing, frame)
         apply(
           feature.result,
@@ -1316,8 +1372,8 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
             sketch: sketchFeature.sketch,
             pieces: profile.pieces,
             frame,
-            axisOrigin: frame.origin,
-            axisDirection: feature.axis === 'x' ? frame.xDir : frame.yDir,
+            axisOrigin: axis.origin,
+            axisDirection: axis.direction,
             angle: feature.angle > 0 && feature.angle < 360 ? feature.angle : 360,
           }),
         )

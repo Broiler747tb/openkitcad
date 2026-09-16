@@ -1,6 +1,6 @@
 import { frameToWorld, v3 } from '../../../core/math'
 import type { ExtrudeFeature, RevolveFeature } from '../../../doc/types'
-import { defineCommand, type LooseCommandValues } from '../types'
+import { defineCommand, type LooseCommandValues, type SelectionPick } from '../types'
 import {
   mergeProfilePicks,
   OPERATIONS,
@@ -150,19 +150,30 @@ export const extrudeCommand = defineCommand({
 export const revolveCommand = defineCommand({
   id: 'revolve',
   label: 'Revolve',
-  hint: 'Spin a closed sketch around one of its axes.',
+  hint: 'Spin a closed sketch around a line drawn in it, or around one of its axes.',
   icon: '⟳',
   inputs: [
     PROFILE_INPUT,
     {
+      id: 'axisLine',
+      kind: 'selection',
+      label: 'Axis',
+      hint: 'A straight line in the same sketch to spin around. Leave it empty to use a sketch axis.',
+      filter: ['sketchCurve'],
+      min: 0,
+      max: 1,
+      prompt: 'Sketch axis below',
+    },
+    {
       id: 'axis',
       kind: 'choice',
-      label: 'Axis',
+      label: 'Sketch Axis',
       options: [
         { value: 'x', label: 'Sketch X Axis', hint: 'The horizontal axis through the origin.' },
         { value: 'y', label: 'Sketch Y Axis', hint: 'The vertical axis through the origin.' },
       ],
       default: 'x',
+      visible: (values: LooseCommandValues) => !(values.axisLine as SelectionPick[]).length,
     },
     {
       id: 'angle',
@@ -179,12 +190,21 @@ export const revolveCommand = defineCommand({
     ...OPERATION_INPUTS,
   ],
   validate(values, context) {
-    if (values.surface)
-      return sketchOf(context.doc, values.profile) ? null : { profile: 'Pick a sketch.' }
+    const line = values.axisLine[0]?.curve
+    const sketch = sketchOf(context.doc, values.profile)
+    if (line && sketch) {
+      const entity = sketch.sketch.entities.find((candidate) => candidate.id === line.entityId)
+      if (line.sketchId !== sketch.id) {
+        return { axisLine: 'Pick a line in the same sketch as the profile.' }
+      }
+      if (entity?.kind !== 'line') return { axisLine: 'Pick a straight line.' }
+    }
+    if (values.surface) return sketch ? null : { profile: 'Pick a sketch.' }
     return profileProblem(context.doc, values.profile) ?? operationProblem(values)
   },
   build(values, context) {
     const sketch = sketchOf(context.doc, values.profile)!
+    const axisLine = values.axisLine[0]?.curve?.entityId
     if (values.surface) {
       const surface: RevolveFeature = {
         id: context.editing?.id ?? context.id('revolve'),
@@ -194,6 +214,7 @@ export const revolveCommand = defineCommand({
         sketchId: sketch.id,
         angle: values.angle,
         axis: values.axis,
+        ...(axisLine ? { axisLine } : {}),
         surface: true,
         result: { kind: 'newBody', bodyId: context.id('body') },
       }
@@ -208,6 +229,7 @@ export const revolveCommand = defineCommand({
       ...(profileKeys(values.profile) ? { profiles: profileKeys(values.profile) } : {}),
       angle: values.angle,
       axis: values.axis,
+      ...(axisLine ? { axisLine } : {}),
       result: resultOf(values.operation, values.bodies, context),
     }
     return [feature]
@@ -217,6 +239,32 @@ export const revolveCommand = defineCommand({
     const frame = sketch && sketchFrame(sketch)
     if (!sketch || !frame) return []
     const [u, v] = profileCentre(sketch, profileKeys(values.profile))
+    const line = sketch.sketch.entities.find(
+      (entity) => entity.id === values.axisLine[0]?.curve?.entityId,
+    )
+    if (line?.kind === 'line') {
+      const p1 = sketch.sketch.points.find((point) => point.id === line.p1)
+      const p2 = sketch.sketch.points.find((point) => point.id === line.p2)
+      if (p1 && p2 && Math.hypot(p2.x - p1.x, p2.y - p1.y) > 1e-9) {
+        const a = frameToWorld(frame, [p1.x, p1.y])
+        const direction = v3.norm(v3.sub(frameToWorld(frame, [p2.x, p2.y]), a))
+        const centre = frameToWorld(frame, [u, v])
+        const foot = v3.add(a, v3.scale(direction, v3.dot(v3.sub(centre, a), direction)))
+        const radial = v3.sub(centre, foot)
+        const radius = v3.len(radial)
+        return [
+          {
+            kind: 'arc',
+            input: 'angle',
+            componentId: sketch.componentId,
+            centre: foot,
+            axis: direction,
+            start: radius > 1e-9 ? v3.scale(radial, 1 / radius) : frame.normal,
+            radius: radius || 10,
+          },
+        ]
+      }
+    }
     const alongX = values.axis === 'x'
     const offset = alongX ? v : u
     const radial = alongX ? frame.yDir : frame.xDir

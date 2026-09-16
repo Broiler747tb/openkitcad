@@ -846,6 +846,38 @@ export async function runSolidTest(): Promise<TestResult[]> {
         }
       },
     )
+
+    const turned = rectangle(5, 0, 10, 20)
+    turned.points.push({ id: 'a1', x: 2, y: 0 }, { id: 'a2', x: 2, y: 20 })
+    turned.entities.push({ id: 'centre', kind: 'line', p1: 'a1', p2: 'a2', construction: true })
+    await check(
+      'a revolve spins round a line drawn in the sketch',
+      doc(
+        [
+          sketch('s1', XY, turned),
+          {
+            id: 'rv',
+            name: 'Revolve',
+            componentId: 'root',
+            kind: 'revolve',
+            sketchId: 's1',
+            angle: 360,
+            axis: 'x',
+            axisLine: 'centre',
+            result: { kind: 'newBody', bodyId: 'sleeve' },
+          },
+        ],
+        ['sleeve'],
+      ),
+      (result) => {
+        const sleeve = meshFor(result, 'sleeve')
+        const expected = Math.PI * (13 * 13 - 3 * 3) * 20
+        return {
+          pass: near(sleeve?.volume, expected, 1),
+          detail: `${sleeve?.volume.toFixed(1)} mm3 of ${expected.toFixed(1)}`,
+        }
+      },
+    )
   } catch (error) {
     add('solid test ran', false, `${(error as Error).message}`)
   } finally {
