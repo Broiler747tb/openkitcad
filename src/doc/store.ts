@@ -131,7 +131,7 @@ interface AppState {
   setDoc: (doc: OkcDocument, resetHistory?: boolean) => void
   commit: (
     fn: (draft: OkcDocument) => void,
-    opts?: { transient?: boolean; mergeKey?: string },
+    opts?: { transient?: boolean; mergeKey?: string; sketchOnly?: boolean },
   ) => void
   undo: () => void
   redo: () => void
@@ -206,6 +206,7 @@ let statusTimer: number | undefined
 const MERGE_WINDOW_MS = 900
 let lastMerge: { key: string; at: number } | null = null
 let buildTicket = 0
+let sketchDirty = false
 const sketchTargets = new Map<string, string>()
 
 function clone<T>(v: T): T {
@@ -615,6 +616,10 @@ export const useStore = create<AppState>((set, get) => ({
         ...fixes,
       })
     }
+    if (opts?.sketchOnly && get().activeSketch) {
+      sketchDirty = true
+      return
+    }
     get().rebuild()
   },
 
@@ -673,6 +678,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   rebuild() {
+    sketchDirty = false
     const doc = { ...get().doc, customParts: userParts() }
     const ticket = ++buildTicket
     set({ building: true })
@@ -1094,6 +1100,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   closeSketch() {
     const active = get().activeSketch
+    if (sketchDirty) queueMicrotask(() => get().rebuild())
     set({
       activeSketch: null,
       tool: 'select',
@@ -1106,10 +1113,13 @@ export const useStore = create<AppState>((set, get) => ({
   editSketch(fn, opts) {
     const active = get().activeSketch
     if (!active) return
-    get().commit((d) => {
-      const feature = findFeature(d, active.featureId)
-      if (feature?.kind === 'sketch') fn(feature.sketch)
-    }, opts)
+    get().commit(
+      (d) => {
+        const feature = findFeature(d, active.featureId)
+        if (feature?.kind === 'sketch') fn(feature.sketch)
+      },
+      { ...opts, sketchOnly: true },
+    )
   },
 
   solveActiveSketch(drag) {
