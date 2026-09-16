@@ -69,6 +69,11 @@
     "category": "connector",
     "summary": "The socket a kettle lead plugs into, plain or with a fuse."
   },
+  "lipo-charger": {
+    "name": "Lithium charger",
+    "category": "power",
+    "summary": "Single-cell lithium chargers that run from USB."
+  },
   "micro-servo": {
     "name": "Micro servo",
     "category": "motor",
@@ -133,6 +138,11 @@
     "name": "USB-C port",
     "category": "connector",
     "summary": "USB-C sockets for a board edge, a breakout board or a panel."
+  },
+  "usb-pd-trigger": {
+    "name": "USB-C PD trigger",
+    "category": "power",
+    "summary": "Boards that ask a USB-C charger for a higher voltage."
   },
   "vl53l0x-board": {
     "name": "VL53L0X distance sensor",

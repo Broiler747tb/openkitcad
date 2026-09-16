@@ -1,11 +1,74 @@
 {
   "id": "power-usbc-pd-trigger",
-  "name": "USB-C PD trigger board",
+  "name": "USB-C PD trigger board (generic)",
   "category": "power",
   "popularity": 46,
+  "family": "usb-pd-trigger",
+  "variant": "Fixed-voltage trigger (generic)",
   "summary": "Asks a USB-C charger for 9, 12 or 20 volts instead of 5.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold part. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Fixed-voltage and selectable versions share the same outline. No mounting holes.",
+  "look": {
+    "colour": "#1d1f22",
+    "components": [
+      {
+        "kind": "port",
+        "port": "usb-c",
+        "x": -1.2,
+        "y": 6.0,
+        "facing": "-x",
+        "depth": 7.35,
+        "label": "USB-C"
+      },
+      {
+        "kind": "chip",
+        "x": 9.0,
+        "y": 3.9,
+        "w": 3.0,
+        "h": 4.2,
+        "height": 0.9,
+        "legs": "dual",
+        "label": "PD controller"
+      },
+      {
+        "kind": "chip",
+        "x": 13.5,
+        "y": 4.0,
+        "w": 3.3,
+        "h": 3.3,
+        "height": 0.8,
+        "label": "Output switch"
+      },
+      {
+        "kind": "led",
+        "x": 17.5,
+        "y": 9.8,
+        "colour": "#39d06b",
+        "size": 1.4,
+        "label": "Power LED"
+      },
+      {
+        "kind": "box",
+        "x": 19.3,
+        "y": 1.2,
+        "w": 2.2,
+        "h": 3.2,
+        "height": 0.05,
+        "finish": "gold",
+        "label": "OUT- pad"
+      },
+      {
+        "kind": "box",
+        "x": 19.3,
+        "y": 7.6,
+        "w": 2.2,
+        "h": 3.2,
+        "height": 0.05,
+        "finish": "gold",
+        "label": "OUT+ pad"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
@@ -13,7 +76,19 @@
       "w": 22,
       "h": 12
     },
-    "thickness": 1.0
+    "thickness": 1.0,
+    "bumps": [
+      {
+        "x": -1.2,
+        "y": 1.53,
+        "w": 7.35,
+        "h": 8.94,
+        "z": 1.0,
+        "height": 3.26,
+        "colour": "#8b9096",
+        "label": "USB-C"
+      }
+    ]
   },
   "tags": [
     "usb-c",

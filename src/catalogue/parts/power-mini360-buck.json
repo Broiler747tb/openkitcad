@@ -1,6 +1,6 @@
 {
   "id": "power-mini360-buck",
-  "name": "Mini360 buck converter",
+  "name": "Mini-360 buck converter (generic)",
   "category": "power",
   "popularity": 51,
   "family": "buck-converter",
@@ -8,6 +8,95 @@
   "summary": "Very small step-down. Cheaper and hotter than an MP1584.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold part. These are made by many suppliers to no common standard, so measure yours before cutting a panel. No mounting holes; it gets soldered or taped down. Runs warm at any real current.",
+  "look": {
+    "colour": "#1f6f4a",
+    "components": [
+      {
+        "kind": "box",
+        "x": 8.8,
+        "y": 3.3,
+        "w": 4.0,
+        "h": 4.0,
+        "height": 2.0,
+        "finish": "chip",
+        "colour": "#2a2c30",
+        "radius": 0.6,
+        "label": "Inductor"
+      },
+      {
+        "kind": "box",
+        "x": 9.6,
+        "y": 4.1,
+        "z": 3.0,
+        "w": 2.4,
+        "h": 2.4,
+        "height": 0.02,
+        "finish": "metal",
+        "colour": "#6b6f75",
+        "label": "Inductor top"
+      },
+      {
+        "kind": "chip",
+        "x": 3.6,
+        "y": 4.5,
+        "w": 2.9,
+        "h": 1.6,
+        "height": 1.1,
+        "legs": "dual",
+        "label": "MP2307 regulator"
+      },
+      {
+        "kind": "trimmer",
+        "x": 13.2,
+        "y": 1.0,
+        "w": 3.0,
+        "h": 3.0,
+        "height": 1.5,
+        "colour": "#f2f0ea",
+        "label": "Adjustment pot"
+      },
+      {
+        "kind": "box",
+        "x": 0.3,
+        "y": 0.4,
+        "w": 2.0,
+        "h": 2.2,
+        "height": 0.05,
+        "finish": "gold",
+        "label": "IN+ pad"
+      },
+      {
+        "kind": "box",
+        "x": 0.3,
+        "y": 8.4,
+        "w": 2.0,
+        "h": 2.2,
+        "height": 0.05,
+        "finish": "gold",
+        "label": "IN- pad"
+      },
+      {
+        "kind": "box",
+        "x": 14.7,
+        "y": 8.4,
+        "w": 2.0,
+        "h": 2.2,
+        "height": 0.05,
+        "finish": "gold",
+        "label": "OUT+ pad"
+      },
+      {
+        "kind": "box",
+        "x": 14.7,
+        "y": 4.2,
+        "w": 2.0,
+        "h": 2.2,
+        "height": 0.05,
+        "finish": "gold",
+        "label": "OUT- pad"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
@@ -15,7 +104,19 @@
       "w": 17,
       "h": 11
     },
-    "thickness": 1.0
+    "thickness": 1.0,
+    "bumps": [
+      {
+        "x": 8.8,
+        "y": 3.3,
+        "w": 4.0,
+        "h": 4.0,
+        "z": 1.0,
+        "height": 2.0,
+        "colour": "#2a2c30",
+        "label": "Inductor"
+      }
+    ]
   },
   "tags": [
     "mini360",

@@ -1,6 +1,6 @@
 {
   "id": "power-mp1584-buck",
-  "name": "MP1584 mini buck converter",
+  "name": "MP1584 mini buck converter (generic)",
   "category": "power",
   "popularity": 61,
   "family": "buck-converter",
@@ -8,6 +8,106 @@
   "summary": "Thumbnail-sized step-down. No mounting holes, so it gets glued or taped in.",
   "confidence": "approximate",
   "source": "Dimensions taken from the commonly sold module. These boards are made by many suppliers to no common standard, so measure yours before cutting a panel. Components stand about 4 mm proud.",
+  "look": {
+    "colour": "#1f6f4a",
+    "components": [
+      {
+        "kind": "box",
+        "x": 9.5,
+        "y": 4.5,
+        "w": 7.0,
+        "h": 7.0,
+        "height": 3.0,
+        "finish": "chip",
+        "colour": "#2a2c30",
+        "radius": 0.6,
+        "label": "10 µH inductor"
+      },
+      {
+        "kind": "box",
+        "x": 10.9,
+        "y": 5.9,
+        "z": 4.0,
+        "w": 4.2,
+        "h": 4.2,
+        "height": 0.02,
+        "finish": "metal",
+        "colour": "#6b6f75",
+        "label": "10 µH inductor top"
+      },
+      {
+        "kind": "chip",
+        "x": 3.2,
+        "y": 6.55,
+        "w": 4.9,
+        "h": 3.9,
+        "height": 1.6,
+        "legs": "dual",
+        "label": "MP1584EN"
+      },
+      {
+        "kind": "trimmer",
+        "x": 16.5,
+        "y": 11.0,
+        "w": 3.8,
+        "h": 3.6,
+        "height": 2.0,
+        "colour": "#2f62b8",
+        "label": "Adjustment pot"
+      },
+      {
+        "kind": "box",
+        "x": 17.5,
+        "y": 4.5,
+        "w": 3.2,
+        "h": 1.6,
+        "height": 1.2,
+        "finish": "chip",
+        "colour": "#c9a27a",
+        "label": "Output capacitor"
+      },
+      {
+        "kind": "box",
+        "x": 0.4,
+        "y": 0.6,
+        "w": 2.4,
+        "h": 2.6,
+        "height": 0.05,
+        "finish": "gold",
+        "label": "IN+ pad"
+      },
+      {
+        "kind": "box",
+        "x": 0.4,
+        "y": 13.8,
+        "w": 2.4,
+        "h": 2.6,
+        "height": 0.05,
+        "finish": "gold",
+        "label": "GND pad"
+      },
+      {
+        "kind": "box",
+        "x": 19.2,
+        "y": 0.6,
+        "w": 2.4,
+        "h": 2.6,
+        "height": 0.05,
+        "finish": "gold",
+        "label": "OUT+ pad"
+      },
+      {
+        "kind": "box",
+        "x": 19.2,
+        "y": 13.8,
+        "w": 2.4,
+        "h": 2.6,
+        "height": 0.05,
+        "finish": "gold",
+        "label": "GND pad"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
@@ -15,7 +115,19 @@
       "w": 22,
       "h": 17
     },
-    "thickness": 1.0
+    "thickness": 1.0,
+    "bumps": [
+      {
+        "x": 9.5,
+        "y": 4.5,
+        "w": 7.0,
+        "h": 7.0,
+        "z": 1.0,
+        "height": 3.0,
+        "colour": "#2a2c30",
+        "label": "Inductor"
+      }
+    ]
   },
   "tags": [
     "mp1584",

@@ -1,0 +1,240 @@
+{
+  "id": "power-microlipo-usbc-adafruit",
+  "name": "Micro-Lipo charger, USB-C (Adafruit 4410)",
+  "category": "power",
+  "popularity": 42,
+  "family": "lipo-charger",
+  "variant": "Adafruit Micro-Lipo USB-C (4410)",
+  "manufacturer": "Adafruit",
+  "summary": "MCP73831 lithium charger on a 22.9 x 19.1 mm board with USB-C, a JST-PH battery socket and four M2.5 holes.",
+  "confidence": "datasheet",
+  "source": "Adafruit's Eagle files for the Micro-Lipo Charger for LiPo/LiIon Batt with USB Type C Jack (product 4410): board 22.86 x 19.05 mm with 2.54 mm corners, four 2.5 mm holes 2.54 mm in from the corners, USB-C on one short edge, a JST-PH battery socket and a 5-pin header. It charges at 100 mA, or 500 mA with the jumper closed. It has no battery protection, unlike most TP4056 modules. Part positions in the look come from the same files.",
+  "look": {
+    "colour": "#1d1f22",
+    "components": [
+      {
+        "kind": "chip",
+        "x": 8.787,
+        "y": 8.484,
+        "w": 3.0,
+        "h": 2.844,
+        "height": 1.1,
+        "label": "MCP73831T-2ACI/OT"
+      },
+      {
+        "kind": "led",
+        "x": 17.145,
+        "y": 2.349,
+        "colour": "#e23b3b",
+        "size": 1.6,
+        "label": "LED1"
+      },
+      {
+        "kind": "led",
+        "x": 14.478,
+        "y": 2.349,
+        "colour": "#39d06b",
+        "size": 1.6,
+        "label": "LED2"
+      },
+      {
+        "kind": "box",
+        "x": 13.331,
+        "y": 5.234,
+        "w": 0.76,
+        "h": 1.335,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R1"
+      },
+      {
+        "kind": "box",
+        "x": 11.807,
+        "y": 5.234,
+        "w": 0.76,
+        "h": 1.335,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R2"
+      },
+      {
+        "kind": "box",
+        "x": 8.563,
+        "y": 12.526,
+        "w": 1.16,
+        "h": 1.758,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C1"
+      },
+      {
+        "kind": "box",
+        "x": 10.722,
+        "y": 12.526,
+        "w": 1.16,
+        "h": 1.758,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C2"
+      },
+      {
+        "kind": "box",
+        "x": 9.171,
+        "y": 7.118,
+        "w": 1.335,
+        "h": 0.76,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R3"
+      },
+      {
+        "kind": "box",
+        "x": 6.6,
+        "y": 1.361,
+        "w": 0.76,
+        "h": 1.334,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R4"
+      },
+      {
+        "kind": "port",
+        "port": "usb-c",
+        "x": -1.143,
+        "y": 9.525,
+        "facing": "-x",
+        "label": "X2"
+      },
+      {
+        "kind": "box",
+        "x": 8.862,
+        "y": 5.33,
+        "w": 1.334,
+        "h": 0.76,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R5"
+      },
+      {
+        "kind": "box",
+        "x": 8.862,
+        "y": 3.806,
+        "w": 1.334,
+        "h": 0.76,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R6"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 22.86,
+      "h": 19.05,
+      "cornerRadius": 2.54
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": -1.143,
+        "y": 5.055,
+        "w": 7.35,
+        "h": 8.94,
+        "z": 1.6,
+        "height": 3.2,
+        "colour": "#b9c0c7",
+        "label": "USB socket"
+      }
+    ]
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 20.32,
+      "y": 2.54,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h2",
+      "x": 20.32,
+      "y": 16.51,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h3",
+      "x": 2.54,
+      "y": 2.54,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h4",
+      "x": 2.54,
+      "y": 16.51,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    }
+  ],
+  "connectors": [
+    {
+      "id": "usb",
+      "label": "USB-C",
+      "side": "-x",
+      "x": 0,
+      "y": 9.52,
+      "z": 1.6,
+      "width": 9.4,
+      "height": 3.6,
+      "protrusion": 1.14
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "jp4",
+      "label": "JP4",
+      "x": 6.35,
+      "y": 16.51,
+      "rows": 1,
+      "cols": 5,
+      "pitch": 2.54
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      5
+    ],
+    "currentPeak": 0.5,
+    "note": "Charges one 3.7 V cell at 100 mA, or 500 mA with the jumper closed."
+  },
+  "links": [
+    {
+      "label": "Adafruit 4410",
+      "url": "https://www.adafruit.com/product/4410"
+    },
+    {
+      "label": "Eagle files",
+      "url": "https://github.com/adafruit/Adafruit-MicroLipo-PCB"
+    }
+  ],
+  "tags": [
+    "lipo",
+    "charger",
+    "mcp73831",
+    "usb-c",
+    "battery",
+    "adafruit",
+    "4410"
+  ]
+}

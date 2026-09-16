@@ -1,11 +1,131 @@
 {
   "id": "power-mt3608-boost",
-  "name": "MT3608 boost converter",
+  "name": "MT3608 boost converter (generic)",
   "category": "power",
   "popularity": 66,
   "summary": "Steps voltage up rather than down. Turn the pot before connecting anything.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold part. These are made by many suppliers to no common standard, so measure yours before cutting a panel. The inductor stands about 6 mm proud. No mounting holes on most of them.",
+  "look": {
+    "colour": "#1d4f91",
+    "components": [
+      {
+        "kind": "box",
+        "x": 12.5,
+        "y": 5.9,
+        "w": 5.8,
+        "h": 5.2,
+        "height": 4.5,
+        "finish": "chip",
+        "colour": "#2a2c30",
+        "radius": 0.6,
+        "label": "22 µH inductor"
+      },
+      {
+        "kind": "box",
+        "x": 13.66,
+        "y": 6.94,
+        "z": 5.5,
+        "w": 3.48,
+        "h": 3.12,
+        "height": 0.02,
+        "finish": "metal",
+        "colour": "#6b6f75",
+        "label": "22 µH inductor top"
+      },
+      {
+        "kind": "chip",
+        "x": 7.5,
+        "y": 7.7,
+        "w": 2.9,
+        "h": 1.6,
+        "height": 1.1,
+        "legs": "dual",
+        "label": "MT3608"
+      },
+      {
+        "kind": "chip",
+        "x": 19.5,
+        "y": 9.2,
+        "w": 4.3,
+        "h": 2.6,
+        "height": 2.3,
+        "label": "SS34 diode"
+      },
+      {
+        "kind": "trimmer",
+        "x": 23.0,
+        "y": 1.2,
+        "w": 9.5,
+        "h": 4.8,
+        "height": 10.0,
+        "colour": "#2f62b8",
+        "label": "Adjustment pot"
+      },
+      {
+        "kind": "box",
+        "x": 7.0,
+        "y": 12.0,
+        "w": 3.2,
+        "h": 1.6,
+        "height": 1.2,
+        "finish": "chip",
+        "colour": "#c9a27a",
+        "label": "Input capacitor"
+      },
+      {
+        "kind": "box",
+        "x": 27.0,
+        "y": 12.0,
+        "w": 3.2,
+        "h": 1.6,
+        "height": 1.2,
+        "finish": "chip",
+        "colour": "#c9a27a",
+        "label": "Output capacitor"
+      },
+      {
+        "kind": "box",
+        "x": 0.5,
+        "y": 2.0,
+        "w": 2.6,
+        "h": 3.0,
+        "height": 0.05,
+        "finish": "gold",
+        "label": "VIN- pad"
+      },
+      {
+        "kind": "box",
+        "x": 0.5,
+        "y": 12.0,
+        "w": 2.6,
+        "h": 3.0,
+        "height": 0.05,
+        "finish": "gold",
+        "label": "VIN+ pad"
+      },
+      {
+        "kind": "box",
+        "x": 32.9,
+        "y": 2.0,
+        "w": 2.6,
+        "h": 3.0,
+        "height": 0.05,
+        "finish": "gold",
+        "label": "VOUT- pad"
+      },
+      {
+        "kind": "box",
+        "x": 32.9,
+        "y": 12.0,
+        "w": 2.6,
+        "h": 3.0,
+        "height": 0.05,
+        "finish": "gold",
+        "label": "VOUT+ pad"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
@@ -13,7 +133,29 @@
       "w": 36,
       "h": 17
     },
-    "thickness": 1.0
+    "thickness": 1.0,
+    "bumps": [
+      {
+        "x": 23.0,
+        "y": 1.2,
+        "w": 9.5,
+        "h": 4.8,
+        "z": 1.0,
+        "height": 10.0,
+        "colour": "#2f62b8",
+        "label": "Adjustment pot"
+      },
+      {
+        "x": 12.5,
+        "y": 5.9,
+        "w": 5.8,
+        "h": 5.2,
+        "z": 1.0,
+        "height": 4.5,
+        "colour": "#2a2c30",
+        "label": "Inductor"
+      }
+    ]
   },
   "tags": [
     "mt3608",

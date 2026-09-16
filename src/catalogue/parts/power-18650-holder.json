@@ -1,6 +1,6 @@
 {
   "id": "power-18650-holder",
-  "name": "18650 cell holder, single",
+  "name": "18650 cell holder, single (generic)",
   "category": "power",
   "popularity": 80,
   "family": "18650-holder",
@@ -8,14 +8,102 @@
   "summary": "Plastic holder for one 18650 cell, with solder tabs.",
   "confidence": "approximate",
   "source": "Dimensions taken from the commonly sold module. These boards are made by many suppliers to no common standard, so measure yours before cutting a panel. Holder sizes differ noticeably between makers; the cell itself is the standard 65 x 18 mm.",
+  "look": {
+    "finish": "plastic",
+    "colour": "#1b1d20",
+    "components": [
+      {
+        "kind": "box",
+        "x": 0,
+        "y": 0,
+        "w": 76.0,
+        "h": 1.3,
+        "height": 11.78,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "label": "Side wall"
+      },
+      {
+        "kind": "box",
+        "x": 0,
+        "y": 19.7,
+        "w": 76.0,
+        "h": 1.3,
+        "height": 11.78,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "label": "Side wall"
+      },
+      {
+        "kind": "box",
+        "x": 0,
+        "y": 0,
+        "w": 3.5,
+        "h": 21.0,
+        "height": 17.5,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "radius": 0.4,
+        "label": "End wall"
+      },
+      {
+        "kind": "box",
+        "x": 72.5,
+        "y": 0,
+        "w": 3.5,
+        "h": 21.0,
+        "height": 17.5,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "radius": 0.4,
+        "label": "End wall"
+      },
+      {
+        "kind": "box",
+        "x": 3.5,
+        "y": 7.0,
+        "z": 8.15,
+        "w": 0.6,
+        "h": 7.0,
+        "height": 7.0,
+        "finish": "metal",
+        "label": "Button contact"
+      },
+      {
+        "kind": "box",
+        "x": 66.5,
+        "y": 7.3,
+        "z": 7.2,
+        "w": 6.0,
+        "h": 6.4,
+        "height": 6.4,
+        "finish": "metal",
+        "radius": 2.8,
+        "label": "Spring"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
       "shape": "rect",
-      "w": 76,
-      "h": 21
+      "w": 76.0,
+      "h": 21.0,
+      "cornerRadius": 1
     },
-    "thickness": 19
+    "thickness": 1.5,
+    "bumps": [
+      {
+        "x": 0,
+        "y": 0,
+        "w": 76.0,
+        "h": 21.0,
+        "z": 1.5,
+        "height": 17.5,
+        "colour": "#1b1d20",
+        "label": "Walls and cell space"
+      }
+    ]
   },
   "mountingHoles": [
     {
@@ -31,6 +119,18 @@
       "y": 10.5,
       "diameter": 3,
       "screw": "M3"
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-cell",
+      "label": "Cell and fingers to lift it out",
+      "x": 3.5,
+      "y": 0,
+      "w": 69.0,
+      "h": 21.0,
+      "z": 1.5,
+      "height": 22.0
     }
   ],
   "tags": [

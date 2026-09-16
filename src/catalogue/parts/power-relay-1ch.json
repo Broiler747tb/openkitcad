@@ -1,11 +1,80 @@
 {
   "id": "power-relay-1ch",
-  "name": "Relay module, one channel",
+  "name": "Relay module, one channel (generic)",
   "category": "power",
   "popularity": 83,
   "summary": "Switches mains or a motor from a logic pin. Keep the two sides apart.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold part. These are made by many suppliers to no common standard, so measure yours before cutting a panel. The relay can stands about 16 mm proud. If you are switching mains, the clearance round the high-voltage side matters more than any dimension here.",
+  "look": {
+    "colour": "#1d4f91",
+    "components": [
+      {
+        "kind": "box",
+        "x": 14.5,
+        "y": 5.25,
+        "w": 19.0,
+        "h": 15.5,
+        "height": 15.3,
+        "finish": "plastic",
+        "colour": "#2f62b8",
+        "radius": 0.4,
+        "label": "SRD-05VDC-SL-C relay"
+      },
+      {
+        "kind": "terminal",
+        "x": 50.0,
+        "y": 13.0,
+        "pins": 3,
+        "pitch": 5.08,
+        "facing": "+x",
+        "label": "NO, COM, NC terminal"
+      },
+      {
+        "kind": "header",
+        "x": 3.6,
+        "y": 10.46,
+        "rows": 3,
+        "cols": 1,
+        "height": 8.5,
+        "label": "VCC, GND, IN"
+      },
+      {
+        "kind": "chip",
+        "x": 8.5,
+        "y": 3.5,
+        "w": 2.9,
+        "h": 1.6,
+        "height": 1.1,
+        "label": "Driver transistor"
+      },
+      {
+        "kind": "chip",
+        "x": 8.5,
+        "y": 19.8,
+        "w": 4.3,
+        "h": 2.6,
+        "height": 2.3,
+        "label": "Flyback diode"
+      },
+      {
+        "kind": "led",
+        "x": 9.8,
+        "y": 8.5,
+        "colour": "#e23b3b",
+        "size": 1.6,
+        "label": "Power LED"
+      },
+      {
+        "kind": "led",
+        "x": 9.8,
+        "y": 16.5,
+        "colour": "#39d06b",
+        "size": 1.6,
+        "label": "Relay LED"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
@@ -13,7 +82,29 @@
       "w": 50,
       "h": 26
     },
-    "thickness": 1.6
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 14.5,
+        "y": 5.25,
+        "w": 19.0,
+        "h": 15.5,
+        "z": 1.6,
+        "height": 15.3,
+        "colour": "#2f62b8",
+        "label": "Relay"
+      },
+      {
+        "x": 34.76,
+        "y": 9.2,
+        "w": 15.24,
+        "h": 7.6,
+        "z": 1.6,
+        "height": 10.0,
+        "colour": "#2c6fc9",
+        "label": "Screw terminal"
+      }
+    ]
   },
   "mountingHoles": [
     {
@@ -43,6 +134,22 @@
       "y": 23.5,
       "diameter": 3,
       "screw": "M3"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "pins",
+      "label": "VCC, GND, IN",
+      "x": 3.6,
+      "y": 10.46,
+      "rows": 3,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "VCC",
+        "GND",
+        "IN"
+      ]
     }
   ],
   "tags": [

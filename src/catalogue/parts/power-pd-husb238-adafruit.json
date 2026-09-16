@@ -1,0 +1,409 @@
+{
+  "id": "power-pd-husb238-adafruit",
+  "name": "USB-C PD switchable breakout, HUSB238 (Adafruit 5807)",
+  "category": "power",
+  "popularity": 38,
+  "family": "usb-pd-trigger",
+  "variant": "Adafruit HUSB238 switchable (5807)",
+  "manufacturer": "Adafruit",
+  "summary": "Pick 5 to 20 V from a USB-C PD charger with DIP switches; 20.3 x 27.8 mm with four M2.5 holes.",
+  "confidence": "datasheet",
+  "source": "Adafruit's Eagle files for the USB Type C Power Delivery Dummy Breakout, I2C or Fixed (product 5807): board 20.32 x 27.813 mm with 2.54 mm corners, four 2.5 mm holes, USB-C on the top edge, a 3.5 mm screw terminal on the bottom edge, the HUSB238 controller, a 6-way DIP switch and a STEMMA QT socket. Part positions in the look come from the same files.",
+  "look": {
+    "colour": "#1d1f22",
+    "components": [
+      {
+        "kind": "box",
+        "x": 3.737,
+        "y": 20.273,
+        "w": 1.16,
+        "h": 1.758,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C1"
+      },
+      {
+        "kind": "box",
+        "x": 1.019,
+        "y": 6.848,
+        "w": 1.758,
+        "h": 1.16,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C2"
+      },
+      {
+        "kind": "box",
+        "x": 1.019,
+        "y": 10.912,
+        "w": 1.758,
+        "h": 1.16,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C3"
+      },
+      {
+        "kind": "box",
+        "x": 1.019,
+        "y": 8.88,
+        "w": 1.758,
+        "h": 1.16,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C4"
+      },
+      {
+        "kind": "chip",
+        "x": 4.87,
+        "y": 0.361,
+        "w": 1.563,
+        "h": 1.564,
+        "height": 1.0,
+        "label": "U$7"
+      },
+      {
+        "kind": "chip",
+        "x": 14.014,
+        "y": 0.361,
+        "w": 1.563,
+        "h": 1.564,
+        "height": 1.0,
+        "label": "U$14"
+      },
+      {
+        "kind": "chip",
+        "x": 11.518,
+        "y": 17.613,
+        "w": 3.0,
+        "h": 3.0,
+        "height": 0.9,
+        "label": "HUSB238"
+      },
+      {
+        "kind": "box",
+        "x": 6.648,
+        "y": 19.358,
+        "w": 0.8,
+        "h": 0.4,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R3"
+      },
+      {
+        "kind": "box",
+        "x": 15.666,
+        "y": 20.056,
+        "w": 0.8,
+        "h": 0.4,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R4"
+      },
+      {
+        "kind": "box",
+        "x": 6.648,
+        "y": 12.932,
+        "w": 0.8,
+        "h": 0.4,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R5"
+      },
+      {
+        "kind": "port",
+        "port": "usb-c",
+        "x": 10.16,
+        "y": 28.956,
+        "facing": "+y",
+        "label": "X1"
+      },
+      {
+        "kind": "chip",
+        "x": 4.167,
+        "y": 8.841,
+        "w": 3.591,
+        "h": 3.566,
+        "height": 2.3,
+        "label": "AONR21307"
+      },
+      {
+        "kind": "box",
+        "x": 6.648,
+        "y": 18.075,
+        "w": 0.8,
+        "h": 0.4,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R1"
+      },
+      {
+        "kind": "box",
+        "x": 6.648,
+        "y": 16.793,
+        "w": 0.8,
+        "h": 0.4,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R2"
+      },
+      {
+        "kind": "box",
+        "x": 6.839,
+        "y": 15.51,
+        "w": 0.8,
+        "h": 0.4,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R6"
+      },
+      {
+        "kind": "box",
+        "x": 6.966,
+        "y": 14.227,
+        "w": 0.8,
+        "h": 0.4,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R7"
+      },
+      {
+        "kind": "terminal",
+        "x": 10.26,
+        "y": 0.21,
+        "pins": 2,
+        "pitch": 3.5,
+        "facing": "-y",
+        "colour": "#2c6fc9",
+        "label": "X4"
+      },
+      {
+        "kind": "jst",
+        "x": 0.517,
+        "y": 16.206,
+        "pins": 4,
+        "pitch": 1.0,
+        "facing": "-x",
+        "label": "STEMMA QT"
+      },
+      {
+        "kind": "button",
+        "x": 15.621,
+        "y": 12.573,
+        "size": 5.4,
+        "height": 3.5,
+        "label": "DIP1"
+      },
+      {
+        "kind": "box",
+        "x": 1.251,
+        "y": 20.501,
+        "w": 0.8,
+        "h": 0.4,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R8"
+      },
+      {
+        "kind": "box",
+        "x": 1.251,
+        "y": 21.835,
+        "w": 0.8,
+        "h": 0.4,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R9"
+      },
+      {
+        "kind": "box",
+        "x": 4.68,
+        "y": 4.816,
+        "w": 0.8,
+        "h": 0.4,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R10"
+      },
+      {
+        "kind": "led",
+        "x": 5.652,
+        "y": 3.302,
+        "colour": "#39d06b",
+        "size": 1.6,
+        "label": "D1"
+      },
+      {
+        "kind": "chip",
+        "x": 11.22,
+        "y": 0.488,
+        "w": 1.563,
+        "h": 1.564,
+        "height": 1.0,
+        "flip": true,
+        "z": 0,
+        "label": "U$18"
+      },
+      {
+        "kind": "chip",
+        "x": 7.664,
+        "y": 0.488,
+        "w": 1.563,
+        "h": 1.564,
+        "height": 1.0,
+        "flip": true,
+        "z": 0,
+        "label": "U$19"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 20.32,
+      "h": 27.813,
+      "cornerRadius": 2.54
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 5.69,
+        "y": 21.606,
+        "w": 8.94,
+        "h": 7.35,
+        "z": 1.6,
+        "height": 3.2,
+        "colour": "#b9c0c7",
+        "label": "USB socket"
+      },
+      {
+        "x": 6.76,
+        "y": 0.21,
+        "w": 7.0,
+        "h": 7.0,
+        "z": 1.6,
+        "height": 8.5,
+        "colour": "#2c6fc9",
+        "label": "Screw terminal"
+      },
+      {
+        "x": 0.517,
+        "y": 13.156,
+        "w": 4.251,
+        "h": 6.1,
+        "z": 1.6,
+        "height": 2.95,
+        "colour": "#ece6d6",
+        "label": "STEMMA QT socket"
+      }
+    ]
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 17.653,
+      "y": 25.273,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h2",
+      "x": 2.413,
+      "y": 25.273,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h3",
+      "x": 2.54,
+      "y": 2.54,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h4",
+      "x": 17.78,
+      "y": 2.54,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    }
+  ],
+  "connectors": [
+    {
+      "id": "usb",
+      "label": "USB-C",
+      "side": "+y",
+      "x": 10.16,
+      "y": 27.813,
+      "z": 1.6,
+      "width": 9.4,
+      "height": 3.6,
+      "protrusion": 1.14
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "jp1",
+      "label": "JP1",
+      "x": 16.51,
+      "y": 6.35,
+      "rows": 1,
+      "cols": 2,
+      "pitch": 2.54
+    },
+    {
+      "id": "jp2",
+      "label": "JP2",
+      "x": 16.51,
+      "y": 21.844,
+      "rows": 1,
+      "cols": 2,
+      "pitch": 2.54
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      5,
+      9,
+      12,
+      15,
+      18,
+      20
+    ],
+    "currentPeak": 3,
+    "note": "The charger decides the maximum current; the switches pick the voltage."
+  },
+  "links": [
+    {
+      "label": "Adafruit 5807",
+      "url": "https://www.adafruit.com/product/5807"
+    },
+    {
+      "label": "Eagle files",
+      "url": "https://github.com/adafruit/Adafruit-USB-Type-C-PD-Switchable-PCB"
+    }
+  ],
+  "tags": [
+    "usb-c",
+    "pd",
+    "power delivery",
+    "trigger",
+    "decoy",
+    "husb238",
+    "adafruit",
+    "5807"
+  ]
+}

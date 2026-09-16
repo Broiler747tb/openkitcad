@@ -1,11 +1,115 @@
 {
   "id": "power-tp4056",
-  "name": "TP4056 lithium charger",
+  "name": "TP4056 charger with protection (generic)",
   "category": "power",
   "popularity": 89,
+  "family": "lipo-charger",
+  "variant": "TP4056 module (generic)",
   "summary": "Charges one lithium cell from USB. The version with protection is worth the extra.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold part. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Sold with micro USB, USB-C or both, and with or without a protection chip, all on the same board outline. Most have no mounting holes.",
+  "look": {
+    "colour": "#1d4f91",
+    "components": [
+      {
+        "kind": "port",
+        "port": "micro-usb",
+        "x": -0.7,
+        "y": 8.5,
+        "facing": "-x",
+        "w": 7.5,
+        "h": 2.6,
+        "depth": 5.3,
+        "label": "micro USB"
+      },
+      {
+        "kind": "chip",
+        "x": 8.5,
+        "y": 6.55,
+        "w": 4.9,
+        "h": 3.9,
+        "height": 1.6,
+        "legs": "dual",
+        "label": "TP4056 charger"
+      },
+      {
+        "kind": "chip",
+        "x": 15.5,
+        "y": 3.2,
+        "w": 2.9,
+        "h": 1.6,
+        "height": 1.1,
+        "legs": "dual",
+        "label": "DW01A protection"
+      },
+      {
+        "kind": "chip",
+        "x": 15.2,
+        "y": 9.8,
+        "w": 3.0,
+        "h": 4.4,
+        "height": 1.1,
+        "legs": "dual",
+        "label": "FS8205A switch"
+      },
+      {
+        "kind": "led",
+        "x": 10.2,
+        "y": 2.6,
+        "colour": "#e23b3b",
+        "size": 1.6,
+        "label": "Charging LED"
+      },
+      {
+        "kind": "led",
+        "x": 10.2,
+        "y": 14.4,
+        "colour": "#2f7bff",
+        "size": 1.6,
+        "label": "Done LED"
+      },
+      {
+        "kind": "box",
+        "x": 21.2,
+        "y": 12.2,
+        "w": 2.2,
+        "h": 3.0,
+        "height": 0.05,
+        "finish": "gold",
+        "label": "B+ pad"
+      },
+      {
+        "kind": "box",
+        "x": 21.2,
+        "y": 1.8,
+        "w": 2.2,
+        "h": 3.0,
+        "height": 0.05,
+        "finish": "gold",
+        "label": "B- pad"
+      },
+      {
+        "kind": "box",
+        "x": 23.6,
+        "y": 12.2,
+        "w": 2.2,
+        "h": 3.0,
+        "height": 0.05,
+        "finish": "gold",
+        "label": "OUT+ pad"
+      },
+      {
+        "kind": "box",
+        "x": 23.6,
+        "y": 1.8,
+        "w": 2.2,
+        "h": 3.0,
+        "height": 0.05,
+        "finish": "gold",
+        "label": "OUT- pad"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
@@ -13,7 +117,19 @@
       "w": 26,
       "h": 17
     },
-    "thickness": 1.0
+    "thickness": 1.0,
+    "bumps": [
+      {
+        "x": -0.7,
+        "y": 4.75,
+        "w": 5.3,
+        "h": 7.5,
+        "z": 1.0,
+        "height": 2.6,
+        "colour": "#8b9096",
+        "label": "micro USB"
+      }
+    ]
   },
   "tags": [
     "tp4056",

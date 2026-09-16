@@ -1,33 +1,179 @@
 {
   "id": "power-aa-holder-4",
-  "name": "AA battery holder, four cells",
+  "name": "AA battery holder, four cells side by side (generic)",
   "category": "power",
   "popularity": 50,
-  "summary": "Four AA cells in a row, six volts nominal.",
+  "summary": "Holds four AA cells side by side for 6 V. About 62.5 x 57.5 x 15.5 mm; makers differ.",
   "confidence": "approximate",
-  "source": "Dimensions follow the commonly sold part. These are made by many suppliers to no common standard, so measure yours before cutting a panel. The square 2x2 version is a different shape again. AA cells themselves are a fixed 50.5 x 14.5 mm.",
+  "source": "There is no maker drawing for this holder; it is sold by many suppliers. Measured values: about 62.5 x 57.5 mm and 15.5 mm tall, four cells side by side with springs at one end and wire leads. The 2 x 2 stacked version is a different shape. AA cells themselves are 14.5 mm across and 50.5 mm long, which sets the minimum inside size.",
+  "look": {
+    "finish": "plastic",
+    "colour": "#1b1d20",
+    "components": [
+      {
+        "kind": "box",
+        "x": 0,
+        "y": 0,
+        "w": 1.5,
+        "h": 57.5,
+        "height": 9.0,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "label": "Side wall"
+      },
+      {
+        "kind": "box",
+        "x": 61.0,
+        "y": 0,
+        "w": 1.5,
+        "h": 57.5,
+        "height": 9.0,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "label": "Side wall"
+      },
+      {
+        "kind": "box",
+        "x": 0,
+        "y": 0,
+        "w": 62.5,
+        "h": 3.2,
+        "height": 14.0,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "radius": 0.4,
+        "label": "End wall"
+      },
+      {
+        "kind": "box",
+        "x": 0,
+        "y": 54.3,
+        "w": 62.5,
+        "h": 3.2,
+        "height": 14.0,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "radius": 0.4,
+        "label": "End wall"
+      },
+      {
+        "kind": "box",
+        "x": 5.938,
+        "y": 3.2,
+        "z": 5.5,
+        "w": 6.0,
+        "h": 5.0,
+        "height": 5.6,
+        "finish": "metal",
+        "radius": 2.4,
+        "label": "Spring"
+      },
+      {
+        "kind": "box",
+        "x": 20.812,
+        "y": 3.2,
+        "z": 5.5,
+        "w": 6.0,
+        "h": 5.0,
+        "height": 5.6,
+        "finish": "metal",
+        "radius": 2.4,
+        "label": "Spring"
+      },
+      {
+        "kind": "box",
+        "x": 35.688,
+        "y": 3.2,
+        "z": 5.5,
+        "w": 6.0,
+        "h": 5.0,
+        "height": 5.6,
+        "finish": "metal",
+        "radius": 2.4,
+        "label": "Spring"
+      },
+      {
+        "kind": "box",
+        "x": 50.562,
+        "y": 3.2,
+        "z": 5.5,
+        "w": 6.0,
+        "h": 5.0,
+        "height": 5.6,
+        "finish": "metal",
+        "radius": 2.4,
+        "label": "Spring"
+      },
+      {
+        "kind": "box",
+        "x": 15.875,
+        "y": 3.2,
+        "w": 1.0,
+        "h": 51.1,
+        "height": 5.0,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "label": "Divider"
+      },
+      {
+        "kind": "box",
+        "x": 30.75,
+        "y": 3.2,
+        "w": 1.0,
+        "h": 51.1,
+        "height": 5.0,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "label": "Divider"
+      },
+      {
+        "kind": "box",
+        "x": 45.625,
+        "y": 3.2,
+        "w": 1.0,
+        "h": 51.1,
+        "height": 5.0,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "label": "Divider"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
       "shape": "rect",
-      "w": 58.5,
-      "h": 29.5
+      "w": 62.5,
+      "h": 57.5,
+      "cornerRadius": 1
     },
-    "thickness": 16.5
+    "thickness": 1.5,
+    "bumps": [
+      {
+        "x": 0,
+        "y": 0,
+        "w": 62.5,
+        "h": 57.5,
+        "z": 1.5,
+        "height": 14.0,
+        "colour": "#1b1d20",
+        "label": "Walls and cell space"
+      }
+    ]
   },
   "mountingHoles": [
     {
       "id": "h1",
-      "x": 3,
-      "y": 14.75,
-      "diameter": 3,
+      "x": 31.25,
+      "y": 15.0,
+      "diameter": 3.0,
       "screw": "M3"
     },
     {
       "id": "h2",
-      "x": 55.5,
-      "y": 14.75,
-      "diameter": 3,
+      "x": 31.25,
+      "y": 42.5,
+      "diameter": 3.0,
       "screw": "M3"
     }
   ],
