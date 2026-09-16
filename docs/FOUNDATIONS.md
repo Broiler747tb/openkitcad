@@ -484,6 +484,9 @@ height, and build the other way. Box and Cylinder used to accept one and then fa
 primitives now build down from the plane. When the profile or the placement plane is a face of a body,
 going into that body switches the operation to Cut on it, and coming back out switches it to Join, as
 Fusion does. The switch runs through a `derive` hook on command specs that reacts to one field changing.
+The older fixed dialogs that duplicated these commands are gone: Extrude in the Inspector's Actions tab
+and the Edit Feature quick action open the Extrude, Box or Cylinder panel, so a negative value cuts
+there too, and the unreachable Move, Hole and Extrude fallbacks in `resolveCommand` were removed.
 
 **Tidying.** Counts read "1 body" and "2 bodies" (`src/core/words.ts`). The Inspector hides while a
 command panel is open, and surface bodies no longer offer edge rounding. The Shortcuts dialog no

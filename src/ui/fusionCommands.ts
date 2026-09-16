@@ -1,8 +1,8 @@
-import { activeSketchFeature, newId, selectedBodyId, useStore } from '../doc/store'
+import { activeSketchFeature, selectedBodyId, useStore } from '../doc/store'
 import { sketchActions } from '../sketch/actions'
-import { extrusionAction, selectedObjectActions } from './workflow'
+import { selectedObjectActions } from './workflow'
 import type { ObjectAction } from './ObjectMenu'
-import { findBody, findOccurrence, multiplyMatrices, translationMatrix } from '../doc/model'
+import { findBody, findOccurrence } from '../doc/model'
 
 export const SHORTCUTS = [
   ['S', 'Command toolbox'],
@@ -64,7 +64,6 @@ export function createComponentAction(): ObjectAction {
 export function resolveCommand(id: string): ObjectAction | null {
   const state = useStore.getState()
   const actions = selectedObjectActions()
-  if (id === 'extrude' || id === 'revolve') return extrusionAction(id === 'revolve')
   if (id === 'create-sketch') return createSketchAction()
   if (id === 'create-component') return createComponentAction()
   const sketch = activeSketchFeature(state)
@@ -97,32 +96,6 @@ export function resolveCommand(id: string): ObjectAction | null {
       hint: 'Another occurrence of the same component. Changing one changes both.',
       run: () => state.linkedCopy(occurrence.id),
     }
-  if (id === 'move' && (found || occurrence))
-    return {
-      id,
-      label: 'Move',
-      hint: 'Translate the selected object by an exact distance. Cancel leaves the model unchanged.',
-      prompt: { label: 'X distance', initial: 0, unit: 'mm' },
-      prompt2: { label: 'Y distance', initial: 0, unit: 'mm' },
-      prompt3: { label: 'Z distance', initial: 0, unit: 'mm' },
-      run: (x, y = 0, z = 0) => {
-        if (!x && !y && !z) return
-        if (found)
-          state.addFeature({
-            id: newId('move'),
-            kind: 'move',
-            name: 'Move',
-            componentId: found.component.id,
-            bodyIds: [found.body.id],
-            offset: [x, y, z],
-            rotation: [0, 0, 0],
-          })
-        else if (occurrence)
-          state.updateOccurrence(occurrence.id, {
-            transform: multiplyMatrices(translationMatrix([x, y, z]), occurrence.transform),
-          })
-      },
-    }
   if (id === 'appearance' && found)
     return {
       id,
@@ -146,41 +119,7 @@ export function resolveCommand(id: string): ObjectAction | null {
       },
       run: (_a, _b, _c, colour) => state.updateBody(found.body.id, { colour: colour! }),
     }
-  if (id === 'hole' && found)
-    return {
-      id,
-      label: 'Hole',
-      hint: 'Through hole normal to the XY plane. X and Y are coordinates in the body’s component.',
-      prompt: { label: 'Diameter', initial: 3.4, unit: 'mm', min: 0.01 },
-      prompt2: { label: 'X', initial: 0, unit: 'mm' },
-      prompt3: { label: 'Y', initial: 0, unit: 'mm' },
-      run: (diameter, x, y) =>
-        state.addFeature({
-          id: newId('hole'),
-          name: 'Hole',
-          kind: 'hole',
-          componentId: found.component.id,
-          bodyId: found.body.id,
-          plane: { kind: 'named', name: 'XY', offset: 0 },
-          source: { kind: 'explicit', positions: [[x ?? 0, y ?? 0]] },
-          style: 'simple',
-          diameter,
-          depth: 'through',
-        }),
-    }
-  const ids =
-    id === 'fillet'
-      ? ['round-picked', 'round']
-      : id === 'chamfer'
-        ? ['bevel-picked', 'bevel']
-        : id === 'hole'
-          ? ['holes']
-          : [id]
-  for (const candidate of ids) {
-    const found = actions.find((a) => a.id === candidate)
-    if (found) return found
-  }
-  return null
+  return actions.find((action) => action.id === id) ?? null
 }
 
 export function toggleVisibility() {

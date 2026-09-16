@@ -12,8 +12,12 @@ export function SelectionActions() {
     <div className="selection-actions section">
       <span className="eyebrow">ACTIONS FOR SELECTION</span>
       {extrude && (
-        <button className="primary-button" onClick={() => chooseAction(extrude)}>
-          Extrude sketch
+        <button
+          className="primary-button"
+          title={extrude.hint}
+          onClick={() => chooseAction(extrude)}
+        >
+          Extrude
         </button>
       )}
       <FlyoutMenu actions={actions} onPick={chooseAction} />

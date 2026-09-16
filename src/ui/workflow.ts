@@ -1,8 +1,9 @@
-import { newId, selectedBodyId, sketchTargetBody, useStore } from '../doc/store'
+import { selectedBodyId, useStore } from '../doc/store'
 import { objectActions, type ObjectAction } from './ObjectMenu'
 import { hasProfiles } from './command/specs/shared'
-import { findComponent, findFeature } from '../doc/model'
-import type { BodyOperation, Feature } from '../doc/types'
+import { findFeature } from '../doc/model'
+import { startCommand } from './command/commands'
+import { sketchPick } from './command/picks'
 
 export function selectedObjectActions() {
   const state = useStore.getState()
@@ -37,61 +38,17 @@ export function extrusionAction(revolve = false): ObjectAction | null {
     (state.selection.kind === 'feature' ? state.selection.id : undefined)
   const feature = featureId ? findFeature(state.doc, featureId) : undefined
   if (feature?.kind !== 'sketch' || !hasProfiles(feature)) return null
-  const component = findComponent(state.doc, feature.componentId)
-  if (!component) return null
-  const target = sketchTargetBody(state.doc, feature)
-  const options = [
-    { value: 'new', label: 'New Body', hint: 'The profile becomes a body of its own.' },
-    ...component.bodies.flatMap((body) => [
-      { value: `join:${body.id}`, label: `Join to ${body.name}`, hint: 'Adds material to it.' },
-      { value: `cut:${body.id}`, label: `Cut ${body.name}`, hint: 'Removes material from it.' },
-    ]),
-  ]
   return {
     id: revolve ? 'create-revolve' : 'create-extrude',
-    label: revolve ? 'Revolve sketch' : 'Extrude sketch',
+    label: revolve ? 'Revolve' : 'Extrude',
     group: 'Make a solid',
     hint: revolve
-      ? 'Spin the profile around its horizontal sketch axis.'
-      : 'Give the closed outline a precise thickness.',
-    prompt: {
-      label: revolve ? 'Angle' : 'Thickness',
-      initial: revolve ? 360 : 3,
-      unit: revolve ? '°' : 'mm',
-      min: 0.01,
-      max: revolve ? 360 : undefined,
-    },
-    choice: {
-      label: 'Operation',
-      initial: target ? `join:${target}` : 'new',
-      options,
-    },
-    run: (value, _b, _c, choice) => {
-      const store = useStore.getState()
-      const [kind, bodyId] = (choice ?? 'new').split(':')
-      const newBodyId = newId('body')
-      const result: BodyOperation =
-        kind === 'join' && bodyId
-          ? { kind: 'join', bodyId }
-          : kind === 'cut' && bodyId
-            ? { kind: 'cut', bodyIds: [bodyId] }
-            : { kind: 'newBody', bodyId: newBodyId }
-      const id = newId(revolve ? 'revolve' : 'extrude')
-      const base = { id, componentId: feature.componentId, sketchId: feature.id, result }
-      const created: Feature = revolve
-        ? { ...base, kind: 'revolve', name: 'Revolve', angle: value, axis: 'x' }
-        : {
-            ...base,
-            kind: 'extrude',
-            name: 'Extrude',
-            distance: value,
-            symmetric: false,
-            reverse: false,
-          }
-      store.addFeature(created)
-      store.closeSketch()
-      store.select({ kind: 'feature', id })
-      window.dispatchEvent(new CustomEvent('okc:fit'))
+      ? 'Spins the profile around an axis, with a live preview.'
+      : 'Gives the profile depth, with a live preview. A negative distance goes the other way and cuts into the body it sits on.',
+    run: () => {
+      const doc = useStore.getState().doc
+      const profile = sketchPick(doc, feature.id)
+      startCommand(revolve ? 'revolve' : 'extrude', profile ? { profile: [profile] } : undefined)
     },
   }
 }

@@ -6,6 +6,9 @@ import { createSketchAction, resolveCommand, toggleVisibility } from '../ui/fusi
 import { startCommand } from '../ui/command/commands'
 import { useCommand } from '../ui/command/session'
 import { evaluateCommand } from '../ui/command/state'
+import { extrusionAction } from '../ui/workflow'
+import { chooseAction } from '../ui/ActionDialog'
+import { emptySketch } from '../sketch/types'
 
 function evaluateSession() {
   const session = useCommand.getState().session
@@ -108,6 +111,45 @@ export function runWorkflowTest() {
       'V changes selected body visibility',
       findBody(useStore.getState().doc, body.id)?.body.visible === false,
     )
+    const profileSketch = {
+      id: 'wf-profile',
+      kind: 'sketch' as const,
+      name: 'Profile',
+      componentId: useStore.getState().doc.rootComponentId,
+      plane: { kind: 'named' as const, name: 'XY' as const, offset: 0 },
+      sketch: {
+        ...emptySketch(),
+        points: [
+          { id: 'q0', x: 0, y: 0 },
+          { id: 'q1', x: 5, y: 0 },
+          { id: 'q2', x: 5, y: 5 },
+        ],
+        entities: [
+          { id: 'n0', kind: 'line' as const, p1: 'q0', p2: 'q1', construction: false },
+          { id: 'n1', kind: 'line' as const, p1: 'q1', p2: 'q2', construction: false },
+          { id: 'n2', kind: 'line' as const, p1: 'q2', p2: 'q0', construction: false },
+        ],
+      },
+      visible: true,
+    }
+    useStore.getState().commit((doc) => {
+      doc.timeline.push(profileSketch)
+    })
+    useStore.getState().select({ kind: 'feature', id: profileSketch.id })
+    const extrudeFromActions = extrusionAction()
+    if (extrudeFromActions) chooseAction(extrudeFromActions)
+    const opened = useCommand.getState().session
+    const openedProfile = opened?.state.fields.profile
+    check(
+      'Extrude from the Actions tab opens the Extrude panel, not a fixed-size dialog',
+      opened?.spec.id === 'extrude' &&
+        !extrudeFromActions?.prompt &&
+        openedProfile?.kind === 'selection' &&
+        openedProfile.picks[0]?.id === profileSketch.id,
+    )
+    useCommand.getState().cancel()
+    useStore.getState().undo()
+    useStore.getState().select({ kind: 'none' })
     createSketchAction().run(0)
     check(
       'Create Sketch with nothing picked waits for a plane or a flat face',

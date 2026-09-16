@@ -13,7 +13,6 @@ import type {
   Feature,
   MoveFeature,
   OkcDocument,
-  SketchFeature,
   VentShape,
 } from '../doc/types'
 import {
@@ -27,11 +26,10 @@ import {
   findOccurrence,
 } from '../doc/model'
 import { poseOf, withPose } from '../doc/placement'
-import { resizeSketch } from '../sketch/edit'
 import { getPart } from '../catalogue'
 import { ContextMenu, type MenuRect } from './ContextMenu'
 import { chooseAction } from './ActionDialog'
-import { editFeature, startCommand } from './command/commands'
+import { canEditInPanel, editFeature, startCommand } from './command/commands'
 import { setGrounded, updateJoint } from './command/specs/assemble'
 import { animateJoint } from './jointAnimation'
 import { motionDofs } from '../assembly/motion'
@@ -157,20 +155,6 @@ function ensureMove(bodyId: string): void {
     offset: [0, 0, 0],
     rotation: [0, 0, 0],
   })
-}
-
-const round1 = (n: number) => Math.round(n * 10) / 10
-
-/** How far a drawn outline reaches, which is what its width and length mean. */
-function sketchExtent(sketch: SketchFeature['sketch']): { width: number; height: number } | null {
-  if (sketch.points.length === 0) return null
-  const xs = sketch.points.map((p) => p.x)
-  const ys = sketch.points.map((p) => p.y)
-  const width = Math.max(...xs) - Math.min(...xs)
-  const height = Math.max(...ys) - Math.min(...ys)
-  // A sketch with no extent one way cannot be scaled by a ratio.
-  if (width < 1e-6 || height < 1e-6) return null
-  return { width, height }
 }
 
 function mainExtrude(doc: OkcDocument, bodyId: string): ExtrudeFeature | undefined {
@@ -336,63 +320,23 @@ function buildObjectActions(
       })
     }
     const creator = bodyCreator(doc, bodyId)
-    const solid = creator?.kind === 'box' || creator?.kind === 'cylinder' ? creator : undefined
-    if (solid?.kind === 'box') {
+    const editable =
+      creator?.kind === 'box' || creator?.kind === 'cylinder'
+        ? creator
+        : extrude && canEditInPanel(extrude)
+          ? extrude
+          : undefined
+    if (editable) {
       out.push({
         id: 'size',
         label: 'Edit Feature',
-        hint: 'Width, depth and height',
-        prompt: { label: 'Width', initial: solid.width, unit: 'mm' },
-        prompt2: { label: 'Depth', initial: solid.depth, unit: 'mm' },
-        prompt3: { label: 'Height', initial: solid.height, unit: 'mm' },
-        run: (width, depth, height) =>
-          store.updateFeature(solid.id, {
-            width,
-            depth: depth ?? solid.depth,
-            height: height ?? solid.height,
-          } as Partial<Feature>),
-      })
-    } else if (solid?.kind === 'cylinder') {
-      out.push({
-        id: 'size',
-        label: 'Edit Feature',
-        hint: 'Across and tall',
-        prompt: { label: 'Diameter', initial: solid.radius * 2, unit: 'mm' },
-        prompt2: { label: 'Height', initial: solid.height, unit: 'mm' },
-        run: (diameter, height) =>
-          store.updateFeature(solid.id, {
-            radius: diameter / 2,
-            height: height ?? solid.height,
-          } as Partial<Feature>),
-      })
-    } else if (extrude) {
-      const source = findFeature(doc, extrude.sketchId)
-      const drawn = source?.kind === 'sketch' ? source : undefined
-      const box = drawn ? sketchExtent(drawn.sketch) : null
-      out.push({
-        id: 'size',
-        label: 'Edit Feature',
-        hint: box ? 'Across, front to back, and thick' : 'How thick it is',
-        prompt: box
-          ? { label: 'Width', initial: round1(box.width), unit: 'mm' }
-          : { label: 'Thickness', initial: extrude.distance, unit: 'mm' },
-        prompt2: box ? { label: 'Length', initial: round1(box.height), unit: 'mm' } : undefined,
-        prompt3: box ? { label: 'Thickness', initial: extrude.distance, unit: 'mm' } : undefined,
-        run: (a, b, c) => {
-          if (!box || !drawn) {
-            store.updateFeature(extrude.id, { distance: a } as Partial<Feature>)
-            return
-          }
-          const thickness = c ?? extrude.distance
-          const resized = resizeSketch(drawn.sketch, a / box.width, (b ?? box.height) / box.height)
-          if (!resized.ok) {
-            store.setStatus(resized.reason)
-            store.updateFeature(extrude.id, { distance: thickness } as Partial<Feature>)
-            return
-          }
-          store.updateFeature(drawn.id, { sketch: resized.sketch } as Partial<Feature>)
-          store.updateFeature(extrude.id, { distance: thickness } as Partial<Feature>)
-        },
+        hint:
+          editable.kind === 'box'
+            ? 'Opens the Box panel: sizes, height and operation'
+            : editable.kind === 'cylinder'
+              ? 'Opens the Cylinder panel: diameter, height and operation'
+              : 'Opens the Extrude panel: distance, direction and operation',
+        run: () => editFeature(editable),
       })
     }
     const facePicks = () =>
