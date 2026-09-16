@@ -14,6 +14,7 @@ import { startCommand } from './command/commands'
 import { SKETCH_TOOL_MENUS, SKETCH_TOOLS } from '../sketch/tools/specs'
 import { CONSTRAINT_TOOLS } from '../sketch/constraintTools'
 import { startConstraintTool } from './sketchConstraints'
+import { moveCopyAction, rectangularPatternAction, scaleAction } from './sketchModify'
 
 const SKETCH_MENU_ICONS: Record<string, string> = {
   Line: '╱',
@@ -96,9 +97,64 @@ export function Toolbar({
     group: tool.menu,
     run: () => pickTool(tool.id),
   }))
+  const modifyTool = (id: ToolId, label: string, hint: string, status: string): ObjectAction => ({
+    id: 'tool-' + id,
+    label,
+    hint,
+    group: 'Modify',
+    run: () => {
+      pickTool(id)
+      state.setStatus(status)
+    },
+  })
+  const sketchCreateExtras: ObjectAction[] = [
+    modifyTool(
+      'mirror',
+      'Mirror',
+      'Copies the selected geometry across a line, tied with symmetry.',
+      'Mirror: with the geometry selected, click the line to mirror about.',
+    ),
+    modifyTool(
+      'circularPattern',
+      'Circular Pattern',
+      'Repeats the selected geometry around a centre point.',
+      'Circular Pattern: with the geometry selected, click the centre point.',
+    ),
+    { ...rectangularPatternAction(), run: rectangularPatternAction().run },
+  ]
+  const sketchModifyActions: ObjectAction[] = [
+    modifyTool(
+      'sketchFillet',
+      'Fillet',
+      'Rounds a corner of the sketch.',
+      'Fillet: pick a corner, or two curves.',
+    ),
+    modifyTool(
+      'trim',
+      'Trim',
+      'Removes the piece of a curve up to where it crosses something.',
+      'Trim: click the piece to remove.',
+    ),
+    modifyTool(
+      'extend',
+      'Extend',
+      'Lengthens a line or arc to the next curve.',
+      'Extend: click near the end to lengthen.',
+    ),
+    modifyTool(
+      'break',
+      'Break',
+      'Splits a curve where it crosses something.',
+      'Break: click the piece to split off.',
+    ),
+    moveCopyAction(),
+    scaleAction(),
+  ]
   const commands = state.activeSketch
     ? [
         ...toolActions,
+        ...sketchCreateExtras,
+        ...sketchModifyActions,
         {
           id: 'dimension',
           label: 'Sketch Dimension',
@@ -258,6 +314,11 @@ export function Toolbar({
         s.setTool(sketchMap[k])
         return
       }
+      if (s.activeSketch && k === 'm') {
+        e.preventDefault()
+        chooseAction(moveCopyAction())
+        return
+      }
       const map: Record<string, string> = s.activeSketch
         ? { e: 'extrude', o: 'offset', x: 'construction', t: 'trim' }
         : { e: 'extrude', f: 'fillet', m: 'move', h: 'hole', a: 'appearance' }
@@ -389,7 +450,7 @@ export function Toolbar({
           <>
             {group(
               'CREATE',
-              [...toolActions, ...sketchCommands],
+              [...toolActions, ...sketchCreateExtras, ...sketchCommands],
               RIBBON_MENUS.map((name) => {
                 const tools = SKETCH_TOOL_MENUS.find((entry) => entry.menu === name)?.tools ?? []
                 const chosen = tools.find((tool) => tool.id === variants[name]) ?? tools[0]
@@ -447,11 +508,19 @@ export function Toolbar({
             )}
             {group(
               'MODIFY',
-              sketchCommands,
+              [
+                ...sketchModifyActions,
+                ...sketchCommands.filter(
+                  (a) => a.group === 'Change the shape' || a.group === 'Repeat or copy',
+                ),
+              ],
               <>
-                {tool('Trim', '✂', () => invoke('trim'), 'T')}
+                {tool('Fillet', '◜', () => chooseAction(sketchModifyActions[0]))}
+                {tool('Trim', '✂', () => chooseAction(sketchModifyActions[1]), 'T')}
+                {tool('Extend', '⟶', () => chooseAction(sketchModifyActions[2]))}
+                {tool('Break', '⌇', () => chooseAction(sketchModifyActions[3]))}
                 {tool('Offset', '⊚', () => invoke('offset'), 'O')}
-                {tool('Construction', '┄', () => invoke('construction'), 'X')}
+                {tool('Move/Copy', '✥', () => chooseAction(sketchModifyActions[4]), 'M')}
               </>,
             )}
             {group(

@@ -3,6 +3,14 @@ import { closestPoint, curveOf, intersectEntities, pointLookup, tessellate } fro
 import { selectProfiles, sketchRegions } from '../sketch/regions'
 import { resolveConstraint, toggleFixes } from '../sketch/constraintTools'
 import {
+  breakEntity,
+  extendEntity,
+  mirrorAbout,
+  moveEntities,
+  scaleEntities,
+  trimEntity,
+} from '../sketch/modify'
+import {
   buildTool,
   emptyToolState,
   lockField,
@@ -853,6 +861,194 @@ export function runSketchTest(): TestResult[] {
         second === 'released' &&
         d.sketch.constraints.filter((x) => x.kind === 'fix').length === 1,
       `${first} ${pinned} ${second}`,
+    )
+  })
+
+  guard('modify', () => {
+    const kinds = (d: Draft) => d.sketch.entities.map((e) => e.kind).join(',')
+    const regionArea = (d: Draft) =>
+      sketchRegions(d.sketch)
+        .regions.reduce((sum, region) => sum + region.area, 0)
+        .toFixed(2)
+    const railed = () => {
+      const d = draft()
+      const bar = entity(d, {
+        kind: 'line',
+        p1: point(d, 0, 0),
+        p2: point(d, 30, 0),
+        construction: false,
+      })
+      entity(d, { kind: 'line', p1: point(d, 10, -5), p2: point(d, 10, 5), construction: false })
+      entity(d, { kind: 'line', p1: point(d, 20, -5), p2: point(d, 20, 5), construction: false })
+      return { d, bar }
+    }
+
+    const trimmed = railed()
+    const trimResult = trimEntity(trimmed.d.sketch, trimmed.bar, [15, 0.2], trimmed.d.id)
+    const pieces = trimmed.d.sketch.entities
+      .filter((e) => e.kind === 'line')
+      .map((e) => {
+        const l = e as { p1: string; p2: string }
+        return `${at(trimmed.d, l.p1)[0]}-${at(trimmed.d, l.p2)[0]}`
+      })
+    const trimStatus = solved(trimmed.d)
+    check(
+      'Trim cuts the middle out of a line between two crossings and keeps both ends joined on',
+      trimResult.ok &&
+        pieces.includes('0-10') &&
+        pieces.includes('20-30') &&
+        trimmed.d.sketch.constraints.filter((c) => c.kind === 'pointOnLine').length === 2 &&
+        trimmed.d.sketch.constraints.some((c) => c.kind === 'collinear') &&
+        trimStatus.ok,
+      `${pieces.join(' ')} ${trimmed.d.sketch.constraints.map((c) => c.kind).join(',')}`,
+    )
+
+    const broken = railed()
+    breakEntity(broken.d.sketch, broken.bar, [15, 0], broken.d.id)
+    check(
+      'Break splits a line at the crossings either side of the click',
+      broken.d.sketch.entities.filter((e) => e.kind === 'line').length === 5,
+      kinds(broken.d),
+    )
+
+    const ringed = draft()
+    const ring = entity(ringed, {
+      kind: 'circle',
+      c: point(ringed, 0, 0),
+      r: 10,
+      construction: false,
+    })
+    entity(ringed, {
+      kind: 'line',
+      p1: point(ringed, -20, 0),
+      p2: point(ringed, 20, 0),
+      construction: false,
+    })
+    trimEntity(ringed.sketch, ring, [0, 10], ringed.id)
+    const bottom = ringed.sketch.entities.find((e) => e.kind === 'arc') as
+      { c: string; p1: string; p2: string; ccw: boolean } | undefined
+    check(
+      'Trim turns a circle crossed by a line into the arc on the other side',
+      !!bottom && bottom.ccw && at(ringed, bottom.p1)[0] < 0 && at(ringed, bottom.p2)[0] > 0,
+      kinds(ringed),
+    )
+
+    const oval = draft()
+    const ellipseId = entity(oval, {
+      kind: 'ellipse',
+      c: point(oval, 0, 0),
+      rx: 20,
+      ry: 10,
+      rotation: 0,
+      construction: false,
+    })
+    entity(oval, {
+      kind: 'line',
+      p1: point(oval, 0, -20),
+      p2: point(oval, 0, 20),
+      construction: false,
+    })
+    trimEntity(oval.sketch, ellipseId, [-20, 0], oval.id)
+    check(
+      'Trim turns an ellipse into an elliptical arc that still closes a half profile',
+      oval.sketch.entities.some((e) => e.kind === 'ellipticalArc') &&
+        regionArea(oval) === (Math.PI * 100).toFixed(2),
+      `${kinds(oval)} ${regionArea(oval)}`,
+    )
+
+    const sail = draft()
+    const s1 = point(sail, 0, 0)
+    const s4 = point(sail, 40, 0)
+    const curveId = entity(sail, {
+      kind: 'spline',
+      mode: 'fit',
+      points: [s1, point(sail, 10, 15), point(sail, 30, 15), s4],
+      construction: false,
+    })
+    entity(sail, { kind: 'line', p1: s1, p2: s4, construction: false })
+    entity(sail, {
+      kind: 'line',
+      p1: point(sail, 20, -5),
+      p2: point(sail, 20, 30),
+      construction: false,
+    })
+    const areaBefore = sketchRegions(sail.sketch).regions.find((r) => r.inside[0] < 20)?.area ?? 0
+    trimEntity(sail.sketch, curveId, [35, 8], sail.id)
+    const splineAfter = sail.sketch.entities.find((e) => e.kind === 'spline') as
+      { mode: string } | undefined
+    const leftArea = sketchRegions(sail.sketch).regions.find((r) => r.inside[0] < 20)?.area ?? 0
+    check(
+      'Trim cuts a spline exactly, leaving the left piece of the profile unchanged',
+      splineAfter?.mode === 'control' && Math.abs(leftArea - areaBefore) < 1e-6,
+      `${kinds(sail)} ${areaBefore.toFixed(6)} -> ${leftArea.toFixed(6)}`,
+    )
+
+    const reaching = draft()
+    const short = entity(reaching, {
+      kind: 'line',
+      p1: point(reaching, 0, 0),
+      p2: point(reaching, 5, 0),
+      construction: false,
+    })
+    entity(reaching, {
+      kind: 'line',
+      p1: point(reaching, 12, -5),
+      p2: point(reaching, 12, 5),
+      construction: false,
+    })
+    const extended = extendEntity(reaching.sketch, short, [5, 0], reaching.id)
+    const shortLine = reaching.sketch.entities.find((e) => e.id === short) as { p2: string }
+    check(
+      'Extend carries a line on until it meets the next curve',
+      extended.ok && Math.abs(at(reaching, shortLine.p2)[0] - 12) < 1e-9,
+      `${extended.message ?? ''} ${at(reaching, shortLine.p2)}`,
+    )
+
+    const mirrored = draft()
+    const corners = [
+      point(mirrored, 5, 0),
+      point(mirrored, 15, 0),
+      point(mirrored, 15, 10),
+      point(mirrored, 5, 10),
+    ]
+    const box = corners.map((p, i) =>
+      entity(mirrored, { kind: 'line', p1: p, p2: corners[(i + 1) % 4], construction: false }),
+    )
+    const axis = entity(mirrored, {
+      kind: 'line',
+      p1: point(mirrored, 0, -5),
+      p2: point(mirrored, 0, 15),
+      construction: true,
+    })
+    const mirrorResult = mirrorAbout(mirrored.sketch, box, axis, mirrored.id)
+    const mirrorStatus = solved(mirrored)
+    check(
+      'Mirror copies a rectangle across a line and ties each copy with symmetry',
+      mirrorResult.ok &&
+        regionArea(mirrored) === '200.00' &&
+        mirrored.sketch.constraints.filter((c) => c.kind === 'symmetricEntities').length === 4 &&
+        mirrorStatus.ok,
+      `${regionArea(mirrored)} ${mirrorStatus.residual}`,
+    )
+
+    const grown = draft()
+    const gc = [point(grown, 0, 0), point(grown, 10, 0), point(grown, 10, 5), point(grown, 0, 5)]
+    const grownIds = gc.map((p, i) =>
+      entity(grown, { kind: 'line', p1: p, p2: gc[(i + 1) % 4], construction: false }),
+    )
+    constrain(grown, { kind: 'distance', a: gc[0], b: gc[1], value: 10 })
+    scaleEntities(grown.sketch, grownIds, [0, 0], 2)
+    check(
+      'Sketch Scale grows geometry and its dimensions together',
+      regionArea(grown) === '200.00' &&
+        grown.sketch.constraints.some((c) => c.kind === 'distance' && c.value === 20),
+      regionArea(grown),
+    )
+    moveEntities(grown.sketch, grownIds, [5, 5], 90, [0, 0])
+    check(
+      'Move turns and shifts geometry without changing its area',
+      regionArea(grown) === '200.00' && Math.abs(at(grown, gc[1])[0] - 5) < 1e-9,
+      `${regionArea(grown)} ${at(grown, gc[1])}`,
     )
   })
 

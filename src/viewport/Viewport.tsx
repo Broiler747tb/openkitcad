@@ -55,6 +55,9 @@ import type {
 } from '../sketch/tools/types'
 import { parseAngle, parseInteger, parseLength } from '../ui/command/units'
 import { runConstraintTool } from '../ui/sketchConstraints'
+import { circularPatternAt, sketchEdit } from '../ui/sketchModify'
+import { breakEntity, extendEntity, mirrorAbout, trimEntity } from '../sketch/modify'
+import { findCorner, maxFilletRadius } from '../sketch/corner'
 import type { ConstraintToolId } from '../sketch/constraintTools'
 import { sketchActions } from '../sketch/actions'
 import { isAndroidApp, usePenMode } from '../platform/android'
@@ -1003,9 +1006,9 @@ export function Viewport() {
         return
       }
 
-      if (tool === 'trim') {
+      if (['trim', 'extend', 'break', 'mirror'].includes(tool)) {
         const hit = hitTestSketch(sketch, cursor, toleranceAt(), false)
-        setCursorHint({ x: e.clientX, y: e.clientY, text: 'Trim: click to remove · Esc to finish' })
+        setCursorHint({ x: e.clientX, y: e.clientY, text: MODIFY_HINTS[tool] ?? '' })
         engine.setSketch(
           sketch,
           frame,
@@ -1096,14 +1099,102 @@ export function Viewport() {
         return
       }
 
-      if (tool === 'trim') {
-        // Ignore point hits: Trim operates on the edge portion under the cursor.
+      if (tool === 'trim' || tool === 'extend' || tool === 'break') {
         const hit = hitTestSketch(sketch, cursor, toleranceAt(), false)
-        const action = hit && sketchActions(sketch, [hit], cursor).find((a) => a.id === 'trim')
-        if (action) {
+        const label = tool === 'trim' ? 'Trim' : tool === 'extend' ? 'Extend' : 'Break'
+        if (hit?.kind !== 'entity') {
+          store.setStatus(`${label}: click a curve.`)
+          return
+        }
+        const operation =
+          tool === 'trim' ? trimEntity : tool === 'extend' ? extendEntity : breakEntity
+        store.setSketchSelection([])
+        sketchEdit(label, (draft) => operation(draft, hit.id, cursor, newId))
+        return
+      }
+
+      if (tool === 'sketchFillet') {
+        const hit = hitTestSketch(sketch, cursor, toleranceAt())
+        if (hit?.kind === 'point') {
+          const corner = findCorner(sketch, hit.id)
+          if (!corner) {
+            store.setStatus('Fillet: pick a corner where two lines or arcs meet.')
+            return
+          }
+          const suggested = Math.max(
+            0.5,
+            Math.round(Math.min(maxFilletRadius(corner) * 0.35, 5) * 10) / 10,
+          )
+          setPrompt({
+            x: e.clientX,
+            y: e.clientY,
+            value: String(suggested),
+            unit: 'mm',
+            apply: (radius) =>
+              useStore
+                .getState()
+                .applySketchAction({ kind: 'filletCorner', pointId: hit.id, radius }),
+          })
+          return
+        }
+        if (hit?.kind === 'entity') {
+          const picks = store.sketchSelection.filter((t) => t.kind === 'entity' && t.id !== hit.id)
+          if (!picks.length) {
+            store.setSketchSelection([hit])
+            store.setStatus('Fillet: pick the second curve.')
+            return
+          }
+          const first = picks[picks.length - 1]
           store.setSketchSelection([])
-          store.applySketchAction(action.build(0))
-        } else store.setStatus('Trim: click a line, circle or arc.')
+          setPrompt({
+            x: e.clientX,
+            y: e.clientY,
+            value: '3',
+            unit: 'mm',
+            apply: (radius) =>
+              useStore.getState().applySketchAction({
+                kind: 'filletBetween',
+                aId: first.id,
+                bId: hit.id,
+                radius,
+                cursor,
+              }),
+          })
+          return
+        }
+        store.setStatus('Fillet: pick a corner, or two curves.')
+        return
+      }
+
+      if (tool === 'mirror') {
+        const hit = hitTestSketch(sketch, cursor, toleranceAt(), false)
+        const objects = store.sketchSelection.filter((t) => t.kind === 'entity').map((t) => t.id)
+        if (!objects.length) {
+          store.setStatus('Mirror: select the geometry to mirror first, then choose Mirror.')
+          return
+        }
+        const line =
+          hit?.kind === 'entity' ? sketch.entities.find((x) => x.id === hit.id) : undefined
+        if (line?.kind !== 'line') {
+          store.setStatus('Mirror: click the line to mirror about.')
+          return
+        }
+        if (sketchEdit('Mirror', (draft) => mirrorAbout(draft, objects, line.id, newId))) {
+          store.setSketchSelection([])
+          store.setTool('select')
+        }
+        return
+      }
+
+      if (tool === 'circularPattern') {
+        const objects = store.sketchSelection.filter((t) => t.kind === 'entity')
+        if (!objects.length) {
+          store.setStatus('Circular Pattern: select the geometry to repeat first.')
+          return
+        }
+        const snap = findSnap(sketch, cursor, snapOptions(toleranceAt(), e.altKey))
+        chooseAction(circularPatternAt(snap.point))
+        store.setTool('select')
         return
       }
 
@@ -1693,6 +1784,13 @@ export function Viewport() {
       <ViewCube />
     </div>
   )
+}
+
+const MODIFY_HINTS: Record<string, string> = {
+  trim: 'Trim: click the piece to remove · Esc to finish',
+  extend: 'Extend: click near the end to lengthen · Esc to finish',
+  break: 'Break: click the piece to split off · Esc to finish',
+  mirror: 'Mirror: click the line to mirror about',
 }
 
 interface HeadsUp {

@@ -1,4 +1,5 @@
 import type { SketchToolId } from '../sketch/tools/types'
+import { trimEntity } from '../sketch/modify'
 import type { ConstraintToolId } from '../sketch/constraintTools'
 import { create } from 'zustand'
 import { resolveParameters } from './parameters'
@@ -50,8 +51,6 @@ import {
   linearPattern,
   mirrorEntities,
   offsetEntities,
-  trimLine,
-  trimRound,
 } from '../sketch/edit'
 import { getPart, userParts } from '../catalogue'
 import { planHole, planPillar } from '../fasteners'
@@ -69,7 +68,17 @@ export function newId(prefix: string): string {
 export const DEFAULT_BODY_COLOUR = '#b9c0c7'
 
 export type ToolId =
-  'select' | 'dimension' | 'trim' | 'measure' | SketchToolId | `constrain:${ConstraintToolId}`
+  | SketchToolId
+  | `constrain:${ConstraintToolId}`
+  | 'select'
+  | 'dimension'
+  | 'trim'
+  | 'extend'
+  | 'break'
+  | 'sketchFillet'
+  | 'mirror'
+  | 'circularPattern'
+  | 'measure'
 
 export interface Selection {
   kind: 'none' | 'body' | 'occurrence' | 'feature' | 'face' | 'edge'
@@ -1212,14 +1221,9 @@ export const useStore = create<AppState>((set, get) => ({
                 newId,
               )
               break
-            case 'trim': {
-              const target = sketch.entities.find((e) => e.id === result.entityId)
-              outcome =
-                target && target.kind !== 'line'
-                  ? trimRound(sketch, result.entityId, result.at, newId)
-                  : trimLine(sketch, result.entityId, result.at, newId)
+            case 'trim':
+              outcome = trimEntity(sketch, result.entityId, result.at, newId)
               break
-            }
             case 'linearPattern':
               outcome = linearPattern(
                 sketch,
