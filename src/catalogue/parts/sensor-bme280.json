@@ -1,11 +1,48 @@
 {
   "id": "sensor-bme280",
-  "name": "BME280 module",
+  "name": "BME280 module (generic, purple)",
   "category": "sensor",
   "popularity": 83,
+  "family": "bme280-board",
+  "variant": "Purple 4-pin module (generic)",
   "summary": "Temperature, humidity and pressure on one small I2C board.",
   "confidence": "approximate",
   "source": "Dimensions taken from the commonly sold module. These boards are made by many suppliers to no common standard, so measure yours before cutting a panel. Hole count varies: some carry one, some none at all.",
+  "look": {
+    "colour": "#5b2a86",
+    "components": [
+      {
+        "kind": "box",
+        "x": 6.25,
+        "y": 4.5,
+        "w": 2.5,
+        "h": 2.5,
+        "height": 0.93,
+        "finish": "metal",
+        "label": "BME280"
+      },
+      {
+        "kind": "chip",
+        "x": 3.8,
+        "y": 8.6,
+        "w": 2.9,
+        "h": 1.6,
+        "height": 1.1,
+        "label": "3.3 V regulator"
+      },
+      {
+        "kind": "box",
+        "x": 9.8,
+        "y": 8.8,
+        "w": 1.6,
+        "h": 0.8,
+        "height": 0.5,
+        "finish": "chip",
+        "colour": "#c9a27a",
+        "label": "Capacitor"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
@@ -22,6 +59,23 @@
       "y": 5.75,
       "diameter": 2,
       "screw": "M2"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "pins",
+      "label": "VIN, GND, SCL, SDA",
+      "x": 13.73,
+      "y": 1.94,
+      "rows": 4,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "VIN",
+        "GND",
+        "SCL",
+        "SDA"
+      ]
     }
   ],
   "tags": [

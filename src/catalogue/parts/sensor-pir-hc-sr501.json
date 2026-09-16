@@ -1,11 +1,142 @@
 {
   "id": "sensor-pir-hc-sr501",
-  "name": "HC-SR501 motion sensor",
+  "name": "HC-SR501 PIR motion sensor (generic)",
   "category": "sensor",
   "popularity": 76,
   "summary": "Passive infrared movement detector under a white dome.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. The dome is 23 mm across and stands about 8 mm proud, which is the number you need for the hole in the lid.",
+  "look": {
+    "colour": "#1f6f4a",
+    "components": [
+      {
+        "kind": "box",
+        "x": 4.0,
+        "y": 0.0,
+        "w": 24.0,
+        "h": 24.0,
+        "height": 2.5,
+        "finish": "plastic",
+        "colour": "#f4f4f0",
+        "radius": 0.6,
+        "label": "Lens holder"
+      },
+      {
+        "kind": "cylinder",
+        "x": 16.0,
+        "y": 12.0,
+        "z": 3.7,
+        "d": 23.0,
+        "height": 2.6,
+        "finish": "plastic",
+        "colour": "#f7f7f3",
+        "label": "Fresnel dome"
+      },
+      {
+        "kind": "cylinder",
+        "x": 16.0,
+        "y": 12.0,
+        "z": 6.3,
+        "d": 20.0,
+        "height": 2.2,
+        "finish": "plastic",
+        "colour": "#f7f7f3",
+        "label": "Fresnel dome"
+      },
+      {
+        "kind": "cylinder",
+        "x": 16.0,
+        "y": 12.0,
+        "z": 8.5,
+        "d": 15.0,
+        "height": 1.8,
+        "finish": "plastic",
+        "colour": "#f7f7f3",
+        "label": "Fresnel dome"
+      },
+      {
+        "kind": "cylinder",
+        "x": 16.0,
+        "y": 12.0,
+        "z": 10.3,
+        "d": 8.0,
+        "height": 1.2,
+        "finish": "plastic",
+        "colour": "#f7f7f3",
+        "label": "Fresnel dome"
+      },
+      {
+        "kind": "box",
+        "x": 5.5,
+        "y": 15.5,
+        "z": -4.0,
+        "w": 6.5,
+        "h": 6.5,
+        "height": 4.0,
+        "finish": "plastic",
+        "colour": "#e07b22",
+        "radius": 0.3,
+        "label": "Sensitivity pot"
+      },
+      {
+        "kind": "cylinder",
+        "x": 8.75,
+        "y": 18.75,
+        "z": -4.5,
+        "d": 3.0,
+        "height": 0.5,
+        "finish": "plastic",
+        "colour": "#f2f0ea",
+        "label": "Sensitivity adjuster"
+      },
+      {
+        "kind": "box",
+        "x": 20.0,
+        "y": 15.5,
+        "z": -4.0,
+        "w": 6.5,
+        "h": 6.5,
+        "height": 4.0,
+        "finish": "plastic",
+        "colour": "#e07b22",
+        "radius": 0.3,
+        "label": "Time delay pot"
+      },
+      {
+        "kind": "cylinder",
+        "x": 23.25,
+        "y": 18.75,
+        "z": -4.5,
+        "d": 3.0,
+        "height": 0.5,
+        "finish": "plastic",
+        "colour": "#f2f0ea",
+        "label": "Time delay adjuster"
+      },
+      {
+        "kind": "chip",
+        "x": 11.0,
+        "y": 8.0,
+        "w": 9.9,
+        "h": 3.9,
+        "height": 1.6,
+        "legs": "dual",
+        "flip": true,
+        "z": 0,
+        "label": "BISS0001"
+      },
+      {
+        "kind": "header",
+        "x": 13.46,
+        "y": 2.2,
+        "rows": 1,
+        "cols": 3,
+        "height": 8.5,
+        "flip": true,
+        "label": "VCC, OUT, GND"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
@@ -13,7 +144,19 @@
       "w": 32,
       "h": 24
     },
-    "thickness": 1.6
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 4.0,
+        "y": 0.0,
+        "w": 24.0,
+        "h": 24.0,
+        "z": 1.6,
+        "height": 9.9,
+        "colour": "#f7f7f3",
+        "label": "Fresnel dome"
+      }
+    ]
   },
   "mountingHoles": [
     {
@@ -29,6 +172,34 @@
       "y": 12,
       "diameter": 2,
       "screw": "M2"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "pins",
+      "label": "VCC, OUT, GND",
+      "x": 13.46,
+      "y": 2.2,
+      "rows": 1,
+      "cols": 3,
+      "pitch": 2.54,
+      "pins": [
+        "VCC",
+        "OUT",
+        "GND"
+      ]
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-under",
+      "label": "Pots, chip and pins underneath",
+      "x": 0,
+      "y": 0,
+      "w": 32,
+      "h": 24,
+      "z": -8.5,
+      "height": 8.5
     }
   ],
   "tags": [

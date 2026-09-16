@@ -8,6 +8,39 @@
   "summary": "Reads a strain gauge, which is how you build a scale.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Hole positions in particular differ between makers - check yours against these.",
+  "look": {
+    "colour": "#1f6f4a",
+    "components": [
+      {
+        "kind": "chip",
+        "x": 12.0,
+        "y": 8.55,
+        "w": 9.9,
+        "h": 3.9,
+        "height": 1.6,
+        "legs": "dual",
+        "label": "HX711"
+      },
+      {
+        "kind": "chip",
+        "x": 13.0,
+        "y": 15.0,
+        "w": 2.9,
+        "h": 1.6,
+        "height": 1.1,
+        "label": "S8550 transistor"
+      },
+      {
+        "kind": "capacitor",
+        "x": 9.0,
+        "y": 15.0,
+        "d": 4.0,
+        "height": 5.0,
+        "colour": "#1c2d5a",
+        "label": "Filter capacitor"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
@@ -15,7 +48,19 @@
       "w": 34,
       "h": 21
     },
-    "thickness": 1.6
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 7.0,
+        "y": 13.0,
+        "w": 4.0,
+        "h": 4.0,
+        "z": 1.6,
+        "height": 5.0,
+        "colour": "#1c2d5a",
+        "label": "Filter capacitor"
+      }
+    ]
   },
   "mountingHoles": [
     {
@@ -45,6 +90,40 @@
       "y": 18.5,
       "diameter": 3,
       "screw": "M3"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "load-cell",
+      "label": "E+, E-, A-, A+, B-, B+",
+      "x": 1.73,
+      "y": 4.15,
+      "rows": 6,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "E+",
+        "E-",
+        "A-",
+        "A+",
+        "B-",
+        "B+"
+      ]
+    },
+    {
+      "id": "mcu",
+      "label": "GND, DT, SCK, VCC",
+      "x": 32.27,
+      "y": 6.69,
+      "rows": 4,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "GND",
+        "DT",
+        "SCK",
+        "VCC"
+      ]
     }
   ],
   "tags": [

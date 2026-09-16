@@ -1,20 +1,352 @@
 {
   "id": "sensor-dht22",
-  "name": "DHT22 temperature and humidity",
+  "name": "DHT22 / AM2302 temperature and humidity sensor (Aosong)",
   "category": "sensor",
   "popularity": 89,
-  "summary": "The white one. Slower than a BME280 but reads humidity well.",
-  "confidence": "approximate",
-  "source": "Body dimensions are the AM2302 package, which is consistent between suppliers. The two mounting ears on the bare sensor are not included; the module version on a small PCB is a different size again.",
+  "manufacturer": "Aosong",
+  "summary": "White 15.1 x 7.7 x 25.1 mm sensor with four pins at 2.54 mm and a 3 mm hole in its ear.",
+  "confidence": "datasheet",
+  "source": "Aosong AM2302 (DHT22) datasheet, section 4: body 15.1 mm wide, 7.7 mm deep and 25.1 mm tall including the mounting ear, the grille section 20.0 mm tall, a 3 mm hole through the ear, and four 0.5 mm pins at 2.54 mm pitch reaching 8.5 mm below the body (VDD, DATA, NC, GND from left to right). The part stands on its pins with the grille facing -y. The same drawing covers the big-case version with wires, which is 26.7 x 58.8 x 13.8 mm and is not this part.",
+  "look": {
+    "finish": "plastic",
+    "colour": "#f2f2ee",
+    "components": [
+      {
+        "kind": "box",
+        "x": 0,
+        "y": 5.7,
+        "z": 20.0,
+        "w": 15.1,
+        "h": 2.0,
+        "height": 5.1,
+        "finish": "plastic",
+        "colour": "#f2f2ee",
+        "radius": 0.8,
+        "label": "Mounting ear"
+      },
+      {
+        "kind": "cylinder",
+        "x": 7.55,
+        "y": 5.69,
+        "z": 21.9,
+        "d": 3.0,
+        "height": 0.03,
+        "finish": "plastic",
+        "colour": "#2a2c30",
+        "label": "Ear hole"
+      },
+      {
+        "kind": "box",
+        "x": 2.6,
+        "y": -0.05,
+        "z": 2.6,
+        "w": 2.2,
+        "h": 0.05,
+        "height": 1.6,
+        "finish": "plastic",
+        "colour": "#2a2c30",
+        "label": "Grille slot"
+      },
+      {
+        "kind": "box",
+        "x": 2.6,
+        "y": -0.05,
+        "z": 5.5,
+        "w": 2.2,
+        "h": 0.05,
+        "height": 1.6,
+        "finish": "plastic",
+        "colour": "#2a2c30",
+        "label": "Grille slot"
+      },
+      {
+        "kind": "box",
+        "x": 2.6,
+        "y": -0.05,
+        "z": 8.4,
+        "w": 2.2,
+        "h": 0.05,
+        "height": 1.6,
+        "finish": "plastic",
+        "colour": "#2a2c30",
+        "label": "Grille slot"
+      },
+      {
+        "kind": "box",
+        "x": 2.6,
+        "y": -0.05,
+        "z": 11.3,
+        "w": 2.2,
+        "h": 0.05,
+        "height": 1.6,
+        "finish": "plastic",
+        "colour": "#2a2c30",
+        "label": "Grille slot"
+      },
+      {
+        "kind": "box",
+        "x": 2.6,
+        "y": -0.05,
+        "z": 14.2,
+        "w": 2.2,
+        "h": 0.05,
+        "height": 1.6,
+        "finish": "plastic",
+        "colour": "#2a2c30",
+        "label": "Grille slot"
+      },
+      {
+        "kind": "box",
+        "x": 2.6,
+        "y": -0.05,
+        "z": 17.1,
+        "w": 2.2,
+        "h": 0.05,
+        "height": 1.6,
+        "finish": "plastic",
+        "colour": "#2a2c30",
+        "label": "Grille slot"
+      },
+      {
+        "kind": "box",
+        "x": 6.2,
+        "y": -0.05,
+        "z": 2.6,
+        "w": 2.2,
+        "h": 0.05,
+        "height": 1.6,
+        "finish": "plastic",
+        "colour": "#2a2c30",
+        "label": "Grille slot"
+      },
+      {
+        "kind": "box",
+        "x": 6.2,
+        "y": -0.05,
+        "z": 5.5,
+        "w": 2.2,
+        "h": 0.05,
+        "height": 1.6,
+        "finish": "plastic",
+        "colour": "#2a2c30",
+        "label": "Grille slot"
+      },
+      {
+        "kind": "box",
+        "x": 6.2,
+        "y": -0.05,
+        "z": 8.4,
+        "w": 2.2,
+        "h": 0.05,
+        "height": 1.6,
+        "finish": "plastic",
+        "colour": "#2a2c30",
+        "label": "Grille slot"
+      },
+      {
+        "kind": "box",
+        "x": 6.2,
+        "y": -0.05,
+        "z": 11.3,
+        "w": 2.2,
+        "h": 0.05,
+        "height": 1.6,
+        "finish": "plastic",
+        "colour": "#2a2c30",
+        "label": "Grille slot"
+      },
+      {
+        "kind": "box",
+        "x": 6.2,
+        "y": -0.05,
+        "z": 14.2,
+        "w": 2.2,
+        "h": 0.05,
+        "height": 1.6,
+        "finish": "plastic",
+        "colour": "#2a2c30",
+        "label": "Grille slot"
+      },
+      {
+        "kind": "box",
+        "x": 6.2,
+        "y": -0.05,
+        "z": 17.1,
+        "w": 2.2,
+        "h": 0.05,
+        "height": 1.6,
+        "finish": "plastic",
+        "colour": "#2a2c30",
+        "label": "Grille slot"
+      },
+      {
+        "kind": "box",
+        "x": 9.8,
+        "y": -0.05,
+        "z": 2.6,
+        "w": 2.2,
+        "h": 0.05,
+        "height": 1.6,
+        "finish": "plastic",
+        "colour": "#2a2c30",
+        "label": "Grille slot"
+      },
+      {
+        "kind": "box",
+        "x": 9.8,
+        "y": -0.05,
+        "z": 5.5,
+        "w": 2.2,
+        "h": 0.05,
+        "height": 1.6,
+        "finish": "plastic",
+        "colour": "#2a2c30",
+        "label": "Grille slot"
+      },
+      {
+        "kind": "box",
+        "x": 9.8,
+        "y": -0.05,
+        "z": 8.4,
+        "w": 2.2,
+        "h": 0.05,
+        "height": 1.6,
+        "finish": "plastic",
+        "colour": "#2a2c30",
+        "label": "Grille slot"
+      },
+      {
+        "kind": "box",
+        "x": 9.8,
+        "y": -0.05,
+        "z": 11.3,
+        "w": 2.2,
+        "h": 0.05,
+        "height": 1.6,
+        "finish": "plastic",
+        "colour": "#2a2c30",
+        "label": "Grille slot"
+      },
+      {
+        "kind": "box",
+        "x": 9.8,
+        "y": -0.05,
+        "z": 14.2,
+        "w": 2.2,
+        "h": 0.05,
+        "height": 1.6,
+        "finish": "plastic",
+        "colour": "#2a2c30",
+        "label": "Grille slot"
+      },
+      {
+        "kind": "box",
+        "x": 9.8,
+        "y": -0.05,
+        "z": 17.1,
+        "w": 2.2,
+        "h": 0.05,
+        "height": 1.6,
+        "finish": "plastic",
+        "colour": "#2a2c30",
+        "label": "Grille slot"
+      },
+      {
+        "kind": "box",
+        "x": 3.44,
+        "y": 5.65,
+        "z": -8.5,
+        "w": 0.5,
+        "h": 0.25,
+        "height": 8.5,
+        "finish": "gold",
+        "label": "Pin"
+      },
+      {
+        "kind": "box",
+        "x": 5.98,
+        "y": 5.65,
+        "z": -8.5,
+        "w": 0.5,
+        "h": 0.25,
+        "height": 8.5,
+        "finish": "gold",
+        "label": "Pin"
+      },
+      {
+        "kind": "box",
+        "x": 8.52,
+        "y": 5.65,
+        "z": -8.5,
+        "w": 0.5,
+        "h": 0.25,
+        "height": 8.5,
+        "finish": "gold",
+        "label": "Pin"
+      },
+      {
+        "kind": "box",
+        "x": 11.06,
+        "y": 5.65,
+        "z": -8.5,
+        "w": 0.5,
+        "h": 0.25,
+        "height": 8.5,
+        "finish": "gold",
+        "label": "Pin"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
       "shape": "rect",
       "w": 15.1,
-      "h": 7.7
+      "h": 7.7,
+      "cornerRadius": 0.6
     },
-    "thickness": 25.1
+    "thickness": 20.0,
+    "bumps": [
+      {
+        "x": 0,
+        "y": 5.7,
+        "w": 15.1,
+        "h": 2.0,
+        "z": 20.0,
+        "height": 5.1,
+        "colour": "#f2f2ee",
+        "label": "Mounting ear"
+      }
+    ]
   },
+  "keepouts": [
+    {
+      "id": "k-pins",
+      "label": "Pins below the body",
+      "x": 3.44,
+      "y": 5.3,
+      "w": 8.12,
+      "h": 1.0,
+      "z": -8.5,
+      "height": 8.5
+    },
+    {
+      "id": "k-air",
+      "label": "Keep air moving past the grille",
+      "x": 0,
+      "y": -5,
+      "w": 15.1,
+      "h": 5,
+      "z": 0,
+      "height": 20
+    }
+  ],
+  "links": [
+    {
+      "label": "AM2302 datasheet",
+      "url": "https://cdn-shop.adafruit.com/datasheets/Digital+humidity+and+temperature+sensor+AM2302.pdf"
+    }
+  ],
   "tags": [
     "dht22",
     "am2302",

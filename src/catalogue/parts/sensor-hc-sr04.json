@@ -1,11 +1,133 @@
 {
   "id": "sensor-hc-sr04",
-  "name": "HC-SR04 ultrasonic sensor",
+  "name": "HC-SR04 ultrasonic sensor (generic)",
   "category": "sensor",
   "popularity": 96,
   "summary": "Measures distance by ping. The two cylinders are the transducers.",
   "confidence": "approximate",
   "source": "Dimensions taken from the commonly sold module. These boards are made by many suppliers to no common standard, so measure yours before cutting a panel. The transducers stand about 13 mm off the board and need a 16 mm hole each if you are mounting it behind a panel.",
+  "look": {
+    "colour": "#1d4f91",
+    "components": [
+      {
+        "kind": "transducer",
+        "x": 9.5,
+        "y": 10.0,
+        "d": 16.0,
+        "height": 12.2,
+        "label": "Transmitter"
+      },
+      {
+        "kind": "transducer",
+        "x": 35.5,
+        "y": 10.0,
+        "d": 16.0,
+        "height": 12.2,
+        "label": "Receiver"
+      },
+      {
+        "kind": "crystal",
+        "x": 17.7,
+        "y": 14.8,
+        "w": 9.6,
+        "h": 3.8,
+        "height": 3.2,
+        "label": "Crystal"
+      },
+      {
+        "kind": "chip",
+        "x": 7.0,
+        "y": 5.0,
+        "w": 4.9,
+        "h": 3.9,
+        "height": 1.6,
+        "legs": "dual",
+        "flip": true,
+        "z": 0,
+        "label": "Driver chip"
+      },
+      {
+        "kind": "chip",
+        "x": 20.0,
+        "y": 8.5,
+        "w": 9.9,
+        "h": 3.9,
+        "height": 1.6,
+        "legs": "dual",
+        "flip": true,
+        "z": 0,
+        "label": "Receiver amplifier"
+      },
+      {
+        "kind": "chip",
+        "x": 33.0,
+        "y": 5.0,
+        "w": 4.9,
+        "h": 3.9,
+        "height": 1.6,
+        "legs": "dual",
+        "flip": true,
+        "z": 0,
+        "label": "Microcontroller"
+      },
+      {
+        "kind": "box",
+        "x": 17.42,
+        "y": 0.9,
+        "z": -2.5,
+        "w": 10.16,
+        "h": 2.5,
+        "height": 2.5,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "label": "Pin header body"
+      },
+      {
+        "kind": "box",
+        "x": 18.37,
+        "y": -6.0,
+        "z": -1.57,
+        "w": 0.64,
+        "h": 8.2,
+        "height": 0.64,
+        "finish": "gold",
+        "label": "Pin"
+      },
+      {
+        "kind": "box",
+        "x": 20.91,
+        "y": -6.0,
+        "z": -1.57,
+        "w": 0.64,
+        "h": 8.2,
+        "height": 0.64,
+        "finish": "gold",
+        "label": "Pin"
+      },
+      {
+        "kind": "box",
+        "x": 23.45,
+        "y": -6.0,
+        "z": -1.57,
+        "w": 0.64,
+        "h": 8.2,
+        "height": 0.64,
+        "finish": "gold",
+        "label": "Pin"
+      },
+      {
+        "kind": "box",
+        "x": 25.99,
+        "y": -6.0,
+        "z": -1.57,
+        "w": 0.64,
+        "h": 8.2,
+        "height": 0.64,
+        "finish": "gold",
+        "label": "Pin"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
@@ -13,7 +135,29 @@
       "w": 45,
       "h": 20
     },
-    "thickness": 1.6
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 1.5,
+        "y": 2.0,
+        "w": 16.0,
+        "h": 16.0,
+        "z": 1.6,
+        "height": 12.2,
+        "colour": "#8b9096",
+        "label": "Transmitter"
+      },
+      {
+        "x": 27.5,
+        "y": 2.0,
+        "w": 16.0,
+        "h": 16.0,
+        "z": 1.6,
+        "height": 12.2,
+        "colour": "#8b9096",
+        "label": "Receiver"
+      }
+    ]
   },
   "mountingHoles": [
     {
@@ -43,6 +187,45 @@
       "y": 18,
       "diameter": 1,
       "screw": "M1"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "pins",
+      "label": "VCC, Trig, Echo, GND",
+      "x": 18.69,
+      "y": 2.15,
+      "rows": 1,
+      "cols": 4,
+      "pitch": 2.54,
+      "pins": [
+        "VCC",
+        "Trig",
+        "Echo",
+        "GND"
+      ]
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-pins",
+      "label": "Pins and header below the edge",
+      "x": 17.42,
+      "y": -6.0,
+      "w": 10.16,
+      "h": 9.4,
+      "z": -2.5,
+      "height": 2.5
+    },
+    {
+      "id": "k-front",
+      "label": "Sound path in front of the transducers",
+      "x": 0,
+      "y": 0,
+      "w": 45,
+      "h": 20,
+      "z": 13.8,
+      "height": 20
     }
   ],
   "tags": [

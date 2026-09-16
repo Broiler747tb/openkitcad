@@ -24,6 +24,11 @@
     "category": "sensor",
     "summary": "Ambient light sensors that report lux over I2C."
   },
+  "bme280-board": {
+    "name": "BME280 environment sensor",
+    "category": "sensor",
+    "summary": "Temperature, humidity and pressure boards on I2C."
+  },
   "buck-converter": {
     "name": "Buck converter",
     "category": "power",

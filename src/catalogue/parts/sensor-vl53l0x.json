@@ -8,6 +8,55 @@
   "summary": "Measures distance with laser rather than sound. Good to about 2 m.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. It needs a clear window in front of it, not just a hole - the sensor is fussy about anything in the beam.",
+  "look": {
+    "colour": "#5b2a86",
+    "components": [
+      {
+        "kind": "box",
+        "x": 10.3,
+        "y": 6.1,
+        "w": 4.4,
+        "h": 2.4,
+        "height": 1.0,
+        "finish": "chip",
+        "colour": "#1b1d20",
+        "label": "VL53L0X"
+      },
+      {
+        "kind": "box",
+        "x": 11.0,
+        "y": 6.6,
+        "z": 2.2,
+        "w": 1.1,
+        "h": 1.2,
+        "height": 0.05,
+        "finish": "glass",
+        "colour": "#3a2b4a",
+        "label": "Emitter window"
+      },
+      {
+        "kind": "box",
+        "x": 12.9,
+        "y": 6.6,
+        "z": 2.2,
+        "w": 1.1,
+        "h": 1.2,
+        "height": 0.05,
+        "finish": "glass",
+        "colour": "#3a2b4a",
+        "label": "Receiver window"
+      },
+      {
+        "kind": "chip",
+        "x": 17.5,
+        "y": 6.0,
+        "w": 2.9,
+        "h": 1.6,
+        "height": 1.1,
+        "label": "2.8 V regulator"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
@@ -31,6 +80,25 @@
       "y": 5.5,
       "diameter": 2,
       "screw": "M2"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "pins",
+      "label": "VIN, GND, SCL, SDA, GPIO1, XSHUT",
+      "x": 6.15,
+      "y": 1.27,
+      "rows": 1,
+      "cols": 6,
+      "pitch": 2.54,
+      "pins": [
+        "VIN",
+        "GND",
+        "SCL",
+        "SDA",
+        "GPIO1",
+        "XSHUT"
+      ]
     }
   ],
   "tags": [

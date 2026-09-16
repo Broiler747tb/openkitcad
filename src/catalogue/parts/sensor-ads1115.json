@@ -8,6 +8,32 @@
   "summary": "Four analogue inputs with far better resolution than a Pi has.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Hole positions in particular differ between makers - check yours against these.",
+  "look": {
+    "colour": "#1d4f91",
+    "components": [
+      {
+        "kind": "chip",
+        "x": 11.5,
+        "y": 7.0,
+        "w": 3.0,
+        "h": 3.0,
+        "height": 1.1,
+        "legs": "dual",
+        "label": "ADS1115"
+      },
+      {
+        "kind": "box",
+        "x": 17.5,
+        "y": 8.0,
+        "w": 1.6,
+        "h": 0.8,
+        "height": 0.5,
+        "finish": "chip",
+        "colour": "#c9a27a",
+        "label": "Capacitor"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
@@ -24,6 +50,29 @@
       "y": 8.5,
       "diameter": 2.5,
       "screw": "M2.5"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "pins",
+      "label": "VDD, GND, SCL, SDA, ADDR, ALRT, A0, A1, A2, A3",
+      "x": 1.57,
+      "y": 15.73,
+      "rows": 1,
+      "cols": 10,
+      "pitch": 2.54,
+      "pins": [
+        "VDD",
+        "GND",
+        "SCL",
+        "SDA",
+        "ADDR",
+        "ALRT",
+        "A0",
+        "A1",
+        "A2",
+        "A3"
+      ]
     }
   ],
   "tags": [

@@ -8,6 +8,31 @@
   "summary": "Reads brightness in lux over I2C.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Hole positions in particular differ between makers - check yours against these.",
+  "look": {
+    "colour": "#1d4f91",
+    "components": [
+      {
+        "kind": "box",
+        "x": 8.0,
+        "y": 5.7,
+        "w": 3.0,
+        "h": 1.6,
+        "height": 0.55,
+        "finish": "chip",
+        "colour": "#1b1d20",
+        "label": "BH1750"
+      },
+      {
+        "kind": "chip",
+        "x": 8.0,
+        "y": 9.5,
+        "w": 2.9,
+        "h": 1.6,
+        "height": 1.1,
+        "label": "3.3 V regulator"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
@@ -24,6 +49,24 @@
       "y": 6.5,
       "diameter": 2,
       "screw": "M2"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "pins",
+      "label": "VCC, GND, SCL, SDA, ADDR",
+      "x": 16.73,
+      "y": 1.42,
+      "rows": 5,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "VCC",
+        "GND",
+        "SCL",
+        "SDA",
+        "ADDR"
+      ]
     }
   ],
   "tags": [

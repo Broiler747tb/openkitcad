@@ -1,0 +1,216 @@
+{
+  "id": "sensor-bme280-adafruit",
+  "name": "BME280 temperature, humidity and pressure (Adafruit 2652)",
+  "category": "sensor",
+  "popularity": 52,
+  "family": "bme280-board",
+  "variant": "Adafruit 2652, 7-pin",
+  "manufacturer": "Adafruit",
+  "summary": "BME280 on a 17.8 x 19.1 mm board with two 2.2 mm holes and a 7-pin header.",
+  "confidence": "datasheet",
+  "source": "Adafruit's Eagle files for the BME280 I2C or SPI Temperature Humidity Pressure Sensor (product 2652): board 17.78 x 19.05 mm with 2.54 mm corners, two 2.2 mm holes 2.54 mm in from the top corners and a 7-pin header along the bottom edge. Chip positions in the look come from the same files. The newer STEMMA QT version of this product is a different size.",
+  "look": {
+    "colour": "#1d1f22",
+    "components": [
+      {
+        "kind": "chip",
+        "x": 0.991,
+        "y": 7.517,
+        "w": 2.844,
+        "h": 3.0,
+        "height": 1.1,
+        "label": "MIC5225-3.3"
+      },
+      {
+        "kind": "box",
+        "x": 7.64,
+        "y": 11.196,
+        "w": 2.5,
+        "h": 2.5,
+        "height": 1.0,
+        "finish": "metal",
+        "label": "BME280"
+      },
+      {
+        "kind": "box",
+        "x": 1.541,
+        "y": 11.486,
+        "w": 1.758,
+        "h": 1.16,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C3"
+      },
+      {
+        "kind": "chip",
+        "x": 6.556,
+        "y": 5.055,
+        "w": 3.144,
+        "h": 2.59,
+        "height": 1.1,
+        "label": "BSS138"
+      },
+      {
+        "kind": "chip",
+        "x": 12.525,
+        "y": 5.436,
+        "w": 3.144,
+        "h": 2.59,
+        "height": 1.1,
+        "label": "BSS138"
+      },
+      {
+        "kind": "box",
+        "x": 13.225,
+        "y": 8.946,
+        "w": 1.758,
+        "h": 1.16,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R1"
+      },
+      {
+        "kind": "box",
+        "x": 7.256,
+        "y": 8.438,
+        "w": 1.758,
+        "h": 1.16,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R2"
+      },
+      {
+        "kind": "box",
+        "x": 4.687,
+        "y": 10.249,
+        "w": 1.04,
+        "h": 1.6,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R4"
+      },
+      {
+        "kind": "box",
+        "x": 4.626,
+        "y": 5.732,
+        "w": 1.16,
+        "h": 1.758,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R7"
+      },
+      {
+        "kind": "box",
+        "x": 10.341,
+        "y": 5.732,
+        "w": 1.16,
+        "h": 1.758,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R8"
+      },
+      {
+        "kind": "box",
+        "x": 1.414,
+        "y": 5.263,
+        "w": 1.758,
+        "h": 1.16,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C1"
+      },
+      {
+        "kind": "chip",
+        "x": 12.716,
+        "y": 10.73,
+        "w": 2.0,
+        "h": 1.4,
+        "height": 1.0,
+        "label": "1N4148"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 17.78,
+      "h": 19.05,
+      "cornerRadius": 2.54
+    },
+    "thickness": 1.6
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2.54,
+      "y": 16.51,
+      "diameter": 2.2,
+      "screw": "M2"
+    },
+    {
+      "id": "h2",
+      "x": 15.24,
+      "y": 16.51,
+      "diameter": 2.2,
+      "screw": "M2"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "jp2",
+      "label": "VIN, 3Vo, GND, SCK, SDO, SDI, CS",
+      "x": 1.27,
+      "y": 2.54,
+      "rows": 1,
+      "cols": 7,
+      "pitch": 2.54,
+      "pins": [
+        "VIN",
+        "3Vo",
+        "GND",
+        "SCK",
+        "SDO",
+        "SDI",
+        "CS"
+      ]
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      3.3,
+      5
+    ],
+    "currentTypical": 0.001,
+    "note": "Has its own 3.3 V regulator and level shifting, so 5 V boards can use it directly."
+  },
+  "links": [
+    {
+      "label": "Adafruit 2652",
+      "url": "https://www.adafruit.com/product/2652"
+    },
+    {
+      "label": "Eagle files",
+      "url": "https://github.com/adafruit/Adafruit-BME280-Breakout-PCB"
+    }
+  ],
+  "tags": [
+    "bme280",
+    "temperature",
+    "humidity",
+    "pressure",
+    "barometer",
+    "environment",
+    "i2c",
+    "spi",
+    "adafruit",
+    "2652"
+  ]
+}

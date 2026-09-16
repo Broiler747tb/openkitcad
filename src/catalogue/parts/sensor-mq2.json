@@ -1,11 +1,82 @@
 {
   "id": "sensor-mq2",
-  "name": "MQ-2 gas sensor",
+  "name": "MQ-2 gas sensor module (generic)",
   "category": "sensor",
   "popularity": 49,
   "summary": "Smoke and combustible gas. Needs a good while to warm up.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. The sensor can itself stands about 16 mm proud and runs hot, so give it air.",
+  "look": {
+    "colour": "#1d4f91",
+    "components": [
+      {
+        "kind": "cylinder",
+        "x": 19.0,
+        "y": 11.0,
+        "d": 19.0,
+        "height": 6.5,
+        "finish": "plastic",
+        "colour": "#6b4a2f",
+        "label": "Sensor base"
+      },
+      {
+        "kind": "cylinder",
+        "x": 19.0,
+        "y": 11.0,
+        "z": 8.1,
+        "d": 16.5,
+        "height": 9.5,
+        "finish": "metal",
+        "colour": "#c9ced3",
+        "label": "Steel mesh cap"
+      },
+      {
+        "kind": "box",
+        "x": 6.5,
+        "y": 12.0,
+        "z": -10.0,
+        "w": 4.8,
+        "h": 9.5,
+        "height": 10.0,
+        "finish": "plastic",
+        "colour": "#2f62b8",
+        "radius": 0.2,
+        "label": "Threshold pot"
+      },
+      {
+        "kind": "cylinder",
+        "x": 8.9,
+        "y": 14.0,
+        "z": -10.6,
+        "d": 2.2,
+        "height": 0.6,
+        "finish": "brass",
+        "label": "Threshold adjuster"
+      },
+      {
+        "kind": "chip",
+        "x": 5.5,
+        "y": 4.0,
+        "w": 4.9,
+        "h": 3.9,
+        "height": 1.6,
+        "legs": "dual",
+        "flip": true,
+        "z": 0,
+        "label": "LM393 comparator"
+      },
+      {
+        "kind": "header",
+        "x": 1.8,
+        "y": 7.19,
+        "rows": 4,
+        "cols": 1,
+        "height": 8.5,
+        "flip": true,
+        "label": "VCC, GND, DO, AO"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
@@ -13,7 +84,19 @@
       "w": 32,
       "h": 22
     },
-    "thickness": 1.6
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 9.5,
+        "y": 1.5,
+        "w": 19.0,
+        "h": 19.0,
+        "z": 1.6,
+        "height": 16.0,
+        "colour": "#c9ced3",
+        "label": "Sensor"
+      }
+    ]
   },
   "mountingHoles": [
     {
@@ -43,6 +126,45 @@
       "y": 19.5,
       "diameter": 3,
       "screw": "M3"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "pins",
+      "label": "VCC, GND, DO, AO",
+      "x": 1.8,
+      "y": 7.19,
+      "rows": 4,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "VCC",
+        "GND",
+        "DO",
+        "AO"
+      ]
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-under",
+      "label": "Pot, chip and pins underneath",
+      "x": 0,
+      "y": 0,
+      "w": 32,
+      "h": 22,
+      "z": -10.6,
+      "height": 10.6
+    },
+    {
+      "id": "k-heat",
+      "label": "Heater runs hot: give it air",
+      "x": 9.5,
+      "y": 1.5,
+      "w": 19,
+      "h": 19,
+      "z": 17.6,
+      "height": 10
     }
   ],
   "tags": [

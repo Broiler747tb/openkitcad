@@ -8,6 +8,37 @@
   "summary": "Accelerometer and gyroscope on an I2C breakout.",
   "confidence": "approximate",
   "source": "Dimensions taken from the commonly sold module. These boards are made by many suppliers to no common standard, so measure yours before cutting a panel.",
+  "look": {
+    "colour": "#1d4f91",
+    "components": [
+      {
+        "kind": "chip",
+        "x": 8.6,
+        "y": 7.0,
+        "w": 4.0,
+        "h": 4.0,
+        "height": 0.9,
+        "label": "MPU-6050"
+      },
+      {
+        "kind": "chip",
+        "x": 3.2,
+        "y": 10.0,
+        "w": 2.9,
+        "h": 1.6,
+        "height": 1.1,
+        "label": "3.3 V regulator"
+      },
+      {
+        "kind": "led",
+        "x": 16.0,
+        "y": 12.0,
+        "colour": "#e23b3b",
+        "size": 1.6,
+        "label": "Power LED"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
     "outline": {
@@ -31,6 +62,27 @@
       "y": 7.8,
       "diameter": 3,
       "screw": "M3"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "pins",
+      "label": "VCC, GND, SCL, SDA, XDA, XCL, AD0, INT",
+      "x": 1.71,
+      "y": 1.27,
+      "rows": 1,
+      "cols": 8,
+      "pitch": 2.54,
+      "pins": [
+        "VCC",
+        "GND",
+        "SCL",
+        "SDA",
+        "XDA",
+        "XCL",
+        "AD0",
+        "INT"
+      ]
     }
   ],
   "tags": [
