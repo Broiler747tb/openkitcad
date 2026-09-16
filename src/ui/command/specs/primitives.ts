@@ -1,5 +1,5 @@
 import { frameToWorld, v3, type Frame } from '../../../core/math'
-import type { BoxFeature, CylinderFeature, SphereFeature } from '../../../doc/types'
+import type { BoxFeature, CylinderFeature, SphereFeature, TorusFeature } from '../../../doc/types'
 import { defineCommand } from '../types'
 import { OPERATION_INPUTS } from './sketchBased'
 import { operationProblem, pickedFrame, placementComponent, planeOf, resultOf } from './shared'
@@ -164,6 +164,70 @@ export const cylinderCommand = defineCommand({
           point: onPlane(frame, values.x, values.y, values.height / 2),
           direction: frame.xDir,
         },
+        scale: 0.5,
+      },
+    ]
+  },
+})
+
+export const torusCommand = defineCommand({
+  id: 'torus',
+  label: 'Torus',
+  hint: 'A ring like a doughnut, placed by its centre on a plane or a flat face.',
+  icon: '◎',
+  inputs: [
+    PLANE_INPUT,
+    { id: 'x', kind: 'length', label: 'Centre X', default: 0 },
+    { id: 'y', kind: 'length', label: 'Centre Y', default: 0 },
+    {
+      id: 'diameter',
+      kind: 'length',
+      label: 'Diameter',
+      hint: 'Across the ring, measured through the middle of the tube.',
+      default: 40,
+      min: 0,
+      exclusiveMin: true,
+    },
+    {
+      id: 'tube',
+      kind: 'length',
+      label: 'Torus Diameter',
+      hint: 'How thick the tube is.',
+      default: 10,
+      min: 0,
+      exclusiveMin: true,
+    },
+    ...OPERATION_INPUTS,
+  ],
+  validate(values) {
+    if (values.tube >= values.diameter) {
+      return { tube: 'The tube has to be thinner than the ring is wide.' }
+    }
+    return operationProblem(values)
+  },
+  build(values, context) {
+    const feature: TorusFeature = {
+      id: context.editing?.id ?? context.id('torus'),
+      kind: 'torus',
+      name: context.editing?.name ?? 'Torus',
+      componentId: placementComponent(context, values.plane),
+      plane: planeOf(values.plane),
+      centre: [values.x, values.y],
+      majorRadius: values.diameter / 2,
+      minorRadius: values.tube / 2,
+      result: resultOf(values.operation, values.bodies, context),
+    }
+    return [feature]
+  },
+  handles(values, context) {
+    const frame = pickedFrame(values.plane, context.editing?.id)
+    if (!frame) return []
+    return [
+      {
+        kind: 'arrow',
+        input: 'diameter',
+        componentId: placementComponent(context, values.plane),
+        anchor: { point: onPlane(frame, values.x, values.y), direction: frame.xDir },
         scale: 0.5,
       },
     ]

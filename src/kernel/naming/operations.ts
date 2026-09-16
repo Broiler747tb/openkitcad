@@ -162,6 +162,14 @@ export interface SphereOptions {
   half: boolean
 }
 
+export interface TorusOptions {
+  featureId: string
+  frame: Frame
+  centre: Vec2
+  majorRadius: number
+  minorRadius: number
+}
+
 type Naming = Pick<NamingInput<OcShape>, 'inputs' | 'history'> & {
   seeds?: readonly Seed<OcShape>[] | ((result: Topology<OcShape>) => Seed<OcShape>[])
 }
@@ -738,6 +746,24 @@ export function cylinder(oc: OC, options: CylinderOptions): NamedShape {
           : '+z'
         : 'side',
     )
+  } finally {
+    scratch.release()
+  }
+}
+
+export function torus(oc: OC, options: TorusOptions): NamedShape {
+  const { frame } = options
+  if (!(options.minorRadius > 0) || options.minorRadius >= options.majorRadius) {
+    throw new Error('The tube of a torus has to be thinner than the ring is wide')
+  }
+  const scratch = new Scratch()
+  try {
+    const at = axes(oc, frame, inFrame(frame, options.centre), scratch)
+    const builder = scratch.track(
+      new oc.BRepPrimAPI_MakeTorus_5(at, options.majorRadius, options.minorRadius),
+    )
+    build(oc, builder, 'Torus')
+    return primitive(oc, options.featureId, builder.Shape(), () => 'surface')
   } finally {
     scratch.release()
   }

@@ -62,6 +62,7 @@ import {
   revolve as namedRevolve,
   shell as namedShell,
   sphere as namedSphere,
+  torus as namedTorus,
   transformNamed,
   type ElementMap,
   type NamedShape,
@@ -1418,6 +1419,20 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
           centre: feature.centre,
           radius: feature.radius,
           half: feature.half,
+        }),
+      )
+      return
+    }
+
+    case 'torus': {
+      apply(
+        feature.result,
+        namedTorus(oc, {
+          featureId: feature.id,
+          frame: planeOf(feature.plane),
+          centre: feature.centre,
+          majorRadius: feature.majorRadius,
+          minorRadius: feature.minorRadius,
         }),
       )
       return

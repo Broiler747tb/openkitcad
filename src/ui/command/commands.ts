@@ -23,7 +23,7 @@ import {
   shellEditCommand,
 } from './specs/modify'
 import { holeCommand, pointOnFace, ventCommand } from './specs/placed'
-import { boxCommand, cylinderCommand, sphereCommand } from './specs/primitives'
+import { boxCommand, cylinderCommand, sphereCommand, torusCommand } from './specs/primitives'
 import { operationValues, planeValues, profilePicksOf, resultIds } from './specs/shared'
 import { extrudeCommand, revolveCommand } from './specs/sketchBased'
 import { midplaneCommand, offsetPlaneCommand, planeAtAngleCommand } from './specs/construct'
@@ -86,6 +86,7 @@ export const COMMANDS: Readonly<Record<string, AnyCommandSpec>> = {
   box: spec(boxCommand),
   cylinder: spec(cylinderCommand),
   sphere: spec(sphereCommand),
+  torus: spec(torusCommand),
   fillet: spec(filletCommand),
   chamfer: spec(chamferCommand),
   shell: spec(shellCommand),
@@ -266,6 +267,7 @@ function startOptions(id: string): CommandStart {
     case 'box':
     case 'cylinder':
     case 'sphere':
+    case 'torus':
       return { initial: { plane: faces.slice(0, 1) } }
     case 'hole':
       return { initial: { face: faces.slice(0, 1), ...(faces[0] ? pointOnFace(faces[0]) : {}) } }
@@ -358,6 +360,21 @@ function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, Comma
             }
       return [variantOf(feature.kind, feature.surface), { initial, ids: resultIds(feature.result) }]
     }
+    case 'torus':
+      return [
+        COMMANDS.torus,
+        {
+          initial: {
+            plane: planeValues(doc, feature.plane),
+            x: feature.centre[0],
+            y: feature.centre[1],
+            diameter: feature.majorRadius * 2,
+            tube: feature.minorRadius * 2,
+            ...operationValues(doc, feature.result),
+          },
+          ids: resultIds(feature.result),
+        },
+      ]
     case 'constructionPlane':
       if (feature.method === 'offset') {
         return [

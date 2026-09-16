@@ -472,6 +472,17 @@ export function runCreateCommandTest(): TestResult[] {
         bodyIds: ['b1', 'b2'],
       },
       {
+        id: 'torus1',
+        kind: 'torus',
+        name: 'Torus',
+        componentId: 'root',
+        plane: { kind: 'named', name: 'YZ', offset: 3 },
+        centre: [1, 2],
+        majorRadius: 15,
+        minorRadius: 2.5,
+        result: { kind: 'newBody', bodyId: 'ring' },
+      },
+      {
         id: 'plane1',
         kind: 'constructionPlane',
         name: 'Offset Plane',

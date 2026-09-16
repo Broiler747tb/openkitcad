@@ -135,6 +135,15 @@ export interface SphereFeature extends FeatureBase {
   result: BodyOperation
 }
 
+export interface TorusFeature extends FeatureBase {
+  kind: 'torus'
+  plane: PlaneRef
+  centre: Vec2
+  majorRadius: number
+  minorRadius: number
+  result: BodyOperation
+}
+
 export interface FilletFeature extends FeatureBase {
   kind: 'fillet'
   bodyId: string
@@ -594,6 +603,7 @@ export type Feature =
   | OffsetFaceFeature
   | DraftFeature
   | ConstructionPlaneFeature
+  | TorusFeature
   | SurfaceOffsetFeature
   | ReverseNormalFeature
 
@@ -723,6 +733,7 @@ export const FEATURE_LABEL: Record<FeatureKind, string> = {
   offsetFace: 'Offset Face',
   draft: 'Draft',
   constructionPlane: 'Plane',
+  torus: 'Torus',
 }
 
 export const FEATURE_HINT: Record<FeatureKind, string> = {
@@ -776,6 +787,7 @@ export const FEATURE_HINT: Record<FeatureKind, string> = {
   offsetFace: 'Moves flat faces of a body in or out, stretching the faces around them.',
   draft: 'Tilts faces by an angle so the part slides out of a mould.',
   constructionPlane: 'A plane to sketch on or cut with, placed from other planes and faces.',
+  torus: 'A ring like a doughnut, lying flat on a plane.',
 }
 
 export const FEATURE_ICON: Record<FeatureKind, string> = {
@@ -829,4 +841,5 @@ export const FEATURE_ICON: Record<FeatureKind, string> = {
   offsetFace: '⇱',
   draft: '◿',
   constructionPlane: '▭',
+  torus: '◎',
 }

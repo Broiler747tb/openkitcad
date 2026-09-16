@@ -435,8 +435,8 @@ extra faces stay together in the last body with a warning. Reverse Normal turns 
 **Ribbon.** The SOLID tab shows Extrude, Revolve, Sweep, Loft and Hole under CREATE and Press Pull,
 Fillet, Shell and Move under MODIFY; everything else is in the group menus, and the whole ribbon
 fits a 1280 px window. The SURFACE tab shows Extrude, Revolve, Loft, Patch, Offset and Thicken, then
-Stitch, Unstitch and Reverse Normal. Trim, Extend, Ruled, Boundary Fill, Rib, Web, Emboss, Thread,
-Torus and Pattern on Path are not implemented.
+Stitch, Unstitch and Reverse Normal. Torus sits with Box, Cylinder and Sphere in the CREATE menu.
+Trim, Extend, Ruled, Boundary Fill, Rib, Web, Emboss, Thread and Pattern on Path are not implemented.
 
 ## 13. Jank audit (J)
 

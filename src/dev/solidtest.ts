@@ -815,6 +815,37 @@ export async function runSolidTest(): Promise<TestResult[]> {
         }
       },
     )
+
+    await check(
+      'a torus has the volume of its tube carried round the ring',
+      doc(
+        [
+          {
+            id: 'to',
+            name: 'Torus',
+            componentId: 'root',
+            kind: 'torus',
+            plane: { kind: 'named', name: 'XY', offset: 5 },
+            centre: [3, 4],
+            majorRadius: 10,
+            minorRadius: 2,
+            result: { kind: 'newBody', bodyId: 'ring' },
+          },
+        ],
+        ['ring'],
+      ),
+      (result) => {
+        const ring = meshFor(result, 'ring')
+        const expected = 2 * Math.PI * Math.PI * 10 * 4
+        return {
+          pass:
+            near(ring?.volume, expected, 0.5) &&
+            near(ring?.bounds[2], 3, 0.05) &&
+            near(ring?.bounds[0], -9, 0.05),
+          detail: `${ring?.volume.toFixed(2)} mm3 of ${expected.toFixed(2)}, bounds ${ring?.bounds.map((v) => v.toFixed(2)).join(' ')}`,
+        }
+      },
+    )
   } catch (error) {
     add('solid test ran', false, `${(error as Error).message}`)
   } finally {
