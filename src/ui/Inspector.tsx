@@ -16,6 +16,7 @@ import type { DofLimits } from '../assembly/types'
 import { motionDofs } from '../assembly/motion'
 import { editFeature } from './command/commands'
 import { DOF_LABEL, MOTION_OPTIONS, driveJoint, updateJoint } from './command/specs/assemble'
+import { animateJoint, useJointAnimation } from './jointAnimation'
 import { findBody, findComponent, findFeature, findOccurrence } from '../doc/model'
 import { poseOf, withPose, type Pose } from '../doc/placement'
 import { kernel } from '../kernel/api'
@@ -198,6 +199,7 @@ export function Inspector({
 function JointPanel({ feature }: { feature: JointFeature }) {
   const doc = useStore((s) => s.doc)
   const [problem, setProblem] = useState<string | null>(null)
+  const animating = useJointAnimation((s) => s.jointId === feature.id)
   const dofs = motionDofs(feature.motion)
   const motion = MOTION_OPTIONS.find((option) => option.value === feature.motion.kind)
   const owner = (path: string[]) =>
@@ -286,6 +288,23 @@ function JointPanel({ feature }: { feature: JointFeature }) {
         </label>
       )}
       {problem && <p className="hint error">{problem}</p>}
+      {dofs.length > 0 && !feature.locked && (
+        <button
+          className="btn"
+          disabled={animating}
+          onClick={() => {
+            const failed = animateJoint(feature.id)
+            setProblem(failed)
+            if (!failed) {
+              useStore
+                .getState()
+                .setStatus('Animating the joint. Click anywhere or press a key to stop.')
+            }
+          }}
+        >
+          {animating ? 'Click anywhere to stop' : 'Animate Joint'}
+        </button>
+      )}
       <button className="btn primary" onClick={() => editFeature(feature)}>
         Edit Joint
       </button>
@@ -310,7 +329,7 @@ function Num({
   const id = useId()
   const units = useStore((s) => s.doc.units)
   const isLength = suffix === 'mm'
-  const shown = isLength ? lengthText(value, units) : String(value)
+  const shown = isLength ? lengthText(value, units) : String(Math.round(value * 1000) / 1000)
   const [draft, setDraft] = useState(shown)
   useEffect(() => setDraft(shown), [shown])
   const commit = () => {
@@ -654,6 +673,18 @@ function FeatureInspector({ featureId }: { featureId: string }) {
 
       {feature.kind === 'joint' && <JointPanel key={feature.id} feature={feature} />}
 
+      {feature.kind === 'jointOrigin' && (
+        <>
+          <p className="hint" style={{ marginTop: 0 }}>
+            A saved snap point on {component?.name ?? 'a component'}. Joints that use it follow it
+            when it changes.
+          </p>
+          <button className="btn primary" onClick={() => editFeature(feature)}>
+            Edit Joint Origin
+          </button>
+        </>
+      )}
+
       {feature.kind === 'rigidGroup' && (
         <p className="hint" style={{ marginTop: 0 }}>
           Holds{' '}
@@ -666,6 +697,18 @@ function FeatureInspector({ featureId }: { featureId: string }) {
             .join(', ')}{' '}
           together.
         </p>
+      )}
+
+      {feature.kind === 'motionStudy' && (
+        <>
+          <p className="hint" style={{ marginTop: 0 }}>
+            {feature.tracks.length} joint{feature.tracks.length === 1 ? '' : 's'} over{' '}
+            {feature.steps} steps.
+          </p>
+          <button className="btn primary" onClick={() => editFeature(feature)}>
+            Play and edit
+          </button>
+        </>
       )}
 
       {feature.kind === 'motionLink' && (

@@ -1,4 +1,4 @@
-import { applyAssemblyResult, solveDocument } from '../../../assembly/fromDocument'
+import { applyAssemblyResult, followOrigins, solveDocument } from '../../../assembly/fromDocument'
 import { motionDofs } from '../../../assembly/motion'
 import type { DofName, JointMotion } from '../../../assembly/types'
 import {
@@ -14,6 +14,7 @@ import { occurrencePathOf, useStore } from '../../../doc/store'
 import type {
   Feature,
   JointFeature,
+  JointOriginFeature,
   JointSide,
   Matrix4,
   MotionLinkFeature,
@@ -92,13 +93,18 @@ function solvedPlacement(doc: OkcDocument, features: Feature[]) {
   applyAssemblyResult(doc, solveDocument(doc, { ground: [anchor] }))
 }
 
-function sideOf(pick: SelectionPick): JointSide {
+function snapOf(pick: SelectionPick) {
   const joint = pick.joint!
   return {
-    occurrencePath: joint.occurrencePath,
-    snap: { ref: joint.ref, keypoint: joint.keypoint },
-    frame: joint.frame,
+    ref: joint.ref,
+    keypoint: joint.keypoint,
+    ...(joint.originId ? { originId: joint.originId } : {}),
   }
+}
+
+function sideOf(pick: SelectionPick): JointSide {
+  const joint = pick.joint!
+  return { occurrencePath: joint.occurrencePath, snap: snapOf(pick), frame: joint.frame }
 }
 
 function keptValues(context: CommandContext, motion: JointMotion): number[] {
@@ -242,7 +248,7 @@ export const asBuiltJointCommand = defineCommand({
     )
     const local = (path: string[]): Matrix4 =>
       multiplyMatrices(invertRigidMatrix(pathMatrix(context.doc, path) ?? world), world)
-    const snap = { ref: position.ref, keypoint: position.keypoint }
+    const snap = snapOf(values.position[0])
     const motion = motionOf(values.motion)
     const feature: JointFeature = {
       id: context.editing?.id ?? context.id('joint'),
@@ -260,6 +266,58 @@ export const asBuiltJointCommand = defineCommand({
       limits: keptLimits(context, motion),
     }
     return [feature]
+  },
+})
+
+export const jointOriginCommand = defineCommand({
+  id: 'jointOrigin',
+  label: 'Joint Origin',
+  hint: 'Saves a snap point on a component, so joints can use it later.',
+  icon: '⊕',
+  inputs: [
+    { ...SNAP_INPUT, id: 'snap', label: 'Snap', hint: 'Where the origin sits.' },
+    {
+      id: 'angle',
+      kind: 'angle',
+      label: 'Angle',
+      hint: 'Turns the origin about its Z axis.',
+      default: 0,
+      field: 'angle',
+    },
+    { id: 'offsetX', kind: 'length', label: 'Offset X', default: 0 },
+    { id: 'offsetY', kind: 'length', label: 'Offset Y', default: 0 },
+    { id: 'offsetZ', kind: 'length', label: 'Offset Z', default: 0 },
+    { id: 'flip', kind: 'toggle', label: 'Flip', hint: 'Points the Z axis the other way.' },
+  ],
+  validate(values, context) {
+    const originId = values.snap[0]?.joint?.originId
+    if (originId && originId === context.editing?.id) {
+      return { snap: 'An origin cannot sit on itself. Pick other geometry.' }
+    }
+    return null
+  },
+  build(values, context) {
+    const pick = values.snap[0].joint!
+    const path = pick.occurrencePath
+    const componentId = path.length
+      ? (findOccurrence(context.doc, path[path.length - 1])?.componentId ??
+        context.doc.rootComponentId)
+      : context.doc.rootComponentId
+    const feature: JointOriginFeature = {
+      id: context.editing?.id ?? context.id('jointOrigin'),
+      kind: 'jointOrigin',
+      name: context.editing?.name ?? 'Joint Origin',
+      componentId,
+      snap: snapOf(values.snap[0]),
+      base: pick.frame,
+      offset: [values.offsetX, values.offsetY, values.offsetZ],
+      angle: values.angle,
+      flip: values.flip,
+    }
+    return [feature]
+  },
+  adjust(doc) {
+    if (followOrigins(doc)) applyAssemblyResult(doc, solveDocument(doc))
   },
 })
 

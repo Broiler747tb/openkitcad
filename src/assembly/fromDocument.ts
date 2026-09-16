@@ -1,5 +1,13 @@
-import { activeFeatures, findOccurrence, pathKey } from '../doc/model'
-import type { JointFeature, OkcDocument } from '../doc/types'
+import {
+  activeFeatures,
+  findFeature,
+  findOccurrence,
+  multiplyMatrices,
+  pathKey,
+  rotationMatrix,
+  translationMatrix,
+} from '../doc/model'
+import type { JointFeature, JointOriginFeature, Matrix4, OkcDocument } from '../doc/types'
 import { assemblyInputFromDocument, occurrenceUpdatesFromSolve } from './document'
 import { solveAssembly } from './solve'
 import type {
@@ -112,6 +120,59 @@ export function applyAssemblyResult(doc: OkcDocument, result: AssemblySolveResul
     if (values) feature.values = [...values]
   }
   return divergent
+}
+
+const FLIP: Matrix4 = [1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1]
+
+export function originFrame(
+  origin: Pick<JointOriginFeature, 'base' | 'offset' | 'angle' | 'flip'>,
+): Matrix4 {
+  const placed = multiplyMatrices(
+    multiplyMatrices(origin.base, translationMatrix(origin.offset)),
+    rotationMatrix('z', origin.angle),
+  )
+  return origin.flip ? multiplyMatrices(placed, FLIP) : placed
+}
+
+export function followOrigins(doc: OkcDocument): boolean {
+  let changed = false
+  for (const feature of doc.timeline) {
+    if (feature.kind === 'jointOrigin' && feature.snap.originId) {
+      const parent = findFeature(doc, feature.snap.originId)
+      if (parent?.kind === 'jointOrigin') {
+        const base = originFrame(parent)
+        if (base.some((value, index) => Math.abs(value - feature.base[index]) > 1e-9)) {
+          feature.base = base
+          changed = true
+        }
+      }
+    }
+    if (feature.kind !== 'joint') continue
+    for (const side of [feature.one, feature.two]) {
+      if (!side.snap.originId) continue
+      const origin = findFeature(doc, side.snap.originId)
+      if (origin?.kind !== 'jointOrigin') continue
+      const frame = originFrame(origin)
+      if (frame.some((value, index) => Math.abs(value - side.frame[index]) > 1e-9)) {
+        side.frame = frame
+        changed = true
+      }
+    }
+  }
+  return changed
+}
+
+export function jointedPaths(doc: OkcDocument): Set<string> {
+  const keys = new Set<string>()
+  for (const feature of activeFeatures(doc)) {
+    if (feature.kind === 'joint') {
+      keys.add(pathKey(feature.one.occurrencePath))
+      keys.add(pathKey(feature.two.occurrencePath))
+    } else if (feature.kind === 'rigidGroup') {
+      for (const path of feature.members) keys.add(pathKey(path))
+    }
+  }
+  return keys
 }
 
 export function solveDocument(

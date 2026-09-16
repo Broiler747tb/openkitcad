@@ -44,6 +44,7 @@ export interface SelectionPick {
     ref: ElementRef | null
     keypoint: JointKeypoint
     frame: Matrix4
+    originId?: string
   }
 }
 

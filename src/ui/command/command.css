@@ -395,3 +395,93 @@
 .okc-handle-value:focus {
   box-shadow: 0 0 0 2px var(--okc-focus-ring);
 }
+
+.okc-study {
+  max-height: calc(100% - 2 * var(--okc-space-5));
+}
+
+.okc-study .okc-cmd-body {
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.okc-study-transport {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: var(--okc-space-3);
+  min-height: var(--okc-row-height);
+}
+
+.okc-study-transport .okc-cmd-button {
+  min-width: 32px;
+  padding: 0;
+}
+
+.okc-study-transport input[type='range'] {
+  width: 100%;
+  accent-color: var(--okc-accent);
+}
+
+.okc-study-step {
+  min-width: 24px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--okc-text-muted);
+}
+
+.okc-study-loop {
+  display: flex;
+  align-items: center;
+  gap: var(--okc-space-1);
+  color: var(--okc-text-muted);
+}
+
+.okc-study-track {
+  display: flex;
+  flex-direction: column;
+  gap: var(--okc-space-2);
+  padding-top: var(--okc-space-3);
+  border-top: 1px solid var(--okc-line-soft);
+}
+
+.okc-study-track-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: var(--okc-font-weight-medium);
+}
+
+.okc-study-key {
+  display: grid;
+  grid-template-columns: auto 56px auto 1fr auto;
+  align-items: center;
+  gap: var(--okc-space-2);
+  color: var(--okc-text-muted);
+}
+
+.okc-study-number {
+  width: 100%;
+  min-width: 0;
+}
+
+.okc-study-remove {
+  padding: 0 var(--okc-space-1);
+  border: 0;
+  background: transparent;
+  color: var(--okc-text-muted);
+  cursor: pointer;
+}
+
+.okc-study-remove:hover {
+  color: var(--okc-error);
+}
+
+.okc-study-add {
+  align-self: flex-start;
+  padding: var(--okc-space-1) 0;
+  border: 0;
+  background: transparent;
+  color: var(--okc-text-link);
+  cursor: pointer;
+}

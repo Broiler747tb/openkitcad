@@ -245,6 +245,7 @@ export type JointKeypoint = 'centre' | 'middle' | 'point' | 'origin'
 export interface JointSnap {
   ref: ElementRef | null
   keypoint: JointKeypoint
+  originId?: string
 }
 
 export interface JointSide {
@@ -265,6 +266,32 @@ export interface JointFeature extends FeatureBase {
   values: number[]
   limits: DofLimits[]
   locked?: boolean
+}
+
+export interface JointOriginFeature extends FeatureBase {
+  kind: 'jointOrigin'
+  snap: JointSnap
+  base: Matrix4
+  offset: Vec3
+  angle: number
+  flip: boolean
+}
+
+export interface MotionStudyKey {
+  step: number
+  value: number
+}
+
+export interface MotionStudyTrack {
+  jointId: string
+  dof: number
+  keys: MotionStudyKey[]
+}
+
+export interface MotionStudyFeature extends FeatureBase {
+  kind: 'motionStudy'
+  steps: number
+  tracks: MotionStudyTrack[]
 }
 
 export interface RigidGroupFeature extends FeatureBase {
@@ -299,8 +326,10 @@ export type Feature =
   | LidSocketFeature
   | MoveFeature
   | JointFeature
+  | JointOriginFeature
   | RigidGroupFeature
   | MotionLinkFeature
+  | MotionStudyFeature
 
 export type FeatureKind = Feature['kind']
 
@@ -395,8 +424,10 @@ export const FEATURE_LABEL: Record<FeatureKind, string> = {
   lidSocket: 'Lid Seat',
   move: 'Move',
   joint: 'Joint',
+  jointOrigin: 'Joint Origin',
   rigidGroup: 'Rigid Group',
   motionLink: 'Motion Link',
+  motionStudy: 'Motion Study',
 }
 
 export const FEATURE_HINT: Record<FeatureKind, string> = {
@@ -418,8 +449,10 @@ export const FEATURE_HINT: Record<FeatureKind, string> = {
   lidSocket: 'The ledge or groove a lid sits in.',
   move: 'Moves and turns bodies by exact amounts.',
   joint: 'Holds two components together, with the motion left between them.',
+  jointOrigin: 'A saved snap point on a component that joints can use.',
   rigidGroup: 'Locks components together so they move as one.',
   motionLink: 'Ties the motion of one joint to another.',
+  motionStudy: 'Moves joints over time so the mechanism can be played back.',
 }
 
 export const FEATURE_ICON: Record<FeatureKind, string> = {
@@ -441,6 +474,8 @@ export const FEATURE_ICON: Record<FeatureKind, string> = {
   lidSocket: '⊓',
   move: '✚',
   joint: '⚭',
+  jointOrigin: '⊕',
   rigidGroup: '⛓',
   motionLink: '⟲',
+  motionStudy: '⏵',
 }

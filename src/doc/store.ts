@@ -36,6 +36,7 @@ import {
   markerIndex,
   multiplyMatrices,
   parseInstanceId,
+  pathKey,
   translationMatrix,
   wouldCreateCycle,
 } from './model'
@@ -512,6 +513,19 @@ export function activeComponentOf(state: Pick<AppState, 'doc' | 'activeComponent
   return component && component.source.kind === 'design' ? component.id : state.doc.rootComponentId
 }
 
+export function placedInstances(instances: Instance[], doc: OkcDocument): Instance[] {
+  if (!instances.length) return instances
+  const matrices = new Map(expandInstances(doc).map((node) => [pathKey(node.path), node.matrix]))
+  let changed = false
+  const next = instances.map((instance) => {
+    const matrix = matrices.get(pathKey(instance.path))
+    if (!matrix || matrix.every((value, index) => value === instance.matrix[index])) return instance
+    changed = true
+    return { ...instance, matrix }
+  })
+  return changed ? next : instances
+}
+
 function reconcile(state: AppState, doc: OkcDocument): Partial<AppState> {
   const out: Partial<AppState> = {}
   if (!findComponent(doc, state.activeComponentId)) out.activeComponentId = doc.rootComponentId
@@ -688,7 +702,7 @@ export const useStore = create<AppState>((set, get) => ({
     sketchDirty = false
     const doc = { ...get().doc, customParts: userParts() }
     const ticket = ++buildTicket
-    set({ building: true })
+    set({ building: true, instances: placedInstances(get().instances, get().doc) })
     requestBuild(doc, () => [...get().meshes.keys()]).then((result: EvaluateResult) => {
       if (ticket !== buildTicket) return
       const crashed =

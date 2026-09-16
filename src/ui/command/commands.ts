@@ -10,6 +10,7 @@ import {
   sketchPick,
 } from './picks'
 import { useCommand, type CommandStart } from './session'
+import { openMotionStudy } from '../MotionStudy'
 import {
   chamferCommand,
   combineCommand,
@@ -26,11 +27,12 @@ import {
   asBuiltJointCommand,
   driveJointsCommand,
   jointCommand,
+  jointOriginCommand,
   motionLinkCommand,
   rigidGroupCommand,
 } from './specs/assemble'
 import { motionDofs } from '../../assembly/motion'
-import { findComponent } from '../../doc/model'
+import { expandInstances, findComponent } from '../../doc/model'
 import type { AnyCommandSpec, SelectionPick } from './types'
 
 const spec = (command: unknown) => command as AnyCommandSpec
@@ -54,6 +56,7 @@ export const COMMANDS: Readonly<Record<string, AnyCommandSpec>> = {
   rigidGroup: spec(rigidGroupCommand),
   motionLink: spec(motionLinkCommand),
   driveJoints: spec(driveJointsCommand),
+  jointOrigin: spec(jointOriginCommand),
 }
 
 function pathPick(doc: OkcDocument, path: string[]): SelectionPick | null {
@@ -332,6 +335,31 @@ function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, Comma
         },
       ]
     }
+    case 'jointOrigin': {
+      const node = expandInstances(doc).find(
+        (candidate) => candidate.componentId === feature.componentId,
+      )
+      if (!node) return null
+      return [
+        COMMANDS.jointOrigin,
+        {
+          initial: {
+            snap: [
+              jointSnapPick(doc, {
+                occurrencePath: node.path,
+                snap: feature.snap,
+                frame: feature.base,
+              }),
+            ],
+            angle: feature.angle,
+            offsetX: feature.offset[0],
+            offsetY: feature.offset[1],
+            offsetZ: feature.offset[2],
+            flip: feature.flip,
+          },
+        },
+      ]
+    }
     case 'rigidGroup':
       return [
         COMMANDS.rigidGroup,
@@ -383,10 +411,16 @@ function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, Comma
 }
 
 export function canEditInPanel(feature: Feature): boolean {
-  return !!editOptions(useStore.getState().doc, feature)
+  return feature.kind === 'motionStudy' || !!editOptions(useStore.getState().doc, feature)
 }
 
 export function editFeature(feature: Feature): boolean {
+  if (feature.kind === 'motionStudy') {
+    if (useStore.getState().activeSketch) useStore.getState().closeSketch()
+    useCommand.getState().cancel()
+    openMotionStudy(feature)
+    return true
+  }
   const options = editOptions(useStore.getState().doc, feature)
   if (!options) return false
   const [command, start] = options

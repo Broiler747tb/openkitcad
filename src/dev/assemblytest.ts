@@ -1,5 +1,7 @@
 import type { Vec3 } from '../core/math'
-import { applyAssemblyResult, solveDocument } from '../assembly/fromDocument'
+import { refreshJointFrames } from '../assembly/follow'
+import { poseStudy, studyDrives, trackValue } from '../assembly/study'
+import { applyAssemblyResult, originFrame, solveDocument } from '../assembly/fromDocument'
 import { columnOf, dot, originOf } from '../assembly/frames'
 import { edgeSnap, faceSnap, frameAt, snapFromMesh } from '../assembly/snaps'
 import {
@@ -11,20 +13,29 @@ import {
   rotationMatrix,
   translationMatrix,
 } from '../doc/model'
-import { insertFeatures, removeOccurrencesFromDocument } from '../doc/store'
+import {
+  deleteFeatures,
+  dependentClosure,
+  insertFeatures,
+  placedInstances,
+  removeOccurrencesFromDocument,
+  replaceFeatureInDocument,
+} from '../doc/store'
 import {
   emptyDocument,
   type Feature,
   type JointFeature,
+  type JointOriginFeature,
   type JointSide,
   type Matrix4,
   type OkcDocument,
 } from '../doc/types'
-import type { BodyMesh } from '../kernel/types'
+import type { BodyMesh, Instance } from '../kernel/types'
 import { featurePick, jointSnapPick, occurrencePick } from '../ui/command/picks'
 import {
   driveJointsCommand,
   jointCommand,
+  jointOriginCommand,
   motionLinkCommand,
   rigidGroupCommand,
 } from '../ui/command/specs/assemble'
@@ -553,6 +564,169 @@ export function runAssemblyTest(): TestResult[] {
       kinds.length === 1 && kinds[0] === 'joint' && doc.timeline[0].id === second.id,
       kinds.join(', '),
     )
+  })
+
+  test('moved components show at their new place before the kernel answers', () => {
+    const doc = assemblyDoc()
+    const instance = (path: string[], matrix: Matrix4): Instance => ({
+      id: path.join('/') + '|body',
+      kind: 'body',
+      path,
+      componentId: 'c',
+      bodyId: 'body',
+      meshKey: 'mesh',
+      matrix,
+      visible: true,
+      negative: false,
+    })
+    const instances = [
+      instance(['o-plate'], findOccurrence(doc, 'o-plate')!.transform),
+      instance(['o-block'], findOccurrence(doc, 'o-block')!.transform),
+    ]
+    check(placedInstances(instances, doc) === instances, 'nothing moved, nothing replaced')
+    findOccurrence(doc, 'o-block')!.transform = translationMatrix([1, 2, 3])
+    const placed = placedInstances(instances, doc)
+    check(placed[0] === instances[0], 'the plate keeps its instance')
+    nearPoint(originOf(placed[1].matrix), [1, 2, 3], 'the block follows its occurrence')
+  })
+
+  test('a joint origin applies its offset, angle and flip in its own axes', () => {
+    const frame = originFrame({
+      base: frameAt([1, 2, 3], [0, 0, 1]),
+      offset: [2, 0, 1],
+      angle: 90,
+      flip: true,
+    })
+    nearPoint(originOf(frame), [3, 2, 4], 'offset along its axes', 1e-9)
+    nearPoint(columnOf(frame, 0), [0, 1, 0], 'x turned a quarter', 1e-9)
+    nearPoint(columnOf(frame, 2), [0, 0, -1], 'z flipped', 1e-9)
+  })
+
+  const originDoc = () => {
+    const doc = assemblyDoc()
+    findOccurrence(doc, 'o-plate')!.grounded = true
+    const [origin] = commit(jointOriginCommand, doc, {
+      snap: [jointSnapPick(doc, side(['o-plate'], [20, 10, 4], [0, 0, 1], 'top'))],
+      offsetX: 5,
+    }) as JointOriginFeature[]
+    const originPick = jointSnapPick(doc, {
+      occurrencePath: ['o-plate'],
+      snap: { ref: null, keypoint: 'origin', originId: origin.id },
+      frame: originFrame(origin),
+    })
+    const [joint] = commit(jointCommand, doc, {
+      one: [jointSnapPick(doc, side(['o-block'], [5, 5, 0], [0, 0, -1], 'bottom'))],
+      two: [originPick],
+    }) as JointFeature[]
+    return { doc, origin, joint }
+  }
+
+  test('a joint can snap to a joint origin', () => {
+    const { doc, origin, joint } = originDoc()
+    check(origin.componentId === 'c-plate', origin.componentId)
+    check(joint.two.snap.originId === origin.id, JSON.stringify(joint.two.snap))
+    nearPoint(originOf(worldFrame(doc, joint.one)), [25, 10, 4], 'block sits on the origin', 1e-6)
+  })
+
+  test('moving a joint origin carries the joints that use it', () => {
+    const { doc, origin } = originDoc()
+    const { command, context, result } = built(
+      jointOriginCommand,
+      doc,
+      {
+        snap: [jointSnapPick(doc, side(['o-plate'], [20, 10, 4], [0, 0, 1], 'top'))],
+        offsetX: 5,
+        offsetY: 7,
+      },
+      origin,
+    )
+    replaceFeatureInDocument(doc, origin.id, result.features!)
+    command.adjust?.(doc, result.features!, context, result.values as LooseCommandValues)
+    const joint = doc.timeline.find((feature) => feature.kind === 'joint') as JointFeature
+    nearPoint(originOf(joint.two.frame), [25, 17, 4], 'the joint read the new origin', 1e-9)
+    nearPoint(originOf(worldFrame(doc, joint.one)), [25, 17, 4], 'and the block followed', 1e-6)
+  })
+
+  test('a joint follows its face when the body is rebuilt bigger', () => {
+    const doc = assemblyDoc()
+    findOccurrence(doc, 'o-plate')!.grounded = true
+    const [joint] = commit(jointCommand, doc, {
+      one: [jointSnapPick(doc, side(['o-block'], [5, 5, 0], [0, 0, -1], 'bottom'))],
+      two: [jointSnapPick(doc, side(['o-plate'], [5, 5, 10], [0, 0, 1], 'top'))],
+    }) as JointFeature[]
+    const plate = (height: number) => ({
+      ...meshOf([{ name: 'top', triangles: square(height, 10, true) }], []),
+      key: `plate-${height}`,
+      bodyId: 'o-plate-body',
+    })
+    const instances = [
+      {
+        id: 'o-plate|o-plate-body',
+        kind: 'body' as const,
+        path: ['o-plate'],
+        componentId: 'c-plate',
+        bodyId: 'o-plate-body',
+        meshKey: 'plate-10',
+        matrix: identityMatrix(),
+        visible: true,
+        negative: false,
+      },
+    ]
+    const same = new Map([['plate-10', plate(10)]])
+    check(!refreshJointFrames(doc, instances, same), 'unchanged geometry changes nothing')
+    const taller = new Map([['plate-10', plate(14)]])
+    check(refreshJointFrames(doc, instances, taller), 'taller geometry is noticed')
+    applyAssemblyResult(doc, solveDocument(doc))
+    const live = doc.timeline.find((feature) => feature.id === joint.id) as JointFeature
+    nearPoint(originOf(live.two.frame), [5, 5, 14], 'the snap moved up with the face', 1e-5)
+    nearPoint(originOf(worldFrame(doc, live.one)), [5, 5, 14], 'and the block rode up', 1e-5)
+    check(!refreshJointFrames(doc, instances, taller), 'and then it settles')
+  })
+
+  test('a motion study track interpolates between its keys', () => {
+    const track = {
+      jointId: 'j',
+      dof: 0,
+      keys: [
+        { step: 40, value: 90 },
+        { step: 0, value: 0 },
+        { step: 60, value: 30 },
+      ],
+    }
+    near(trackValue(track, -5, 7), 0, 'before the first key', 1e-12)
+    near(trackValue(track, 10, 7), 22.5, 'a quarter of the way', 1e-12)
+    near(trackValue(track, 50, 7), 60, 'between the later keys', 1e-12)
+    near(trackValue(track, 80, 7), 30, 'after the last key', 1e-12)
+    near(trackValue({ ...track, keys: [] }, 10, 7), 7, 'no keys keeps the joint', 1e-12)
+  })
+
+  test('a motion study poses the joints at a step', () => {
+    const doc = assemblyDoc()
+    const joint = hinge(doc)
+    const study = {
+      tracks: [
+        {
+          jointId: joint.id,
+          dof: 0,
+          keys: [
+            { step: 0, value: 0 },
+            { step: 10, value: 90 },
+          ],
+        },
+        { jointId: 'missing', dof: 0, keys: [{ step: 0, value: 5 }] },
+      ],
+    }
+    check(studyDrives(doc, study, 5).length === 1, 'missing joints are skipped')
+    check(poseStudy(doc, study, 5), 'solved without conflicts')
+    near((findFeature(doc, joint.id) as JointFeature).values[0], 45, 'halfway through', 1e-6)
+    ;(findFeature(doc, joint.id) as JointFeature).locked = true
+    check(!studyDrives(doc, study, 8).length, 'locked joints are left alone')
+  })
+
+  test('deleting a joint origin deletes the joints built on it', () => {
+    const { doc, origin } = originDoc()
+    deleteFeatures(doc, dependentClosure(doc, [origin.id]))
+    check(!doc.timeline.length, doc.timeline.map((feature) => feature.kind).join(', '))
   })
 
   test('editing a joint keeps its driven position when the motion stays', () => {

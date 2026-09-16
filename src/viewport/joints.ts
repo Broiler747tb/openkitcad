@@ -1,5 +1,13 @@
+import { originFrame } from '../assembly/fromDocument'
 import { snapFromMesh } from '../assembly/snaps'
-import { activeFeatures, multiplyMatrices, pathKey, pathMatrix } from '../doc/model'
+import {
+  activeFeatures,
+  expandInstances,
+  findFeature,
+  multiplyMatrices,
+  pathKey,
+  pathMatrix,
+} from '../doc/model'
 import type { Matrix4, OkcDocument } from '../doc/types'
 import type { BodyMesh, Instance } from '../kernel/types'
 import { jointSnapPick } from '../ui/command/picks'
@@ -52,6 +60,32 @@ export function snapAt(
   return { pick, world: multiplyMatrices(instance.matrix, snap.frame) }
 }
 
+export function glyphFeatureId(id: string): string {
+  return id.startsWith('origin:') ? id.slice(7, id.lastIndexOf('@')) : id
+}
+
+export function originSnapAt(
+  doc: OkcDocument,
+  instances: readonly Instance[],
+  glyphId: string | null,
+): SnapHit | null {
+  if (!glyphId?.startsWith('origin:')) return null
+  const origin = findFeature(doc, glyphFeatureId(glyphId))
+  if (origin?.kind !== 'jointOrigin') return null
+  const key = glyphId.slice(glyphId.lastIndexOf('@') + 1)
+  const node = expandInstances(doc).find((candidate) => pathKey(candidate.path) === key)
+  if (!node) return null
+  const world = worldOfPath(doc, instances, node.path)
+  if (!world) return null
+  const frame = originFrame(origin)
+  const pick = jointSnapPick(doc, {
+    occurrencePath: node.path,
+    snap: { ref: null, keypoint: 'origin', originId: origin.id },
+    frame,
+  })
+  return { pick, world: multiplyMatrices(world, frame) }
+}
+
 export function jointGlyphs(
   doc: OkcDocument,
   instances: readonly Instance[],
@@ -64,6 +98,26 @@ export function jointGlyphs(
   },
 ): JointGlyph[] {
   const glyphs: JointGlyph[] = []
+  const nodes = expandInstances(doc)
+  for (const feature of activeFeatures(doc)) {
+    if (feature.kind !== 'jointOrigin' || feature.id === options.skipId) continue
+    const frame = originFrame(feature)
+    for (const node of nodes) {
+      if (node.componentId !== feature.componentId) continue
+      const world = worldOfPath(doc, instances, node.path)
+      if (!world) continue
+      glyphs.push({
+        id: `origin:${feature.id}@${pathKey(node.path)}`,
+        frame: multiplyMatrices(world, frame),
+        tone:
+          feature.id === options.selectedId
+            ? 'picked'
+            : feature.id === options.hotId
+              ? 'hover'
+              : 'origin',
+      })
+    }
+  }
   for (const feature of activeFeatures(doc)) {
     if (feature.kind !== 'joint' || feature.id === options.skipId) continue
     const world = worldOfPath(doc, instances, feature.two.occurrencePath)

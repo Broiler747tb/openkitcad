@@ -99,6 +99,7 @@ export function featureReadsBodies(feature: Feature): string[] {
       if (side.snap.ref) bodies.push(side.snap.ref.bodyId)
     }
   }
+  if (feature.kind === 'jointOrigin' && feature.snap.ref) bodies.push(feature.snap.ref.bodyId)
   if (feature.kind === 'combine') bodies.push(...feature.toolBodyIds)
   if (feature.kind === 'lid') bodies.push(feature.sourceBodyId)
   return bodies
@@ -116,6 +117,14 @@ export function featureDependencies(doc: OkcDocument, feature: Feature): string[
   if (feature.kind === 'motionLink') {
     dependencies.add(feature.a.jointId)
     dependencies.add(feature.b.jointId)
+  }
+  if (feature.kind === 'joint') {
+    for (const side of [feature.one, feature.two]) {
+      if (side.snap.originId) dependencies.add(side.snap.originId)
+    }
+  }
+  if (feature.kind === 'jointOrigin' && feature.snap.originId) {
+    dependencies.add(feature.snap.originId)
   }
   for (const bodyId of [...featureModifiesBodies(feature), ...featureReadsBodies(feature)]) {
     const creator = bodyCreator(doc, bodyId)

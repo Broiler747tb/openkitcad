@@ -102,18 +102,27 @@ export function jointSnapPick(doc: OkcDocument, side: JointSide): SelectionPick 
     ? findOccurrence(doc, side.occurrencePath[side.occurrencePath.length - 1])?.name
     : undefined
   const body = side.snap.ref ? findBody(doc, side.snap.ref.bodyId)?.body.name : undefined
+  const origin = side.snap.originId ? findFeature(doc, side.snap.originId)?.name : undefined
   const at = [side.frame[12], side.frame[13], side.frame[14]]
     .map((value) => (Math.abs(value) < 5e-4 ? 0 : value).toFixed(3))
     .join(',')
   return {
     kind: 'jointSnap',
-    id: [pathKey(side.occurrencePath), side.snap.ref?.name ?? '', side.snap.keypoint, at].join('|'),
-    label: `${KEYPOINT_LABEL[side.snap.keypoint]} of ${owner ?? body ?? 'component'}`,
+    id: [
+      pathKey(side.occurrencePath),
+      side.snap.originId ?? side.snap.ref?.name ?? '',
+      side.snap.keypoint,
+      at,
+    ].join('|'),
+    label: origin
+      ? `${origin} on ${owner ?? body ?? 'component'}`
+      : `${KEYPOINT_LABEL[side.snap.keypoint]} of ${owner ?? body ?? 'component'}`,
     joint: {
       occurrencePath: side.occurrencePath,
       ref: side.snap.ref,
       keypoint: side.snap.keypoint,
       frame: side.frame,
+      ...(side.snap.originId ? { originId: side.snap.originId } : {}),
     },
   }
 }

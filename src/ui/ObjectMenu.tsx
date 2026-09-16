@@ -33,6 +33,7 @@ import { ContextMenu } from './ContextMenu'
 import { chooseAction } from './ActionDialog'
 import { editFeature, startCommand } from './command/commands'
 import { setGrounded, updateJoint } from './command/specs/assemble'
+import { animateJoint } from './jointAnimation'
 import { motionDofs } from '../assembly/motion'
 import { bodyPick, elementPick } from './command/picks'
 
@@ -81,6 +82,7 @@ const OBJECT_GROUPS: Array<[string, string[]]> = [
       'rigid-group',
       'edit-joint',
       'drive-joint',
+      'animate-joint',
       'lock-joint',
     ],
   ],
@@ -784,6 +786,19 @@ function buildObjectActions(
           hint: 'Moves the joint to an exact position.',
           run: () => startCommand('driveJoints'),
         })
+        if (!feature.locked) {
+          out.push({
+            id: 'animate-joint',
+            label: 'Animate Joint',
+            hint: 'Plays the joint through its motion. Click anywhere to stop.',
+            run: () => {
+              const problem = animateJoint(feature.id)
+              store.setStatus(
+                problem ?? 'Animating the joint. Click anywhere or press a key to stop.',
+              )
+            },
+          })
+        }
         out.push({
           id: 'lock-joint',
           label: feature.locked ? 'Unlock' : 'Lock',

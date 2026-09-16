@@ -88,7 +88,7 @@ export interface ProfileHit {
 export interface JointGlyph {
   id: string
   frame: Matrix4
-  tone: 'hover' | 'picked' | 'placed'
+  tone: 'hover' | 'picked' | 'placed' | 'origin'
 }
 
 export interface WorldHandle {
@@ -1052,7 +1052,9 @@ export class ViewportEngine {
           ? this.palette.handleHot
           : glyph.tone === 'picked'
             ? this.palette.selection
-            : this.palette.overlayLine
+            : glyph.tone === 'origin'
+              ? this.palette.overlayConstruction
+              : this.palette.overlayLine
       const paint = (color: number, opacity = 1) =>
         new THREE.MeshBasicMaterial({
           color,

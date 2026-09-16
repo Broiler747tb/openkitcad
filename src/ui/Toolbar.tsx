@@ -18,9 +18,10 @@ import { moveCopyAction, rectangularPatternAction, scaleAction } from './sketchM
 import { THEME_LABEL, THEME_PREFERENCES, useTheme } from '../theme/theme'
 import type { ReactNode } from 'react'
 import { BrandMark } from './BrandMark'
+import { openMotionStudy } from './MotionStudy'
 import { rememberCommand } from './MarkingMenu'
 import { ExtrudeIcon, HoleIcon, RevolveIcon } from './icons/solid'
-import { AsBuiltJointIcon, JointIcon, RigidGroupIcon } from './icons/assemble'
+import { AsBuiltJointIcon, JointIcon, JointOriginIcon, RigidGroupIcon } from './icons/assemble'
 import { FilletIcon, MoveCopyIcon as SolidMoveIcon, ShellIcon } from './icons/modify'
 import {
   BreakIcon,
@@ -61,6 +62,7 @@ const labels: Record<string, string> = {
   trim: 'Trim',
   joint: 'Joint',
   asBuiltJoint: 'As-built Joint',
+  jointOrigin: 'Joint Origin',
   rigidGroup: 'Rigid Group',
   motionLink: 'Motion Link',
   driveJoints: 'Drive Joints',
@@ -206,6 +208,7 @@ export function Toolbar({
           'appearance',
           'joint',
           'asBuiltJoint',
+          'jointOrigin',
           'rigidGroup',
           'driveJoints',
           'motionLink',
@@ -721,8 +724,27 @@ export function Toolbar({
               'ASSEMBLE',
               [
                 ...creations.filter((a) => a.id === 'create-component'),
-                ...['joint', 'asBuiltJoint', 'rigidGroup', 'driveJoints', 'motionLink'].map(cmd),
-                { id: 'hardware', label: 'Insert hardware', run: onCatalogue },
+                ...[
+                  'joint',
+                  'asBuiltJoint',
+                  'jointOrigin',
+                  'rigidGroup',
+                  'driveJoints',
+                  'motionLink',
+                ].map((id) => ({ ...cmd(id), group: 'Assemble' })),
+                {
+                  id: 'motion-study',
+                  label: 'Motion Study',
+                  hint: 'Moves joints over time so the mechanism can be played back.',
+                  group: 'Assemble',
+                  run: () => openMotionStudy(),
+                },
+                {
+                  id: 'hardware',
+                  label: 'Insert hardware',
+                  group: 'Assemble',
+                  run: onCatalogue,
+                },
                 ...selected.filter((a) =>
                   ['holes', 'standoffs', 'ports', 'negative'].includes(a.id),
                 ),
@@ -734,6 +756,9 @@ export function Toolbar({
                   <AsBuiltJointIcon className="okc-icon" />,
                   () => invoke('asBuiltJoint'),
                   'Shift J',
+                )}
+                {tool('Joint Origin', <JointOriginIcon className="okc-icon" />, () =>
+                  invoke('jointOrigin'),
                 )}
                 {tool('Rigid Group', <RigidGroupIcon className="okc-icon" />, () =>
                   invoke('rigidGroup'),

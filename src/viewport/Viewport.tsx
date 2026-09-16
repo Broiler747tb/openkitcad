@@ -26,6 +26,7 @@ import { cachedRegions } from '../sketch/regions'
 import { findInput } from '../ui/command/state'
 import { formatAngle, formatLength } from '../ui/command/units'
 import { CommandHost } from '../ui/command/CommandHost'
+import { MotionStudyHost } from '../ui/MotionStudy'
 import { useCommand } from '../ui/command/session'
 import {
   acceptedKinds,
@@ -38,7 +39,8 @@ import {
   pickSketchId,
   profilePick,
 } from '../ui/command/picks'
-import { jointGlyphs, snapAt, type SnapHit } from './joints'
+import { glyphFeatureId, jointGlyphs, originSnapAt, snapAt, type SnapHit } from './joints'
+import { applyAssemblyResult, jointedPaths, solveDocument } from '../assembly/fromDocument'
 import {
   type ToolId,
   activeSketchFeature,
@@ -109,6 +111,7 @@ import {
   invertRigidMatrix,
   isElementRef,
   multiplyMatrices,
+  pathKey,
   pathMatrix,
   remapElementName,
   transformPoint,
@@ -455,6 +458,20 @@ export function Viewport() {
       if (store.selection.kind !== 'occurrence' || !store.selection.id) return
       const parent = gizmoParent.current
       if (!parent) return
+      const path = occurrencePathOf(store.doc, store.selection.id, store.selection.instanceId)
+      if (path && jointedPaths(store.doc).has(pathKey(path))) {
+        store.beginTransient()
+        store.commit(
+          (draft) => {
+            const result = solveDocument(draft, {
+              drag: { kind: 'pose', path, target: pose.matrix },
+            })
+            applyAssemblyResult(draft, result)
+          },
+          { transient: true },
+        )
+        return
+      }
       const local = poseOf(multiplyMatrices(invertRigidMatrix(parent), pose.matrix))
       store.beginTransient()
       store.updateOccurrence(
@@ -1168,12 +1185,16 @@ export function Viewport() {
     const hot = activeHandles.length ? engine.pickHandle(e.clientX, e.clientY) : null
     if (hot !== hotHandle) setHotHandle(hot)
     if (!hot && activeKinds().has('jointSnap')) {
-      const snap = snapAt(engine, store.doc, instances, meshes, e.clientX, e.clientY)
+      const snap =
+        originSnapAt(store.doc, instances, engine.pickJointGlyph(e.clientX, e.clientY)) ??
+        snapAt(engine, store.doc, instances, meshes, e.clientX, e.clientY)
       if ((snap?.pick.id ?? null) !== (snapHover?.pick.id ?? null)) setSnapHover(snap)
       setCursorHint(snap ? { x: e.clientX, y: e.clientY, text: snap.pick.label } : null)
       if (store.hovered !== null) store.setHovered(null)
       engine.setHoverPick(
-        snap ? engine.pickSub(e.clientX, e.clientY, { catalogue: true, vertices: false }) : null,
+        snap && !snap.pick.joint?.originId
+          ? engine.pickSub(e.clientX, e.clientY, { catalogue: true, vertices: false })
+          : null,
       )
       return
     }
@@ -1182,7 +1203,11 @@ export function Viewport() {
       setCursorHint(null)
     }
     const glyph = hot ? null : engine.pickJointGlyph(e.clientX, e.clientY)
-    const joint = glyph && findFeature(store.doc, glyph)?.kind === 'joint' ? glyph : null
+    const glyphFeature = glyph ? findFeature(store.doc, glyphFeatureId(glyph)) : undefined
+    const joint =
+      glyphFeature?.kind === 'joint' || glyphFeature?.kind === 'jointOrigin'
+        ? glyphFeature.id
+        : null
     if (joint !== hotJoint) setHotJoint(joint)
     const profile =
       !hot && useCommand.getState().session && acceptedKinds().has('profile')
@@ -1436,10 +1461,12 @@ export function Viewport() {
       const focused = activeKinds()
       if (filter.has('feature')) {
         const glyph = engine.pickJointGlyph(e.clientX, e.clientY)
-        if (glyph && offerPick(featurePick(store.doc, glyph))) return
+        if (glyph && offerPick(featurePick(store.doc, glyphFeatureId(glyph)))) return
       }
       if (focused.has('jointSnap')) {
-        const snap = snapAt(engine, store.doc, instances, meshes, e.clientX, e.clientY)
+        const snap =
+          originSnapAt(store.doc, instances, engine.pickJointGlyph(e.clientX, e.clientY)) ??
+          snapAt(engine, store.doc, instances, meshes, e.clientX, e.clientY)
         if (snap && offerPick(snap.pick)) {
           setSnapHover(null)
           return
@@ -1489,8 +1516,9 @@ export function Viewport() {
     }
 
     const glyph = engine.pickJointGlyph(e.clientX, e.clientY)
-    if (glyph && findFeature(store.doc, glyph)?.kind === 'joint') {
-      store.select({ kind: 'feature', id: glyph })
+    const glyphFeature = glyph ? findFeature(store.doc, glyphFeatureId(glyph)) : undefined
+    if (glyphFeature?.kind === 'joint' || glyphFeature?.kind === 'jointOrigin') {
+      store.select({ kind: 'feature', id: glyphFeature.id })
       store.setSubSelection([])
       return
     }
@@ -1786,6 +1814,7 @@ export function Viewport() {
   return (
     <div className="viewport">
       <CommandHost />
+      <MotionStudyHost />
       <div
         ref={mountRef}
         className="viewport-canvas"

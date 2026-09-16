@@ -1022,8 +1022,10 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
 
   switch (feature.kind) {
     case 'joint':
+    case 'jointOrigin':
     case 'rigidGroup':
     case 'motionLink':
+    case 'motionStudy':
       return
 
     case 'sketch': {

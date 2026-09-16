@@ -128,6 +128,17 @@ function ComponentContents({
   const children = childOccurrences(doc, component.id).filter(
     (occurrence) => !lineage.includes(occurrence.componentId),
   )
+  const origins = doc.timeline.filter(
+    (feature) =>
+      feature.kind === 'jointOrigin' &&
+      (feature.componentId === component.id ||
+        (component.id === doc.rootComponentId &&
+          findComponent(doc, feature.componentId)?.source.kind === 'catalogue')),
+  )
+  const studies =
+    component.id === doc.rootComponentId
+      ? doc.timeline.filter((feature) => feature.kind === 'motionStudy')
+      : []
   const joints = doc.timeline.filter(
     (feature) =>
       (feature.kind === 'joint' ||
@@ -159,10 +170,36 @@ function ComponentContents({
           ))}
         </details>
       )}
+      {origins.length > 0 && (
+        <details className="browser-folder">
+          <summary>Joint Origins ({origins.length})</summary>
+          {origins.map((feature) => (
+            <FeatureRow
+              key={feature.id}
+              feature={feature}
+              selected={selection.kind === 'feature' && selection.id === feature.id}
+              failed={failed.has(feature.id)}
+            />
+          ))}
+        </details>
+      )}
       {joints.length > 0 && (
         <details className="browser-folder" open>
           <summary>Joints ({joints.length})</summary>
           {joints.map((feature) => (
+            <FeatureRow
+              key={feature.id}
+              feature={feature}
+              selected={selection.kind === 'feature' && selection.id === feature.id}
+              failed={failed.has(feature.id)}
+            />
+          ))}
+        </details>
+      )}
+      {studies.length > 0 && (
+        <details className="browser-folder">
+          <summary>Motion Studies ({studies.length})</summary>
+          {studies.map((feature) => (
             <FeatureRow
               key={feature.id}
               feature={feature}

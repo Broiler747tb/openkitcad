@@ -63,6 +63,7 @@ if (params.has('selftest') || params.has('kerneltest')) {
       results.map((r) => `${r.pass ? ' ok ' : 'FAIL'}  ${r.name}\n        ${r.detail}`).join('\n')
   })()
 } else {
+  import('./assembly/follow').then((m) => m.followGeometry())
   if (import.meta.env.DEV) {
     // Handy for poking at state from the console during development.
     import('./doc/store').then((m) => {
