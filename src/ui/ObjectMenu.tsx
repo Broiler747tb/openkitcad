@@ -66,16 +66,13 @@ export interface ObjectAction {
 }
 
 const OBJECT_GROUPS: Array<[string, string[]]> = [
-  ['Start a sketch', ['sketch-XY', 'sketch-XZ', 'sketch-YZ', 'sketch-offset', 'sketch-tilted']],
-  ['Add a shape', ['add-box', 'add-cylinder', 'add-sphere', 'add-dome']],
+  ['Sketch', ['sketch-XY', 'sketch-XZ', 'sketch-YZ', 'sketch-offset', 'sketch-tilted']],
+  ['Create', ['add-box', 'add-cylinder', 'add-sphere', 'add-dome']],
   ['Assemble', ['create-component', 'linked-copy', 'activate']],
-  ['Draw on it', ['sketch-on-face', 'sketch-on-top', 'edit-sketch']],
+  ['Sketch on Body', ['sketch-on-face', 'sketch-on-top', 'edit-sketch']],
+  ['Modify', ['size', 'hollow', 'hollow-lid', 'round-picked', 'bevel-picked', 'round', 'bevel']],
   [
-    'Change its shape',
-    ['size', 'hollow', 'hollow-lid', 'round-picked', 'bevel-picked', 'round', 'bevel'],
-  ],
-  [
-    'Cut into it',
+    'Cut',
     [
       'vent-hex',
       'vent-round',
@@ -89,9 +86,9 @@ const OBJECT_GROUPS: Array<[string, string[]]> = [
       'cut-box',
     ],
   ],
-  ['Move it', ['move', 'turn', 'flip']],
-  ['Build around it', ['holes', 'standoffs', 'ports']],
-  ['This part', ['negative', 'hide', 'delete']],
+  ['Move', ['move', 'turn', 'flip']],
+  ['Hardware', ['holes', 'standoffs', 'ports']],
+  ['Body', ['negative', 'hide', 'delete']],
 ]
 
 export function objectGroupOf(id: string): string {
@@ -285,8 +282,8 @@ function buildObjectActions(
     if (picked && onThis) {
       out.push({
         id: 'sketch-on-face',
-        label: 'Draw on this face',
-        hint: 'Start an outline right where you clicked',
+        label: 'Create Sketch',
+        hint: 'Starts a sketch right on the face you clicked',
         run: () =>
           store.startSketch(
             {
@@ -302,8 +299,8 @@ function buildObjectActions(
     if (sketchId && findFeature(doc, sketchId)?.kind === 'sketch') {
       out.push({
         id: 'edit-sketch',
-        label: 'Edit the shape this was drawn from',
-        hint: 'Go back to the outline and change it',
+        label: 'Edit Sketch',
+        hint: 'Goes back to the sketch this was built from',
         run: () => store.openSketch(sketchId),
       })
     }
@@ -312,7 +309,7 @@ function buildObjectActions(
     if (solid?.kind === 'box') {
       out.push({
         id: 'size',
-        label: 'Change its size',
+        label: 'Edit Feature',
         hint: 'Width, depth and height',
         prompt: { label: 'Width', initial: solid.width, unit: 'mm' },
         prompt2: { label: 'Depth', initial: solid.depth, unit: 'mm' },
@@ -327,7 +324,7 @@ function buildObjectActions(
     } else if (solid?.kind === 'cylinder') {
       out.push({
         id: 'size',
-        label: 'Change its size',
+        label: 'Edit Feature',
         hint: 'Across and tall',
         prompt: { label: 'Diameter', initial: solid.radius * 2, unit: 'mm' },
         prompt2: { label: 'Height', initial: solid.height, unit: 'mm' },
@@ -343,7 +340,7 @@ function buildObjectActions(
       const box = drawn ? sketchExtent(drawn.sketch) : null
       out.push({
         id: 'size',
-        label: 'Change its size',
+        label: 'Edit Feature',
         hint: box ? 'Across, front to back, and thick' : 'How thick it is',
         prompt: box
           ? { label: 'Width', initial: round1(box.width), unit: 'mm' }
@@ -380,14 +377,14 @@ function buildObjectActions(
     if (picked && onThis) {
       out.push({
         id: 'hollow',
-        label: 'Hollow it out, opening this face',
-        hint: 'Shell: turns a solid block into a box with even walls',
+        label: 'Shell',
+        hint: 'Hollows the body into even walls, open at this face',
         run: () => startCommand('shell', { faces: facePicks() }),
       })
       out.push({
         id: 'hollow-lid',
-        label: 'Hollow it out and make this side a lid',
-        hint: 'Shell with a lid that closes the opening',
+        label: 'Shell with Lid',
+        hint: 'Hollows the body and makes this side a lid that closes it',
         run: () => startCommand('shell', { faces: facePicks(), lid: true }),
       })
     }
@@ -404,14 +401,14 @@ function buildObjectActions(
       const many = pickedEdges.length > 1
       out.push({
         id: 'round-picked',
-        label: `Round ${many ? `these ${pickedEdges.length} edges` : 'this edge'}`,
-        hint: 'Fillet only the ones you selected',
+        label: 'Fillet',
+        hint: `Rounds ${many ? `the ${pickedEdges.length} edges` : 'the edge'} you selected`,
         run: () => startCommand('fillet', { edges: edgePicks() }),
       })
       out.push({
         id: 'bevel-picked',
-        label: `Bevel ${many ? `these ${pickedEdges.length} edges` : 'this edge'}`,
-        hint: 'Chamfer only the ones you selected',
+        label: 'Chamfer',
+        hint: `Bevels ${many ? `the ${pickedEdges.length} edges` : 'the edge'} you selected`,
         run: () => startCommand('chamfer', { edges: edgePicks() }),
       })
     }
@@ -452,20 +449,20 @@ function buildObjectActions(
 
     out.push({
       id: 'round',
-      label: 'Round all the edges',
-      hint: 'Fillet every edge at once',
+      label: 'Fillet All Edges',
+      hint: 'Rounds every edge at once',
       run: () => startCommand('fillet', { edges: thisBody() }),
     })
     out.push({
       id: 'bevel',
-      label: 'Bevel all the edges',
-      hint: 'Chamfer every edge at once',
+      label: 'Chamfer All Edges',
+      hint: 'Bevels every edge at once',
       run: () => startCommand('chamfer', { edges: thisBody() }),
     })
     out.push({
       id: 'sketch-on-top',
-      label: 'Draw on top of this',
-      hint: 'Start a new outline on the highest face',
+      label: 'Create Sketch on Top',
+      hint: 'Starts a sketch on the highest face',
       run: () => {
         const bounds = bodyBounds(useStore.getState(), bodyId)
         store.startSketch({ kind: 'named', name: 'XY', offset: bounds ? bounds[5] : 0 }, bodyId)
@@ -480,27 +477,27 @@ function buildObjectActions(
         })
       out.push({
         id: `join-${other.id}`,
-        label: `Join with ${other.name}`,
-        hint: 'Fuses the two into one part',
+        label: `Combine: Join ${other.name}`,
+        hint: 'Fuses the two into one body',
         run: combine('join'),
       })
       out.push({
         id: `cut-${other.id}`,
-        label: `Cut ${other.name} away from this`,
-        hint: 'Uses it as a cookie cutter',
+        label: `Combine: Cut ${other.name}`,
+        hint: 'Cuts it away from this body, like a cookie cutter',
         run: combine('cut'),
       })
       out.push({
         id: `overlap-${other.id}`,
-        label: `Keep only where they overlap`,
-        hint: `The part they share with ${other.name}`,
+        label: `Combine: Intersect ${other.name}`,
+        hint: `Keeps only the part this shares with ${other.name}`,
         run: combine('intersect'),
       })
     }
 
     out.push({
       id: 'move',
-      label: 'Move it',
+      label: 'Move/Copy',
       hint: 'Drag the arrows. Snaps to 1 mm',
       run: () => {
         ensureMove(bodyId)
@@ -509,7 +506,7 @@ function buildObjectActions(
     })
     out.push({
       id: 'turn',
-      label: 'Turn it',
+      label: 'Rotate',
       hint: 'Drag a ring. Snaps to 15 degrees',
       run: () => {
         ensureMove(bodyId)
@@ -520,8 +517,8 @@ function buildObjectActions(
     const topOf = () => bodyBounds(useStore.getState(), bodyId)?.[5] ?? 0
     out.push({
       id: 'cut-ball',
-      label: 'Cut a ball-shaped hollow',
-      hint: 'Sphere cut into the part, centred where you clicked',
+      label: 'Sphere Cut',
+      hint: 'Cuts a ball-shaped hollow centred where you clicked',
       run: () =>
         startCommand('sphere', {
           operation: 'cut',
@@ -531,8 +528,8 @@ function buildObjectActions(
     })
     out.push({
       id: 'cut-box',
-      label: 'Cut a square hollow',
-      hint: 'Box cut down into the part from its top',
+      label: 'Box Cut',
+      hint: 'Cuts a square hollow down from the top',
       run: () =>
         startCommand('box', {
           operation: 'cut',
@@ -560,12 +557,12 @@ function buildObjectActions(
     })
     out.push({
       id: 'hide',
-      label: 'Hide it',
+      label: 'Hide',
       run: () => store.updateBody(bodyId, { visible: false }),
     })
     out.push({
       id: 'delete',
-      label: 'Delete this part',
+      label: 'Delete',
       danger: true,
       run: () => store.removeBody(bodyId),
     })
@@ -581,14 +578,14 @@ function buildObjectActions(
     for (const [name, label] of planes) {
       out.push({
         id: `sketch-${name}`,
-        label: `Start a sketch on ${label}`,
+        label: `Create Sketch on ${label}`,
         run: () => store.startSketch({ kind: 'named', name, offset: 0 }),
       })
     }
     out.push({
       id: 'sketch-offset',
-      label: 'Start a sketch above the top plane',
-      hint: 'A parallel plane floating at a set height',
+      label: 'Offset Plane Sketch',
+      hint: 'Sketches on a plane parallel to the top plane at a set height',
       prompt: { label: 'Height', initial: 20, unit: 'mm' },
       run: (offset) => store.startSketch({ kind: 'named', name: 'XY', offset }),
     })
@@ -618,8 +615,8 @@ function buildObjectActions(
     })
     out.push({
       id: 'sketch-tilted',
-      label: 'Start a sketch on a tilted plane',
-      hint: 'The top plane tipped over, for sloped faces and brackets',
+      label: 'Plane at Angle Sketch',
+      hint: 'Sketches on the top plane tipped over, for sloped faces and brackets',
       prompt: { label: 'Tilt', initial: 30, unit: 'deg' },
       run: (angle) =>
         store.startSketch({
@@ -652,13 +649,13 @@ function buildObjectActions(
 
     out.push({
       id: 'move',
-      label: 'Move it',
+      label: 'Move/Copy',
       hint: 'Drag the arrows. Snaps to 1 mm',
       run: () => store.setGizmoMode('translate'),
     })
     out.push({
       id: 'turn',
-      label: 'Turn it',
+      label: 'Rotate',
       hint: 'Drag the ring. Snaps to 15 degrees',
       run: () => store.setGizmoMode('rotate'),
     })
@@ -689,13 +686,13 @@ function buildObjectActions(
     if (targetBody && holes?.length) {
       out.push({
         id: 'holes',
-        label: 'Put its mounting holes in',
+        label: 'Mounting Holes',
         hint: `${holes.length} holes, cut right through`,
         run: () => add('holes'),
       })
       out.push({
         id: 'standoffs',
-        label: 'Stand it off on pillars',
+        label: 'Standoffs',
         prompt: { label: 'Height', initial: 6, unit: 'mm' },
         run: (height) => add('standoffs', height),
       })
@@ -703,7 +700,7 @@ function buildObjectActions(
     if (targetBody && part?.connectors?.length) {
       out.push({
         id: 'ports',
-        label: 'Cut its port openings',
+        label: 'Port Cutouts',
         hint: part.connectors
           .map((c) => c.label)
           .slice(0, 3)
