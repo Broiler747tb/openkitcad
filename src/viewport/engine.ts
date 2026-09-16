@@ -12,7 +12,7 @@ import type { FastenerGhost } from './ghosts'
 import type { BodyMesh, Instance } from '../kernel/types'
 import type { Matrix4 } from '../doc/types'
 import type { Frame, Vec2, Vec3 } from '../core/math'
-import { frameToWorld, v3 } from '../core/math'
+import { frameToWorld, NAMED_FRAMES, v3 } from '../core/math'
 import type { Sketch2D } from '../sketch/types'
 import { usePreferences, type Preferences } from '../doc/preferences'
 import { tessellate } from '../sketch/curves'
@@ -162,6 +162,7 @@ export class ViewportEngine {
   private solidGroup = new THREE.Group()
   private sketchGroup = new THREE.Group()
   private overlayGroup = new THREE.Group()
+  private originPlaneGroup = new THREE.Group()
   private gridGroup = new THREE.Group()
 
   private geometries = new Map<string, GeometryEntry>()
@@ -293,6 +294,7 @@ export class ViewportEngine {
       this.dimensionGroup,
       this.sketchGroup,
       this.overlayGroup,
+      this.originPlaneGroup,
       this.gridGroup,
       this.highlightGroup,
       this.handleGroup,
@@ -914,6 +916,106 @@ export class ViewportEngine {
       if (hitDistance < best.distance - Math.max(0.05, best.distance * 1e-4)) return null
     }
     return best
+  }
+
+  setOriginPlanes(visible: boolean) {
+    for (const child of [...this.originPlaneGroup.children]) {
+      this.originPlaneGroup.remove(child)
+      child.traverse((object) => {
+        const mesh = object as THREE.Mesh
+        mesh.geometry?.dispose()
+        ;(mesh.material as THREE.Material | undefined)?.dispose()
+      })
+    }
+    if (!visible) return
+    const box = new THREE.Box3().setFromObject(this.solidGroup)
+    const reach = box.isEmpty()
+      ? 0
+      : Math.max(...box.min.toArray().map(Math.abs), ...box.max.toArray().map(Math.abs))
+    const size = Math.max(30, reach * 1.15)
+    for (const name of ['XY', 'XZ', 'YZ'] as const) {
+      const frame = NAMED_FRAMES[name]
+      const geometry = new THREE.PlaneGeometry(size, size)
+      geometry.translate(size / 2, size / 2, 0)
+      const mesh = new THREE.Mesh(
+        geometry,
+        new THREE.MeshBasicMaterial({
+          color: this.palette.originPlane,
+          transparent: true,
+          opacity: 0.2,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+        }),
+      )
+      const outline = new THREE.LineSegments(
+        new THREE.EdgesGeometry(geometry),
+        new THREE.LineBasicMaterial({ color: this.palette.originPlaneEdge }),
+      )
+      mesh.add(outline)
+      mesh.quaternion.setFromRotationMatrix(
+        new THREE.Matrix4().makeBasis(
+          new THREE.Vector3(...frame.xDir),
+          new THREE.Vector3(...frame.yDir),
+          new THREE.Vector3(...frame.normal),
+        ),
+      )
+      mesh.userData.originPlane = name
+      mesh.renderOrder = 2
+      this.originPlaneGroup.add(mesh)
+    }
+  }
+
+  pickOriginPlane(clientX: number, clientY: number): 'XY' | 'XZ' | 'YZ' | null {
+    if (!this.originPlaneGroup.children.length) return null
+    this.raycaster.setFromCamera(this.pointerToNdc(clientX, clientY), this.camera)
+    const hit = this.raycaster.intersectObjects(this.originPlaneGroup.children, false)[0]
+    return (hit?.object.userData.originPlane as 'XY' | 'XZ' | 'YZ' | undefined) ?? null
+  }
+
+  setOriginPlaneHover(name: 'XY' | 'XZ' | 'YZ' | null) {
+    for (const child of this.originPlaneGroup.children) {
+      const material = (child as THREE.Mesh).material as THREE.MeshBasicMaterial
+      material.opacity = child.userData.originPlane === name ? 0.45 : 0.2
+    }
+  }
+
+  isFlatFace(hit: PickResult): boolean {
+    const entry = this.objects.get(hit.instanceId)
+    const data = entry ? this.geometries.get(entry.instance.meshKey)?.data : undefined
+    const triangle = hit.faceId * 3
+    const group = data?.faceGroups.find(
+      (candidate) => triangle >= candidate.start && triangle < candidate.start + candidate.count,
+    )
+    if (!data || !group) return false
+    const { triangles, vertices } = data
+    const normalOf = (at: number) => {
+      const [a, b, c] = [triangles[at] * 3, triangles[at + 1] * 3, triangles[at + 2] * 3]
+      const u = [
+        vertices[b] - vertices[a],
+        vertices[b + 1] - vertices[a + 1],
+        vertices[b + 2] - vertices[a + 2],
+      ]
+      const w = [
+        vertices[c] - vertices[a],
+        vertices[c + 1] - vertices[a + 1],
+        vertices[c + 2] - vertices[a + 2],
+      ]
+      const n = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]]
+      const length = Math.hypot(n[0], n[1], n[2])
+      return length > 1e-12 ? n.map((value) => value / length) : null
+    }
+    let reference: number[] | null = null
+    for (let at = group.start; at < group.start + group.count; at += 3) {
+      const normal = normalOf(at)
+      if (!normal) continue
+      if (!reference) reference = normal
+      else if (
+        normal[0] * reference[0] + normal[1] * reference[1] + normal[2] * reference[2] <
+        0.9999
+      )
+        return false
+    }
+    return !!reference
   }
 
   /** Faint filled plane so the user can see what they are drawing on. */

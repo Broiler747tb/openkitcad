@@ -195,6 +195,9 @@ interface AppState {
   subSelection: SubPick[]
   setSubSelection: (picks: SubPick[]) => void
 
+  pickingSketchPlane: boolean
+  setPickingSketchPlane: (picking: boolean) => void
+
   sketchSelection: SketchTarget[]
   setSketchSelection: (selection: SketchTarget[]) => void
   applySketchAction: (result: ActionResult) => void
@@ -1111,6 +1114,7 @@ export const useStore = create<AppState>((set, get) => ({
       activeSketch: { featureId, componentId },
       tool: 'select',
       selection: { kind: 'feature', id: featureId },
+      pickingSketchPlane: false,
     })
   },
 
@@ -1177,6 +1181,11 @@ export const useStore = create<AppState>((set, get) => ({
   subSelection: [],
   setSubSelection(subSelection) {
     set({ subSelection })
+  },
+
+  pickingSketchPlane: false,
+  setPickingSketchPlane(pickingSketchPlane) {
+    set({ pickingSketchPlane })
   },
 
   sketchSelection: [],

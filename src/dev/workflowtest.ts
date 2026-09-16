@@ -108,6 +108,12 @@ export function runWorkflowTest() {
       'V changes selected body visibility',
       findBody(useStore.getState().doc, body.id)?.body.visible === false,
     )
+    createSketchAction().run(0)
+    check(
+      'Create Sketch with nothing picked waits for a plane or a flat face',
+      useStore.getState().pickingSketchPlane && !useStore.getState().activeSketch,
+    )
+    useStore.getState().setPickingSketchPlane(false)
     createSketchAction().run(0, undefined, undefined, 'XZ')
     const active = useStore.getState().activeSketch
     check('new sketch starts in Select', !!active && useStore.getState().tool === 'select')

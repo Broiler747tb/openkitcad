@@ -37,6 +37,7 @@ import {
   occurrencePick,
   offerPick,
   pickSketchId,
+  planePick,
   profilePick,
 } from '../ui/command/picks'
 import { glyphFeatureId, jointGlyphs, originSnapAt, snapAt, type SnapHit } from './joints'
@@ -364,6 +365,10 @@ export function Viewport() {
   const committedMeshes = useStore((s) => s.meshes)
   const commandPreview = useCommand((s) => s.preview)
   const commandSession = useCommand((s) => s.session)
+  const pickingSketchPlane = useStore((s) => s.pickingSketchPlane)
+  const planesWanted =
+    !useStore.getState().activeSketch &&
+    (pickingSketchPlane || (!!commandSession && acceptedKinds().has('plane')))
   const instances = commandPreview?.instances ?? committedInstances
   const meshes = useMemo(
     () =>
@@ -524,6 +529,10 @@ export function Viewport() {
     }
     engine.setScene(instances, meshes, colourOf, showPlacements)
   }, [instances, meshes, showPlacements, doc])
+
+  useEffect(() => {
+    engineRef.current?.setOriginPlanes(planesWanted)
+  }, [planesWanted, instances, paletteVersion])
 
   // Ghosts of the screws and inserts the holes were drilled for.
   useEffect(() => {
@@ -1182,6 +1191,28 @@ export function Viewport() {
       dragHandle(handleDragRef.current, e)
       return
     }
+    if (planesWanted) {
+      const body = engine.pick(e.clientX, e.clientY)
+      const flat = body?.kind === 'body' && engine.isFlatFace(body)
+      const plane = body ? null : engine.pickOriginPlane(e.clientX, e.clientY)
+      engine.setOriginPlaneHover(plane)
+      if (store.pickingSketchPlane) {
+        if (store.hovered !== (body?.instanceId ?? null)) store.setHovered(body?.instanceId ?? null)
+        engine.setHoverPick(flat ? engine.pickSub(e.clientX, e.clientY) : null)
+        setCursorHint({
+          x: e.clientX,
+          y: e.clientY,
+          text: plane
+            ? `Sketch on ${plane}`
+            : flat
+              ? 'Sketch on this face'
+              : body
+                ? 'Pick a flat face'
+                : 'Click an origin plane or a flat face',
+        })
+        return
+      }
+    }
     const hot = activeHandles.length ? engine.pickHandle(e.clientX, e.clientY) : null
     if (hot !== hotHandle) setHotHandle(hot)
     if (!hot && activeKinds().has('jointSnap')) {
@@ -1456,9 +1487,41 @@ export function Viewport() {
     if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > CLICK_SLOP_PX) return
 
     const store = useStore.getState()
+    if (store.pickingSketchPlane && !store.activeSketch) {
+      const body = engine.pick(e.clientX, e.clientY)
+      if (body?.kind === 'body' && body.faceName && engine.isFlatFace(body)) {
+        setCursorHint(null)
+        store.startSketch(
+          {
+            kind: 'face',
+            face: { bodyId: body.bodyId, kind: 'face', name: body.faceName },
+            offset: 0,
+          },
+          body.bodyId,
+        )
+        return
+      }
+      const plane = body ? null : engine.pickOriginPlane(e.clientX, e.clientY)
+      if (plane) {
+        setCursorHint(null)
+        store.startSketch({ kind: 'named', name: plane, offset: 0 })
+        return
+      }
+      store.setStatus(
+        body
+          ? 'That face is curved. Pick a flat face or an origin plane.'
+          : 'Click an origin plane or a flat face. Esc cancels.',
+      )
+      return
+    }
     if (useCommand.getState().session) {
       const filter = acceptedKinds()
       const focused = activeKinds()
+      if (filter.has('plane') && !engine.pick(e.clientX, e.clientY)) {
+        const plane = engine.pickOriginPlane(e.clientX, e.clientY)
+        if (plane && offerPick(planePick(store.doc, { kind: 'named', name: plane, offset: 0 })))
+          return
+      }
       if (filter.has('feature')) {
         const glyph = engine.pickJointGlyph(e.clientX, e.clientY)
         if (glyph && offerPick(featurePick(store.doc, glyphFeatureId(glyph)))) return
@@ -1731,6 +1794,12 @@ export function Viewport() {
           actions.type('')
           return
         }
+      }
+      if (e.key === 'Escape' && store.pickingSketchPlane) {
+        store.setPickingSketchPlane(false)
+        store.setStatus('')
+        setCursorHint(null)
+        return
       }
       if (e.key === 'Escape') {
         if (toolRef.current.anchors.length) {

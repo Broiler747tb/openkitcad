@@ -21,6 +21,8 @@ export interface ViewportPalette {
   profileIdle: number
   profileHover: number
   profilePicked: number
+  originPlane: number
+  originPlaneEdge: number
   handle: number
   handleHot: number
   previewCut: number
@@ -51,6 +53,8 @@ export const LIGHT_PALETTE: ViewportPalette = {
   profileIdle: 0xf1cf9b,
   profileHover: 0xf0a64a,
   profilePicked: 0x4f9fe0,
+  originPlane: 0xf2b25c,
+  originPlaneEdge: 0xc07a22,
   handle: 0x1676c5,
   handleHot: 0x46a3ec,
   previewCut: 0xd4473d,
@@ -118,6 +122,8 @@ export function readPalette(
     profileIdle: dark ? 0x8a6a36 : LIGHT_PALETTE.profileIdle,
     profileHover: dark ? 0xc98a2e : LIGHT_PALETTE.profileHover,
     profilePicked: solid('--okc-selection', LIGHT_PALETTE.profilePicked),
+    originPlane: dark ? 0xb37a2c : LIGHT_PALETTE.originPlane,
+    originPlaneEdge: dark ? 0xe0a24a : LIGHT_PALETTE.originPlaneEdge,
     handle: solid('--okc-accent', LIGHT_PALETTE.handle),
     handleHot: solid('--okc-prehighlight', LIGHT_PALETTE.handleHot),
     previewCut: solid('--okc-preview-cut', LIGHT_PALETTE.previewCut),

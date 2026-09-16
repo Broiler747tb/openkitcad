@@ -38,20 +38,17 @@ export function createSketchAction(): ObjectAction {
   return {
     id: 'create-sketch',
     label: 'Create Sketch',
-    hint: 'Select an origin plane. To use a face, cancel and select a planar face first.',
-    choice: {
-      label: 'Sketch plane',
-      initial: 'XY',
-      options: [
-        { value: 'XY', label: 'XY · Top' },
-        { value: 'XZ', label: 'XZ · Front' },
-        { value: 'YZ', label: 'YZ · Right' },
-      ],
+    hint: 'Click an origin plane or a flat face to sketch on.',
+    run: (_a, _b, _c, plane) => {
+      const store = useStore.getState()
+      if (plane) {
+        store.startSketch({ kind: 'named', name: plane as 'XY' | 'XZ' | 'YZ', offset: 0 })
+        return
+      }
+      if (store.activeSketch) store.closeSketch()
+      store.setPickingSketchPlane(true)
+      store.setStatus('Create Sketch: click an origin plane or a flat face. Esc cancels.')
     },
-    run: (_a, _b, _c, plane) =>
-      useStore
-        .getState()
-        .startSketch({ kind: 'named', name: plane as 'XY' | 'XZ' | 'YZ', offset: 0 }),
   }
 }
 

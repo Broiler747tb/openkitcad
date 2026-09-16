@@ -450,6 +450,11 @@ Fusion does. Draft tilts faces about a plane by an angle, away from the plane's 
 with Flip. Scale Factor and Coil Revolutions use a plain number field (`kind: 'number'`) that no unit
 touches.
 
+**Create Sketch.** Create Sketch no longer asks for a plane in a dialog. The three origin planes
+appear as translucent squares reaching past the model, a hovered plane darkens, and a click on a plane
+or on a flat face opens the sketch there; Esc cancels. The same planes appear whenever a command's
+Plane input is waiting, so Mirror, Split Body, Coil and Draft take a click on an origin plane.
+
 **Tidying.** Counts read "1 body" and "2 bodies" (`src/core/words.ts`). The Inspector hides while a
 command panel is open, and surface bodies no longer offer edge rounding. The Shortcuts dialog no
 longer claims surfaces and Press Pull are missing, and P outside a sketch says Project needs one.
@@ -504,7 +509,8 @@ are gone.
   six times around Z, mirror it across YZ, split a box on XZ and scale a body by 2. Unstitch a box
   into six surfaces, Stitch them back into a solid and Reverse Normal one of the surfaces first.
   Double-click each step on the timeline, change a value and OK. Undo back through every step.
-- **J smoke test.** Select the top face of a box and press Q: the Press Pull panel pulls it 8 mm with
+- **J smoke test.** Click Create Sketch and then the XZ plane, finish, click Create Sketch again and
+  click the top of a box. Select the top face of a box and press Q: the Press Pull panel pulls it 8 mm with
   the arrow. Select an edge and press Q to get Fillet; select a sketch and press Q to get Extrude.
   Right-click a side face and choose Draft, pick XY as the plane and tilt it 10°. Scale a body by 2.5
   in an inch document and read 2.5, not a length. Open any command and see the Inspector step aside.
