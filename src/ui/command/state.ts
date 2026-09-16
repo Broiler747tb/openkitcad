@@ -487,10 +487,3 @@ export function selectionSummary(input: SelectionInput, picks: readonly Selectio
   if (!picks.length) return input.prompt ?? 'Select'
   return `${picks.length} selected`
 }
-
-export function activePrompt(spec: AnyCommandSpec, state: CommandState): string | null {
-  if (!state.active) return null
-  const input = findInput(spec, state.active)
-  if (input?.kind !== 'selection') return null
-  return input.prompt ?? `Select ${input.label.toLowerCase()}`
-}

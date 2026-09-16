@@ -378,6 +378,11 @@ button.workspace-tab {
 .inspector-empty .panel-right {
   display: none;
 }
+@media (min-width: 901px) {
+  .commanding .panel-right {
+    display: none;
+  }
+}
 .browser-hidden .panel-left {
   display: none;
 }
@@ -534,7 +539,7 @@ button.workspace-tab {
 .file-menu kbd {
   float: right;
 }
-@media (max-width: 1200px) {
+@media (max-width: 1279px) {
   .ribbon {
     padding-left: 3px;
     padding-right: 3px;
@@ -555,6 +560,19 @@ button.workspace-tab {
   }
   .fusion-group.standalone {
     padding: 0 2px;
+  }
+}
+@media (max-width: 1023px) {
+  .ribbon {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .fusion-dropdown {
+    position: fixed;
+    top: 158px;
+    left: 10px !important;
+    right: auto !important;
+    max-height: calc(100vh - 220px);
   }
 }
 @media (max-width: 900px) {

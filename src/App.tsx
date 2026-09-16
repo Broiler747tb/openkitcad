@@ -23,6 +23,7 @@ import { ActionDialogHost } from './ui/ActionDialog'
 import { Timeline, NavigationBar } from './ui/Timeline'
 import { PenBar } from './ui/PenBar'
 import { isAndroidApp } from './platform/android'
+import { useCommand } from './ui/command/session'
 
 export function App() {
   const [showExport, setShowExport] = useState(false)
@@ -37,6 +38,7 @@ export function App() {
   const doc = useStore((s) => s.doc)
   const activeSketch = useStore((s) => s.activeSketch)
   const selection = useStore((s) => s.selection)
+  const commanding = useCommand((s) => !!s.session)
 
   // Boot the kernel, then restore whatever the user was last working on.
   useEffect(() => {
@@ -112,7 +114,7 @@ export function App() {
 
   return (
     <div
-      className={`app ${activeSketch ? 'sketching' : ''} ${selection.kind === 'none' && !activeSketch && inspectorTab === 'properties' ? 'inspector-empty' : ''} ${sheet ? `sheet-${sheet}` : ''}`}
+      className={`app ${activeSketch ? 'sketching' : ''} ${selection.kind === 'none' && !activeSketch && inspectorTab === 'properties' ? 'inspector-empty' : ''} ${sheet ? `sheet-${sheet}` : ''} ${commanding ? 'commanding' : ''}`}
     >
       <Toolbar
         onExport={() => setShowExport(true)}

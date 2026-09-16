@@ -378,78 +378,6 @@ select {
   font-weight: 650;
   color: var(--text-faint);
 }
-.workspace-welcome {
-  grid-area: main;
-  align-self: center;
-  justify-self: center;
-  z-index: 2;
-  position: relative;
-  padding: 30px;
-  width: min(100%, 750px);
-  color: var(--okc-text-on-accent);
-  pointer-events: none;
-}
-.workspace-welcome .eyebrow {
-  color: var(--okc-text-faint);
-}
-.workspace-welcome h1 {
-  font-weight: 500;
-  font-size: clamp(28px, 3vw, 49px);
-  letter-spacing: -1.8px;
-  line-height: 1.08;
-  margin: 18px 0;
-}
-.workspace-welcome p {
-  color: var(--okc-text-faint);
-  font-size: 13px;
-  line-height: 1.6;
-  margin-bottom: 26px;
-}
-.start-cards {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-.start-cards button {
-  pointer-events: auto;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 18px 15px;
-  gap: 9px;
-  border: 1px solid var(--okc-line-strong);
-  background: var(--okc-surface-scrim);
-  color: var(--okc-text-on-accent);
-  border-radius: 10px;
-  min-height: 166px;
-}
-.start-cards button:hover {
-  border-color: var(--okc-accent);
-  background: var(--okc-surface-tooltip);
-  transform: translateY(-2px);
-}
-.start-cards button > span {
-  font-size: 25px;
-  color: var(--okc-accent-soft);
-  line-height: 1;
-  margin-bottom: 7px;
-}
-.start-cards strong {
-  font-size: 12px;
-  font-weight: 600;
-}
-.start-cards small {
-  font-size: 10px;
-  color: var(--okc-text-faint);
-  line-height: 1.6;
-}
-.start-cards b {
-  font-size: 10px;
-  color: var(--okc-text-disabled);
-  margin-top: auto;
-  font-weight: 400;
-}
 .welcome-tip {
   color: var(--okc-text-faint);
   font-size: 10px;
@@ -673,22 +601,6 @@ select {
     padding: 7px;
     min-width: 59px;
   }
-  .start-cards {
-    grid-template-columns: 1fr;
-  }
-  .start-cards button {
-    min-height: 0;
-    display: grid;
-    grid-template-columns: 25px 1fr auto;
-    padding: 12px;
-  }
-  .start-cards small {
-    grid-column: 2;
-  }
-  .start-cards b {
-    grid-column: 3;
-    grid-row: 1;
-  }
 }
 @media (max-width: 900px) {
   .app,
@@ -725,12 +637,6 @@ select {
   .ribbon-tool {
     padding: 6px 8px;
   }
-  .workspace-welcome {
-    padding: 22px;
-  }
-  .workspace-welcome h1 {
-    font-size: 34px;
-  }
   .statusbar > label,
   .statusbar > span:nth-child(2) {
     display: none !important;
@@ -738,15 +644,6 @@ select {
   .sketch-banner {
     margin-bottom: 65px;
     font-size: 10px;
-  }
-  .start-cards button {
-    padding: 12px;
-  }
-  .start-cards small {
-    display: none;
-  }
-  .start-cards button {
-    min-height: 130px;
   }
   .welcome-tip {
     line-height: 1.6;

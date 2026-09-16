@@ -23,6 +23,7 @@ import { kernel } from '../kernel/api'
 import type { Clash, PrintWarning } from '../kernel/types'
 import { quantity } from '../core/quantity'
 import { lengthLabel, lengthText, volumeLabel } from '../core/units'
+import { counted } from '../core/words'
 
 function SketchOptions() {
   const values = usePreferences((s) => s.values)
@@ -510,7 +511,7 @@ function OccurrenceInspector({ id, instanceId }: { id: string; instanceId?: stri
             Mounting holes
             <small>
               {part.mountingHoles?.length
-                ? `${part.mountingHoles.length} holes, sized for ${part.mountingHoles[0].screw ?? 'the screws'}, cut right through`
+                ? `${counted(part.mountingHoles.length, 'hole')}, sized for ${part.mountingHoles[0].screw ?? 'the screws'}, cut right through`
                 : 'This part has no mounting holes'}
             </small>
           </button>
@@ -639,7 +640,12 @@ function BodyInspector({ id, instanceId }: { id: string; instanceId?: string }) 
       <div className="section" hidden={mesh?.kind === 'mesh'}>
         <h3>Quick actions</h3>
         {objectActions({ kind: 'body', id })
-          .filter((a) => ['size', 'round', 'bevel', 'sketch-on-top'].includes(a.id))
+          .filter((a) =>
+            (mesh?.kind === 'surface'
+              ? ['size', 'sketch-on-top']
+              : ['size', 'round', 'bevel', 'sketch-on-top']
+            ).includes(a.id),
+          )
           .map((action) => (
             <button key={action.id} className="btn" onClick={() => chooseAction(action)}>
               {action.label}
@@ -714,7 +720,7 @@ function FeatureInspector({ featureId }: { featureId: string }) {
         <>
           <p className="hint" style={{ marginTop: 0 }}>
             {feature.tracks.length} joint{feature.tracks.length === 1 ? '' : 's'} over{' '}
-            {feature.steps} steps.
+            {counted(feature.steps, 'step')}.
           </p>
           <button className="btn primary" onClick={() => editFeature(feature)}>
             Play and edit

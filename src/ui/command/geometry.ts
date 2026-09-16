@@ -30,12 +30,3 @@ export function clampPanelOffset(
     ),
   }
 }
-
-export function shiftBox(box: Box, offset: Offset): Box {
-  return {
-    left: box.left + offset.x,
-    top: box.top + offset.y,
-    right: box.right + offset.x,
-    bottom: box.bottom + offset.y,
-  }
-}

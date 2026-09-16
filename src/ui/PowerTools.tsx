@@ -15,6 +15,7 @@ import { quantity } from '../core/quantity'
 import type { Vec2 } from '../core/math'
 import type { ObjectAction } from './ObjectMenu'
 import { chooseAction } from './ActionDialog'
+import { counted } from '../core/words'
 
 const numberField = (label: string, initial: number, unit = 'mm', min?: number, max?: number) => ({
   label,
@@ -190,7 +191,7 @@ export function SketchPowerTools() {
     <section className="section power-tools">
       <h3>Sketch workshop</h3>
       <p className="hint">
-        {entities.length} edges · {selected.size} selected · selected length{' '}
+        {counted(entities.length, 'edge')} · {selected.size} selected · selected length{' '}
         {geometryLength(feature.sketch, [...selected]).toFixed(3)} mm
       </p>
       <details open>
@@ -309,7 +310,7 @@ export function SceneTools() {
     <section className="section power-tools">
       <h3>Scene visibility</h3>
       <p className="hint">
-        {bodies.length} bodies · {occurrences.length} components ·{' '}
+        {counted(bodies.length, 'body', 'bodies')} · {counted(occurrences.length, 'component')} ·{' '}
         {items.filter((i) => i.visible).length} visible
       </p>
       <div className="power-buttons">

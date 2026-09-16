@@ -49,6 +49,9 @@ solids (§11).
 **SF: surface and solid tools.** Loft, Sweep, Coil, Pipe, Thicken, Pattern, Mirror, Split Body and
 Scale on the SOLID tab, and the SURFACE tab (§12).
 
+**J: jank audit.** Press Pull, Offset Face and Draft, so Q and the marking menu work as in Fusion;
+stale notices, plural labels, narrow windows and dead code (§13).
+
 ## 3. Document model v2
 
 Types live in `src/doc/types.ts`. Pure helpers every layer shares live in `src/doc/model.ts`
@@ -429,13 +432,32 @@ within a tolerance into the first one, makes a solid when they close all the way
 the rest. Unstitch gives every face its own surface body; if the body gains faces upstream, the
 extra faces stay together in the last body with a warning. Reverse Normal turns surfaces inside out.
 
-**Ribbon.** The SOLID tab shows Extrude, Revolve, Sweep, Loft and Hole under CREATE and Fillet,
-Shell, Split Body and Move under MODIFY; everything else is in the group menus, and the whole ribbon
+**Ribbon.** The SOLID tab shows Extrude, Revolve, Sweep, Loft and Hole under CREATE and Press Pull,
+Fillet, Shell and Move under MODIFY; everything else is in the group menus, and the whole ribbon
 fits a 1280 px window. The SURFACE tab shows Extrude, Revolve, Loft, Patch, Offset and Thicken, then
 Stitch, Unstitch and Reverse Normal. Trim, Extend, Ruled, Boundary Fill, Rib, Web, Emboss, Thread,
 Torus and Pattern on Path are not implemented.
 
-## 13. How the work is done
+## 13. Jank audit (J)
+
+**Press Pull, Offset Face and Draft.** Offset Face moves flat faces of a body along their normals: a
+prism from each face is fused on or cut away, the result is simplified, and the history hands each
+face's name to the face that replaces it, so later steps still find it. Curved faces are refused
+with a message, because the bundled kernel has no per-face offset. Press Pull (Q, the right slot of
+the marking menu and the face context menu) opens Fillet when edges are selected, Extrude when a
+sketch is, and otherwise Offset Face under the Press Pull name; the timeline records Offset Face, as
+Fusion does. Draft tilts faces about a plane by an angle, away from the plane's normal or towards it
+with Flip. Scale Factor and Coil Revolutions use a plain number field (`kind: 'number'`) that no unit
+touches.
+
+**Tidying.** Counts read "1 body" and "2 bodies" (`src/core/words.ts`). The Inspector hides while a
+command panel is open, and surface bodies no longer offer edge rounding. The Shortcuts dialog no
+longer claims surfaces and Press Pull are missing, and P outside a sketch says Project needs one.
+Below 1280 px the ribbon tools shrink, and below 1024 px the ribbon scrolls sideways with its menus
+pinned under it, so the page itself never scrolls. An unused welcome screen and three unused helpers
+are gone.
+
+## 14. How the work is done
 
 - Agents never start other agents or workflows.
 - New and rewritten code has no comments. Touched files are formatted with Prettier.
@@ -464,7 +486,7 @@ Torus and Pattern on Path are not implemented.
   those two. Sketch on the top face, project the face, offset it 3 mm inward and extrude the ring as a
   cut. Undo back through every step.
 - **L smoke test.** Switch to Dark and back: panels, canvas, grid, sketch lines and dimensions follow.
-  Click FRONT on the cube, then the house. Right-click the model and run Extrude from the ring, then
+  Click FRONT on the cube, then the house. Right-click the model and run Press Pull from the ring, then
   Repeat. Choose the SolidWorks scheme and orbit with the middle button.
 - **A smoke test.** Insert a NEMA 17 stepper and a 608ZZ bearing and ground the stepper. Press J, pick
   the bearing's bottom and the round boss on the motor, choose Revolute and OK: the bearing sits on
@@ -482,3 +504,8 @@ Torus and Pattern on Path are not implemented.
   six times around Z, mirror it across YZ, split a box on XZ and scale a body by 2. Unstitch a box
   into six surfaces, Stitch them back into a solid and Reverse Normal one of the surfaces first.
   Double-click each step on the timeline, change a value and OK. Undo back through every step.
+- **J smoke test.** Select the top face of a box and press Q: the Press Pull panel pulls it 8 mm with
+  the arrow. Select an edge and press Q to get Fillet; select a sketch and press Q to get Extrude.
+  Right-click a side face and choose Draft, pick XY as the plane and tilt it 10°. Scale a body by 2.5
+  in an inch document and read 2.5, not a length. Open any command and see the Inspector step aside.
+  Narrow the window to 950 px and scroll the ribbon. Undo back through every step.

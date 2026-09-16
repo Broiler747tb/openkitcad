@@ -37,10 +37,6 @@ export function setPendingMeshes(meshes: PendingMesh[]) {
   pending = meshes
 }
 
-export function pendingMeshes(): PendingMesh[] {
-  return pending
-}
-
 export function bodyMeshOf(bodyId: string): BodyMesh | undefined {
   const state = useStore.getState()
   const instance = state.instances.find(

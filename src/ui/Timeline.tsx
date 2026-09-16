@@ -14,6 +14,7 @@ import { ContextMenu } from './ContextMenu'
 import { editFeature } from './command/commands'
 import { featurePick, offerPick, sketchPick } from './command/picks'
 import { useCommand } from './command/session'
+import { counted } from '../core/words'
 
 const PLAY_STEP_MS = 450
 const DRAG_SLOP_PX = 6
@@ -354,7 +355,7 @@ export function Timeline({ onEdit }: { onEdit: () => void }) {
                 <button
                   className={`tl-group-closed ${groupFailed ? 'failed' : ''} ${span.start >= marker ? 'rolled-back' : ''}`}
                   data-start={span.start}
-                  title={`${span.group.name}: ${inside.length} steps. Click to expand.`}
+                  title={`${span.group.name}: ${counted(inside.length, 'step')}. Click to expand.`}
                   onClick={() => store.toggleGroup(span.group.id)}
                   onContextMenu={openMenu}
                 >
