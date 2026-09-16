@@ -34,7 +34,26 @@ import {
 } from '../doc/store'
 import { frameFromPlaneRefLocal, transformFrame } from '../doc/planes'
 import { findSnap, hitTestSketch, toggleSelection } from '../sketch/inference'
-import { circleRadius, continueLine, emptyDraft, type Draft } from '../sketch/draft'
+import {
+  anchorFromSnap,
+  buildTool,
+  canFinish,
+  continueFrom,
+  emptyToolState,
+  lockField,
+  placeAnchor,
+  remember,
+} from '../sketch/tools/session'
+import { isSketchTool, sketchTool } from '../sketch/tools/specs'
+import type {
+  SketchToolSpec,
+  ToolAnchor,
+  ToolBuild,
+  ToolField,
+  ToolFrame,
+  ToolState,
+} from '../sketch/tools/types'
+import { parseAngle, parseInteger, parseLength } from '../ui/command/units'
 import { sketchActions } from '../sketch/actions'
 import { isAndroidApp, usePenMode } from '../platform/android'
 import { SketchMenu } from '../ui/SketchMenu'
@@ -248,7 +267,15 @@ export function Viewport() {
   const preferences = usePreferences((s) => s.values)
   const mountRef = useRef<HTMLDivElement>(null)
   const engineRef = useRef<ViewportEngine | null>(null)
-  const draftRef = useRef<Draft>({ anchors: [], anchorIds: [] })
+  const toolRef = useRef<ToolState>(emptyToolState())
+  const toolCursorRef = useRef<ToolAnchor | null>(null)
+  const headsUpRef = useRef<HeadsUp>({ fields: [], focus: null, text: '' })
+  const [headsUp, setHeadsUpState] = useState<HeadsUp>({ fields: [], focus: null, text: '' })
+  const setHeadsUp = (next: HeadsUp) => {
+    headsUpRef.current = next
+    setHeadsUpState(next)
+  }
+  const toolActionsRef = useRef<ToolActions | null>(null)
   const draggingRef = useRef<{ pointId: string; moved: boolean } | null>(null)
   const penContactRef = useRef(false)
   const downRef = useRef<{ x: number; y: number } | null>(null)
@@ -628,7 +655,7 @@ export function Viewport() {
     if (activeSketch && frame) engineRef.current?.lookAtFrame(frame)
     if (!activeSketch) {
       engineRef.current?.clearSketch()
-      draftRef.current = { anchors: [], anchorIds: [] }
+      resetTool()
     }
     // Only when entering or leaving sketch mode.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -636,7 +663,7 @@ export function Viewport() {
 
   // A gesture belongs to one tool and one sketch only.
   useEffect(() => {
-    draftRef.current = emptyDraft()
+    resetTool()
     draggingRef.current = null
     engineRef.current?.setControlsEnabled(true)
   }, [tool, activeSketch?.featureId])
@@ -648,7 +675,7 @@ export function Viewport() {
 
   useEffect(() => {
     const cancel = () => {
-      draftRef.current = emptyDraft()
+      toolActionsRef.current?.reset()
       draggingRef.current = null
       cancelHold()
       engineRef.current?.setControlsEnabled(true)
@@ -708,12 +735,12 @@ export function Viewport() {
 
   useEffect(() => {
     const input = (event: Event) => {
-      if (!['line', 'rectangle', 'circle', 'arc'].includes(tool) || !activeSketch) return
+      if (!isSketchTool(tool) || !activeSketch) return
       const { x, y, relative } = (event as CustomEvent<{ x: number; y: number; relative: boolean }>)
         .detail
       if (!Number.isFinite(x) || !Number.isFinite(y)) return
-      const base = relative ? draftRef.current.anchors.at(-1) : null
-      commitClick([x + (base?.[0] ?? 0), y + (base?.[1] ?? 0)], true)
+      const base = relative ? toolRef.current.anchors.at(-1)?.point : null
+      placeAt(freeToolAnchor([x + (base?.[0] ?? 0), y + (base?.[1] ?? 0)]))
     }
     window.addEventListener('okc:coordinate', input)
     return () => window.removeEventListener('okc:coordinate', input)
@@ -721,156 +748,178 @@ export function Viewport() {
 
   // --- sketch drawing ------------------------------------------------------
 
-  function commitClick(raw: Vec2, bypass = false) {
-    if (!['line', 'rectangle', 'circle', 'arc'].includes(tool)) return
-    const store = useStore.getState()
-    const draft = draftRef.current
-    const sketch = activeSketchFeature(store)?.sketch
-    if (!sketch) return
-
-    const snap = findSnap(sketch, raw, {
-      ...snapOptions(toleranceAt(), bypass),
-      from: draft.anchors.length ? draft.anchors[draft.anchors.length - 1] : undefined,
-    })
-
-    draft.anchors.push(snap.point)
-    draft.anchorIds.push(snap.snapToPointId)
-
-    const finish = () => {
-      draftRef.current = { anchors: [], anchorIds: [] }
+  function resetTool() {
+    toolRef.current = emptyToolState()
+    toolCursorRef.current = null
+    if (headsUpRef.current.fields.length || headsUpRef.current.text) {
+      setHeadsUp({ fields: [], focus: null, text: '' })
     }
-
-    if (tool === 'line' && draft.anchors.length === 2) {
-      let endpointId = ''
-      store.editSketch((s) => {
-        const a = ensurePoint(s, draft.anchors[0], draft.anchorIds[0])
-        const b = ensurePoint(s, draft.anchors[1], draft.anchorIds[1])
-        endpointId = b
-        const id = newId('e')
-        s.entities.push({ id, kind: 'line', p1: a, p2: b, construction: false })
-        if (snap.align === 'horizontal') pushConstraint(s, { kind: 'horizontal', e: id })
-        if (snap.align === 'vertical') pushConstraint(s, { kind: 'vertical', e: id })
-        if (snap.onEntityId && snap.onEntityKind === 'line') {
-          pushConstraint(s, { kind: 'pointOnLine', p: b, e: snap.onEntityId })
-        }
-      })
-      // Chain: keep drawing from the end of the segment just made.
-      store.solveActiveSketch()
-      draftRef.current = continueLine(activeSketchFeature(useStore.getState())!.sketch, endpointId)
-    } else if (tool === 'rectangle' && draft.anchors.length === 2) {
-      const [a, b] = draft.anchors
-      store.editSketch((s) => {
-        const p1 = ensurePoint(s, a, draft.anchorIds[0])
-        const p2 = ensurePoint(s, [b[0], a[1]], null)
-        const p3 = ensurePoint(s, b, draft.anchorIds[1])
-        const p4 = ensurePoint(s, [a[0], b[1]], null)
-        const e1 = newId('e')
-        const e2 = newId('e')
-        const e3 = newId('e')
-        const e4 = newId('e')
-        s.entities.push(
-          { id: e1, kind: 'line', p1, p2, construction: false },
-          { id: e2, kind: 'line', p1: p2, p2: p3, construction: false },
-          { id: e3, kind: 'line', p1: p3, p2: p4, construction: false },
-          { id: e4, kind: 'line', p1: p4, p2: p1, construction: false },
-        )
-        // A rectangle is only a rectangle because of these four constraints.
-        pushConstraint(s, { kind: 'horizontal', e: e1 })
-        pushConstraint(s, { kind: 'horizontal', e: e3 })
-        pushConstraint(s, { kind: 'vertical', e: e2 })
-        pushConstraint(s, { kind: 'vertical', e: e4 })
-      })
-      finish()
-      store.solveActiveSketch()
-      store.setTool('select')
-    } else if (tool === 'circle' && draft.anchors.length === 2) {
-      const [c, edge] = draft.anchors
-      const radius = circleRadius(c, edge)
-      if (radius === null) {
-        draft.anchors.pop()
-        draft.anchorIds.pop()
-        store.setStatus('Circle radius must be greater than zero. Choose another edge point.')
-        return
-      }
-      store.editSketch((s) => {
-        const centre = ensurePoint(s, c, draft.anchorIds[0])
-        s.entities.push({
-          id: newId('e'),
-          kind: 'circle',
-          c: centre,
-          r: radius,
-          construction: false,
-        })
-      })
-      finish()
-      store.solveActiveSketch()
-      store.setTool('select')
-    } else if (tool === 'arc' && draft.anchors.length === 3) {
-      const [c, start, end] = draft.anchors
-      store.editSketch((s) => {
-        const centre = ensurePoint(s, c, draft.anchorIds[0])
-        const p1 = ensurePoint(s, start, draft.anchorIds[1])
-        // Force the end onto the arc's radius so the sketch starts consistent.
-        const r = v2.dist(c, start)
-        const dir = v2.norm(v2.sub(end, c))
-        const p2 = ensurePoint(s, [c[0] + dir[0] * r, c[1] + dir[1] * r], draft.anchorIds[2])
-        const a1 = Math.atan2(start[1] - c[1], start[0] - c[0])
-        const a2 = Math.atan2(end[1] - c[1], end[0] - c[0])
-        const ccw = (a2 - a1 + Math.PI * 2) % (Math.PI * 2) < Math.PI
-        s.entities.push({
-          id: newId('e'),
-          kind: 'arc',
-          c: centre,
-          p1,
-          p2,
-          ccw,
-          construction: false,
-        })
-      })
-      finish()
-      store.solveActiveSketch()
-      store.setTool('select')
-    }
-    forceRender((n) => n + 1)
   }
 
-  /** Preview chains for the tool currently mid-gesture. */
-  function previewFor(cursor: Vec2): Vec2[][] | null {
-    const draft = draftRef.current
-    if (draft.anchors.length === 0) return null
-    const a = draft.anchors[0]
-    switch (tool) {
-      case 'line':
-        return [[draft.anchors[draft.anchors.length - 1], cursor]]
-      case 'rectangle':
-        return [[a, [cursor[0], a[1]], cursor, [a[0], cursor[1]], a]]
-      case 'circle': {
-        const r = v2.dist(a, cursor)
-        const ring: Vec2[] = []
-        for (let i = 0; i <= 64; i++) {
-          const t = (i / 64) * Math.PI * 2
-          ring.push([a[0] + r * Math.cos(t), a[1] + r * Math.sin(t)])
-        }
-        return [ring, [a, cursor]]
-      }
-      case 'arc': {
-        if (draft.anchors.length === 1) return [[a, cursor]]
-        const start = draft.anchors[1]
-        const r = v2.dist(a, start)
-        const a1 = Math.atan2(start[1] - a[1], start[0] - a[0])
-        const a2 = Math.atan2(cursor[1] - a[1], cursor[0] - a[0])
-        let sweep = a2 - a1
-        while (sweep < 0) sweep += Math.PI * 2
-        const chain: Vec2[] = []
-        for (let i = 0; i <= 48; i++) {
-          const t = a1 + (sweep * i) / 48
-          chain.push([a[0] + r * Math.cos(t), a[1] + r * Math.sin(t)])
-        }
-        return [chain]
-      }
-      default:
-        return null
+  function snapAnchor(sketch: Sketch2D, cursor: Vec2, bypass: boolean): ToolAnchor {
+    const snap = findSnap(sketch, cursor, {
+      ...snapOptions(toleranceAt(), bypass),
+      from: toolRef.current.anchors.at(-1)?.point,
+    })
+    return anchorFromSnap(snap)
+  }
+
+  function showToolFrame(sketch: Sketch2D, spec: SketchToolSpec, anchor: ToolAnchor): ToolFrame {
+    const engine = engineRef.current
+    const toolFrame = spec.frame(toolRef.current, anchor, sketch)
+    toolRef.current = remember(toolRef.current, toolFrame)
+    if (!engine || !frame) return toolFrame
+    const store = useStore.getState()
+    const highlight = selectionHighlight(store.sketchSelection)
+    if (anchor.snapToPointId) highlight.points.push(anchor.snapToPointId)
+    if (anchor.onEntityId) highlight.entities.push(anchor.onEntityId)
+    engine.setSketch(
+      sketch,
+      frame,
+      { curves: toolFrame.curves, construction: toolFrame.construction },
+      highlight,
+      looseGeometry(sketch, store.sketchStatus),
+    )
+    const fields = toolFrame.fields.flatMap((field) => {
+      const at = engine.toScreen(frameToWorld(frame, field.at))
+      return at ? [{ ...field, x: at[0], y: at[1] }] : []
+    })
+    const current = headsUpRef.current
+    const focus =
+      current.focus && fields.some((field) => field.id === current.focus)
+        ? current.focus
+        : (fields[0]?.id ?? null)
+    setHeadsUp({ fields, focus, text: focus === current.focus ? current.text : '' })
+    return toolFrame
+  }
+
+  function refreshTool() {
+    const spec = sketchTool(useStore.getState().tool)
+    const sketch = activeSketchFeature(useStore.getState())?.sketch
+    const anchor = toolCursorRef.current
+    if (spec && sketch && anchor) showToolFrame(sketch, spec, anchor)
+  }
+
+  function commitTool(spec: SketchToolSpec, state: ToolState) {
+    const store = useStore.getState()
+    const sketch = activeSketchFeature(store)?.sketch
+    if (!sketch) return
+    let serial = 0
+    const trial = buildTool(
+      spec,
+      structuredClone(sketch),
+      state,
+      (prefix) => `${prefix}~${serial++}`,
+    )
+    if (trial.error) {
+      if (trial.error !== 'same point') store.setStatus(trial.error)
+      resetTool()
+      return
     }
+    let build: ToolBuild = {}
+    store.editSketch((draft) => {
+      build = buildTool(spec, draft, state, newId)
+    })
+    store.solveActiveSketch()
+    const next = activeSketchFeature(useStore.getState())?.sketch
+    toolRef.current =
+      spec.chain && next
+        ? continueFrom(next, build.chainFrom, state.origin ?? build.chainStart)
+        : emptyToolState()
+    setHeadsUp({ fields: [], focus: null, text: '' })
+    refreshTool()
+  }
+
+  function finishOpenTool(): boolean {
+    const spec = sketchTool(useStore.getState().tool)
+    if (!spec || spec.clicks !== 0) return false
+    if (canFinish(spec, toolRef.current)) commitTool(spec, toolRef.current)
+    else resetTool()
+    return true
+  }
+
+  function placeAt(anchor: ToolAnchor) {
+    const store = useStore.getState()
+    const spec = sketchTool(store.tool)
+    const sketch = activeSketchFeature(store)?.sketch
+    if (!spec || !sketch) return
+    const state = toolRef.current
+    const toolFrame = spec.frame(state, anchor, sketch)
+    if (toolFrame.blocked) {
+      store.setStatus(toolFrame.blocked)
+      return
+    }
+    const previous = state.anchors.at(-1)
+    if (
+      spec.clicks === 0 &&
+      previous &&
+      v2.dist(previous.point, toolFrame.anchor.point) <= toleranceAt() * 0.25
+    ) {
+      finishOpenTool()
+      return
+    }
+    const placed = placeAnchor(spec, remember(state, toolFrame), toolFrame)
+    if (spec.chain && placed.state.anchors.length === 2) {
+      const [a, b] = placed.state.anchors
+      if (
+        (a.snapToPointId && a.snapToPointId === b.snapToPointId) ||
+        v2.dist(a.point, b.point) < 1e-9
+      ) {
+        resetTool()
+        return
+      }
+    }
+    if (placed.complete) {
+      commitTool(spec, placed.state)
+      return
+    }
+    toolRef.current = placed.state
+    setHeadsUp({ ...headsUpRef.current, focus: null, text: '' })
+    showToolFrame(sketch, spec, toolFrame.anchor)
+    store.setStatus(spec.prompts[Math.min(placed.state.anchors.length, spec.prompts.length - 1)])
+  }
+
+  function lockFocused(): boolean {
+    const hud = headsUpRef.current
+    const field = hud.fields.find((candidate) => candidate.id === hud.focus)
+    if (!field || !hud.text.trim()) return true
+    const store = useStore.getState()
+    let value: number
+    try {
+      value =
+        field.kind === 'length'
+          ? parseLength(hud.text, store.doc.units)
+          : field.kind === 'angle'
+            ? parseAngle(hud.text)
+            : parseInteger(hud.text)
+    } catch (error) {
+      store.setStatus((error as Error).message)
+      return false
+    }
+    if (!Number.isFinite(value) || (field.kind !== 'angle' && value <= 0)) {
+      store.setStatus(`${field.label} has to be more than zero.`)
+      return false
+    }
+    toolRef.current = lockField(toolRef.current, field.id, value)
+    setHeadsUp({ ...hud, text: '' })
+    return true
+  }
+
+  toolActionsRef.current = {
+    reset: resetTool,
+    refresh: refreshTool,
+    place: () => {
+      if (toolCursorRef.current) placeAt(toolCursorRef.current)
+    },
+    finish: finishOpenTool,
+    lock: lockFocused,
+    focusNext: () => {
+      const hud = headsUpRef.current
+      if (!hud.fields.length) return
+      const index = hud.fields.findIndex((field) => field.id === hud.focus)
+      setHeadsUp({ ...hud, focus: hud.fields[(index + 1) % hud.fields.length].id, text: '' })
+    },
+    type: (text: string) => setHeadsUp({ ...headsUpRef.current, text }),
   }
 
   // --- pointer handling ----------------------------------------------------
@@ -928,16 +977,26 @@ export function Viewport() {
         return
       }
 
-      const snap = findSnap(sketch, cursor, {
+      const anchor = snapAnchor(sketch, cursor, e.altKey)
+      const spec = sketchTool(tool)
+      if (!spec) {
+        const snap = findSnap(sketch, cursor, snapOptions(toleranceAt(), e.altKey))
+        setCursorHint(snap.hint ? { x: e.clientX, y: e.clientY, text: snap.hint } : null)
+        const highlight = selectionHighlight(store.sketchSelection)
+        if (snap.snapToPointId) highlight.points.push(snap.snapToPointId)
+        if (snap.onEntityId) highlight.entities.push(snap.onEntityId)
+        engine.setSketch(sketch, frame, null, highlight, looseGeometry(sketch, store.sketchStatus))
+        return
+      }
+      toolCursorRef.current = anchor
+      const toolFrame = showToolFrame(sketch, spec, anchor)
+      const hint = toolFrame.blocked ?? (toolRef.current.anchors.length ? null : spec.prompts[0])
+      const snapHint = findSnap(sketch, cursor, {
         ...snapOptions(toleranceAt(), e.altKey),
-        from: draftRef.current.anchors.at(-1),
-      })
-      setCursorHint(snap.hint ? { x: e.clientX, y: e.clientY, text: snap.hint } : null)
-      const preview = tool === 'select' ? null : previewFor(snap.point)
-      const highlight = selectionHighlight(store.sketchSelection)
-      if (snap.snapToPointId) highlight.points.push(snap.snapToPointId)
-      if (snap.onEntityId) highlight.entities.push(snap.onEntityId)
-      engine.setSketch(sketch, frame, preview, highlight, looseGeometry(sketch, store.sketchStatus))
+        from: toolRef.current.anchors.at(-1)?.point,
+      }).hint
+      const text = toolFrame.blocked ?? snapHint ?? hint
+      setCursorHint(text ? { x: e.clientX, y: e.clientY, text } : null)
       return
     }
 
@@ -1009,8 +1068,9 @@ export function Viewport() {
         return
       }
 
+      if (!isSketchTool(tool)) return
       engine.setControlsEnabled(false)
-      commitClick(cursor, e.altKey)
+      placeAt(snapAnchor(sketch, cursor, e.altKey))
       return
     }
 
@@ -1209,9 +1269,46 @@ export function Viewport() {
         return
       }
       const store = useStore.getState()
+      const mod = e.ctrlKey || e.metaKey
+      const hud = headsUpRef.current
+      const actions = toolActionsRef.current
+      if (store.activeSketch && isSketchTool(store.tool) && actions && !mod && !e.altKey) {
+        if (hud.fields.length && hud.focus) {
+          const typing = hud.text.length > 0
+          if (/^[0-9.,+\-*/()]$/.test(e.key) || (typing && /^[a-zA-Z ]$/.test(e.key))) {
+            e.preventDefault()
+            actions.type(hud.text + e.key)
+            return
+          }
+          if (e.key === 'Backspace' && typing) {
+            e.preventDefault()
+            actions.type(hud.text.slice(0, -1))
+            return
+          }
+          if (e.key === 'Tab') {
+            e.preventDefault()
+            if (actions.lock()) {
+              actions.refresh()
+              actions.focusNext()
+            }
+            return
+          }
+        }
+        if (e.key === 'Enter') {
+          e.preventDefault()
+          if (hud.text && !actions.lock()) return
+          if (!hud.text && actions.finish()) return
+          actions.place()
+          return
+        }
+        if (e.key === 'Escape' && hud.text) {
+          actions.type('')
+          return
+        }
+      }
       if (e.key === 'Escape') {
-        if (draftRef.current.anchors.length) {
-          draftRef.current = { anchors: [], anchorIds: [] }
+        if (toolRef.current.anchors.length) {
+          toolActionsRef.current?.reset()
           forceRender((n) => n + 1)
         } else if (store.tool !== 'select') {
           store.setTool('select')
@@ -1222,7 +1319,6 @@ export function Viewport() {
           store.setSubSelection([])
         }
       }
-      const mod = e.ctrlKey || e.metaKey
       const key = e.code.startsWith('Key') ? e.code.slice(3).toLowerCase() : e.key.toLowerCase()
 
       if (mod && key === 'z') {
@@ -1399,8 +1495,8 @@ export function Viewport() {
           }
           // Mid-drawing, right-click means "stop this chain" - that has to keep
           // working, or the line tool becomes a trap.
-          if (draftRef.current.anchors.length) {
-            draftRef.current = { anchors: [], anchorIds: [] }
+          if (toolRef.current.anchors.length) {
+            if (!toolActionsRef.current?.finish()) toolActionsRef.current?.reset()
             forceRender((n) => n + 1)
             return
           }
@@ -1487,6 +1583,23 @@ export function Viewport() {
         </div>
       ))}
 
+      {activeSketch &&
+        headsUp.fields.map((field) => (
+          <div
+            key={field.id}
+            className={`vp-headsup${field.id === headsUp.focus ? ' focus' : ''}${field.locked ? ' locked' : ''}`}
+            style={{ left: field.x, top: field.y }}
+            title={`${field.label}: type a value, Tab for the next box, Enter to place`}
+          >
+            <span className="vp-headsup-label">{field.label}</span>
+            <span className="vp-headsup-value">
+              {field.id === headsUp.focus && headsUp.text
+                ? headsUp.text
+                : headsUpValue(field, doc.units)}
+            </span>
+          </div>
+        ))}
+
       {cursorHint && (
         <div className="vp-snap-hint" style={{ left: cursorHint.x + 14, top: cursorHint.y + 14 }}>
           {cursorHint.text}
@@ -1509,6 +1622,32 @@ export function Viewport() {
       <ViewCube />
     </div>
   )
+}
+
+interface HeadsUp {
+  fields: Array<ToolField & { x: number; y: number }>
+  focus: string | null
+  text: string
+}
+
+interface ToolActions {
+  reset: () => void
+  refresh: () => void
+  place: () => void
+  finish: () => boolean
+  lock: () => boolean
+  focusNext: () => void
+  type: (text: string) => void
+}
+
+function freeToolAnchor(point: Vec2): ToolAnchor {
+  return { point, snapToPointId: null, onEntityId: null, onEntityKind: null, align: null }
+}
+
+function headsUpValue(field: ToolField, unit: LengthUnit): string {
+  if (field.kind === 'count') return String(Math.round(field.value))
+  if (field.kind === 'angle') return `${field.value.toFixed(1)}°`
+  return lengthLabel(field.value, unit)
 }
 
 /** Split a sketch selection into the shape the engine wants for highlighting. */

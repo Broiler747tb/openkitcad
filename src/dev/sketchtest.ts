@@ -1,6 +1,16 @@
 import { v2, type Vec2 } from '../core/math'
 import { closestPoint, curveOf, intersectEntities, pointLookup, tessellate } from '../sketch/curves'
 import { selectProfiles, sketchRegions } from '../sketch/regions'
+import {
+  buildTool,
+  emptyToolState,
+  lockField,
+  placeAnchor,
+  remember,
+} from '../sketch/tools/session'
+import { freeAnchor } from '../sketch/tools/shapes'
+import { sketchTool } from '../sketch/tools/specs'
+import type { SketchToolId, ToolAnchor } from '../sketch/tools/types'
 import { applySolve, solveSketch } from '../sketch/solver'
 import { emptySketch, type Constraint, type Sketch2D, type SketchEntity } from '../sketch/types'
 import type { TestResult } from './selftest'
@@ -499,6 +509,220 @@ export function runSketchTest(): TestResult[] {
       'a profile that no longer exists is reported missing',
       loopsOf(plain, ['gone']) === 'failed 1 missing',
       loopsOf(plain, ['gone']),
+    )
+  })
+
+  guard('tools', () => {
+    type Step = { at: Vec2; click?: boolean; lock?: Record<string, number>; anchor?: ToolAnchor }
+    const drawWith = (d: Draft, id: SketchToolId, steps: Step[]) => {
+      const spec = sketchTool(id)!
+      let state = emptyToolState()
+      for (const step of steps) {
+        for (const [key, value] of Object.entries(step.lock ?? {})) {
+          state = lockField(state, key, value)
+        }
+        const frame = spec.frame(state, step.anchor ?? freeAnchor(step.at), d.sketch)
+        state = remember(state, frame)
+        if (step.click === false) continue
+        const placed = placeAnchor(spec, state, frame)
+        state = placed.state
+        if (placed.complete) break
+      }
+      const before = d.sketch.entities.length
+      const build = buildTool(spec, d.sketch, state, d.id)
+      return { build, added: d.sketch.entities.slice(before) }
+    }
+    const areaOf = (d: Draft) =>
+      sketchRegions(d.sketch)
+        .regions.reduce((sum, region) => sum + region.area, 0)
+        .toFixed(2)
+    const settled = (d: Draft) => {
+      const result = solved(d)
+      return result.ok ? `ok dof ${result.dof}` : `failed ${result.residual.toExponential(2)}`
+    }
+
+    const lined = draft()
+    const { added: segment } = drawWith(lined, 'line', [
+      { at: [0, 0] },
+      { at: [7, 3], lock: { length: 25, angle: 30 } },
+    ])
+    solved(lined)
+    const seg = segment[0] as { p1: string; p2: string }
+    const segLength = v2.dist(at(lined, seg.p1), at(lined, seg.p2))
+    check(
+      'a line drawn with a typed length and angle keeps the length as a dimension',
+      Math.abs(segLength - 25) < 1e-6 &&
+        lined.sketch.constraints.some((c) => c.kind === 'distance' && c.value === 25) &&
+        Math.abs(Math.atan2(at(lined, seg.p2)[1], at(lined, seg.p2)[0]) - Math.PI / 6) < 1e-6,
+      `${segLength.toFixed(6)} mm`,
+    )
+
+    const cases: Array<{ name: string; tool: SketchToolId; steps: Step[]; area: number }> = [
+      {
+        name: 'a 2-point rectangle',
+        tool: 'rectangle',
+        steps: [{ at: [0, 0] }, { at: [40, 30] }],
+        area: 1200,
+      },
+      {
+        name: 'a centre rectangle',
+        tool: 'rectangleCentre',
+        steps: [{ at: [10, 10] }, { at: [30, 25] }],
+        area: 1200,
+      },
+      {
+        name: 'a 3-point rectangle at an angle',
+        tool: 'rectangle3',
+        steps: [{ at: [0, 0] }, { at: [30, 40] }, { at: [0, 0], lock: { width: 20 } }],
+        area: 1000,
+      },
+      {
+        name: 'a circle with a typed diameter',
+        tool: 'circle',
+        steps: [{ at: [0, 0] }, { at: [3, 0], lock: { diameter: 20 } }],
+        area: Math.PI * 100,
+      },
+      {
+        name: 'a 2-point circle',
+        tool: 'circle2',
+        steps: [{ at: [0, 0] }, { at: [10, 0] }],
+        area: Math.PI * 25,
+      },
+      {
+        name: 'a 3-point circle',
+        tool: 'circle3',
+        steps: [{ at: [0, 0] }, { at: [10, 0] }, { at: [5, 5] }],
+        area: Math.PI * 25,
+      },
+      {
+        name: 'an inscribed hexagon',
+        tool: 'polygonInscribed',
+        steps: [{ at: [0, 0] }, { at: [10, 0] }],
+        area: ((3 * Math.sqrt(3)) / 2) * 100,
+      },
+      {
+        name: 'a circumscribed hexagon',
+        tool: 'polygon',
+        steps: [{ at: [0, 0] }, { at: [10, 0] }],
+        area: 2 * Math.sqrt(3) * 100,
+      },
+      {
+        name: 'an edge polygon with five sides',
+        tool: 'polygonEdge',
+        steps: [{ at: [0, 0] }, { at: [10, 0], lock: { sides: 5 } }, { at: [5, 5] }],
+        area: (5 * 100) / (4 * Math.tan(Math.PI / 5)),
+      },
+      {
+        name: 'a centre to centre slot',
+        tool: 'slot',
+        steps: [{ at: [0, 0] }, { at: [30, 0] }, { at: [15, 5] }],
+        area: 300 + Math.PI * 25,
+      },
+      {
+        name: 'an overall slot',
+        tool: 'slotOverall',
+        steps: [{ at: [0, 0] }, { at: [40, 0] }, { at: [20, 5] }],
+        area: 300 + Math.PI * 25,
+      },
+      {
+        name: 'a centre point slot',
+        tool: 'slotCentrePoint',
+        steps: [{ at: [0, 0] }, { at: [15, 0] }, { at: [0, 5] }],
+        area: 300 + Math.PI * 25,
+      },
+      {
+        name: 'an ellipse',
+        tool: 'ellipse',
+        steps: [{ at: [0, 0] }, { at: [20, 0] }, { at: [3, 10] }],
+        area: Math.PI * 200,
+      },
+    ]
+    for (const shape of cases) {
+      const d = draft()
+      const { build } = drawWith(d, shape.tool, shape.steps)
+      const drawn = areaOf(d)
+      const status = settled(d)
+      const after = areaOf(d)
+      check(
+        `${shape.name} closes into one profile of the right area and keeps it when solved`,
+        !build.error &&
+          Math.abs(Number(drawn) - shape.area) < 0.01 &&
+          drawn === after &&
+          status.startsWith('ok'),
+        `${build.error ?? ''} drawn ${drawn}, solved ${after}, expected ${shape.area.toFixed(2)}, ${status}`,
+      )
+    }
+
+    const edged = draft()
+    drawWith(edged, 'polygonEdge', [{ at: [0, 0] }, { at: [10, 0] }, { at: [5, -5] }])
+    const edgeCorners = edged.sketch.points.filter((p) => p.id !== 'origin')
+    check(
+      'an edge polygon keeps the edge that was drawn',
+      edgeCorners.some((p) => Math.abs(p.x - 10) < 1e-9 && Math.abs(p.y) < 1e-9) &&
+        edgeCorners.every((p) => p.y <= 1e-9),
+      edgeCorners.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' '),
+    )
+
+    const bent = draft()
+    const { added: bentArc } = drawWith(bent, 'arc3', [
+      { at: [0, 0] },
+      { at: [10, 0] },
+      { at: [5, 5] },
+    ])
+    const arc3 = bentArc[0] as { kind: string; c: string; ccw: boolean }
+    check(
+      'a 3-point arc bends through the third point',
+      arc3?.kind === 'arc' && !arc3.ccw && v2.dist(at(bent, arc3.c), [5, 0]) < 1e-9,
+      JSON.stringify(arc3),
+    )
+
+    const swung = draft()
+    const { added: swungArc } = drawWith(swung, 'arc', [
+      { at: [0, 0] },
+      { at: [10, 0] },
+      { at: [7, 7], click: false },
+      { at: [0, 10], click: false },
+      { at: [-10, 0], click: false },
+      { at: [0, -10] },
+    ])
+    const swing = swungArc[0] as { kind: string; ccw: boolean; p2: string }
+    check(
+      'a centre point arc follows the way the cursor swung, past half a turn',
+      swing?.kind === 'arc' && swing.ccw && v2.dist(at(swung, swing.p2), [0, -10]) < 1e-9,
+      JSON.stringify(swing),
+    )
+
+    const joined = draft()
+    const lineEnd = point(joined, 10, 0)
+    entity(joined, { kind: 'line', p1: point(joined, 0, 0), p2: lineEnd, construction: false })
+    const { build: tangentBuild, added: tangentAdded } = drawWith(joined, 'arcTangent', [
+      { at: [10, 0], anchor: { ...freeAnchor([10, 0]), snapToPointId: lineEnd } },
+      { at: [10, 10] },
+    ])
+    const tangentArc = tangentAdded[0] as { kind: string; c: string; ccw: boolean; p1: string }
+    const tangentStatus = settled(joined)
+    check(
+      'a tangent arc carries on from the end of a line and stays tangent when solved',
+      !tangentBuild.error &&
+        tangentArc?.kind === 'arc' &&
+        tangentArc.p1 === lineEnd &&
+        tangentArc.ccw &&
+        v2.dist(at(joined, tangentArc.c), [10, 5]) < 1e-6 &&
+        joined.sketch.constraints.some((c) => c.kind === 'tangent') &&
+        tangentStatus.startsWith('ok'),
+      `${tangentBuild.error ?? ''} ${JSON.stringify(tangentArc)} ${tangentStatus}`,
+    )
+
+    const curvy = draft()
+    const { added: curve } = drawWith(curvy, 'spline', [
+      { at: [0, 0] },
+      { at: [10, 5] },
+      { at: [20, 0] },
+    ])
+    check(
+      'a fit point spline keeps every clicked point',
+      curve[0]?.kind === 'spline' && (curve[0] as { points: string[] }).points.length === 3,
+      JSON.stringify(curve[0]),
     )
   })
 

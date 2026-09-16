@@ -513,7 +513,7 @@ export class ViewportEngine {
   setSketch(
     sketch: Sketch2D,
     frame: Frame,
-    preview: Vec2[][] | null,
+    preview: { curves: Vec2[][]; construction?: Vec2[][] } | null,
     highlight: { points: string[]; entities: string[] } = { points: [], entities: [] },
     /**
      * Geometry the solver says is still free. Drawn in a cool blue against the
@@ -565,13 +565,15 @@ export class ViewportEngine {
     addLines(construction, CONSTRUCTION, true)
 
     if (preview) {
-      const previewPoints: THREE.Vector3[] = []
-      for (const chain of preview) {
-        for (let i = 0; i + 1 < chain.length; i++) {
-          previewPoints.push(to3(chain[i]), to3(chain[i + 1]))
+      const segments = (chains: Vec2[][]) => {
+        const points: THREE.Vector3[] = []
+        for (const chain of chains) {
+          for (let i = 0; i + 1 < chain.length; i++) points.push(to3(chain[i]), to3(chain[i + 1]))
         }
+        return points
       }
-      addLines(previewPoints, ACCENT, true)
+      addLines(segments(preview.curves), ACCENT)
+      addLines(segments(preview.construction ?? []), CONSTRUCTION, true)
     }
 
     // Sketch points, split by whether the solver still lets them move.
@@ -1454,6 +1456,14 @@ export class ViewportEngine {
     }
   }
 
+  toScreen(at: Vec3): [number, number] | null {
+    this.camera.updateMatrixWorld()
+    const v = new THREE.Vector3(...at).project(this.camera)
+    if (v.z > 1) return null
+    const rect = this.renderer.domElement.getBoundingClientRect()
+    return [rect.left + ((v.x + 1) / 2) * rect.width, rect.top + ((1 - v.y) / 2) * rect.height]
+  }
+
   /** Millimetres per screen pixel at a point, for size-independent snapping. */
   pixelSize(at: Vec3): number {
     const distance = this.camera.position.distanceTo(new THREE.Vector3(...at))
@@ -1497,9 +1507,7 @@ export class ViewportEngine {
     const centre = new THREE.Vector3(...frame.origin)
     this.controls.target.copy(centre)
     this.camera.position.copy(centre).addScaledVector(new THREE.Vector3(...frame.normal), distance)
-    // Sketch x points up the screen rather than across it, which turns the
-    // drawing a quarter turn anticlockwise to match the 3D view's home angle.
-    this.camera.up.set(...frame.xDir)
+    this.camera.up.set(...frame.yDir)
     this.camera.lookAt(centre)
   }
 

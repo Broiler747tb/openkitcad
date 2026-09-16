@@ -1,3 +1,4 @@
+import type { SketchToolId } from '../sketch/tools/types'
 import { create } from 'zustand'
 import { resolveParameters } from './parameters'
 import type { BodyMesh, EvaluateResult, Instance, KernelError } from '../kernel/types'
@@ -66,8 +67,7 @@ export function newId(prefix: string): string {
 
 export const DEFAULT_BODY_COLOUR = '#b9c0c7'
 
-export type ToolId =
-  'select' | 'line' | 'rectangle' | 'circle' | 'arc' | 'dimension' | 'trim' | 'measure'
+export type ToolId = 'select' | 'dimension' | 'trim' | 'measure' | SketchToolId
 
 export interface Selection {
   kind: 'none' | 'body' | 'occurrence' | 'feature' | 'face' | 'edge'

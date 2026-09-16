@@ -1,7 +1,9 @@
 import { findSnap } from '../sketch/inference'
 import { emptySketch } from '../sketch/types'
 import { normalizePreferences, DEFAULT_PREFERENCES } from '../doc/preferences'
-import { circleRadius, continueLine, emptyDraft } from '../sketch/draft'
+import { buildTool, continueFrom, emptyToolState, placeAnchor } from '../sketch/tools/session'
+import { freeAnchor } from '../sketch/tools/shapes'
+import { sketchTool } from '../sketch/tools/specs'
 import { hitTestSketch } from '../sketch/inference'
 import { sketchActions } from '../sketch/actions'
 export function runPrecisionTest() {
@@ -45,25 +47,33 @@ export function runPrecisionTest() {
     'zero disables gizmo snapping',
     normalizePreferences({ moveSnap: 0, angleSnap: 0 }).moveSnap === 0,
   )
-  check('small exact circles retain radius', circleRadius([0, 0], [0.2, 0]) === 0.2)
-  check('zero-radius circle is rejected', circleRadius([1, 1], [1, 1]) === null)
+  const circleFrom = (centre: [number, number], edge: [number, number]) => {
+    const spec = sketchTool('circle')!
+    let state = emptyToolState()
+    for (const at of [centre, edge]) {
+      state = placeAnchor(spec, state, spec.frame(state, freeAnchor(at), sketch)).state
+    }
+    const scratch = emptySketch()
+    let n = 0
+    const build = buildTool(spec, scratch, state, (prefix) => `${prefix}${++n}`)
+    const circle = scratch.entities.find((e) => e.kind === 'circle') as { r: number } | undefined
+    return build.error ? null : (circle?.r ?? null)
+  }
+  check('small exact circles retain radius', circleFrom([0, 0], [0.2, 0]) === 0.2)
+  check('zero-radius circle is rejected', circleFrom([1, 1], [1, 1]) === null)
   sketch.points.push({ id: 'a', x: 10, y: 10 }, { id: 'b', x: 20, y: 10 })
   sketch.entities.push({ id: 'line', kind: 'line', p1: 'a', p2: 'b', construction: false })
-  const chain = continueLine(sketch, 'b')
-  check('chained line reuses endpoint ID', chain.anchorIds[0] === 'b')
+  const chain = continueFrom(sketch, 'b')
+  check('chained line reuses endpoint ID', chain.anchors[0]?.snapToPointId === 'b')
   check(
     'chained line uses solved endpoint',
-    chain.anchors[0][0] === 20 && chain.anchors[0][1] === 10,
+    chain.anchors[0]?.point[0] === 20 && chain.anchors[0]?.point[1] === 10,
   )
-  check('deleted endpoint cancels chain', continueLine(sketch, 'deleted').anchors.length === 0)
-  const draft1 = emptyDraft(),
-    draft2 = emptyDraft()
-  draft1.anchors.push([1, 2])
-  draft1.anchorIds.push('a')
-  check(
-    'new gesture does not inherit anchors',
-    draft2.anchors.length === 0 && draft2.anchorIds.length === 0,
-  )
+  check('deleted endpoint cancels chain', continueFrom(sketch, 'deleted').anchors.length === 0)
+  const draft1 = emptyToolState(),
+    draft2 = emptyToolState()
+  draft1.anchors.push(freeAnchor([1, 2]))
+  check('new gesture does not inherit anchors', draft2.anchors.length === 0)
   const hit = hitTestSketch(sketch, [10, 10], 1, false)
   check('trim hits edge even near endpoint', hit?.kind === 'entity' && hit.id === 'line')
   const trim = hit && sketchActions(sketch, [hit], [15, 10]).find((a) => a.id === 'trim')

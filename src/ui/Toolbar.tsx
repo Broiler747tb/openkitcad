@@ -11,14 +11,20 @@ import { createSketchAction, resolveCommand, SHORTCUTS, toggleVisibility } from 
 import { powerActions } from './PowerTools'
 import { ParametersDialog } from './ParametersDialog'
 import { startCommand } from './command/commands'
+import { SKETCH_TOOL_MENUS, SKETCH_TOOLS } from '../sketch/tools/specs'
 
-const sketchTools: Array<[ToolId, string, string, string]> = [
-  ['line', 'Line', '╱', 'L'],
-  ['rectangle', 'Rectangle', '▭', 'R'],
-  ['circle', 'Circle', '○', 'C'],
-  ['arc', 'Arc', '◠', ''],
-  ['dimension', 'Dimension', '↔', 'D'],
-]
+const SKETCH_MENU_ICONS: Record<string, string> = {
+  Line: '╱',
+  Rectangle: '▭',
+  Circle: '○',
+  Arc: '◠',
+  Polygon: '⬡',
+  Ellipse: '⬭',
+  Slot: '⊂⊃',
+  Spline: '∿',
+  Point: '·',
+}
+const RIBBON_MENUS = ['Line', 'Rectangle', 'Circle', 'Arc', 'Polygon', 'Slot', 'Spline']
 const labels: Record<string, string> = {
   extrude: 'Extrude',
   revolve: 'Revolve',
@@ -55,6 +61,7 @@ export function Toolbar({
   const [parametersOpen, setParametersOpen] = useState(false)
   const [pending, setPending] = useState<string | null>(null),
     [menu, setMenu] = useState<string | null>(null)
+  const [variants, setVariants] = useState<Record<string, ToolId>>({})
   const root = useRef<HTMLElement>(null)
   const sketch = activeSketchFeature(state)
   const creations = objectActions({ kind: 'none' }),
@@ -75,14 +82,27 @@ export function Toolbar({
     group: 'Design',
     run: () => invoke(id),
   })
+  const pickTool = (id: ToolId) => {
+    setPending(null)
+    setMenu(null)
+    state.setTool(id)
+  }
+  const toolActions: ObjectAction[] = SKETCH_TOOLS.map((tool) => ({
+    id: 'tool-' + tool.id,
+    label: tool.label,
+    hint: tool.hint,
+    group: tool.menu,
+    run: () => pickTool(tool.id),
+  }))
   const commands = state.activeSketch
     ? [
-        ...sketchTools.map(([id, label]) => ({
-          id,
-          label,
+        ...toolActions,
+        {
+          id: 'dimension',
+          label: 'Sketch Dimension',
           group: 'Sketch',
-          run: () => state.setTool(id),
-        })),
+          run: () => pickTool('dimension'),
+        },
         ...sketchCommands,
         cmd('trim'),
         cmd('extrude'),
@@ -367,22 +387,61 @@ export function Toolbar({
           <>
             {group(
               'CREATE',
-              sketchCommands,
-              sketchTools.slice(0, 4).map(([id, label, glyph, key]) => (
-                <button
-                  key={id}
-                  className={'ribbon-tool ' + (state.tool === id ? 'active' : '')}
-                  title={label + ' ' + key}
-                  aria-pressed={state.tool === id}
-                  onClick={() => {
-                    setPending(null)
-                    state.setTool(id)
-                  }}
-                >
-                  <span className="tool-symbol">{glyph}</span>
-                  <span>{label}</span>
-                </button>
-              )),
+              [...toolActions, ...sketchCommands],
+              RIBBON_MENUS.map((name) => {
+                const tools = SKETCH_TOOL_MENUS.find((entry) => entry.menu === name)?.tools ?? []
+                const chosen = tools.find((tool) => tool.id === variants[name]) ?? tools[0]
+                if (!chosen) return null
+                const active = tools.some((tool) => tool.id === state.tool)
+                const flyout = 'tool:' + name
+                return (
+                  <div key={name} className={'ribbon-split' + (active ? ' active' : '')}>
+                    <button
+                      className={'ribbon-tool ' + (active ? 'active' : '')}
+                      title={
+                        chosen.label +
+                        (chosen.shortcut ? ' (' + chosen.shortcut + ')' : '') +
+                        ' - ' +
+                        chosen.hint
+                      }
+                      aria-pressed={active}
+                      onClick={() => pickTool(chosen.id)}
+                    >
+                      <span className="tool-symbol">{SKETCH_MENU_ICONS[name]}</span>
+                      <span>{name}</span>
+                    </button>
+                    {tools.length > 1 && (
+                      <button
+                        className="ribbon-split-arrow"
+                        aria-label={name + ' options'}
+                        aria-expanded={menu === flyout}
+                        onClick={() => setMenu(menu === flyout ? null : flyout)}
+                      >
+                        ▾
+                      </button>
+                    )}
+                    {menu === flyout && (
+                      <div className="fusion-dropdown ribbon-split-menu" role="menu">
+                        {tools.map((tool) => (
+                          <button
+                            key={tool.id}
+                            role="menuitem"
+                            className={state.tool === tool.id ? 'active' : ''}
+                            title={tool.hint}
+                            onClick={() => {
+                              setVariants({ ...variants, [name]: tool.id })
+                              pickTool(tool.id)
+                            }}
+                          >
+                            {tool.label}
+                            {tool.shortcut ? <kbd>{tool.shortcut}</kbd> : null}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              }),
             )}
             {group(
               'MODIFY',
