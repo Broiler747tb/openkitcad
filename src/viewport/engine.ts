@@ -163,6 +163,9 @@ export class ViewportEngine {
   private highlightGroup = new THREE.Group()
   private clipPlane = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0)
   private sectionPlanes: THREE.Plane[] = []
+  private sectionEnabled = false
+  private slicePlane: THREE.Plane | null = null
+  private sketchDisplay = { points: true }
   private dimmed = false
   private highlightKeys: { hovered: string | null; selected: string | null } = {
     hovered: null,
@@ -486,11 +489,33 @@ export class ViewportEngine {
     if (!flipped) normal.negate()
     this.clipPlane.normal.copy(normal)
     this.clipPlane.constant = flipped ? -position : position
-    this.sectionPlanes = enabled ? [this.clipPlane] : []
+    this.sectionEnabled = enabled
+    this.applyClipping()
+  }
+
+  setSlice(frame: Frame | null) {
+    this.slicePlane = frame
+      ? new THREE.Plane().setFromNormalAndCoplanarPoint(
+          new THREE.Vector3(...frame.normal).negate(),
+          new THREE.Vector3(...frame.origin),
+        )
+      : null
+    this.applyClipping()
+  }
+
+  private applyClipping() {
+    this.sectionPlanes = [
+      ...(this.sectionEnabled ? [this.clipPlane] : []),
+      ...(this.slicePlane ? [this.slicePlane] : []),
+    ]
     for (const { mesh, outline } of this.objects.values()) {
       ;(mesh.material as THREE.Material).clippingPlanes = this.sectionPlanes
       ;(outline.material as THREE.Material).clippingPlanes = this.sectionPlanes
     }
+  }
+
+  setSketchDisplay(display: { points: boolean }) {
+    this.sketchDisplay = display
   }
 
   // -------------------------------------------------------------------------
@@ -600,8 +625,10 @@ export class ViewportEngine {
       points.renderOrder = 11
       this.sketchGroup.add(points)
     }
-    addPoints(locked, 0xffffff, 6)
-    addPoints(free, UNDERDEFINED, 7)
+    if (this.sketchDisplay.points || highlight.points.length) {
+      addPoints(this.sketchDisplay.points ? locked : [], 0xffffff, 6)
+      addPoints(this.sketchDisplay.points ? free : [], UNDERDEFINED, 7)
+    }
   }
 
   setSketchOverlays(overlays: SketchOverlay[]) {

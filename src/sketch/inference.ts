@@ -44,7 +44,7 @@ export interface SnapOptions {
 
 /** Something in a sketch the user can point at. */
 export interface SketchTarget {
-  kind: 'point' | 'entity'
+  kind: 'point' | 'entity' | 'constraint'
   id: string
 }
 

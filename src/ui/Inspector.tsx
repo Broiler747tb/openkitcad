@@ -6,6 +6,8 @@ import { chooseAction, chooseSketchAction } from './ActionDialog'
 import { mountFeature, objectActions } from './ObjectMenu'
 import { FlyoutMenu } from './FlyoutMenu'
 import { activeSketchFeature, bodyBounds, newId, targetBodies, useStore } from '../doc/store'
+import { usePreferences } from '../doc/preferences'
+import { startConstraintTool } from './sketchConstraints'
 import { sketchActions } from '../sketch/actions'
 import { CONFIDENCE_LABEL, getPart } from '../catalogue'
 import { fmt } from '../core/math'
@@ -16,6 +18,79 @@ import { kernel } from '../kernel/api'
 import type { Clash, PrintWarning } from '../kernel/types'
 import { quantity } from '../core/quantity'
 import { lengthLabel, lengthText, volumeLabel } from '../core/units'
+
+function SketchOptions() {
+  const values = usePreferences((s) => s.values)
+  const setPreference = usePreferences((s) => s.set)
+  const store = useStore()
+  const sketch = activeSketchFeature(store)
+  const selected = store.sketchSelection.filter((t) => t.kind === 'entity')
+  const option = (key: keyof typeof values, label: string, hint: string) => (
+    <label className="sketch-option" title={hint}>
+      <input
+        type="checkbox"
+        checked={values[key] as boolean}
+        onChange={(e) => setPreference({ [key]: e.target.checked })}
+      />
+      {label}
+    </label>
+  )
+  return (
+    <section className="section sketch-options">
+      <h3>Options</h3>
+      <div className="sketch-linetype">
+        <span>Linetype</span>
+        <button
+          title="Construction - turns the selected curves into guides that are not part of any profile"
+          disabled={!selected.length}
+          onClick={() => {
+            store.editSketch((draft) => {
+              const ids = new Set(selected.map((t) => t.id))
+              const picked = draft.entities.filter((e) => ids.has(e.id))
+              const make = picked.some((e) => !e.construction)
+              for (const e of picked) e.construction = make
+            })
+          }}
+        >
+          ┄ Construction
+        </button>
+        <button
+          title="Fix/UnFix - pins the selection where it is, or releases it"
+          disabled={!store.sketchSelection.length}
+          onClick={() => startConstraintTool('fix')}
+        >
+          🔒 Fix/UnFix
+        </button>
+      </div>
+      <button
+        className="btn sketch-look-at"
+        title="Look At - turns the view to face the sketch"
+        onClick={() => window.dispatchEvent(new CustomEvent('okc:look-at'))}
+      >
+        Look At
+      </button>
+      {option('gridVisible', 'Sketch Grid', 'Shows the grid on the sketch plane.')}
+      {option('snapGrid', 'Snap', 'Clicks land on the grid when nothing else is near.')}
+      {option('sketchSlice', 'Slice', 'Cuts away the bodies in front of the sketch plane.')}
+      {option('sketchShowProfile', 'Show Profile', 'Shades the closed areas you can extrude.')}
+      {option('sketchShowPoints', 'Show Points', 'Shows the end points and centres.')}
+      {option('sketchShowDimensions', 'Show Dimensions', 'Shows the sizes you have set.')}
+      {option('sketchShowConstraints', 'Show Constraints', 'Shows the constraint glyphs.')}
+      {sketch && (
+        <p className="hint">
+          {store.sketchStatus
+            ? store.sketchStatus.dof === 0
+              ? 'Fully constrained.'
+              : `${store.sketchStatus.dof} degree${store.sketchStatus.dof === 1 ? '' : 's'} of freedom left.`
+            : ''}
+        </p>
+      )}
+      <button className="btn finish-sketch-palette" onClick={() => store.closeSketch()}>
+        ✓ Finish Sketch
+      </button>
+    </section>
+  )
+}
 
 export function Inspector({
   tab,
@@ -32,7 +107,11 @@ export function Inspector({
     return (
       <div className="panel-right">
         <div className="panel-caption">SKETCH PALETTE</div>
-        <SketchPowerTools key={activeSketch.featureId} />
+        <SketchOptions />
+        <details className="sketch-panel-group">
+          <summary>Sketch workshop</summary>
+          <SketchPowerTools key={activeSketch.featureId} />
+        </details>
         <details className="sketch-panel-group">
           <summary>Pointer coordinates & polar input</summary>
           <PrecisionSketchTools />

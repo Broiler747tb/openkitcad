@@ -475,6 +475,51 @@ input[type='checkbox'] {
   z-index: 30;
 }
 
+.constraint-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 22px);
+  grid-auto-rows: 22px;
+  gap: 2px;
+  align-self: center;
+}
+
+.constraint-tool {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.constraint-tool:hover,
+.constraint-tool.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.sketch-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sketch-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sketch-linetype {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
 .ribbon-split {
   position: relative;
   display: inline-flex;
@@ -866,17 +911,23 @@ input[type='checkbox'] {
 }
 
 .vp-label-constraint {
-  border-color: rgba(122, 190, 255, 0.45);
-  color: #8fc0f0;
-  font-weight: 600;
-  padding: 0 4px;
+  min-width: 15px;
+  padding: 0 3px;
+  border-color: #9fb3c8;
+  border-radius: 2px;
+  background: #f4f7fa;
+  color: #2f4a66;
+  font: 600 10px/14px var(--sans, system-ui);
+  text-align: center;
   cursor: pointer;
   pointer-events: auto;
 }
 
-.vp-label-constraint:hover {
-  border-color: var(--err);
-  color: var(--err);
+.vp-label-constraint:hover,
+.vp-label-constraint.selected {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
 }
 
 .vp-label-dimension {

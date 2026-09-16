@@ -1,6 +1,7 @@
 import { v2, type Vec2 } from '../core/math'
 import { closestPoint, curveOf, intersectEntities, pointLookup, tessellate } from '../sketch/curves'
 import { selectProfiles, sketchRegions } from '../sketch/regions'
+import { resolveConstraint, toggleFixes } from '../sketch/constraintTools'
 import {
   buildTool,
   emptyToolState,
@@ -723,6 +724,135 @@ export function runSketchTest(): TestResult[] {
       'a fit point spline keeps every clicked point',
       curve[0]?.kind === 'spline' && (curve[0] as { points: string[] }).points.length === 3,
       JSON.stringify(curve[0]),
+    )
+  })
+
+  guard('constraint tools', () => {
+    const d = draft()
+    const a = point(d, 0, 0)
+    const b = point(d, 20, 1)
+    const c = point(d, 20, 10)
+    const e = point(d, 0, 12)
+    const l1 = entity(d, { kind: 'line', p1: a, p2: b, construction: false })
+    const l2 = entity(d, { kind: 'line', p1: c, p2: e, construction: false })
+    const loose = point(d, 7, 3)
+    const ring = entity(d, { kind: 'circle', c: point(d, 40, 0), r: 5, construction: false })
+    const hoop = entity(d, { kind: 'circle', c: point(d, 41, 1), r: 3, construction: false })
+    const outcome = (id: Parameters<typeof resolveConstraint>[1], picks: Array<[string, string]>) =>
+      resolveConstraint(
+        d.sketch,
+        id,
+        picks.map(([kind, pickId]) => ({ kind: kind as 'point' | 'entity', id: pickId })),
+      )
+    const summary = (o: ReturnType<typeof resolveConstraint>) =>
+      o.kind === 'apply' ? o.constraints.map((x) => x.kind).join(',') : o.kind
+    check(
+      'Horizontal/Vertical picks the axis a line is closest to',
+      summary(outcome('horizontalVertical', [['entity', l1]])) === 'horizontal',
+      summary(outcome('horizontalVertical', [['entity', l1]])),
+    )
+    check(
+      'Coincident waits for a second pick, then puts a point on a line',
+      outcome('coincident', [['point', loose]]).kind === 'more' &&
+        summary(
+          outcome('coincident', [
+            ['point', loose],
+            ['entity', l1],
+          ]),
+        ) === 'pointOnLine',
+      summary(
+        outcome('coincident', [
+          ['point', loose],
+          ['entity', l1],
+        ]),
+      ),
+    )
+    check(
+      'Coincident refuses a line and its own end point',
+      outcome('coincident', [
+        ['point', a],
+        ['entity', l1],
+      ]).kind === 'invalid',
+      summary(
+        outcome('coincident', [
+          ['point', a],
+          ['entity', l1],
+        ]),
+      ),
+    )
+    check(
+      'Parallel, Perpendicular and Collinear take two lines',
+      summary(
+        outcome('parallel', [
+          ['entity', l1],
+          ['entity', l2],
+        ]),
+      ) === 'parallel' &&
+        summary(
+          outcome('perpendicular', [
+            ['entity', l1],
+            ['entity', l2],
+          ]),
+        ) === 'perpendicular' &&
+        outcome('parallel', [
+          ['entity', l1],
+          ['entity', ring],
+        ]).kind === 'invalid',
+      summary(
+        outcome('parallel', [
+          ['entity', l1],
+          ['entity', ring],
+        ]),
+      ),
+    )
+    check(
+      'Tangent between a nested pair of circles keeps one inside the other',
+      (() => {
+        const o = outcome('tangent', [
+          ['entity', ring],
+          ['entity', hoop],
+        ])
+        return o.kind === 'apply' && (o.constraints[0] as { side: number }).side === -1
+      })(),
+      summary(
+        outcome('tangent', [
+          ['entity', ring],
+          ['entity', hoop],
+        ]),
+      ),
+    )
+    check(
+      'Symmetry needs two points and then a line',
+      outcome('symmetry', [
+        ['point', loose],
+        ['point', c],
+      ]).kind === 'more' &&
+        summary(
+          outcome('symmetry', [
+            ['point', loose],
+            ['point', c],
+            ['entity', l1],
+          ]),
+        ) === 'symmetric',
+      summary(
+        outcome('symmetry', [
+          ['point', loose],
+          ['point', c],
+          ['entity', l1],
+        ]),
+      ),
+    )
+    const fixed = outcome('fix', [['entity', l1]])
+    const first = fixed.kind === 'toggleFix' ? toggleFixes(d.sketch, fixed.points, d.id) : 'none'
+    const pinned = d.sketch.constraints.filter((x) => x.kind === 'fix').length
+    const second = fixed.kind === 'toggleFix' ? toggleFixes(d.sketch, fixed.points, d.id) : 'none'
+    check(
+      'Fix/UnFix pins both ends of a line, then releases them',
+      first === 'fixed' &&
+        pinned === 3 &&
+        second === 'released' &&
+        d.sketch.constraints.filter((x) => x.kind === 'fix').length === 1,
+      `${first} ${pinned} ${second}`,
     )
   })
 

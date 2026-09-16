@@ -54,6 +54,8 @@ import type {
   ToolState,
 } from '../sketch/tools/types'
 import { parseAngle, parseInteger, parseLength } from '../ui/command/units'
+import { runConstraintTool } from '../ui/sketchConstraints'
+import type { ConstraintToolId } from '../sketch/constraintTools'
 import { sketchActions } from '../sketch/actions'
 import { isAndroidApp, usePenMode } from '../platform/android'
 import { SketchMenu } from '../ui/SketchMenu'
@@ -63,6 +65,7 @@ import { fastenerGhosts } from './ghosts'
 import { saveDocument } from '../doc/persist'
 import { usePreferences, snapOptions } from '../doc/preferences'
 import { fmt, frameToWorld, v2, type Frame, type Vec2, type Vec3 } from '../core/math'
+import { CONSTRAINT_LABELS } from '../sketch/types'
 import type { Constraint, NewConstraint, Sketch2D } from '../sketch/types'
 import type { Body, Component, Feature, LengthUnit, Matrix4, Occurrence } from '../doc/types'
 import type { Instance } from '../kernel/types'
@@ -186,6 +189,12 @@ function deleteSketchSelection(): void {
       store.applySketchAction({ kind: 'deletePoint', pointId: target.id })
     }
   }
+  for (const target of picked) {
+    if (target.kind === 'constraint') {
+      store.applySketchAction({ kind: 'deleteConstraint', constraintId: target.id })
+    }
+  }
+  store.setSketchSelection([])
 }
 
 function pasteClipboard(): boolean {
@@ -556,13 +565,43 @@ export function Viewport() {
     engineRef.current?.setSubHighlight(activeSketch ? [] : picks)
   }, [subSelection, activeSketch, instances, commandSession])
 
+  useEffect(() => {
+    const engine = engineRef.current
+    if (!engine) return
+    engine.setSketchDisplay({ points: preferences.sketchShowPoints })
+    engine.setSlice(activeSketch && preferences.sketchSlice ? frame : null)
+  }, [preferences.sketchShowPoints, preferences.sketchSlice, activeSketch, frame])
+
+  useEffect(() => {
+    const look = () => {
+      if (frame) engineRef.current?.lookAtFrame(frame)
+    }
+    window.addEventListener('okc:look-at', look)
+    return () => window.removeEventListener('okc:look-at', look)
+  }, [frame])
+
   const pickedSketchKey = commandSession
     ? [...new Set(commandPicks().map(pickSketchId))].sort().join(',')
     : ''
+  const showProfile = preferences.sketchShowProfile
   const sketchOverlays = useMemo((): SketchOverlay[] => {
     const referenced = new Set(pickedSketchKey ? pickedSketchKey.split(',') : [])
     return activeFeatures(doc).flatMap((feature): SketchOverlay[] => {
-      if (feature.kind !== 'sketch' || feature.id === activeSketch?.featureId) return []
+      if (feature.kind !== 'sketch') return []
+      if (feature.id === activeSketch?.featureId) {
+        const local = frameFromPlaneRefLocal(feature.plane, planes.get(feature.id))
+        if (!local || !showProfile) return []
+        return [
+          {
+            id: feature.id,
+            frame: transformFrame(local, componentMatrix(doc, feature.componentId)),
+            curves: [],
+            construction: [],
+            regions: cachedRegions(feature.sketch),
+            profiles: true,
+          },
+        ]
+      }
       if (!feature.visible && !referenced.has(feature.id)) return []
       const local = frameFromPlaneRefLocal(feature.plane, planes.get(feature.id))
       if (!local) return []
@@ -584,7 +623,7 @@ export function Viewport() {
         },
       ]
     })
-  }, [doc, planes, activeSketch?.featureId, pickedSketchKey])
+  }, [doc, planes, activeSketch?.featureId, pickedSketchKey, showProfile])
   useEffect(() => {
     engineRef.current?.setSketchOverlays(sketchOverlays)
   }, [sketchOverlays])
@@ -1068,6 +1107,22 @@ export function Viewport() {
         return
       }
 
+      if (tool.startsWith('constrain:')) {
+        const hit = hitTestSketch(sketch, cursor, toleranceAt())
+        if (!hit) {
+          store.setSketchSelection([])
+          return
+        }
+        const picks = store.sketchSelection.filter((target) => target.kind !== 'constraint')
+        const already = picks.some((target) => target.kind === hit.kind && target.id === hit.id)
+        runConstraintTool(
+          tool.slice('constrain:'.length) as ConstraintToolId,
+          already
+            ? picks.filter((t) => !(t.kind === hit.kind && t.id === hit.id))
+            : [...picks, hit],
+        )
+        return
+      }
       if (!isSketchTool(tool)) return
       engine.setControlsEnabled(false)
       placeAt(snapAnchor(sketch, cursor, e.altKey))
@@ -1542,46 +1597,62 @@ export function Viewport() {
           />
         )
       })}
-      {labels.map((label) => (
-        <div
-          key={label.id}
-          className={`vp-label vp-label-${label.kind}`}
-          style={{ left: label.x, top: label.y }}
-          title={
-            label.kind === 'constraint' ? 'Click to remove this rule' : 'Click to change this size'
-          }
-          onPointerDown={(e) => {
-            if (!activeSketch) return
-            e.stopPropagation()
-            if (label.kind === 'constraint') {
-              useStore
-                .getState()
-                .applySketchAction({ kind: 'deleteConstraint', constraintId: label.id })
-            } else {
-              const constraint = activeSketchFeature(useStore.getState())?.sketch.constraints.find(
-                (c) => c.id === label.id,
-              )
-              if (!constraint || !('value' in constraint)) return
-              setPrompt({
-                x: e.clientX,
-                y: e.clientY,
-                value: String(constraint.value),
-                unit: constraint.kind === 'angle' ? '°' : 'mm',
-                apply: (value) => {
-                  const store = useStore.getState()
-                  store.editSketch((sketch) => {
-                    const c = sketch.constraints.find((x) => x.id === label.id)
-                    if (c && 'value' in c) c.value = value
-                  })
-                  store.solveActiveSketch()
-                },
-              })
+      {labels
+        .filter((label) =>
+          label.kind === 'dimension'
+            ? preferences.sketchShowDimensions
+            : label.kind === 'constraint'
+              ? preferences.sketchShowConstraints
+              : true,
+        )
+        .map((label) => (
+          <div
+            key={label.id}
+            className={`vp-label vp-label-${label.kind}${
+              sketchSelection.some((t) => t.kind === 'constraint' && t.id === label.id)
+                ? ' selected'
+                : ''
+            }`}
+            style={{ left: label.x, top: label.y }}
+            title={
+              label.kind === 'constraint'
+                ? `${constraintTitle(label.id)} - click to select, Delete to remove`
+                : 'Click to change this size'
             }
-          }}
-        >
-          {label.text}
-        </div>
-      ))}
+            onPointerDown={(e) => {
+              if (!activeSketch) return
+              e.stopPropagation()
+              if (label.kind === 'constraint') {
+                const store = useStore.getState()
+                const target = { kind: 'constraint' as const, id: label.id }
+                store.setSketchSelection(
+                  e.shiftKey ? toggleSelection(store.sketchSelection, target) : [target],
+                )
+              } else {
+                const constraint = activeSketchFeature(
+                  useStore.getState(),
+                )?.sketch.constraints.find((c) => c.id === label.id)
+                if (!constraint || !('value' in constraint)) return
+                setPrompt({
+                  x: e.clientX,
+                  y: e.clientY,
+                  value: String(constraint.value),
+                  unit: constraint.kind === 'angle' ? '°' : 'mm',
+                  apply: (value) => {
+                    const store = useStore.getState()
+                    store.editSketch((sketch) => {
+                      const c = sketch.constraints.find((x) => x.id === label.id)
+                      if (c && 'value' in c) c.value = value
+                    })
+                    store.solveActiveSketch()
+                  },
+                })
+              }
+            }}
+          >
+            {label.text}
+          </div>
+        ))}
 
       {activeSketch &&
         headsUp.fields.map((field) => (
@@ -1650,6 +1721,12 @@ function headsUpValue(field: ToolField, unit: LengthUnit): string {
   return lengthLabel(field.value, unit)
 }
 
+function constraintTitle(id: string): string {
+  const sketch = activeSketchFeature(useStore.getState())?.sketch
+  const constraint = sketch?.constraints.find((c) => c.id === id)
+  return constraint ? CONSTRAINT_LABELS[constraint.kind] : 'Constraint'
+}
+
 /** Split a sketch selection into the shape the engine wants for highlighting. */
 function selectionHighlight(selection: { kind: string; id: string }[]): {
   points: string[]
@@ -1680,18 +1757,25 @@ function looseGeometry(
 
 /** Short symbols for the constraints that carry no number. */
 const GLYPH: Partial<Record<Constraint['kind'], string>> = {
-  horizontal: 'H',
-  vertical: 'V',
-  parallel: '//',
+  horizontal: '—',
+  vertical: '|',
+  parallel: '∥',
   perpendicular: '⊥',
   equal: '=',
   tangent: '⌒',
-  coincident: '•',
-  fix: '×',
-  pointOnLine: '—',
-  pointOnCircle: '○',
-  midpoint: '|',
-  symmetric: '><',
+  tangentArcs: '⌒',
+  tangentCurves: '⌒',
+  coincident: '◦',
+  fix: '🔒',
+  pointOnLine: '◦',
+  pointOnCircle: '◦',
+  pointOnCurve: '◦',
+  midpoint: '△',
+  symmetric: '⋈',
+  symmetricEntities: '⋈',
+  collinear: '⋯',
+  concentric: '◎',
+  smooth: '∿',
 }
 
 function sketchLabels(sketch: Sketch2D, frame: Frame, unit: LengthUnit) {

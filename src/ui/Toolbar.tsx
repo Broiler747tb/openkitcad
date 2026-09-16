@@ -12,6 +12,8 @@ import { powerActions } from './PowerTools'
 import { ParametersDialog } from './ParametersDialog'
 import { startCommand } from './command/commands'
 import { SKETCH_TOOL_MENUS, SKETCH_TOOLS } from '../sketch/tools/specs'
+import { CONSTRAINT_TOOLS } from '../sketch/constraintTools'
+import { startConstraintTool } from './sketchConstraints'
 
 const SKETCH_MENU_ICONS: Record<string, string> = {
   Line: '╱',
@@ -454,10 +456,40 @@ export function Toolbar({
             )}
             {group(
               'CONSTRAINTS',
-              sketchCommands.filter((a) =>
-                ['Hold it in place', 'Set a size'].includes(a.group ?? ''),
-              ),
-              tool('Dimension', '↔', () => state.setTool('dimension'), 'D'),
+              [
+                ...CONSTRAINT_TOOLS.map((constraint) => ({
+                  id: 'constraint-' + constraint.id,
+                  label: constraint.label,
+                  hint: constraint.hint,
+                  group: 'Constraints',
+                  run: () => startConstraintTool(constraint.id),
+                })),
+                ...sketchCommands.filter((a) => a.group === 'Set a size'),
+              ],
+              <>
+                {tool('Sketch Dimension', '↔', () => pickTool('dimension'), 'D')}
+                <div className="constraint-grid" role="group" aria-label="Constraints">
+                  {CONSTRAINT_TOOLS.map((constraint) => (
+                    <button
+                      key={constraint.id}
+                      className={
+                        'constraint-tool' +
+                        (state.tool === 'constrain:' + constraint.id ? ' active' : '')
+                      }
+                      title={constraint.label + ' - ' + constraint.hint}
+                      aria-label={constraint.label}
+                      aria-pressed={state.tool === 'constrain:' + constraint.id}
+                      onClick={() => {
+                        setPending(null)
+                        setMenu(null)
+                        startConstraintTool(constraint.id)
+                      }}
+                    >
+                      {constraint.icon}
+                    </button>
+                  ))}
+                </div>
+              </>,
             )}
             <span className="spacer" />
             <button

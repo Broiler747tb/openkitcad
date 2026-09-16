@@ -1,4 +1,5 @@
 import type { SketchToolId } from '../sketch/tools/types'
+import type { ConstraintToolId } from '../sketch/constraintTools'
 import { create } from 'zustand'
 import { resolveParameters } from './parameters'
 import type { BodyMesh, EvaluateResult, Instance, KernelError } from '../kernel/types'
@@ -67,7 +68,8 @@ export function newId(prefix: string): string {
 
 export const DEFAULT_BODY_COLOUR = '#b9c0c7'
 
-export type ToolId = 'select' | 'dimension' | 'trim' | 'measure' | SketchToolId
+export type ToolId =
+  'select' | 'dimension' | 'trim' | 'measure' | SketchToolId | `constrain:${ConstraintToolId}`
 
 export interface Selection {
   kind: 'none' | 'body' | 'occurrence' | 'feature' | 'face' | 'edge'

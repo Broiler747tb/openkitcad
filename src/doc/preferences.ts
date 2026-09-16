@@ -16,6 +16,11 @@ export const DEFAULT_PREFERENCES = {
   moveSnap: 1,
   angleSnap: 15,
   gridOpacity: 0.45,
+  sketchShowProfile: true,
+  sketchShowPoints: true,
+  sketchShowDimensions: true,
+  sketchShowConstraints: true,
+  sketchSlice: false,
 }
 export type Preferences = typeof DEFAULT_PREFERENCES
 const bounds: Partial<Record<keyof Preferences, [number, number]>> = {
