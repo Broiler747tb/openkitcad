@@ -1,77 +1,97 @@
 {
   "id": "port-fan-40mm",
-  "name": "40 mm cooling fan",
+  "name": "40 mm fan, 12 V (Sunon MF40101V2-1000U-A99)",
   "category": "connector",
   "popularity": 56,
-  "summary": "Small square case fan that bolts over a hole in the panel. Needs a 36 mm round hole and four M3 screws 32 mm apart.",
-  "confidence": "approximate",
-  "source": "The 40.0 x 40.0 mm frame and the 32.0 mm square screw pattern are the same on every 40 mm fan drawing (Sunon, Delta, Noctua and the rest), so those numbers are safe. Two things here are not from a drawing. The 10 mm thickness is the most common version but the same frame is also sold 20 mm and 28 mm deep, so check yours. The 36 mm air opening is a sensible recommendation, not a specification: it passes almost all the air while leaving about 2 mm of material between the hole and the corner screws. Screw holes are drawn at 4.5 mm; real fans run 4.3 to 4.5 mm, and people normally bolt them up with M3.",
-  "look": {"style": "fan"},
+  "manufacturer": "Sunon",
+  "summary": "40 x 40 x 10 mm 12 V fan that bolts over a hole. Four holes on a 32 mm square.",
+  "confidence": "datasheet",
+  "source": "Sunon specification D04111140G-02 for MF40101V2-1000U-A99: frame 40 +/-0.5 mm square and 10 mm thick, four 4.3 mm holes on a 32 +/-0.3 mm square, 12 V at 40 mA (0.48 W), 300 mm leads. Sunon recommends M4 machine screws or 5 mm self-tapping screws. The 36 mm air opening is a sensible size for the panel, not a Sunon figure. Other 40 mm fans share the frame and holes but not always the 10 mm thickness.",
+  "look": {
+    "style": "fan"
+  },
   "geometry": {
     "kind": "connector",
     "bodyWidth": 40,
     "bodyHeight": 40,
     "bodyDepth": 10,
     "protrusion": 0,
-    "cutout": { "shape": "circle", "d": 36.0 }
+    "cutout": {
+      "shape": "circle",
+      "d": 36.0
+    }
   },
   "mountingHoles": [
-    { "id": "m1", "x": 4, "y": 4, "diameter": 4.5, "screw": "M3", "label": "Corner screw, bottom left" },
-    { "id": "m2", "x": 36, "y": 4, "diameter": 4.5, "screw": "M3", "label": "Corner screw, bottom right" },
-    { "id": "m3", "x": 4, "y": 36, "diameter": 4.5, "screw": "M3", "label": "Corner screw, top left" },
-    { "id": "m4", "x": 36, "y": 36, "diameter": 4.5, "screw": "M3", "label": "Corner screw, top right" }
+    {
+      "id": "m1",
+      "x": 4,
+      "y": 4,
+      "diameter": 4.3,
+      "screw": "M4",
+      "label": "Corner screw, bottom left"
+    },
+    {
+      "id": "m2",
+      "x": 36,
+      "y": 4,
+      "diameter": 4.3,
+      "screw": "M4",
+      "label": "Corner screw, bottom right"
+    },
+    {
+      "id": "m3",
+      "x": 4,
+      "y": 36,
+      "diameter": 4.3,
+      "screw": "M4",
+      "label": "Corner screw, top left"
+    },
+    {
+      "id": "m4",
+      "x": 36,
+      "y": 36,
+      "diameter": 4.3,
+      "screw": "M4",
+      "label": "Corner screw, top right"
+    }
   ],
   "connectors": [
     {
       "id": "opening",
-      "label": "Fan air opening",
+      "label": "Air opening",
       "side": "+y",
       "shape": "circle",
-      "x": 20,
+      "x": 20.0,
       "y": 10,
-      "z": 20,
+      "z": 20.0,
       "width": 36.0,
       "height": 36.0,
       "diameter": 36.0,
       "protrusion": 0
     }
   ],
-  "keepouts": [
+  "electrical": {
+    "voltage": [
+      12
+    ],
+    "currentTypical": 0.04,
+    "currentPeak": 0.048,
+    "note": "Starts from 6 V; runs 6 to 13.8 V."
+  },
+  "links": [
     {
-      "id": "k-air-in",
-      "label": "Clear air space behind the fan",
-      "x": 0,
-      "y": -20,
-      "w": 40,
-      "h": 20,
-      "z": 0,
-      "height": 40
-    },
-    {
-      "id": "k-plug",
-      "label": "Clear air space in front of the grille",
-      "x": 0,
-      "y": 10,
-      "w": 40,
-      "h": 15,
-      "z": 0,
-      "height": 40
-    },
-    {
-      "id": "k-wires",
-      "label": "Room for the fan wires leaving a corner",
-      "x": 38,
-      "y": -8,
-      "w": 12,
-      "h": 10,
-      "z": 30,
-      "height": 12
+      "label": "Sunon specification",
+      "url": "https://datasheet.octopart.com/MF40101V2-1000U-A99-Sunon-Fans-datasheet-120174974.pdf"
     }
   ],
-  "electrical": {
-    "voltage": [5, 12, 24],
-    "currentPeak": 0.25,
-    "note": "The same 40 mm frame is sold in 5 V, 12 V and 24 V versions and they are not interchangeable. A 12 V one usually draws 60 to 150 mA once spinning, with a short higher gulp at start-up. Fans with a third wire give a speed signal; a fourth wire is PWM speed control."
-  },
-  "tags": ["fan", "40mm", "4010", "cooling", "airflow", "grille", "vent", "panel", "port"]
+  "tags": [
+    "fan",
+    "cooling",
+    "40mm",
+    "4010",
+    "sunon",
+    "12v",
+    "air",
+    "vent"
+  ]
 }

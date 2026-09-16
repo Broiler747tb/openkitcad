@@ -1,0 +1,134 @@
+{
+  "id": "port-usb-c-breakout",
+  "name": "USB-C breakout board (Adafruit 4090)",
+  "category": "connector",
+  "popularity": 62,
+  "family": "usb-c-port",
+  "variant": "Breakout board (Adafruit 4090)",
+  "manufacturer": "Adafruit",
+  "summary": "A USB-C socket on a 20 x 14 mm board with two M2 holes and a row of 8 pins.",
+  "confidence": "datasheet",
+  "source": "Adafruit's Eagle files for the USB Type C Breakout Board - Downstream Connection (product 4090), revision B: board 20.32 x 13.97 mm with 2.54 mm corner radii, 2.5 mm plated holes 2.54 and 17.78 mm across and 11.43 mm up, 8 pins at 2.54 mm pitch along the bottom edge. The socket (CUI CUSB31-CFM2AX-01-X) is 8.94 mm wide with its mouth on the top edge. Its height is not in the board files; 3.2 mm is typical for this style.",
+  "look": {
+    "colour": "#1d1f22",
+    "components": [
+      {
+        "kind": "port",
+        "port": "usb-c",
+        "x": 10.16,
+        "y": 13.97,
+        "facing": "+y",
+        "label": "USB-C"
+      },
+      {
+        "kind": "chip",
+        "x": 1.19,
+        "y": 5.37,
+        "w": 1.67,
+        "h": 0.95,
+        "height": 0.5,
+        "label": "R1"
+      },
+      {
+        "kind": "chip",
+        "x": 1.19,
+        "y": 7.15,
+        "w": 1.67,
+        "h": 0.95,
+        "height": 0.5,
+        "label": "R2"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 20.32,
+      "h": 13.97,
+      "cornerRadius": 2.54
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 5.69,
+        "y": 6.62,
+        "w": 8.94,
+        "h": 7.35,
+        "z": 1.6,
+        "height": 3.2,
+        "colour": "#b9c0c7",
+        "label": "USB-C socket"
+      }
+    ]
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2.54,
+      "y": 11.43,
+      "diameter": 2.5,
+      "screw": "M2"
+    },
+    {
+      "id": "h2",
+      "x": 17.78,
+      "y": 11.43,
+      "diameter": 2.5,
+      "screw": "M2"
+    }
+  ],
+  "connectors": [
+    {
+      "id": "usbc",
+      "label": "USB-C",
+      "side": "+y",
+      "shape": "rect",
+      "x": 10.16,
+      "y": 13.97,
+      "z": 1.6,
+      "width": 9.0,
+      "height": 3.2,
+      "protrusion": 0
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "pins",
+      "label": "Breakout pins",
+      "x": 1.27,
+      "y": 2.54,
+      "rows": 1,
+      "cols": 8,
+      "pitch": 2.54
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      5
+    ],
+    "currentPeak": 3,
+    "note": "Downstream wiring: 5.1 kOhm resistors on CC ask a USB-C source for 5 V."
+  },
+  "links": [
+    {
+      "label": "Adafruit 4090",
+      "url": "https://www.adafruit.com/product/4090"
+    },
+    {
+      "label": "Eagle files",
+      "url": "https://github.com/adafruit/Adafruit-USB-C-Downstream-Breakout"
+    }
+  ],
+  "tags": [
+    "usb-c",
+    "type-c",
+    "usbc",
+    "breakout",
+    "adafruit",
+    "4090",
+    "board",
+    "socket",
+    "connector"
+  ]
+}

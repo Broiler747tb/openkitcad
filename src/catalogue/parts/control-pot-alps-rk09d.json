@@ -1,33 +1,81 @@
 {
   "id": "control-pot-alps-rk09d",
-  "name": "ALPS Alpine RK09D 9 mm potentiometer", 
+  "name": "Potentiometer, 9 mm (ALPS RK09D, unverified)",
   "category": "control",
   "popularity": 61,
   "family": "potentiometer",
-  "variant": "9 mm, ALPS RK09D",
+  "variant": "9 mm, ALPS RK09D (unverified)",
   "manufacturer": "ALPS Alpine",
   "summary": "Compact 9 mm rotary potentiometer with a threaded bushing, used in compact audio and control panels; use a 7.2 mm panel hole.",
   "confidence": "approximate",
   "source": "ALPS Alpine RK09K/RK09D family catalogue confirms the 9 mm family and threaded RK09D variants, but the public selection table spans multiple body orientations, shaft lengths and bushing styles. This is a conservative 9.8 × 11.0 × 10.0 mm envelope with a 7.2 mm clearance cutout for the M7-family bushing. Check the drawing for the exact RK09D suffix before cutting a production panel.",
-  "links": [
-    { "label": "ALPS Alpine RK09K/RK09D family", "url": "https://tech.alpsalpine.com/e/products/category/potentiometers/sub/02/series/rk09k/" }
-  ],
-  "look": {"style": "pot"},
+  "look": {
+    "style": "pot"
+  },
   "geometry": {
     "kind": "connector",
     "bodyWidth": 9.8,
     "bodyHeight": 11,
     "bodyDepth": 10,
     "protrusion": 20,
-    "cutout": { "shape": "circle", "d": 7.2 },
+    "cutout": {
+      "shape": "circle",
+      "d": 7.2
+    },
     "panelThickness": 3
   },
   "connectors": [
-    { "id": "opening", "label": "RK09D bushing hole", "side": "+y", "shape": "circle", "x": 4.9, "y": 10, "z": 5.5, "width": 7.2, "height": 7.2, "diameter": 7.2, "protrusion": 20 }
+    {
+      "id": "opening",
+      "label": "RK09D bushing hole",
+      "side": "+y",
+      "shape": "circle",
+      "x": 4.9,
+      "y": 10,
+      "z": 5.5,
+      "width": 7.2,
+      "height": 7.2,
+      "diameter": 7.2,
+      "protrusion": 20
+    }
   ],
   "keepouts": [
-    { "id": "k-knob", "label": "Space for knob", "x": -5, "y": 10, "w": 19.8, "h": 21, "z": -5, "height": 21 },
-    { "id": "k-body", "label": "Potentiometer body behind panel", "x": 0, "y": 0, "w": 9.8, "h": 10, "z": 0, "height": 11 }
+    {
+      "id": "k-knob",
+      "label": "Space for knob",
+      "x": -5,
+      "y": 10,
+      "w": 19.8,
+      "h": 21,
+      "z": -5,
+      "height": 21
+    },
+    {
+      "id": "k-body",
+      "label": "Potentiometer body behind panel",
+      "x": 0,
+      "y": 0,
+      "w": 9.8,
+      "h": 10,
+      "z": 0,
+      "height": 11
+    }
   ],
-  "tags": ["potentiometer", "pot", "rk09", "rk09d", "alps", "rotary", "volume", "panel", "9mm"]
+  "links": [
+    {
+      "label": "ALPS Alpine RK09K/RK09D family",
+      "url": "https://tech.alpsalpine.com/e/products/category/potentiometers/sub/02/series/rk09k/"
+    }
+  ],
+  "tags": [
+    "potentiometer",
+    "pot",
+    "rk09",
+    "rk09d",
+    "alps",
+    "rotary",
+    "volume",
+    "panel",
+    "9mm"
+  ]
 }

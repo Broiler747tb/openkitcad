@@ -1,0 +1,80 @@
+{
+  "id": "port-rocker-kcd1-mini",
+  "name": "Rocker switch, 15 x 10.5 mm (NCR KCD1-101)",
+  "category": "connector",
+  "popularity": 58,
+  "family": "rocker-switch",
+  "variant": "15 x 10.5 mm bezel (KCD1-101 small)",
+  "manufacturer": "NCR",
+  "summary": "Small snap-in on/off rocker. Clips into a 14.2 x 9 mm hole.",
+  "confidence": "datasheet",
+  "source": "NCR KCD1-101F datasheet, small outline: bezel 15 x 10.5 mm with the rocker 1.5 mm proud, housing 13.2 x 8.5 mm reaching 10.2 mm behind the panel, 16.3 mm overall with the tabs. Panel hole 14.0 x 9 mm for panels 0.6 to 1.2 mm thick, 14.2 mm for 1.2 to 2 mm and 14.5 mm for 2 to 3 mm.",
+  "look": {
+    "style": "rocker"
+  },
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 13.2,
+    "bodyHeight": 8.5,
+    "bodyDepth": 10.2,
+    "protrusion": 3.0,
+    "cutout": {
+      "shape": "rect",
+      "w": 14.2,
+      "h": 9.0,
+      "cornerRadius": 0.5
+    },
+    "panelThickness": 2.0
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "Switch hole",
+      "side": "+y",
+      "shape": "rect",
+      "x": 6.6,
+      "y": 10.2,
+      "z": -0.25,
+      "width": 14.2,
+      "height": 9.0,
+      "protrusion": 3.0
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-tabs",
+      "label": "Solder tabs",
+      "x": 0,
+      "y": -4.6,
+      "w": 13.2,
+      "h": 4.6,
+      "z": 0,
+      "height": 8.5
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      125,
+      250
+    ],
+    "currentPeak": 6,
+    "note": "Rated 6 A at 125 V AC or 3 A at 250 V AC."
+  },
+  "links": [
+    {
+      "label": "NCR KCD1-101F datasheet",
+      "url": "https://www.ncr.hk/uploads/Switches/Rocker_Switch/KCD1-101F.pdf"
+    }
+  ],
+  "tags": [
+    "switch",
+    "rocker",
+    "kcd1",
+    "mini",
+    "small",
+    "power",
+    "on-off",
+    "snap-in",
+    "panel"
+  ]
+}

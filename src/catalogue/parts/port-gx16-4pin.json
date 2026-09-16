@@ -1,12 +1,14 @@
 {
   "id": "port-gx16-4pin",
-  "name": "GX16 aviation connector, 4 pin",
+  "name": "GX16 aviation connector, 4 pin (generic)",
   "category": "connector",
   "popularity": 35,
   "summary": "Screw-lock round connector. Needs a 16 mm hole.",
   "confidence": "approximate",
   "source": "The GX16 panel thread is 16 mm, which is the number that matters. The flange is around 20 mm across and needs three small screws or a nut depending on the variant. Pin counts from 2 to 10 share the same shell.",
-  "look": {"style": "gx16"},
+  "look": {
+    "style": "gx16"
+  },
   "geometry": {
     "kind": "connector",
     "bodyWidth": 20,

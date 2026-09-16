@@ -105,12 +105,14 @@ export function runPartsTest(): TestResult[] {
     /raspberry/.test(top('rpi')?.name.toLowerCase() ?? ''),
     topName('rpi'),
   )
-  check('"usbc" finds the USB-C socket first', top('usbc')?.id === 'port-usb-c', topName('usbc'))
-  check(
-    '"type-c" finds the USB-C socket first',
-    top('type-c')?.id === 'port-usb-c',
-    topName('type-c'),
-  )
+  const findsUsbC = (query: string) => {
+    const entry = top(query)
+    return entry?.kind === 'family'
+      ? entry.parts.some((p) => p.id === 'port-usb-c')
+      : entry?.id === 'port-usb-c'
+  }
+  check('"usbc" finds the USB-C sockets first', findsUsbC('usbc'), topName('usbc'))
+  check('"type-c" finds the USB-C sockets first', findsUsbC('type-c'), topName('type-c'))
   check(
     'a typo still finds the part: "raspbery pi 4"',
     top('raspbery pi 4')?.id === 'raspberry-pi-4b',

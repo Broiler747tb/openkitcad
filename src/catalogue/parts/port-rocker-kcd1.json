@@ -1,61 +1,79 @@
 {
   "id": "port-rocker-kcd1",
-  "name": "Rocker on/off switch (KCD1)",
+  "name": "Rocker switch, 21 x 15 mm (NCR KCD1-101F)",
   "category": "connector",
   "popularity": 76,
-  "summary": "The small square rocker switch found on power strips. Clips into a 19 x 13 mm rectangular hole, no screws needed.",
-  "confidence": "approximate",
-  "source": "KCD1 is a shape that many factories copy rather than a controlled standard, so the numbers move. The 19.0 x 13.0 mm snap-in cutout is what the common KCD1-101 wants and is the size most sellers quote, but parts also sold as KCD1 exist with a 21 x 15 mm cutout, and the illuminated versions are usually deeper. Nothing behind the panel is verified: housing depth, terminal type (solder lug or 4.8 mm spade) and terminal length all vary. Check the cutout drawing that came with your switch, and test-fit in scrap before cutting the real panel.",
-  "look": {"style": "rocker"},
+  "family": "rocker-switch",
+  "variant": "21 x 15 mm bezel (KCD1-101F)",
+  "manufacturer": "NCR",
+  "summary": "Snap-in on/off rocker, the size on power strips. Clips into a 19.2 x 13 mm hole.",
+  "confidence": "datasheet",
+  "source": "NCR KCD1-101F datasheet, issue 2011-10-28: bezel 21 x 15 mm and 2.5 mm thick with the rocker standing 3.5 mm above it, housing 19 x 12.8 mm reaching 13.2 mm behind the panel, 22.6 mm overall to the ends of the 4.8 mm tabs. Panel hole 19.0 x 13 mm for panels 0.6 to 1.2 mm thick, 19.2 mm for 1.2 to 2 mm and 19.4 mm for 2 to 3 mm. Many switches sold as KCD1 copy this outline, and a smaller 15 x 10.5 mm switch uses the same name.",
+  "look": {
+    "style": "rocker"
+  },
   "geometry": {
     "kind": "connector",
-    "bodyWidth": 19,
-    "bodyHeight": 13,
-    "bodyDepth": 19,
-    "protrusion": 8,
-    "cutout": { "shape": "rect", "w": 19.0, "h": 13.0, "cornerRadius": 0.8 },
-    "panelThickness": 2
+    "bodyWidth": 19.0,
+    "bodyHeight": 12.8,
+    "bodyDepth": 13.2,
+    "protrusion": 6.0,
+    "cutout": {
+      "shape": "rect",
+      "w": 19.2,
+      "h": 13.0,
+      "cornerRadius": 0.5
+    },
+    "panelThickness": 2.0
   },
   "connectors": [
     {
       "id": "opening",
-      "label": "Rocker switch cutout",
+      "label": "Switch hole",
       "side": "+y",
       "shape": "rect",
       "x": 9.5,
-      "y": 19,
-      "z": 0,
-      "width": 19.0,
+      "y": 13.2,
+      "z": -0.1,
+      "width": 19.2,
       "height": 13.0,
-      "protrusion": 8
+      "protrusion": 6.0
     }
   ],
   "keepouts": [
     {
-      "id": "k-bezel",
-      "label": "Room for the front bezel and the rocker to tilt",
-      "x": -2,
-      "y": 19,
-      "w": 23,
-      "h": 10,
-      "z": -2,
-      "height": 17
-    },
-    {
-      "id": "k-wires",
-      "label": "Room for the terminals and wires behind the panel",
-      "x": 1,
-      "y": -20,
-      "w": 17,
-      "h": 20,
-      "z": 1,
-      "height": 11
+      "id": "k-tabs",
+      "label": "Solder tabs",
+      "x": 0,
+      "y": -6.9,
+      "w": 19.0,
+      "h": 6.9,
+      "z": 0,
+      "height": 12.8
     }
   ],
   "electrical": {
-    "voltage": [125, 250],
-    "currentPeak": 6,
-    "note": "Typically rated 6 A at 250 V AC or 10 A at 125 V AC. These are usually wired to mains, which is dangerous: insulate the terminals and keep them out of reach."
+    "voltage": [
+      125,
+      250
+    ],
+    "currentPeak": 10,
+    "note": "Rated 10 A at 125 V AC or 6 A at 250 V AC."
   },
-  "tags": ["rocker", "switch", "kcd1", "kcd1-101", "power", "on-off", "snap-in", "panel"]
+  "links": [
+    {
+      "label": "NCR KCD1-101F datasheet",
+      "url": "https://www.ncr.hk/uploads/Switches/Rocker_Switch/KCD1-101F.pdf"
+    }
+  ],
+  "tags": [
+    "switch",
+    "rocker",
+    "kcd1",
+    "power",
+    "on-off",
+    "snap-in",
+    "panel",
+    "mains"
+  ]
 }

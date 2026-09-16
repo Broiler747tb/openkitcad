@@ -1,0 +1,81 @@
+{
+  "id": "port-audio-35-pcb",
+  "name": "3.5 mm audio jack, board mount (Same Sky SJ1-3523N)",
+  "category": "connector",
+  "popularity": 55,
+  "family": "audio-jack",
+  "variant": "Board mount, stereo (Same Sky SJ1-3523N)",
+  "manufacturer": "Same Sky",
+  "summary": "Stereo headphone socket for a board edge. Its round nose needs a 6.2 mm hole.",
+  "confidence": "datasheet",
+  "source": "Same Sky (formerly CUI Devices) SJ1-352xN drawing, 2024: housing 12.0 mm wide, 11.0 mm deep and 5.0 mm tall with a 6.0 mm round nose 3.3 mm long in front, 3.6 mm plug hole whose centre is 2.5 mm below the top of the housing. The 6.2 mm hole lets the nose sit in a wall up to about 3 mm thick. SJ1-3523N has no switch; 3524N adds a tip switch and 3525N tip and ring switches.",
+  "look": {
+    "style": "jack-35"
+  },
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 12.0,
+    "bodyHeight": 5.0,
+    "bodyDepth": 11.0,
+    "protrusion": 3.3,
+    "cutout": {
+      "shape": "circle",
+      "d": 6.2
+    },
+    "panelThickness": 3.0
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "Jack nose",
+      "side": "+y",
+      "shape": "circle",
+      "x": 6.0,
+      "y": 11.0,
+      "z": 2.5,
+      "width": 6.2,
+      "height": 6.2,
+      "diameter": 6.2,
+      "protrusion": 3.3
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-plug",
+      "label": "Room for the plug",
+      "x": 1,
+      "y": 14.3,
+      "w": 10,
+      "h": 30,
+      "z": -2.5,
+      "height": 10
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      12
+    ],
+    "currentPeak": 1,
+    "note": "Rated 1 A at 12 V DC."
+  },
+  "links": [
+    {
+      "label": "Same Sky SJ1-352xN datasheet",
+      "url": "https://www.sameskydevices.com/product/resource/sj1-352xn.pdf"
+    }
+  ],
+  "tags": [
+    "audio",
+    "headphone",
+    "jack",
+    "3.5mm",
+    "stereo",
+    "trs",
+    "pcb",
+    "board",
+    "socket",
+    "connector",
+    "cui",
+    "sj1-3523n"
+  ]
+}

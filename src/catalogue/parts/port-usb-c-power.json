@@ -1,0 +1,80 @@
+{
+  "id": "port-usb-c-power",
+  "name": "USB-C power socket (GCT USB4125)",
+  "category": "connector",
+  "popularity": 70,
+  "family": "usb-c-port",
+  "variant": "Power only, 6 pin (GCT USB4125)",
+  "manufacturer": "GCT",
+  "summary": "6-pin USB-C socket that carries power only, for chargers and lamps. Same 9 x 3.2 mm slot.",
+  "confidence": "datasheet",
+  "source": "GCT USB4125-GF-A drawing, revision A6: body 8.94 mm wide, 6.80 mm deep and 3.16 mm tall, mouth 8.34 x 2.56 mm, front flush with the board edge. Only VBUS, GND and the two CC pins are fitted, so there is no USB data. The slot and plug clearance are the same as the 16-pin socket.",
+  "look": {
+    "style": "usb-c"
+  },
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 8.94,
+    "bodyHeight": 3.16,
+    "bodyDepth": 6.8,
+    "protrusion": 0,
+    "cutout": {
+      "shape": "rect",
+      "w": 9.0,
+      "h": 3.2,
+      "cornerRadius": 1.6
+    },
+    "panelThickness": 1.0
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "USB-C opening",
+      "side": "+y",
+      "shape": "rect",
+      "x": 4.47,
+      "y": 6.8,
+      "z": -0.02,
+      "width": 9.0,
+      "height": 3.2,
+      "protrusion": 0
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-plug",
+      "label": "Room for the plug and its cable",
+      "x": -1.73,
+      "y": 6.8,
+      "w": 12.4,
+      "h": 40,
+      "z": -1.72,
+      "height": 6.6
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      5
+    ],
+    "currentPeak": 3,
+    "note": "Rated 3 A across VBUS. With 5.1 kOhm resistors on CC a USB-C charger supplies 5 V."
+  },
+  "links": [
+    {
+      "label": "GCT USB4125 drawing",
+      "url": "https://gct.co/files/drawings/usb4125.pdf"
+    }
+  ],
+  "tags": [
+    "usb",
+    "usb-c",
+    "type-c",
+    "usbc",
+    "power",
+    "charging",
+    "socket",
+    "connector",
+    "gct",
+    "usb4125"
+  ]
+}

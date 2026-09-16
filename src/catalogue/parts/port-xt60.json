@@ -1,24 +1,27 @@
 {
   "id": "port-xt60",
-  "name": "XT60 connector",
+  "name": "XT60 connector (Amass XT60)",
   "category": "connector",
   "popularity": 60,
   "family": "xt-connector",
   "variant": "XT60, 60 A",
-  "summary": "High-current battery connector. Needs a 16 x 8 mm slot.",
-  "confidence": "approximate",
-  "source": "The XT60 shell is 16.2 x 8.1 mm across the flats. The 16.4 x 8.3 mm opening here leaves the quarter millimetre a printed panel needs. Rated 60 A by name, though the wire and the solder joint decide the real figure.",
-  "look": {"style": "xt"},
+  "manufacturer": "Amass",
+  "summary": "Yellow high-current battery connector. Needs a 16.2 x 8.6 mm slot to pass through a wall.",
+  "confidence": "measured",
+  "source": "SparkFun's published drawing of the Amass XT60 pair (2013): housing face 15.74 x 8.13 mm, female housing 15.88 mm long, male 19.98 mm long with its pins. SparkFun drew it from the part rather than from an Amass drawing, so this counts as measured. The 16.2 x 8.6 mm slot clears the housing by a quarter of a millimetre a side and ignores the two chamfered corners.",
+  "look": {
+    "style": "xt"
+  },
   "geometry": {
     "kind": "connector",
-    "bodyWidth": 16.2,
-    "bodyHeight": 8.1,
-    "bodyDepth": 15.6,
-    "protrusion": 1,
+    "bodyWidth": 15.74,
+    "bodyHeight": 8.13,
+    "bodyDepth": 15.88,
+    "protrusion": 0,
     "cutout": {
       "shape": "rect",
-      "w": 16.4,
-      "h": 8.3
+      "w": 16.2,
+      "h": 8.6
     },
     "panelThickness": 3
   },
@@ -28,24 +31,12 @@
       "label": "XT60 opening",
       "side": "+y",
       "shape": "rect",
-      "x": 8.1,
-      "y": 15.6,
-      "z": 0,
-      "width": 16.4,
-      "height": 8.3,
-      "protrusion": 1
-    }
-  ],
-  "keepouts": [
-    {
-      "id": "k-cable",
-      "label": "Room for the plug and cable",
-      "x": -4,
-      "y": 15.6,
-      "w": 25,
-      "h": 50,
-      "z": -4,
-      "height": 17
+      "x": 7.87,
+      "y": 15.88,
+      "z": -0.235,
+      "width": 16.2,
+      "height": 8.6,
+      "protrusion": 0
     }
   ],
   "electrical": {
@@ -56,12 +47,20 @@
     "currentPeak": 60,
     "note": "Named for 60 A. Treat that as a peak, not a continuous rating."
   },
+  "links": [
+    {
+      "label": "SparkFun XT60 drawing",
+      "url": "https://cdn.sparkfun.com/datasheets/Prototyping/xt60.pdf"
+    }
+  ],
   "tags": [
     "xt60",
+    "amass",
     "battery",
     "lipo",
     "power",
+    "high-current",
     "connector",
-    "high-current"
+    "rc"
   ]
 }

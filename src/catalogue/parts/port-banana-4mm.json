@@ -1,64 +1,63 @@
 {
   "id": "port-banana-4mm",
-  "name": "4 mm banana socket",
+  "name": "Binding post, red (Keystone 7004)",
   "category": "connector",
   "popularity": 42,
-  "summary": "Panel binding post. Needs a 6 mm round hole.",
-  "confidence": "approximate",
-  "source": "Dimensions follow the commonly sold part. These are made by many suppliers to no common standard, so measure yours before cutting a panel. The threaded barrel on the common panel socket is 6 mm, held by a nut behind. Insulated shrouds vary from 10 to 14 mm across the front.",
-  "look": {"style": "banana", "accent": "#c8322c"},
+  "manufacturer": "Keystone",
+  "summary": "Screw-down binding post that also takes 4 mm banana plugs. Needs an 8.4 mm hole.",
+  "confidence": "datasheet",
+  "source": "Keystone catalogue page 108, standard binding post 7004 (red, 7005 black): cap 0.423 in (10.8 mm) across, standing 0.719 in (18.3 mm) above the panel and reaching 0.828 in (21.1 mm) behind it, for panels up to 0.281 in (7.1 mm). The mounting hole is 0.328 in (8.4 mm) round with a flat 0.250 in (6.4 mm) across that stops it turning; the opening here is round, so add the flat by hand or rely on the nut. Rated 15 A.",
+  "look": {
+    "style": "banana",
+    "accent": "#c8322c"
+  },
   "geometry": {
     "kind": "connector",
-    "bodyWidth": 12,
-    "bodyHeight": 12,
-    "bodyDepth": 20,
-    "protrusion": 4,
+    "bodyWidth": 6.0,
+    "bodyHeight": 6.0,
+    "bodyDepth": 21.1,
+    "protrusion": 18.3,
     "cutout": {
       "shape": "circle",
-      "d": 6.0
+      "d": 8.4
     },
-    "panelThickness": 3
+    "panelThickness": 7.1
   },
   "connectors": [
     {
       "id": "opening",
-      "label": "Banana socket hole",
+      "label": "Post hole",
       "side": "+y",
       "shape": "circle",
-      "x": 6.0,
-      "y": 20,
-      "z": 6.0,
-      "width": 6.0,
-      "height": 6.0,
-      "protrusion": 4,
-      "diameter": 6.0
-    }
-  ],
-  "keepouts": [
-    {
-      "id": "k-cable",
-      "label": "Room for the plug and cable",
-      "x": -3,
-      "y": 20,
-      "w": 18,
-      "h": 45,
-      "z": -3,
-      "height": 18
+      "x": 3.0,
+      "y": 21.1,
+      "z": 3.0,
+      "width": 8.4,
+      "height": 8.4,
+      "diameter": 8.4,
+      "protrusion": 18.3
     }
   ],
   "electrical": {
-    "voltage": [
-      30
-    ],
-    "currentPeak": 15
+    "currentPeak": 15,
+    "note": "Rated 15 A."
   },
+  "links": [
+    {
+      "label": "Keystone binding posts",
+      "url": "https://www.farnell.com/datasheets/1703975.pdf"
+    }
+  ],
   "tags": [
     "banana",
+    "binding",
+    "post",
     "4mm",
-    "binding-post",
-    "test",
-    "power",
-    "connector",
-    "panel"
+    "socket",
+    "terminal",
+    "keystone",
+    "7004",
+    "panel",
+    "test"
   ]
 }

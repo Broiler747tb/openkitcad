@@ -1331,7 +1331,7 @@ function connectorLook(look: Look, part: CataloguePart, g: Geometry<'connector'>
           look.add(style === 'sma' ? 'gold' : 'metal', undefined, geometry)
         })
         if (style === 'banana') {
-          look.cylinderY('plastic', accent ?? '#c8322c', 0, d, cz, cutW + 4, p, 32, cutW + 3)
+          look.cylinderY('plastic', accent ?? '#c8322c', 0, d, cz, cutW + 2.4, p, 32, cutW + 1.4)
           look.cylinderY('metal', undefined, 0, d + p, cz, cutW * 0.55, 0.3, 24)
           look.cylinderY('plastic', DARK, 0, d + p + 0.3, cz, cutW * 0.35, 0.05, 20)
         } else if (style === 'gx16') {
@@ -1347,6 +1347,38 @@ function connectorLook(look: Look, part: CataloguePart, g: Geometry<'connector'>
           look.cylinderY('plastic', accent ?? '#c8322c', 0, d + p, cz, cutW * 0.72, 0.05, 28)
           look.cylinderY('plastic', DARK, 0, d + p + 0.05, cz, cutW * 0.3, 0.05, 20)
         }
+      })
+      return
+    }
+    case 'panel-jack': {
+      look.cylinderY('plastic', '#1b1d20', cx, 0, cz, Math.min(w, h), d - 1, 32)
+      ahead(() => {
+        look.cylinderY('metal', undefined, 0, d - 1, cz, cutW + 2.5, 1, 32)
+        look.cylinderY('metal', '#b9bfc5', 0, d, cz, cutW, p, 32)
+        look.within(new THREE.Matrix4().makeTranslation(0, d + Math.min(p * 0.35, 2), cz), () => {
+          const nut = regular(new THREE.Shape(), 0, 0, cutW * 0.78, 6, Math.PI / 6)
+          const geometry = new THREE.ExtrudeGeometry(nut, {
+            depth: Math.min(1.8, p * 0.4),
+            bevelEnabled: false,
+          })
+          geometry.rotateX(-Math.PI / 2)
+          look.add('metal', undefined, geometry)
+        })
+        look.cylinderY('plastic', DARK, 0, d + p, cz, cutW * 0.72, 0.05, 28)
+        look.cylinderY('metal', '#d5d9dd', 0, d + p - 3, cz, Math.max(1, cutW * 0.25), 2.8, 12)
+      })
+      return
+    }
+    case 'usb-c-panel': {
+      look.cylinderY('plastic', '#1d1f22', cx, 0, cz, Math.min(w, h), d, 40)
+      ahead(() => {
+        look.cylinderY('plastic', '#26292d', 0, d, cz, cutW + 6, p, 40)
+        look.within(
+          new THREE.Matrix4()
+            .makeTranslation(0, d + p + 0.01, cz - 1.65)
+            .multiply(new THREE.Matrix4().makeRotationZ(Math.PI)),
+          () => drawPort(look, 'usb-c', 8.94, 3.3, Math.min(7, d + p)),
+        )
       })
       return
     }

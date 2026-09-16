@@ -1,72 +1,77 @@
 {
   "id": "port-toggle-6mm",
-  "name": "Miniature toggle switch (6 mm bushing)",
+  "name": "Miniature toggle switch (C&K 7101)",
   "category": "connector",
   "popularity": 57,
-  "summary": "The little metal flick switch with a threaded collar and a nut. Needs a 6.2 mm round hole.",
-  "confidence": "measured",
-  "source": "The threaded bushing on miniature toggle switches of the MTS-102 family is M6 x 0.75, so it is 6 mm across and a 6.2 mm hole lets it drop in without forcing. That bushing size is consistent across the whole commodity family, which is why the hole is trustworthy. The rest is not: body size, how far the terminals reach behind the panel and the lever length differ between the two-position and three-position versions and between suppliers. Some of these also have a small anti-rotation tab beside the bushing, which needs its own notch in the panel or must be snapped off.",
-  "look": {"style": "toggle"},
+  "manufacturer": "C&K",
+  "summary": "Classic bat-handle on/on toggle switch. Its 1/4-40 bushing needs a 6.5 mm hole.",
+  "confidence": "datasheet",
+  "source": "C&K 7000 series catalogue, 7101 SPDT: 1/4-40 UNS-2A bushing 0.350 in (8.9 mm) long, bat handle 0.420 in (10.7 mm) beyond it, case 0.270 x 0.500 in (6.9 x 12.7 mm) and 0.350 in (8.9 mm) deep with the terminals a further 0.185 in (4.7 mm). The 6.5 mm hole clears the 6.35 mm thread. MTS-102 copies use an M6 bushing, which fits the same hole.",
+  "look": {
+    "style": "toggle"
+  },
   "geometry": {
     "kind": "connector",
-    "bodyWidth": 13,
-    "bodyHeight": 8.5,
-    "bodyDepth": 19,
-    "protrusion": 20,
-    "cutout": { "shape": "circle", "d": 6.2 },
-    "panelThickness": 2
+    "bodyWidth": 6.86,
+    "bodyHeight": 12.7,
+    "bodyDepth": 8.89,
+    "protrusion": 19.56,
+    "cutout": {
+      "shape": "circle",
+      "d": 6.5
+    },
+    "panelThickness": 3
   },
   "connectors": [
     {
       "id": "opening",
-      "label": "Toggle switch hole",
+      "label": "Bushing hole",
       "side": "+y",
       "shape": "circle",
-      "x": 6.5,
-      "y": 19,
-      "z": 4.25,
-      "width": 6.2,
-      "height": 6.2,
-      "diameter": 6.2,
-      "protrusion": 20
+      "x": 3.43,
+      "y": 8.89,
+      "z": 6.35,
+      "width": 6.5,
+      "height": 6.5,
+      "diameter": 6.5,
+      "protrusion": 19.56
     }
   ],
   "keepouts": [
     {
-      "id": "k-nut",
-      "label": "Room for the washer and fixing nut",
-      "x": 1,
-      "y": 19,
-      "w": 11,
-      "h": 8,
-      "z": -1.25,
-      "height": 11
-    },
-    {
-      "id": "k-lever",
-      "label": "Room to flick the lever from side to side",
-      "x": -1.5,
-      "y": 19,
-      "w": 16,
-      "h": 24,
-      "z": -3.75,
-      "height": 16
-    },
-    {
-      "id": "k-wires",
-      "label": "Room for the solder tags and wires behind the panel",
-      "x": 2,
-      "y": -15,
-      "w": 9,
-      "h": 15,
-      "z": 0.5,
-      "height": 7.5
+      "id": "k-terminals",
+      "label": "Solder terminals",
+      "x": 0,
+      "y": -4.7,
+      "w": 6.86,
+      "h": 4.7,
+      "z": 0,
+      "height": 12.7
     }
   ],
   "electrical": {
-    "voltage": [125, 250],
-    "currentPeak": 6,
-    "note": "Commonly rated 6 A at 125 V AC or 3 A at 250 V AC. Most hobby uses switch low-voltage DC far below that."
+    "voltage": [
+      120,
+      28
+    ],
+    "currentPeak": 5,
+    "note": "With silver (Q) contacts: 5 A at 120 V AC or 28 V DC, 2 A at 250 V AC."
   },
-  "tags": ["toggle", "switch", "mts-102", "spdt", "flick", "on-off", "6mm", "panel"]
+  "links": [
+    {
+      "label": "C&K 7000 series catalogue",
+      "url": "https://www.egr.msu.edu/eceshop/Parts_Inventory/datasheets/spdt%20round%20handled%20switch.pdf"
+    }
+  ],
+  "tags": [
+    "switch",
+    "toggle",
+    "bat",
+    "spdt",
+    "on-on",
+    "panel",
+    "c&k",
+    "7101",
+    "mts-102"
+  ]
 }

@@ -1,6 +1,6 @@
 {
   "id": "port-xt30",
-  "name": "XT30 connector",
+  "name": "XT30 connector (Amass XT30, unverified)",
   "category": "connector",
   "popularity": 45,
   "family": "xt-connector",
@@ -8,7 +8,9 @@
   "summary": "Smaller XT for lighter loads. Needs a 12 x 6 mm slot.",
   "confidence": "approximate",
   "source": "The XT30 shell is 11.9 x 6.3 mm. Rated 30 A by name; as with the XT60 the wire is usually the limit.",
-  "look": {"style": "xt"},
+  "look": {
+    "style": "xt"
+  },
   "geometry": {
     "kind": "connector",
     "bodyWidth": 11.9,

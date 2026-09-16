@@ -1,19 +1,28 @@
 {
   "id": "port-iec-c14",
-  "name": "IEC C14 mains inlet",
+  "name": "IEC C14 mains inlet, snap-in (generic)",
   "category": "connector",
   "popularity": 46,
+  "family": "iec-inlet",
+  "variant": "Snap-in, plain (generic)",
   "summary": "The three-pin socket a kettle lead plugs into. Needs a 27 x 19.5 mm rectangular hole.",
-  "confidence": "datasheet",
+  "confidence": "approximate",
   "source": "The C14 mating face is fixed by IEC 60320, and the 27.0 x 19.5 mm snap-in panel cutout with roughly 3 mm corner radii is the same figure across the major suppliers. Modelled here as the plain snap-in version. What is not verified: the flange size and the 22 mm body depth behind the panel, which differ by a few millimetres between makers, and inlets with a built-in fuse holder or switch, which are much deeper than this. Snap-in inlets only grip thin panels, roughly 0.8 to 2 mm, so on a thicker printed panel use the screw-mount version instead: it takes the same cutout plus two M3 holes on 40 mm centres, but its flange is wider than the body modelled here.",
-  "look": {"style": "iec"},
+  "look": {
+    "style": "iec"
+  },
   "geometry": {
     "kind": "connector",
     "bodyWidth": 31,
     "bodyHeight": 24,
     "bodyDepth": 22,
     "protrusion": 2,
-    "cutout": { "shape": "rect", "w": 27.0, "h": 19.5, "cornerRadius": 3.0 },
+    "cutout": {
+      "shape": "rect",
+      "w": 27.0,
+      "h": 19.5,
+      "cornerRadius": 3.0
+    },
     "panelThickness": 1.5
   },
   "connectors": [
@@ -53,9 +62,24 @@
     }
   ],
   "electrical": {
-    "voltage": [120, 230],
+    "voltage": [
+      120,
+      230
+    ],
     "currentPeak": 10,
     "note": "Mains voltage. Usually rated 10 A at 250 V AC. The earth pin is the longer centre one and must be connected to any metal panel."
   },
-  "tags": ["iec", "c14", "iec60320", "mains", "ac", "power", "inlet", "kettle", "port", "socket", "panel"]
+  "tags": [
+    "iec",
+    "c14",
+    "iec60320",
+    "mains",
+    "ac",
+    "power",
+    "inlet",
+    "kettle",
+    "port",
+    "socket",
+    "panel"
+  ]
 }

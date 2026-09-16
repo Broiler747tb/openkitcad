@@ -1,59 +1,66 @@
 {
   "id": "port-terminal-508",
-  "name": "Screw terminal block, 2-way, 5.08 mm",
+  "name": "Screw terminal, 2 way, 5.08 mm (Phoenix MKDS 1,5/2-5,08)",
   "category": "connector",
   "popularity": 66,
-  "summary": "Two screws you clamp bare wire ends into, soldered onto a circuit board. Needs a 12 x 9 mm slot if the wires come in through a wall.",
-  "confidence": "approximate",
-  "source": "The 5.08 mm pitch is exact, being 0.2 inch, so a 2-way block is 10.16 mm wide and its two board pins sit 5.08 mm apart. The body height and depth given here are typical of the common KF128 / DG128 style block and are not taken from any one datasheet: other 5.08 mm families are taller, and the plug-and-socket types add 20 mm or more in front. The 12 x 9 mm panel slot is a suggested wire-entry opening, not a manufacturer figure. This part solders to a board rather than clamping onto a panel, so it has no fixing holes of its own.",
-  "look": {"style": "terminal"},
+  "manufacturer": "Phoenix Contact",
+  "summary": "Green 2-way screw terminal for a board. Wires go in from the front; it stands 13.8 mm tall.",
+  "confidence": "datasheet",
+  "source": "Phoenix Contact catalogue extract for MKDS 1,5/ 2-5,08 (1715721): 10.16 mm wide for 2 positions at 5.08 mm pitch, 9.8 mm deep and 13.8 mm tall on the board with pins 3.5 mm below, M3 clamping screws, wires up to 2.5 mm2 solid or 1.5 mm2 stranded stripped 7 mm. The 11.2 x 6 mm slot in front is a suggestion for bringing wires through a wall, not a Phoenix figure. KF128 and DG128 lookalikes share the pitch but not always the height.",
+  "look": {
+    "style": "terminal",
+    "accent": "#2e8b57",
+    "pins": 2
+  },
   "geometry": {
     "kind": "connector",
     "bodyWidth": 10.16,
-    "bodyHeight": 10.0,
-    "bodyDepth": 8.5,
+    "bodyHeight": 13.8,
+    "bodyDepth": 9.8,
     "protrusion": 0,
-    "cutout": { "shape": "rect", "w": 12.0, "h": 9.0, "cornerRadius": 1.0 }
+    "cutout": {
+      "shape": "rect",
+      "w": 11.2,
+      "h": 6.0,
+      "cornerRadius": 0.5
+    }
   },
   "connectors": [
     {
       "id": "opening",
-      "label": "Wire entry opening",
+      "label": "Wire entry",
       "side": "+y",
       "shape": "rect",
       "x": 5.08,
-      "y": 8.5,
-      "z": 0.5,
-      "width": 12.0,
-      "height": 9.0,
+      "y": 9.8,
+      "z": 3.0,
+      "width": 11.2,
+      "height": 6.0,
       "protrusion": 0
     }
   ],
-  "keepouts": [
+  "electrical": {
+    "voltage": [
+      250
+    ],
+    "currentPeak": 17.5,
+    "note": "17.5 A at 250 V to IEC; UL lists 10 A at 300 V."
+  },
+  "links": [
     {
-      "id": "k-driver",
-      "label": "Room to get a screwdriver in from above",
-      "x": 0,
-      "y": 0,
-      "w": 10.16,
-      "h": 8.5,
-      "z": 10.0,
-      "height": 30
-    },
-    {
-      "id": "k-wires",
-      "label": "Room for the wires going in",
-      "x": -3,
-      "y": 8.5,
-      "w": 16,
-      "h": 30,
-      "z": -2,
-      "height": 14
+      "label": "Phoenix Contact 1715721",
+      "url": "https://media.digikey.com/pdf/Data%20Sheets/Phoenix%20Contact%20PDFs/1715721.pdf"
     }
   ],
-  "electrical": {
-    "currentPeak": 10,
-    "note": "Blocks of this size are usually rated around 10 A at 300 V, but the rating depends on the exact part and on the wire you put in it. Check what is printed on the block before using it anywhere near mains."
-  },
-  "tags": ["terminal", "screw", "block", "5.08", "pitch", "pcb", "wire", "connector", "kf128", "phoenix"]
+  "tags": [
+    "terminal",
+    "screw",
+    "block",
+    "phoenix",
+    "mkds",
+    "5.08",
+    "wire",
+    "connector",
+    "kf128"
+  ]
 }

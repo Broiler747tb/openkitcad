@@ -1,53 +1,74 @@
 {
   "id": "port-hdmi-a",
-  "name": "HDMI socket, full size (Type A)",
+  "name": "HDMI socket, full size (Würth 685119134923)",
   "category": "connector",
   "popularity": 48,
   "family": "hdmi-port",
-  "variant": "Full-size HDMI",
-  "summary": "The big HDMI port you see on a TV or a laptop. Needs a 15 x 6 mm panel slot.",
-  "confidence": "approximate",
-  "source": "The HDMI Type A plug shell is 13.9 x 4.45 mm, which is fixed by the HDMI connector specification. Everything else here is a working figure, not a verified drawing: the 15.0 x 6.0 mm cutout is the shell plus clearance, and the socket body behind the panel is a typical through-hole receptacle. Receptacle bodies differ between manufacturers, so check yours. Note also that many HDMI cables have a fat moulded plug body starting right behind the metal shell; if yours does, and the panel is thick or the socket is set back from it, the plug will bottom out on the panel before it seats. In that case either mount the socket hard against the panel, or open the hole out to roughly 21 x 10 mm so the whole plug body passes through.",
-  "look": {"style": "hdmi"},
+  "variant": "Full size (Würth 685119134923)",
+  "manufacturer": "Würth Elektronik",
+  "summary": "Full-size HDMI socket for the edge of a board. Needs a 14.6 x 5.2 mm slot.",
+  "confidence": "datasheet",
+  "source": "Würth Elektronik WR-COM 685119134923 drawing: shell 15.0 mm wide and 5.55 mm tall, 11.60 mm deep (12.15 mm to the rear tabs), front at the board edge. The HDMI Type A plug shell is 13.9 x 4.45 mm; the 14.6 x 5.2 mm slot adds about a third of a millimetre round it. Many cables have a moulding far bigger than the shell.",
+  "look": {
+    "style": "hdmi"
+  },
   "geometry": {
     "kind": "connector",
-    "bodyWidth": 15.5,
-    "bodyHeight": 7.0,
-    "bodyDepth": 12.0,
+    "bodyWidth": 15.0,
+    "bodyHeight": 5.55,
+    "bodyDepth": 11.6,
     "protrusion": 0,
-    "cutout": { "shape": "rect", "w": 15.0, "h": 6.0, "cornerRadius": 0.5 },
-    "panelThickness": 2
+    "cutout": {
+      "shape": "rect",
+      "w": 14.6,
+      "h": 5.2,
+      "cornerRadius": 0.5
+    },
+    "panelThickness": 1.5
   },
   "connectors": [
     {
       "id": "opening",
-      "label": "HDMI Type A opening",
+      "label": "HDMI opening",
       "side": "+y",
       "shape": "rect",
-      "x": 7.75,
-      "y": 12.0,
-      "z": 0.5,
-      "width": 15.0,
-      "height": 6.0,
+      "x": 7.5,
+      "y": 11.6,
+      "z": 0.175,
+      "width": 14.6,
+      "height": 5.2,
       "protrusion": 0
     }
   ],
   "keepouts": [
     {
       "id": "k-plug",
-      "label": "Room for the plug body and cable",
-      "x": -4.25,
-      "y": 12.0,
-      "w": 24,
-      "h": 50,
-      "z": -2.5,
-      "height": 12
+      "label": "Room for the plug and its cable",
+      "x": -3.0,
+      "y": 11.6,
+      "w": 21.0,
+      "h": 40,
+      "z": -2.725,
+      "height": 11.0
     }
   ],
   "electrical": {
-    "voltage": [5],
-    "currentPeak": 0.055,
-    "note": "Signal only. One pin carries 5 V so the far end can read the display's ID; the source is only obliged to supply about 55 mA on it, so do not treat an HDMI port as a power supply."
+    "note": "Contacts rated 0.5 A at 40 V."
   },
-  "tags": ["hdmi", "hdmi-a", "type-a", "video", "display", "port", "socket", "connector", "panel"]
+  "links": [
+    {
+      "label": "Würth 685119134923 datasheet",
+      "url": "https://www.we-online.com/components/products/datasheet/685119134923.pdf"
+    }
+  ],
+  "tags": [
+    "hdmi",
+    "hdmi-a",
+    "video",
+    "display",
+    "port",
+    "socket",
+    "connector",
+    "wurth"
+  ]
 }

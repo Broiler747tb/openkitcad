@@ -1,19 +1,27 @@
 {
   "id": "port-usb-a",
-  "name": "USB-A socket",
+  "name": "USB-A socket (GCT USB1046)",
   "category": "connector",
   "popularity": 74,
-  "summary": "The full-size rectangular USB port. Needs a 13 x 6 mm panel slot.",
-  "confidence": "approximate",
-  "source": "The USB Type-A plug shell is 12.0 x 4.5 mm, which is fixed by the USB specification. The 13.0 x 6.0 mm cutout here is the usual working opening: it clears the shell plus the moulded strain relief on a typical cable. Socket bodies vary a lot between manufacturers, so check yours before cutting a panel.",
-  "look": {"style": "usb-a"},
+  "manufacturer": "GCT",
+  "summary": "Full-size USB-A socket for the edge of a board. Needs a 13 x 6 mm slot.",
+  "confidence": "datasheet",
+  "source": "GCT USB1046 drawing, revision B5: shell 12.50 mm wide and 5.12 mm tall, 13.4 mm deep and 14.50 mm over the mounting tabs, front at the board edge. GCT now marks this part not recommended for new designs, but the shell is the USB 2.0 Type-A receptacle outline that current top-mount sockets share. The 13.0 x 6.0 mm slot clears the 12.0 x 4.5 mm plug shell by half a millimetre.",
+  "look": {
+    "style": "usb-a"
+  },
   "geometry": {
     "kind": "connector",
-    "bodyWidth": 13.5,
-    "bodyHeight": 6.5,
-    "bodyDepth": 14,
+    "bodyWidth": 12.5,
+    "bodyHeight": 5.12,
+    "bodyDepth": 13.4,
     "protrusion": 0,
-    "cutout": { "shape": "rect", "w": 13.0, "h": 6.0 },
+    "cutout": {
+      "shape": "rect",
+      "w": 13.0,
+      "h": 6.0,
+      "cornerRadius": 0.3
+    },
     "panelThickness": 2
   },
   "connectors": [
@@ -22,9 +30,9 @@
       "label": "USB-A opening",
       "side": "+y",
       "shape": "rect",
-      "x": 6.75,
-      "y": 14,
-      "z": 0,
+      "x": 6.25,
+      "y": 13.4,
+      "z": -0.44,
       "width": 13.0,
       "height": 6.0,
       "protrusion": 0
@@ -32,20 +40,38 @@
   ],
   "keepouts": [
     {
-      "id": "k-cable",
-      "label": "Room for the plug and cable",
-      "x": -6,
-      "y": 14,
-      "w": 25,
-      "h": 45,
-      "z": -8,
-      "height": 22
+      "id": "k-plug",
+      "label": "Room for the plug and its cable",
+      "x": -1.75,
+      "y": 13.4,
+      "w": 16.0,
+      "h": 40,
+      "z": -1.44,
+      "height": 8.0
     }
   ],
   "electrical": {
-    "voltage": [5],
-    "currentPeak": 0.9,
-    "note": "USB 2.0 ports supply 500 mA, USB 3.0 ports 900 mA, unless the host negotiates more."
+    "voltage": [
+      5
+    ],
+    "currentPeak": 1.5,
+    "note": "Contacts rated 1.5 A at 30 V."
   },
-  "tags": ["usb", "usb-a", "type-a", "port", "socket", "connector", "panel"]
+  "links": [
+    {
+      "label": "GCT USB1046 drawing",
+      "url": "https://gct.co/files/drawings/usb1046.pdf"
+    }
+  ],
+  "tags": [
+    "usb",
+    "usb-a",
+    "type-a",
+    "port",
+    "socket",
+    "receptacle",
+    "connector",
+    "gct",
+    "usb1046"
+  ]
 }

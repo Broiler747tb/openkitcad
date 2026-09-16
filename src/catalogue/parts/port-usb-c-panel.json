@@ -1,0 +1,79 @@
+{
+  "id": "port-usb-c-panel",
+  "name": "USB-C round panel mount (Adafruit 4218)",
+  "category": "connector",
+  "popularity": 58,
+  "family": "usb-c-port",
+  "variant": "Round panel mount, on a cable (Adafruit 4218)",
+  "manufacturer": "Adafruit",
+  "summary": "USB-C socket in a threaded barrel with a nut, on a 30 cm cable. Needs a 21.5 mm round hole.",
+  "confidence": "approximate",
+  "source": "Adafruit's product page for 4218 gives the hole (21.5 mm, and it clamps in holes up to 27 mm), the outside diameter with the nut (about 29.5 mm) and the panel range (up to 16 mm thick). The supplier's drawing (Premier Cable PCM-0165) only covers the cable, so the flange and body lengths here are estimates. Check the body behind the panel before designing tight around it.",
+  "look": {
+    "style": "usb-c-panel"
+  },
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 22,
+    "bodyHeight": 22,
+    "bodyDepth": 30,
+    "protrusion": 3,
+    "cutout": {
+      "shape": "circle",
+      "d": 21.5
+    },
+    "panelThickness": 16
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "Panel hole",
+      "side": "+y",
+      "shape": "circle",
+      "x": 11.0,
+      "y": 30,
+      "z": 11.0,
+      "width": 21.5,
+      "height": 21.5,
+      "diameter": 21.5,
+      "protrusion": 3
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-cable",
+      "label": "Cable leaving the back",
+      "x": 6,
+      "y": -40,
+      "w": 10,
+      "h": 40,
+      "z": 6,
+      "height": 10
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      5
+    ],
+    "note": "USB 3.1 wiring end to end, per the supplier drawing."
+  },
+  "links": [
+    {
+      "label": "Adafruit 4218",
+      "url": "https://www.adafruit.com/product/4218"
+    }
+  ],
+  "tags": [
+    "usb-c",
+    "type-c",
+    "usbc",
+    "panel",
+    "panel-mount",
+    "extension",
+    "cable",
+    "round",
+    "threaded",
+    "adafruit",
+    "4218"
+  ]
+}

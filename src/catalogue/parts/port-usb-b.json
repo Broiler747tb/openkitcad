@@ -1,19 +1,27 @@
 {
   "id": "port-usb-b",
-  "name": "USB-B socket",
+  "name": "USB-B socket (On Shore USB-B1HSW6)",
   "category": "connector",
   "popularity": 36,
-  "summary": "The big chunky square port you find on printers. Needs a 13 x 12 mm panel hole.",
-  "confidence": "approximate",
-  "source": "The USB Series B plug shell is about 11.5 x 10.5 mm with the top two corners bevelled, and that shape is fixed by the USB specification. The rest is not verified. The 13.0 x 12.0 mm cutout here is a plain rectangle rather than the bevelled outline, so the plug will sit with a little slop, and it is sized to clear the shell only, not the plug's moulded body. The socket body behind the panel is a generic through-hole PCB receptacle and varies by a couple of millimetres between suppliers. This entry is the bare socket, which does not bolt on; panel-mount USB-B feedthroughs with screw flanges are a different part.",
-  "look": {"style": "usb-b"},
+  "manufacturer": "On Shore Technology",
+  "summary": "The big square printer-style USB socket for a board edge. Needs a 9.2 x 8.6 mm hole.",
+  "confidence": "datasheet",
+  "source": "On Shore Technology USB-B1HSxx drawing, revision G: shell 12.00 mm wide, 16.50 mm deep and 10.70 mm tall, mouth 8.45 x 7.78 mm with its top corners bevelled. The 9.2 x 8.6 mm hole is the mouth plus clearance and ignores the bevels.",
+  "look": {
+    "style": "usb-b"
+  },
   "geometry": {
     "kind": "connector",
-    "bodyWidth": 15.5,
-    "bodyHeight": 13.5,
+    "bodyWidth": 12.0,
+    "bodyHeight": 10.7,
     "bodyDepth": 16.5,
     "protrusion": 0,
-    "cutout": { "shape": "rect", "w": 13.0, "h": 12.0, "cornerRadius": 1.0 },
+    "cutout": {
+      "shape": "rect",
+      "w": 9.2,
+      "h": 8.6,
+      "cornerRadius": 0.5
+    },
     "panelThickness": 2
   },
   "connectors": [
@@ -22,30 +30,47 @@
       "label": "USB-B opening",
       "side": "+y",
       "shape": "rect",
-      "x": 7.75,
+      "x": 6.0,
       "y": 16.5,
-      "z": 0.75,
-      "width": 13.0,
-      "height": 12.0,
+      "z": 1.05,
+      "width": 9.2,
+      "height": 8.6,
       "protrusion": 0
     }
   ],
   "keepouts": [
     {
       "id": "k-plug",
-      "label": "Room for the plug and cable",
-      "x": -7.25,
+      "label": "Room for the plug and its cable",
+      "x": -2.0,
       "y": 16.5,
-      "w": 30,
-      "h": 50,
-      "z": -6,
-      "height": 25
+      "w": 16.0,
+      "h": 40,
+      "z": -1.65,
+      "height": 14.0
     }
   ],
   "electrical": {
-    "voltage": [5],
-    "currentPeak": 0.5,
-    "note": "This is the socket on the device end of a USB 2.0 cable. The host supplies 500 mA unless the device negotiates more."
+    "voltage": [
+      5
+    ],
+    "currentPeak": 1.5,
+    "note": "Rated 1.5 A at 30 V AC/DC."
   },
-  "tags": ["usb", "usb-b", "type-b", "printer", "port", "socket", "connector", "panel", "square"]
+  "links": [
+    {
+      "label": "On Shore USB-B1HSxx drawing",
+      "url": "https://www.on-shore.com/wp-content/uploads/USB-B1HSXX.pdf"
+    }
+  ],
+  "tags": [
+    "usb",
+    "usb-b",
+    "type-b",
+    "printer",
+    "port",
+    "socket",
+    "connector",
+    "arduino"
+  ]
 }

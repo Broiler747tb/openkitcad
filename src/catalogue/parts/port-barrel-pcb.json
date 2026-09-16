@@ -1,0 +1,82 @@
+{
+  "id": "port-barrel-pcb",
+  "name": "DC barrel jack, board mount (Same Sky PJ-102AH)",
+  "category": "connector",
+  "popularity": 72,
+  "family": "barrel-jack",
+  "variant": "Board mount (Same Sky PJ-102AH)",
+  "manufacturer": "Same Sky",
+  "summary": "The square black power jack on an Arduino-style board, for 5.5 x 2.1 mm plugs. Needs a 7 mm hole.",
+  "confidence": "datasheet",
+  "source": "Same Sky (formerly CUI Devices) PJ-102AH drawing, 2024: body 9.0 mm wide, 11.0 mm tall and 14.4 mm deep, a 6.5 mm opening whose centre is 6.5 mm above the board, 2.0 mm pin, plug goes 9.5 mm in. The 7.0 mm hole clears the 5.5 mm plug barrel; most plug mouldings are 9 to 10 mm across and stay outside, so the jack should sit right behind the wall.",
+  "look": {
+    "style": "barrel"
+  },
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 9.0,
+    "bodyHeight": 11.0,
+    "bodyDepth": 14.4,
+    "protrusion": 0,
+    "cutout": {
+      "shape": "circle",
+      "d": 7.0
+    },
+    "panelThickness": 1.5
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "Jack opening",
+      "side": "+y",
+      "shape": "circle",
+      "x": 4.5,
+      "y": 14.4,
+      "z": 6.5,
+      "width": 7.0,
+      "height": 7.0,
+      "diameter": 7.0,
+      "protrusion": 0
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-plug",
+      "label": "Room for the plug and its cable",
+      "x": -0.5,
+      "y": 14.4,
+      "w": 10,
+      "h": 40,
+      "z": 1.5,
+      "height": 10
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      24
+    ],
+    "currentPeak": 5,
+    "note": "Rated 5 A at 24 V DC."
+  },
+  "links": [
+    {
+      "label": "Same Sky PJ-102AH datasheet",
+      "url": "https://www.sameskydevices.com/product/resource/pj-102ah.pdf"
+    }
+  ],
+  "tags": [
+    "power",
+    "dc",
+    "barrel",
+    "jack",
+    "5.5",
+    "2.1",
+    "pcb",
+    "board",
+    "socket",
+    "connector",
+    "cui",
+    "pj-102ah",
+    "arduino"
+  ]
+}

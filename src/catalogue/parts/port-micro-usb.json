@@ -1,20 +1,28 @@
 {
   "id": "port-micro-usb",
-  "name": "Micro USB socket",
+  "name": "Micro USB socket (GCT USB3076)",
   "category": "connector",
   "popularity": 80,
-  "summary": "The small flat port used on older phones and cheap dev boards. Needs an 8 x 3.2 mm panel slot.",
-  "confidence": "approximate",
-  "source": "The Micro-B plug shell is 6.85 x 1.8 mm, which is fixed by the USB Micro-B specification. The rest is not verified: the 8.0 x 3.2 mm cutout is a working opening with clearance added by hand, and the socket body is a generic surface-mount receptacle whose depth and height vary between suppliers. The plug's moulded body is roughly 11 x 6.5 mm, much larger than the shell, so the socket must sit right at the panel face on a thin panel or the plug will not push in far enough to latch.",
-  "look": {"style": "micro-usb"},
+  "manufacturer": "GCT",
+  "summary": "Micro-B socket for the edge of a board, as on older dev boards. Needs a 7.8 x 2.8 mm slot.",
+  "confidence": "datasheet",
+  "source": "GCT USB3076-30-A drawing, revision C6: body 7.40 mm wide, 5.55 mm deep and 2.35 mm tall, mouth 6.90 x 1.85 mm, front at the board edge. The 7.8 x 2.8 mm slot clears the 6.85 x 1.8 mm plug shell. The plug moulding is far bigger than the shell, so the socket has to sit right behind the wall.",
+  "look": {
+    "style": "micro-usb"
+  },
   "geometry": {
     "kind": "connector",
-    "bodyWidth": 8.5,
-    "bodyHeight": 4.0,
-    "bodyDepth": 5.5,
+    "bodyWidth": 7.4,
+    "bodyHeight": 2.35,
+    "bodyDepth": 5.55,
     "protrusion": 0,
-    "cutout": { "shape": "rect", "w": 8.0, "h": 3.2, "cornerRadius": 0.8 },
-    "panelThickness": 1.5
+    "cutout": {
+      "shape": "rect",
+      "w": 7.8,
+      "h": 2.8,
+      "cornerRadius": 0.6
+    },
+    "panelThickness": 1.0
   },
   "connectors": [
     {
@@ -22,30 +30,49 @@
       "label": "Micro USB opening",
       "side": "+y",
       "shape": "rect",
-      "x": 4.25,
-      "y": 5.5,
-      "z": 0.4,
-      "width": 8.0,
-      "height": 3.2,
+      "x": 3.7,
+      "y": 5.55,
+      "z": -0.225,
+      "width": 7.8,
+      "height": 2.8,
       "protrusion": 0
     }
   ],
   "keepouts": [
     {
       "id": "k-plug",
-      "label": "Room for the plug and cable",
-      "x": -5.75,
-      "y": 5.5,
-      "w": 20,
-      "h": 35,
-      "z": -6,
-      "height": 16
+      "label": "Room for the plug and its cable",
+      "x": -1.8,
+      "y": 5.55,
+      "w": 11.0,
+      "h": 40,
+      "z": -2.325,
+      "height": 7.0
     }
   ],
   "electrical": {
-    "voltage": [5],
+    "voltage": [
+      5
+    ],
     "currentPeak": 1.8,
-    "note": "The connector itself is rated around 1.8 A. A plain USB 2.0 host only supplies 500 mA unless it is a dedicated charging port."
+    "note": "Power pins rated 1.8 A, signal pins 1 A, at 30 V AC."
   },
-  "tags": ["usb", "micro", "micro-usb", "micro-b", "type-b", "port", "socket", "connector", "panel", "phone"]
+  "links": [
+    {
+      "label": "GCT USB3076 drawing",
+      "url": "https://gct.co/files/drawings/usb3076.pdf"
+    }
+  ],
+  "tags": [
+    "usb",
+    "micro-usb",
+    "micro-b",
+    "microusb",
+    "port",
+    "socket",
+    "receptacle",
+    "connector",
+    "gct",
+    "usb3076"
+  ]
 }

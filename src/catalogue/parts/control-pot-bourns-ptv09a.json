@@ -1,33 +1,59 @@
 {
   "id": "control-pot-bourns-ptv09a",
-  "name": "Bourns PTV09A 9 mm potentiometer", 
+  "name": "Potentiometer, 9 mm threaded (Bourns PTV09A-6)",
   "category": "control",
   "popularity": 45,
   "family": "potentiometer",
   "variant": "9 mm, Bourns PTV09A",
   "manufacturer": "Bourns",
-  "summary": "Common 9 mm single-gang rotary potentiometer; the threaded-bushing version fits a 9.2 mm panel hole.",
+  "summary": "Compact 9 mm pot with a metal M9 bushing for a panel. Needs a 9.2 mm hole.",
   "confidence": "datasheet",
-  "source": "Bourns PTV09 datasheet, PTV09A-6 horizontal/rear mount with metal threaded bushing: 11.4 mm body width, 10.0 mm body height, M9 × 0.75 bushing and 6.0 mm flat shaft. This catalogue part is specifically that panel-mount variant, not the bushingless PCB-only variants.",
-  "links": [
-    { "label": "Bourns PTV09 datasheet", "url": "https://www.bourns.com/docs/product-datasheets/PTV09.pdf" }
-  ],
-  "look": {"style": "pot"},
+  "source": "Bourns PTV09 series datasheet, PTV09A-6 horizontal rear mount with metal threaded bushing: body 10.0 mm wide, 11.4 mm tall including the terminal stand and 8.4 mm deep, M9 x 0.75 bushing 5.9 mm long, shaft length L from the body (15 mm modelled). Hardware: nut 11 mm across flats and 2 mm thick, washer 15 mm. The 9.2 mm hole clears the M9 thread.",
+  "look": {
+    "style": "pot"
+  },
   "geometry": {
     "kind": "connector",
-    "bodyWidth": 11.4,
-    "bodyHeight": 10,
-    "bodyDepth": 12,
-    "protrusion": 20,
-    "cutout": { "shape": "circle", "d": 9.2 },
-    "panelThickness": 3
+    "bodyWidth": 10.0,
+    "bodyHeight": 11.4,
+    "bodyDepth": 8.4,
+    "protrusion": 15.0,
+    "cutout": {
+      "shape": "circle",
+      "d": 9.2
+    },
+    "panelThickness": 3.0
   },
   "connectors": [
-    { "id": "opening", "label": "PTV09A bushing hole", "side": "+y", "shape": "circle", "x": 5.7, "y": 12, "z": 5, "width": 9.2, "height": 9.2, "diameter": 9.2, "protrusion": 20 }
+    {
+      "id": "opening",
+      "label": "Bushing hole",
+      "side": "+y",
+      "shape": "circle",
+      "x": 5.0,
+      "y": 8.4,
+      "z": 5.7,
+      "width": 9.2,
+      "height": 9.2,
+      "diameter": 9.2,
+      "protrusion": 15.0
+    }
   ],
-  "keepouts": [
-    { "id": "k-knob", "label": "Space for knob", "x": -5, "y": 12, "w": 21.4, "h": 20, "z": -5, "height": 20 },
-    { "id": "k-body", "label": "Potentiometer body behind panel", "x": 0, "y": 0, "w": 11.4, "h": 12, "z": 0, "height": 10 }
+  "links": [
+    {
+      "label": "Bourns PTV09 datasheet",
+      "url": "https://www.bourns.com/docs/product-datasheets/PTV09.pdf"
+    }
   ],
-  "tags": ["potentiometer", "pot", "ptv09", "ptv09a", "bourns", "rotary", "volume", "panel", "9mm"]
+  "tags": [
+    "potentiometer",
+    "pot",
+    "ptv09",
+    "ptv09a",
+    "bourns",
+    "rotary",
+    "volume",
+    "panel",
+    "9mm"
+  ]
 }

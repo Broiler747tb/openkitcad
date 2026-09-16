@@ -1,0 +1,86 @@
+{
+  "id": "port-iec-c14-fused",
+  "name": "IEC C14 inlet with fuse holder (Qualtek 719W-00/03)",
+  "category": "connector",
+  "popularity": 40,
+  "family": "iec-inlet",
+  "variant": "Screw mount with fuse drawer (Qualtek 719W-00/03)",
+  "manufacturer": "Qualtek",
+  "summary": "Kettle-lead inlet with a pull-out 5 x 20 mm fuse drawer. Two M3 screws and a 27.3 x 31.4 mm hole.",
+  "confidence": "datasheet",
+  "source": "Qualtek 719W-00/03 drawing, revision D: flange 44 x 33 mm with 3.5 mm holes 36 mm apart, housing 26.8 mm wide and 31 mm tall reaching 28.6 mm behind the flange. With the flange in front of the panel the hole is 27.3 x 31.4 mm with 1 mm corner radii; with the flange behind, 28.8 x 31.5 mm. Holds an active and a spare 5 x 20 mm fuse. Rated 10 A 250 V AC. Mains wiring: follow your local rules.",
+  "look": {
+    "style": "iec"
+  },
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 26.8,
+    "bodyHeight": 31.0,
+    "bodyDepth": 28.6,
+    "protrusion": 3.0,
+    "cutout": {
+      "shape": "rect",
+      "w": 27.3,
+      "h": 31.4,
+      "cornerRadius": 1.0
+    },
+    "panelThickness": 3.0
+  },
+  "mountingHoles": [
+    {
+      "id": "m1",
+      "x": -4.6,
+      "y": 15.5,
+      "diameter": 3.5,
+      "screw": "M3",
+      "label": "Left flange screw"
+    },
+    {
+      "id": "m2",
+      "x": 31.4,
+      "y": 15.5,
+      "diameter": 3.5,
+      "screw": "M3",
+      "label": "Right flange screw"
+    }
+  ],
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "Inlet hole",
+      "side": "+y",
+      "shape": "rect",
+      "x": 13.4,
+      "y": 28.6,
+      "z": -0.2,
+      "width": 27.3,
+      "height": 31.4,
+      "protrusion": 3.0
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      250
+    ],
+    "currentPeak": 10,
+    "note": "Rated 10 A at 250 V AC. Fit a 5 x 20 mm fuse."
+  },
+  "links": [
+    {
+      "label": "Qualtek 719W-00/03 drawing",
+      "url": "https://www.qualtekusa.com/images/AC_Receptacles/pdfs/719w0003.pdf"
+    }
+  ],
+  "tags": [
+    "iec",
+    "c14",
+    "mains",
+    "inlet",
+    "kettle",
+    "power",
+    "fuse",
+    "fused",
+    "qualtek",
+    "panel"
+  ]
+}
