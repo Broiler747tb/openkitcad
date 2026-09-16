@@ -152,9 +152,12 @@ the meshes it lacks, transferring the typed arrays. Each instance names a mesh k
 world matrix, so linked copies share one mesh.
 
 **Negative cutters.** Negative bodies, and instances under a negative occurrence, cut every other
-instance they overlap, in world space. Pairs whose world bounding boxes do not intersect are
-skipped. A cut instance gets its own mesh key, `hash(mesh key, instance matrix, cutter keys and
-matrices)`; an uncut instance keeps the shared key.
+instance they overlap. Pairs whose world bounding boxes do not intersect are skipped. The cut runs
+in the target's local frame through the element map (§6), so the displayed faces keep the timeline
+names they came from: a face the cutter splits shows its parent's name on every piece, and a face
+the cutter made has no name and cannot be referenced. A cut instance gets its own mesh key,
+`hash(mesh key, instance matrix, cutter keys and matrices)`; an uncut instance keeps the shared
+key.
 
 **Preview.** `preview({ doc, features, insertAt, replaceFeatureId })` evaluates
 `timeline[0..insertAt)` plus the pending features, replacing `replaceFeatureId` when given, and
@@ -164,7 +167,9 @@ changes what the next `evaluate` returns.
 
 **Exports and checks** take instance ids and work on world-space shapes: `exportStep`, `meshOf`,
 `project`, `printPrep`, `distanceBetween`. `clearance` checks catalogue keepouts and instance
-overlaps across the whole assembly.
+overlaps across the whole assembly. STEP goes through the worker's own XCAF writer, where every
+OpenCascade object has exactly one owner: replicad's `exportSTEP` frees its work session twice when
+the garbage collector runs, which corrupts the WebAssembly heap several calls later.
 
 ## 5. Main thread
 
@@ -215,6 +220,15 @@ builder reports.
   for error messages.
 - A reference is `{ bodyId, kind, name }`. Resolution returns exactly one element or fails. There
   is no fallback.
+- **Meshes and picks.** Every face and edge group in a mesh carries its element name, and picks
+  carry it. Selection ids are built from names, so a selection survives a rebuild.
+- **Face planes.** A sketch or feature placed on a face needs a flat face. Its frame's origin is
+  the component origin projected onto that face's plane, the way Fusion places a sketch, so a
+  sketch does not drift when the face grows. The worker returns every resolved plane in
+  `EvaluateResult.planes`, the store keeps them, and a sketch on a face appears once its plane has
+  arrived.
+- **Copies.** Pasting a copy renames the feature ids inside element names. A hashed name cannot be
+  renamed; that reference fails and asks for a new pick.
 
 ## 7. Command panel and timeline (F3)
 
@@ -243,3 +257,7 @@ groups, and a context menu with Edit, Suppress, Roll Back To Here, Group and Del
   1 mm. Insert a Raspberry Pi 4 and add its mounting holes to the plate, move the Pi and watch the
   holes follow. Create a component, make a linked copy and move the copy. Undo and redo each step.
   Save, reload and open the file. Switch units to inches and read a 100 mm edge as 3.937 in.
+- **F2 smoke test.** On a 40 x 30 x 20 mm box, right-click the top face and draw on it, extrude a
+  circle into a new body, round a picked vertical edge, and hollow the box through the top face
+  with a ledge lid. Make the box 35 mm tall: the circle body, the rounding and the lid follow with
+  no errors. Undo and redo.

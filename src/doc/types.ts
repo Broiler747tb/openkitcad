@@ -38,21 +38,17 @@ export interface ParameterBinding {
   expression: string
 }
 
-export interface FaceRef {
-  bodyId: string
-  anchor: Vec3
-  normal: Vec3
-}
+export type ElementKind = 'face' | 'edge' | 'vertex'
 
-export interface EdgeRef {
+export interface ElementRef {
   bodyId: string
-  anchor: Vec3
-  length: number
+  kind: ElementKind
+  name: string
 }
 
 export type PlaneRef =
   | { kind: 'named'; name: 'XY' | 'XZ' | 'YZ'; offset: number }
-  | { kind: 'face'; face: FaceRef; offset: number }
+  | { kind: 'face'; face: ElementRef; offset: number }
   | {
       kind: 'angled'
       name: 'XY' | 'XZ' | 'YZ'
@@ -136,21 +132,21 @@ export interface FilletFeature extends FeatureBase {
   kind: 'fillet'
   bodyId: string
   radius: number
-  edges: EdgeRef[]
+  edges: ElementRef[]
 }
 
 export interface ChamferFeature extends FeatureBase {
   kind: 'chamfer'
   bodyId: string
   distance: number
-  edges: EdgeRef[]
+  edges: ElementRef[]
 }
 
 export interface ShellFeature extends FeatureBase {
   kind: 'shell'
   bodyId: string
   thickness: number
-  openFaces: FaceRef[]
+  openFaces: ElementRef[]
 }
 
 export type HoleStyle = 'simple' | 'counterbore' | 'countersink' | 'tapped'

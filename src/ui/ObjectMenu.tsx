@@ -10,6 +10,7 @@ import {
 } from '../doc/store'
 import type {
   Body,
+  ElementRef,
   ExtrudeFeature,
   Feature,
   MoveFeature,
@@ -156,6 +157,7 @@ function mainExtrude(doc: OkcDocument, bodyId: string): ExtrudeFeature | undefin
 export interface PickedFace {
   bodyId: string
   instanceId: string
+  name: string
   point: [number, number, number]
   normal: [number, number, number]
 }
@@ -287,7 +289,7 @@ function buildObjectActions(
     const componentId = component.id
     const extrude = mainExtrude(doc, bodyId)
     const sketchId = extrude?.sketchId
-    const onThis = !!picked && picked.bodyId === bodyId
+    const onThis = !!picked && picked.bodyId === bodyId && !!picked.name
 
     if (picked && onThis) {
       out.push({
@@ -298,7 +300,7 @@ function buildObjectActions(
           store.startSketch(
             {
               kind: 'face',
-              face: { bodyId, anchor: picked.point, normal: picked.normal },
+              face: { bodyId, kind: 'face', name: picked.name },
               offset: 0,
             },
             bodyId,
@@ -390,7 +392,7 @@ function buildObjectActions(
             componentId,
             bodyId,
             thickness,
-            openFaces: [{ bodyId, anchor: picked.point, normal: picked.normal }],
+            openFaces: [{ bodyId, kind: 'face', name: picked.name }],
           },
         ]
         const bodies: Record<string, Partial<Body>> = {}
@@ -462,13 +464,11 @@ function buildObjectActions(
           hollowOut(thickness, true, clearance ?? 0.2, (fit as LidFit) ?? 'ledge'),
       })
     }
-    const pickedEdges = store.subSelection.filter((s) => s.bodyId === bodyId && s.kind === 'edge')
+    const pickedEdges = store.subSelection.filter(
+      (s) => s.bodyId === bodyId && s.kind === 'edge' && !!s.name,
+    )
     if (pickedEdges.length > 0) {
-      const refs = pickedEdges.map((s) => ({
-        bodyId,
-        anchor: s.point,
-        length: s.length ?? 0,
-      }))
+      const refs: ElementRef[] = pickedEdges.map((s) => ({ bodyId, kind: 'edge', name: s.name }))
       const many = pickedEdges.length > 1
       out.push({
         id: 'round-picked',
@@ -524,7 +524,7 @@ function buildObjectActions(
             bodyId,
             plane: {
               kind: 'face',
-              face: { bodyId, anchor: picked.point, normal: picked.normal },
+              face: { bodyId, kind: 'face', name: picked.name },
               offset: 0,
             },
             shape,

@@ -1,15 +1,16 @@
+import type { Frame } from '../core/math'
 import type { Feature, Matrix4, OkcDocument } from '../doc/types'
 
 export interface MeshData {
   vertices: Float32Array
   triangles: Uint32Array
   normals: Float32Array
-  faceGroups: Array<{ start: number; count: number; faceId: number }>
+  faceGroups: Array<{ start: number; count: number; faceId: number; name: string }>
 }
 
 export interface EdgeData {
   lines: Float32Array
-  edgeGroups: Array<{ start: number; count: number; edgeId: number }>
+  edgeGroups: Array<{ start: number; count: number; edgeId: number; name: string }>
 }
 
 export interface BodyMesh {
@@ -53,12 +54,18 @@ export interface CacheStats {
   entries: number
 }
 
+export interface ResolvedPlane {
+  featureId: string
+  frame: Frame
+}
+
 export interface EvaluateResult {
   meshes: BodyMesh[]
   instances: Instance[]
   errors: KernelError[]
   elapsedMs: number
   cache: CacheStats
+  planes: ResolvedPlane[]
 }
 
 export interface PreviewRequest {

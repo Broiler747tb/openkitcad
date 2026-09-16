@@ -237,10 +237,32 @@ export function occGeometry(oc: OC): Geometry<OcShape> {
       if (kind === 'vertex') return null
       return measure(oc, kind, shape, (props) => {
         if (!(props.Mass() > 1e-12)) return null
-        const matrix = props.MatrixOfInertia()
-        const inertia = [1, 2, 3].map((row) => [1, 2, 3].map((column) => matrix.Value(row, column)))
-        matrix.delete()
-        return principalAxisFromInertia(inertia)
+        const centre = props.CentreOfMass()
+        const moment = (x: number, y: number, z: number): number => {
+          const direction = new oc.gp_Dir_4(x, y, z)
+          const axis = new oc.gp_Ax1_2(centre, direction)
+          try {
+            return props.MomentOfInertia(axis)
+          } finally {
+            axis.delete()
+            direction.delete()
+          }
+        }
+        try {
+          const xx = moment(1, 0, 0)
+          const yy = moment(0, 1, 0)
+          const zz = moment(0, 0, 1)
+          const xy = moment(1, 1, 0) - (xx + yy) / 2
+          const xz = moment(1, 0, 1) - (xx + zz) / 2
+          const yz = moment(0, 1, 1) - (yy + zz) / 2
+          return principalAxisFromInertia([
+            [xx, xy, xz],
+            [xy, yy, yz],
+            [xz, yz, zz],
+          ])
+        } finally {
+          centre.delete()
+        }
       })
     },
   }

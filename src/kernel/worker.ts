@@ -2,9 +2,11 @@ import * as Comlink from 'comlink'
 import initOpenCascade from 'replicad-opencascadejs/src/replicad_single.js'
 import wasmUrl from 'replicad-opencascadejs/src/replicad_single.wasm?url'
 import {
+  cast,
+  downcast,
   drawProjection,
   drawRectangle,
-  exportSTEP,
+  getOC,
   measureDistanceBetween,
   measureVolume,
   setOC,
@@ -17,6 +19,7 @@ import {
   findOccurrence,
   instanceId,
   invertRigidMatrix,
+  multiplyMatrices,
   transformPoint,
 } from '../doc/model'
 import { resolveParameters } from '../doc/parameters'
@@ -29,6 +32,16 @@ import {
   transformShape,
   type Snapshot,
 } from './build'
+import {
+  cut as namedCut,
+  nameShape,
+  releaseNamedShape,
+  resolveElement,
+  type ElementMap,
+  type NamedShape,
+  type OC,
+  type OcShape,
+} from './naming'
 import { flattenSvgPaths } from '../export/svgpath'
 import type {
   BodyMesh,
@@ -64,6 +77,7 @@ const SNAPSHOT_CAP = 128
 const TESSELLATION_CAP = 256
 const PART_CAP = 64
 const CUT_CAP = 128
+const NEGATIVE_CUT = '~negative'
 
 function hashText(text: string): string {
   let h1 = 0xdeadbeef
@@ -142,9 +156,20 @@ interface PartSolid {
   error?: string
 }
 
+type MeshElementKind = 'face' | 'edge'
+
+type ReferenceNames = Record<MeshElementKind, ReadonlyMap<string, string>>
+
+interface MapOwner {
+  local: any
+  map?: ElementMap<OcShape>
+}
+
 interface CutEntry {
   world: any
   local: any
+  map?: ElementMap<OcShape>
+  references?: ReferenceNames
   failures: string[]
 }
 
@@ -157,6 +182,8 @@ interface LiveInstance {
   ancestorsVisible: boolean
   local: any
   world: any | null
+  map?: ElementMap<OcShape>
+  references?: ReferenceNames
 }
 
 const snapshots = new Lru<Snapshot>(SNAPSHOT_CAP)
@@ -178,8 +205,12 @@ function liveShapes(instances: Map<string, LiveInstance>): any[] {
   return [...instances.values()].flatMap((entry) => [entry.local, entry.world])
 }
 
-function release(candidates: any[]): void {
-  if (!candidates.length) return
+function snapshotOwners(snapshot: Snapshot): MapOwner[] {
+  return [...snapshot.bodies.values()].map((body) => ({ local: body.shape, map: body.map }))
+}
+
+function release(candidates: any[], owners: MapOwner[] = []): void {
+  if (!candidates.length && !owners.length) return
   const held = new Set<any>()
   for (const snapshot of snapshots.values())
     for (const shape of snapshotShapes(snapshot)) held.add(shape)
@@ -198,19 +229,65 @@ function release(candidates: any[]): void {
       continue
     }
   }
+  const disposed = new Set<ElementMap<OcShape>>()
+  for (const { local, map } of owners) {
+    if (!map || disposed.has(map) || held.has(local)) continue
+    disposed.add(map)
+    try {
+      map.dispose()
+    } catch {
+      continue
+    }
+  }
 }
 
-function tessellate(shape: any): Tessellation {
+function referenceName(
+  kind: MeshElementKind,
+  shape: OcShape,
+  map?: ElementMap<OcShape>,
+  references?: ReferenceNames,
+): string {
+  const name = map?.nameOf(kind, shape)
+  if (name === undefined) return ''
+  return references ? (references[kind].get(name) ?? '') : name
+}
+
+function tessellate(
+  shape: any,
+  map?: ElementMap<OcShape>,
+  references?: ReferenceNames,
+): Tessellation {
   const raw = shape.mesh({ tolerance: MESH_TOLERANCE, angularTolerance: MESH_ANGULAR_TOLERANCE })
   const rawEdges = shape.meshEdges({ keepMesh: true })
+  const rawFaceGroups: any[] = raw.faceGroups ?? []
+  const faceNames: string[] = []
+  const edgeNames = new Map<number, string>()
+  if (map) {
+    const faces = shape.faces
+    let next = 0
+    for (const group of rawFaceGroups) {
+      let at = next
+      while (at < faces.length && faces[at].hashCode !== group.faceId) at++
+      if (at < faces.length) {
+        faceNames.push(referenceName('face', faces[at].wrapped, map, references))
+        next = at + 1
+      } else {
+        faceNames.push('')
+      }
+    }
+    for (const edge of shape.edges) {
+      edgeNames.set(edge.hashCode, referenceName('edge', edge.wrapped, map, references))
+    }
+  }
   const mesh: MeshData = {
     vertices: new Float32Array(raw.vertices),
     triangles: new Uint32Array(raw.triangles),
     normals: new Float32Array(raw.normals),
-    faceGroups: (raw.faceGroups ?? []).map((g: any) => ({
+    faceGroups: rawFaceGroups.map((g: any, index: number) => ({
       start: g.start,
       count: g.count,
       faceId: g.faceId,
+      name: faceNames[index] ?? '',
     })),
   }
   const edges: EdgeData = {
@@ -219,6 +296,7 @@ function tessellate(shape: any): Tessellation {
       start: g.start,
       count: g.count,
       edgeId: g.edgeId,
+      name: edgeNames.get(g.edgeId) ?? '',
     })),
   }
   let volume = 0
@@ -262,6 +340,85 @@ function boundsOverlap(a: Bounds, b: Bounds): boolean {
   )
 }
 
+function cutNegatives(target: LiveInstance, cutters: LiveInstance[]): CutEntry {
+  const oc = getOC() as unknown as OC
+  const timeline = target.map
+  const failures: string[] = []
+  const inverse = invertRigidMatrix(target.instance.matrix)
+  const splitFrom: Record<MeshElementKind, Map<string, string>> = {
+    face: new Map(),
+    edge: new Map(),
+  }
+  let current: NamedShape | null = null
+  let local = target.local
+  cutters.forEach((cutter, index) => {
+    const placed = transformShape(cutter.local, multiplyMatrices(inverse, cutter.instance.matrix))
+    let tool: NamedShape | null = null
+    try {
+      if (!timeline) {
+        const next = local.cut(placed)
+        if (local !== target.local) local.delete()
+        local = next
+        return
+      }
+      tool = nameShape(
+        oc,
+        `${NEGATIVE_CUT}:${index}`,
+        downcast(placed.wrapped) as unknown as OcShape,
+      )
+      const next = namedCut(oc, {
+        featureId: NEGATIVE_CUT,
+        target: current ?? { shape: target.local.wrapped, map: timeline },
+        tools: [tool],
+      })
+      for (const kind of ['face', 'edge'] as const) {
+        for (const [name, retirement] of next.map.retired(kind)) {
+          if (retirement.reason !== 'split' || retirement.featureId !== NEGATIVE_CUT) continue
+          const root = splitFrom[kind].get(name) ?? name
+          for (const child of retirement.children) splitFrom[kind].set(child, root)
+        }
+      }
+      if (current) releaseNamedShape(current)
+      current = next
+    } catch (e) {
+      failures.push((e as Error)?.message ?? 'unknown failure')
+    } finally {
+      if (tool) releaseNamedShape(tool)
+      placed.delete()
+    }
+  })
+
+  if (!current) {
+    return {
+      world: transformShape(local, target.instance.matrix),
+      local,
+      map: local === target.local ? timeline : undefined,
+      failures,
+    }
+  }
+
+  const named: NamedShape = current
+  const references: ReferenceNames = { face: new Map(), edge: new Map() }
+  for (const kind of ['face', 'edge'] as const) {
+    const table = references[kind] as Map<string, string>
+    for (const element of named.map.elements(kind)) {
+      const reference = [element.name, ...element.aliases]
+        .map((name) => splitFrom[kind].get(name) ?? name)
+        .find((name) => resolveElement(timeline, { bodyId: target.instance.bodyId, kind, name }).ok)
+      table.set(element.name, reference ?? '')
+    }
+  }
+  const cutLocal = cast(named.shape)
+  named.shape.delete()
+  return {
+    world: transformShape(cutLocal, target.instance.matrix),
+    local: cutLocal,
+    map: named.map,
+    references,
+    failures,
+  }
+}
+
 function worldOf(entry: LiveInstance): any {
   if (!entry.world) entry.world = transformShape(entry.local, entry.instance.matrix)
   return entry.world
@@ -303,6 +460,7 @@ interface Pipeline {
   live: Map<string, LiveInstance>
   snapshot: Snapshot
   evicted: any[]
+  evictedOwners: MapOwner[]
 }
 
 function run(doc: OkcDocument, knownMeshKeys: string[], preview: boolean): Pipeline {
@@ -398,6 +556,7 @@ function run(doc: OkcDocument, knownMeshKeys: string[], preview: boolean): Pipel
         ancestorsVisible: node.visible,
         local: state.shape,
         world: null,
+        map: state.map,
       })
     }
   }
@@ -420,20 +579,7 @@ function run(doc: OkcDocument, knownMeshKeys: string[], preview: boolean): Pipel
       )
       let entry = cuts.get(cutKey)
       if (!entry) {
-        let world = transformShape(target.local, target.instance.matrix)
-        const failures: string[] = []
-        for (const cutter of hits) {
-          try {
-            world = world.cut(worldOf(cutter))
-          } catch (e) {
-            failures.push((e as Error)?.message ?? 'unknown failure')
-          }
-        }
-        entry = {
-          world,
-          local: transformShape(world, invertRigidMatrix(target.instance.matrix)),
-          failures,
-        }
+        entry = cutNegatives(target, hits)
         cuts.set(cutKey, entry)
       }
       for (const failure of entry.failures) {
@@ -448,6 +594,8 @@ function run(doc: OkcDocument, knownMeshKeys: string[], preview: boolean): Pipel
       target.instance.meshKey = cutKey
       target.local = entry.local
       target.world = entry.world
+      target.map = entry.map
+      target.references = entry.references
     }
   }
 
@@ -462,7 +610,7 @@ function run(doc: OkcDocument, knownMeshKeys: string[], preview: boolean): Pipel
     let tessellation = tessellations.get(key)
     if (!tessellation) {
       try {
-        tessellation = tessellate(entry.local)
+        tessellation = tessellate(entry.local, entry.map, entry.references)
         tessellations.set(key, tessellation)
       } catch (e) {
         broken.add(key)
@@ -514,10 +662,16 @@ function run(doc: OkcDocument, knownMeshKeys: string[], preview: boolean): Pipel
     instances.push(preview ? { ...entry.instance, preview: true } : { ...entry.instance })
   }
 
+  const evictedSnapshots = snapshots.evict()
+  const evictedCuts = cuts.evict()
+  const evictedOwners: MapOwner[] = [
+    ...evictedSnapshots.flatMap(snapshotOwners),
+    ...evictedCuts.map((entry) => ({ local: entry.local, map: entry.map })),
+  ]
   const evicted = [
-    ...snapshots.evict().flatMap(snapshotShapes),
+    ...evictedSnapshots.flatMap(snapshotShapes),
     ...partSolids.evict().map((solid) => solid.shape),
-    ...cuts.evict().flatMap((cut) => [cut.world, cut.local]),
+    ...evictedCuts.flatMap((entry) => [entry.world, entry.local]),
   ]
   tessellations.evict()
 
@@ -528,11 +682,13 @@ function run(doc: OkcDocument, knownMeshKeys: string[], preview: boolean): Pipel
       errors,
       elapsedMs: Math.round(performance.now() - t0),
       cache: { hits: start + 1, misses, entries: snapshots.size },
+      planes: [...snapshot.planes].map(([featureId, frame]) => ({ featureId, frame })),
     },
     transfer,
     live: built,
     snapshot,
     evicted,
+    evictedOwners,
   }
 }
 function requireWorld(id: string): any {
@@ -556,6 +712,65 @@ function overlapOf(a: any, b: any): { volume: number; at: [number, number, numbe
   }
 }
 
+function colourChannels(hex: string): [number, number, number] {
+  const digits = /^#?([0-9a-f]{6})$/i.exec(hex)?.[1] ?? '7f878f'
+  return [0, 2, 4].map((at) => parseInt(digits.slice(at, at + 2), 16) / 255) as [
+    number,
+    number,
+    number,
+  ]
+}
+
+function writeStep(parts: Array<{ shape: any; name: string; colour: string }>): ArrayBuffer {
+  const oc = getOC() as any
+  const owned: Array<{ delete(): void }> = []
+  const own = <T extends { delete(): void }>(value: T): T => {
+    owned.push(value)
+    return value
+  }
+  const filename = `/export-${Date.now()}.step`
+  try {
+    const format = own(new oc.TCollection_ExtendedString_2('XmlOcaf', true))
+    const document = own(new oc.Handle_TDocStd_Document_2(new oc.TDocStd_Document(format)))
+    oc.XCAFDoc_ShapeTool.SetAutoNaming(false)
+    const main = own(document.get().Main())
+    const shapes = own(oc.XCAFDoc_DocumentTool.ShapeTool(main))
+    const colours = own(oc.XCAFDoc_DocumentTool.ColorTool(main))
+    for (const part of parts) {
+      const label = own(shapes.get().NewShape())
+      shapes.get().SetShape(label, part.shape.wrapped)
+      own(oc.TDataStd_Name.Set_1(label, own(new oc.TCollection_ExtendedString_2(part.name, true))))
+      const [r, g, b] = colourChannels(part.colour)
+      colours
+        .get()
+        .SetColor_3(
+          label,
+          own(new oc.Quantity_ColorRGBA_5(r, g, b, 1)),
+          oc.XCAFDoc_ColorType.XCAFDoc_ColorSurf,
+        )
+    }
+    shapes.get().UpdateAssemblies()
+    const writer = own(new oc.STEPCAFControl_Writer_1())
+    writer.SetColorMode(true)
+    writer.SetLayerMode(true)
+    writer.SetNameMode(true)
+    oc.Interface_Static.SetIVal('write.surfacecurve.mode', 1)
+    oc.Interface_Static.SetIVal('write.precision.mode', 0)
+    oc.Interface_Static.SetIVal('write.step.assembly', 2)
+    oc.Interface_Static.SetIVal('write.step.schema', 5)
+    const progress = own(new oc.Message_ProgressRange_1())
+    writer.Transfer_1(document, oc.STEPControl_StepModelType.STEPControl_AsIs, null, progress)
+    if (writer.Write(filename) !== oc.IFSelect_ReturnStatus.IFSelect_RetDone) {
+      throw new Error('The STEP file could not be written.')
+    }
+    const bytes: Uint8Array = oc.FS.readFile(filename)
+    return bytes.slice().buffer
+  } finally {
+    if (oc.FS.analyzePath(filename).exists) oc.FS.unlink(filename)
+    for (const value of owned.reverse()) value.delete()
+  }
+}
+
 function projectedPaths(shape: any, plane: ProjectionPlane): string[] {
   const paths = drawProjection(shape, plane).visible.toSVGPaths()
   return Array.isArray(paths[0]) ? (paths as string[][]).flat() : (paths as string[])
@@ -575,7 +790,7 @@ const api: KernelApi = {
     const previous = live
     live = out.live
     liveSnapshot = out.snapshot
-    release([...out.evicted, ...liveShapes(previous)])
+    release([...out.evicted, ...liveShapes(previous)], [...out.evictedOwners, ...previous.values()])
     return Comlink.transfer(out.result, out.transfer)
   },
 
@@ -591,17 +806,21 @@ const api: KernelApi = {
     doc.groups = []
     resolveParameters(doc, true)
     const out = run(doc, knownMeshKeys, true)
-    release([...out.evicted, ...liveShapes(out.live)])
+    release([...out.evicted, ...liveShapes(out.live)], [...out.evictedOwners, ...out.live.values()])
     return Comlink.transfer(out.result, out.transfer)
   },
 
   async exportStep(instanceIds: string[], name: string): Promise<ArrayBuffer> {
     await ensureOC()
-    const configs = instanceIds
+    const parts = instanceIds
       .filter((id) => live.has(id))
-      .map((id) => ({ shape: requireWorld(id), name: `${name}-${live.get(id)!.label}` }))
-    if (configs.length === 0) throw new Error('Nothing to export.')
-    return exportSTEP(configs as never).arrayBuffer()
+      .map((id) => ({
+        shape: requireWorld(id),
+        name: `${name}-${live.get(id)!.label}`,
+        colour: live.get(id)!.colour,
+      }))
+    if (parts.length === 0) throw new Error('Nothing to export.')
+    return writeStep(parts)
   },
 
   async meshOf(instanceId: string): Promise<MeshData> {

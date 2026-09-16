@@ -1,24 +1,8 @@
-/**
- * Sketch-plane resolution for the main thread.
- *
- * The kernel resolves a face-based plane by re-finding the face on the rebuilt
- * solid. The UI cannot do that - the B-rep lives in the worker - so it uses the
- * fingerprint stored on the reference instead. The two agree except in the
- * moment between an edit and the rebuild landing, which is exactly when nobody
- * is drawing anyway.
- */
-import { makeFrame, NAMED_FRAMES, v3, type Frame } from '../core/math'
+import { NAMED_FRAMES, v3, type Frame } from '../core/math'
 import type { LengthUnit, Matrix4, PlaneRef } from './types'
 import { transformDirection, transformPoint } from './model'
 import { lengthLabel } from '../core/units'
 
-/**
- * Tip a base plane over about one of its own in-plane axes.
- *
- * Kept here rather than in the kernel so the viewport and the geometry engine
- * cannot drift: a sketch drawn on a tilted plane must land in exactly the same
- * place in both.
- */
 export function tiltedFrame(
   name: 'XY' | 'XZ' | 'YZ',
   tiltAxis: 'x' | 'y',
@@ -48,15 +32,18 @@ export function tiltedFrame(
   }
 }
 
-export function frameFromPlaneRefLocal(ref: PlaneRef): Frame {
+export type DatumPlaneRef = Exclude<PlaneRef, { kind: 'face' }>
+
+export function datumFrame(ref: DatumPlaneRef): Frame {
   if (ref.kind === 'named') {
     const base = NAMED_FRAMES[ref.name]
     return { ...base, origin: v3.add(base.origin, v3.scale(base.normal, ref.offset)) }
   }
-  if (ref.kind === 'angled') {
-    return tiltedFrame(ref.name, ref.tiltAxis, ref.angle, ref.offset)
-  }
-  return makeFrame(v3.add(ref.face.anchor, v3.scale(ref.face.normal, ref.offset)), ref.face.normal)
+  return tiltedFrame(ref.name, ref.tiltAxis, ref.angle, ref.offset)
+}
+
+export function frameFromPlaneRefLocal(ref: PlaneRef, resolved: Frame | undefined): Frame | null {
+  return ref.kind === 'face' ? (resolved ?? null) : datumFrame(ref)
 }
 
 export function transformFrame(frame: Frame, m: Matrix4): Frame {

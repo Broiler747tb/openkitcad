@@ -5,10 +5,12 @@ import {
   identityMatrix,
   instanceId,
   invertRigidMatrix,
+  isElementRef,
   multiplyMatrices,
   parseInstanceId,
   pathMatrix,
   placementMatrix,
+  remapElementName,
   rotationMatrix,
   transformPoint,
   translationMatrix,
@@ -96,6 +98,29 @@ export function runModelTest(): TestResult[] {
   check('a fillet cannot move before its body', !canMoveFeature(timelineDoc, 'f1', 0), 'f1 to 0')
   check('a sketch cannot move after its user', !canMoveFeature(timelineDoc, 's1', 2), 's1 to 2')
   check('an independent sketch can move first', canMoveFeature(timelineDoc, 's2', 0), 's2 to 0')
+
+  const ids = new Map([
+    ['extrude-1ab', 'f-9zz'],
+    ['fillet-2cd', 'f-8yy'],
+  ])
+  const pasted = [
+    'extrude-1ab:side:l1',
+    'fillet-2cd:gen:extrude-1ab:end',
+    'extrude-1ab:end|extrude-1ab:side:l2#2',
+    'box-3ef:+z',
+  ].map((name) => remapElementName(name, ids))
+  check(
+    'a pasted copy renames the steps inside element names',
+    pasted.join(' ') === 'f-9zz:side:l1 f-8yy:gen:f-9zz:end f-9zz:end|f-9zz:side:l2#2 box-3ef:+z',
+    pasted.join(' '),
+  )
+  check(
+    'element refs are told apart from other objects',
+    isElementRef({ bodyId: 'b', kind: 'edge', name: 'x' }) &&
+      !isElementRef({ bodyId: 'b', kind: 'named', name: 'XY' }) &&
+      !isElementRef({ id: 'b', kind: 'face', name: 'Sketch' }),
+    'edge ref, named plane, feature',
+  )
 
   return results
 }

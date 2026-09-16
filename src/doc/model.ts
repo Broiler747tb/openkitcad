@@ -3,6 +3,7 @@ import type {
   Body,
   BodyOperation,
   Component,
+  ElementRef,
   Feature,
   Matrix4,
   Occurrence,
@@ -306,4 +307,18 @@ export function wouldCreateCycle(
   childComponentId: string,
 ): boolean {
   return componentContains(doc, childComponentId, parentComponentId)
+}
+
+export function isElementRef(value: unknown): value is ElementRef {
+  const ref = value as ElementRef | null
+  return (
+    !!ref &&
+    typeof ref.bodyId === 'string' &&
+    typeof ref.name === 'string' &&
+    (ref.kind === 'face' || ref.kind === 'edge' || ref.kind === 'vertex')
+  )
+}
+
+export function remapElementName(name: string, ids: ReadonlyMap<string, string>): string {
+  return name.replace(/[^:|&#]+/g, (token) => ids.get(token) ?? token)
 }

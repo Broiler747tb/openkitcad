@@ -155,6 +155,7 @@ export function fastenerGhosts(
   doc: OkcDocument,
   instances: Instance[],
   meshes: ReadonlyMap<string, Pick<BodyMesh, 'bounds'>>,
+  planes: ReadonlyMap<string, Frame> = new Map(),
 ): FastenerGhost[] {
   const out: FastenerGhost[] = []
 
@@ -168,7 +169,8 @@ export function fastenerGhosts(
     const tag = inferFastener(feature, doc)
     if (!tag) continue
 
-    const frame = frameFromPlaneRefLocal(feature.plane)
+    const frame = frameFromPlaneRefLocal(feature.plane, planes.get(feature.id))
+    if (!frame) continue
     const insert = tag.kind === 'insert'
     const screw = SCREWS[tag.size]
     const spec = INSERTS[tag.size]

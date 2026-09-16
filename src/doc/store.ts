@@ -52,7 +52,7 @@ import {
 } from '../sketch/edit'
 import { getPart, userParts } from '../catalogue'
 import { planHole, planPillar } from '../fasteners'
-import { v3, type Vec3 } from '../core/math'
+import { v3, type Frame, type Vec3 } from '../core/math'
 import { frameFromPlaneRefLocal } from './planes'
 import { lengthLabel } from '../core/units'
 import { worldBounds, type Bounds } from './placement'
@@ -93,6 +93,7 @@ interface AppState {
 
   meshes: Map<string, BodyMesh>
   instances: Instance[]
+  planes: ReadonlyMap<string, Frame>
   errors: KernelError[]
   buildMs: number
   building: boolean
@@ -502,6 +503,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   meshes: new Map(),
   instances: [],
+  planes: new Map(),
   errors: [],
   buildMs: 0,
   building: false,
@@ -644,6 +646,7 @@ export const useStore = create<AppState>((set, get) => ({
       set({
         meshes,
         instances: result.instances,
+        planes: new Map(result.planes.map((entry) => [entry.featureId, entry.frame])),
         errors: result.errors,
         buildMs: result.elapsedMs,
         building: false,
@@ -1225,7 +1228,8 @@ function surfacePlane(
 ): { bodyId?: string; componentId: string; plane: PlaneRef } | null {
   const sketchFeature = activeSketchFeature(state)
   if (!sketchFeature) return null
-  const frame = frameFromPlaneRefLocal(sketchFeature.plane)
+  const frame = frameFromPlaneRefLocal(sketchFeature.plane, state.planes.get(sketchFeature.id))
+  if (!frame) return null
   const bodyId = sketchTargetBody(state.doc, sketchFeature)
   const bounds = bodyId ? bodyBounds(state, bodyId) : undefined
   let lift = 0

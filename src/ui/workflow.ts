@@ -14,12 +14,18 @@ export function selectedObjectActions() {
         : { kind: 'none' as const }
       : state.selection
   const face = state.subSelection.find(
-    (p) => p.kind === 'face' && p.bodyId === selection.id && p.normal,
+    (p) => p.kind === 'face' && p.bodyId === selection.id && p.normal && p.name,
   )
   return objectActions(
     selection,
     face?.normal
-      ? { bodyId: face.bodyId, instanceId: face.instanceId, point: face.point, normal: face.normal }
+      ? {
+          bodyId: face.bodyId,
+          instanceId: face.instanceId,
+          name: face.name,
+          point: face.point,
+          normal: face.normal,
+        }
       : null,
   )
 }

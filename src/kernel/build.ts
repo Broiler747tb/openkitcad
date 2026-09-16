@@ -1,31 +1,23 @@
 import {
   cast,
+  downcast,
   draw,
   drawCircle,
   drawPolysides,
   drawRectangle,
   drawRoundedRectangle,
+  Face,
   getOC,
   makeBox,
   makeCylinder,
-  makeSphere,
   Plane,
   sketchCircle,
   type Drawing,
 } from 'replicad'
-import {
-  frameToLocal,
-  frameToWorld,
-  makeFrame,
-  v3,
-  type Frame,
-  type Vec2,
-  type Vec3,
-} from '../core/math'
+import { frameToLocal, makeFrame, v3, type Frame, type Vec2, type Vec3 } from '../core/math'
 import type {
   BodyOperation,
-  EdgeRef,
-  FaceRef,
+  ElementRef,
   Feature,
   HoleFeature,
   LidFeature,
@@ -48,10 +40,34 @@ import {
   multiplyMatrices,
   pathComponent,
   pathMatrix,
+  rotationMatrix,
   transformPoint,
+  translationMatrix,
 } from '../doc/model'
-import { frameFromPlaneRefLocal } from '../doc/planes'
+import { datumFrame } from '../doc/planes'
 import { getPart, type CataloguePart } from '../catalogue'
+import {
+  box as namedBox,
+  chamfer as namedChamfer,
+  common,
+  cut,
+  cylinder as namedCylinder,
+  extrude as namedExtrude,
+  fillet as namedFillet,
+  fuse,
+  isPlanarFace,
+  nameShape,
+  NamingError,
+  resolveElement,
+  revolve as namedRevolve,
+  shell as namedShell,
+  sphere as namedSphere,
+  transformNamed,
+  type ElementMap,
+  type NamedShape,
+  type OC,
+  type OcShape,
+} from './naming'
 
 export const CUT_MARGIN = 0.5
 const THROUGH_LENGTH = 1000
@@ -59,6 +75,7 @@ const LID_REACH = 4000
 
 export interface BodyState {
   shape: any
+  map: ElementMap<OcShape>
   key: string
   featureId: string
 }
@@ -66,6 +83,10 @@ export interface BodyState {
 export interface PreShell {
   shape: any
   frame: Frame
+}
+
+function occ(): OC {
+  return getOC() as unknown as OC
 }
 
 export function isIdentity(m: Matrix4): boolean {
@@ -85,12 +106,63 @@ export function transformShape(shape: any, m: Matrix4): any {
   return result
 }
 
+function namedOf(state: BodyState): NamedShape {
+  return { shape: state.shape.wrapped, map: state.map }
+}
+
+function releaseNamed(shapes: NamedShape[]): void {
+  for (const named of shapes) {
+    named.map.dispose()
+    named.shape.delete()
+  }
+}
+
+export function faceFrame(state: BodyState, ref: ElementRef, offset: number): Frame {
+  const resolution = resolveElement(state.map, {
+    bodyId: ref.bodyId,
+    kind: 'face',
+    name: ref.name,
+  })
+  if (!resolution.ok) throw new NamingError(resolution.error)
+  if (!isPlanarFace(occ(), resolution.element.shape)) {
+    throw new Error('Only a flat face can hold a sketch or a plane.')
+  }
+  const face = new Face(occ().TopoDS.Face_1(resolution.element.shape))
+  try {
+    const c = face.center
+    const n = face.normalAt()
+    const normal = v3.norm([n.x, n.y, n.z])
+    const along = v3.dot([c.x, c.y, c.z], normal) + offset
+    return makeFrame(v3.scale(normal, along), normal)
+  } finally {
+    face.delete()
+  }
+}
+
+function opensBesideCurvedFace(state: BodyState, openFaces: readonly ElementRef[]): boolean {
+  const { topology } = state.map
+  const openings = openFaces.flatMap((ref) => {
+    const resolution = resolveElement(state.map, ref)
+    return resolution.ok ? [resolution.element.index] : []
+  })
+  const borders = new Set(openings.flatMap((index) => topology.faceEdges[index]))
+  return topology.faceEdges.some(
+    (edges, index) =>
+      !openings.includes(index) &&
+      edges.some((edge) => borders.has(edge)) &&
+      !isPlanarFace(occ(), topology.faces[index]),
+  )
+}
+
 export function frameFromPlaneRef(ref: PlaneRef, bodies: ReadonlyMap<string, BodyState>): Frame {
-  if (ref.kind !== 'face') return frameFromPlaneRefLocal(ref)
-  const resolved = resolveFace(bodies.get(ref.face.bodyId)?.shape, ref.face)
-  const normal = resolved?.normal ?? ref.face.normal
-  const anchor = resolved?.centre ?? ref.face.anchor
-  return makeFrame(v3.add(anchor, v3.scale(normal, ref.offset)), normal)
+  if (ref.kind !== 'face') return datumFrame(ref)
+  const state = bodies.get(ref.face.bodyId)
+  if (!state) {
+    throw new Error(
+      'The face this is placed on belongs to a body that does not exist at this point in the timeline.',
+    )
+  }
+  return faceFrame(state, ref.face, ref.offset)
 }
 
 export function toReplicadPlane(frame: Frame, offset = 0): Plane {
@@ -102,54 +174,9 @@ function sketchOn(drawing: Drawing, frame: Frame, offset = 0): any {
   return drawing.sketchOnPlane(toReplicadPlane(frame, offset)) as any
 }
 
-function faceCentre(face: any): Vec3 {
-  const c = face.center
-  return [c.x, c.y, c.z]
-}
-
-function faceNormal(face: any): Vec3 {
-  const n = face.normalAt()
-  return v3.norm([n.x, n.y, n.z])
-}
-
-export function resolveFace(
-  shape: any,
-  ref: FaceRef,
-): { face: any; centre: Vec3; normal: Vec3 } | null {
-  if (!shape) return null
-  let best: { face: any; centre: Vec3; normal: Vec3; score: number } | null = null
-  for (const face of shape.faces) {
-    let centre: Vec3
-    let normal: Vec3
-    try {
-      centre = faceCentre(face)
-      normal = faceNormal(face)
-    } catch {
-      continue
-    }
-    if (v3.dot(normal, ref.normal) < 0.5) continue
-    const score = v3.dist(centre, ref.anchor)
-    if (!best || score < best.score) best = { face, centre, normal, score }
-  }
-  return best ? { face: best.face, centre: best.centre, normal: best.normal } : null
-}
-
-function edgeAnchor(edge: any): Vec3 | null {
-  try {
-    const [min, max] = edge.boundingBox.bounds
-    return [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2]
-  } catch {
-    return null
-  }
-}
-
-function edgeMatcher(refs: EdgeRef[]): (edge: any) => boolean {
-  if (refs.length === 0) return () => true
-  return (edge: any) => {
-    const anchor = edgeAnchor(edge)
-    if (!anchor) return false
-    return refs.some((r) => v3.dist(anchor, r.anchor) < 0.75)
-  }
+function profileFace(drawing: Drawing, frame: Frame): any {
+  const sketch = sketchOn(drawing, frame)
+  return typeof sketch.face === 'function' ? sketch.face() : sketch.faces()
 }
 
 function boardOutlineDrawing(part: CataloguePart): Drawing | null {
@@ -824,6 +851,7 @@ export interface Snapshot {
   bodies: ReadonlyMap<string, BodyState>
   sketches: ReadonlyMap<string, SketchFeature>
   preShell: ReadonlyMap<string, PreShell>
+  planes: ReadonlyMap<string, Frame>
   errors: readonly KernelError[]
   failed: ReadonlySet<string>
 }
@@ -834,6 +862,7 @@ export function emptySnapshot(key: string): Snapshot {
     bodies: new Map(),
     sketches: new Map(),
     preShell: new Map(),
+    planes: new Map(),
     errors: [],
     failed: new Set(),
   }
@@ -848,6 +877,7 @@ interface Stage {
   bodies: Map<string, BodyState>
   sketches: Map<string, SketchFeature>
   preShell: Map<string, PreShell>
+  planes: Map<string, Frame>
   report: (
     severity: KernelError['severity'],
     message: string,
@@ -875,6 +905,7 @@ export function evaluateFeature(
     bodies: new Map(prev.bodies),
     sketches: new Map(prev.sketches),
     preShell: new Map(prev.preShell),
+    planes: new Map(prev.planes),
     report,
   }
 
@@ -897,7 +928,11 @@ export function evaluateFeature(
           : feature.kind === 'lidSocket'
             ? 'Could not cut the seat for the lid: '
             : ''
-      report('error', prefix + message, hintForFailure(feature, message))
+      const hint =
+        e instanceof NamingError
+          ? 'Edit this step and pick the geometry again.'
+          : hintForFailure(feature, message)
+      report('error', prefix + message, hint)
     }
   }
 
@@ -906,6 +941,7 @@ export function evaluateFeature(
     bodies: failed ? prev.bodies : stage.bodies,
     sketches: failed ? prev.sketches : stage.sketches,
     preShell: failed ? prev.preShell : stage.preShell,
+    planes: failed ? prev.planes : stage.planes,
     errors: errors.length ? [...prev.errors, ...errors] : prev.errors,
     failed: failed ? new Set([...prev.failed, feature.id]) : prev.failed,
   }
@@ -913,6 +949,7 @@ export function evaluateFeature(
 
 function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: Stage): void {
   const { doc } = ctx
+  const oc = occ()
   const bodyName = (id: string) => findBody(doc, id)?.body.name ?? id
   const need = (id: string): BodyState | null => {
     const state = stage.bodies.get(id)
@@ -926,30 +963,60 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
     }
     return state ?? null
   }
-  const set = (id: string, shape: any) =>
-    stage.bodies.set(id, { shape, key, featureId: feature.id })
-  const apply = (result: BodyOperation, solid: any) => {
+  const set = (id: string, named: NamedShape) => {
+    const shape = cast(named.shape)
+    named.shape.delete()
+    stage.bodies.set(id, { shape, map: named.map, key, featureId: feature.id })
+  }
+  const tool = (solid: any, role: string): NamedShape =>
+    nameShape(oc, `${feature.id}:${role}`, downcast(solid.wrapped) as unknown as OcShape)
+  const planeOf = (ref: PlaneRef): Frame => {
+    const frame = frameFromPlaneRef(ref, stage.bodies)
+    if (ref.kind === 'face') stage.planes.set(feature.id, frame)
+    return frame
+  }
+  const combineInto = (
+    id: string,
+    target: BodyState,
+    kind: 'fuse' | 'cut' | 'common',
+    tools: NamedShape[],
+  ) => {
+    const operation = kind === 'fuse' ? fuse : kind === 'cut' ? cut : common
+    set(id, operation(oc, { featureId: feature.id, target: namedOf(target), tools }))
+  }
+  const cutWith = (id: string, target: BodyState, solid: any, role: string) => {
+    const shaped = tool(solid, role)
+    try {
+      combineInto(id, target, 'cut', [shaped])
+    } finally {
+      releaseNamed([shaped])
+    }
+  }
+  const apply = (result: BodyOperation, solid: NamedShape) => {
     if (result.kind === 'newBody') {
       set(result.bodyId, solid)
       return
     }
-    if (result.kind === 'join') {
-      const target = need(result.bodyId)
-      if (target) set(result.bodyId, target.shape.fuse(solid))
-      return
+    try {
+      if (result.kind === 'join') {
+        const target = need(result.bodyId)
+        if (target) combineInto(result.bodyId, target, 'fuse', [solid])
+        return
+      }
+      const targets = result.bodyIds.map((id) => [id, need(id)] as const)
+      if (targets.some(([, target]) => !target)) return
+      for (const [id, target] of targets) {
+        combineInto(id, target!, result.kind === 'cut' ? 'cut' : 'common', [solid])
+      }
+    } finally {
+      releaseNamed([solid])
     }
-    const targets = result.bodyIds.map((id) => [id, need(id)] as const)
-    if (targets.some(([, target]) => !target)) return
-    const shapes = targets.map(([id, target]) => [
-      id,
-      result.kind === 'cut' ? target!.shape.cut(solid) : target!.shape.intersect(solid),
-    ])
-    for (const [id, shape] of shapes) set(id, shape)
   }
 
   switch (feature.kind) {
     case 'sketch': {
       stage.sketches.set(feature.id, feature)
+      stage.planes.set(feature.id, frameFromPlaneRef(feature.plane, stage.bodies))
       return
     }
 
@@ -975,17 +1042,40 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
         )
         return
       }
-      const frame = frameFromPlaneRef(sketchFeature.plane, stage.bodies)
+      const frame =
+        stage.planes.get(sketchFeature.id) ?? frameFromPlaneRef(sketchFeature.plane, stage.bodies)
       if (feature.kind === 'extrude') {
         const distance = feature.reverse ? -feature.distance : feature.distance
         const offset = feature.symmetric ? -Math.abs(distance) / 2 : 0
         const length = feature.symmetric ? Math.abs(distance) : distance
-        apply(feature.result, sketchOn(profile.drawing, frame, offset).extrude(length))
-      } else {
-        const axis: Vec3 = feature.axis === 'x' ? frame.xDir : frame.yDir
+        const plane: Frame = {
+          ...frame,
+          origin: v3.add(frame.origin, v3.scale(frame.normal, offset)),
+        }
+        const face = profileFace(profile.drawing, plane)
         apply(
           feature.result,
-          sketchOn(profile.drawing, frame).revolve(axis, { origin: frame.origin }),
+          namedExtrude(oc, {
+            featureId: feature.id,
+            profile: face.wrapped,
+            sketch: sketchFeature.sketch,
+            frame: plane,
+            vector: v3.scale(frame.normal, length),
+          }),
+        )
+      } else {
+        const face = profileFace(profile.drawing, frame)
+        apply(
+          feature.result,
+          namedRevolve(oc, {
+            featureId: feature.id,
+            profile: face.wrapped,
+            sketch: sketchFeature.sketch,
+            frame,
+            axisOrigin: frame.origin,
+            axisDirection: feature.axis === 'x' ? frame.xDir : frame.yDir,
+            angle: feature.angle > 0 && feature.angle < 360 ? feature.angle : 360,
+          }),
         )
       }
       return
@@ -1007,58 +1097,68 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
         }
       }
       const centre: Vec3 = [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2]
-      const moved = states.map(([id, state]) => {
-        let shape = state!.shape.clone()
-        if (rx) shape = shape.rotate(rx, centre, [1, 0, 0])
-        if (ry) shape = shape.rotate(ry, centre, [0, 1, 0])
-        if (rz) shape = shape.rotate(rz, centre, [0, 0, 1])
-        if (dx || dy || dz) shape = shape.translate([dx, dy, dz])
-        return [id, shape] as const
-      })
-      for (const [id, shape] of moved) set(id, shape)
+      let matrix = translationMatrix(v3.scale(centre, -1))
+      matrix = multiplyMatrices(rotationMatrix('x', rx), matrix)
+      matrix = multiplyMatrices(rotationMatrix('y', ry), matrix)
+      matrix = multiplyMatrices(rotationMatrix('z', rz), matrix)
+      matrix = multiplyMatrices(translationMatrix(v3.add(centre, [dx, dy, dz])), matrix)
+      const moved = states.map(
+        ([id, state]) => [id, transformNamed(oc, feature.id, namedOf(state!), matrix)] as const,
+      )
+      for (const [id, named] of moved) set(id, named)
       return
     }
 
     case 'box': {
-      const frame = frameFromPlaneRef(feature.plane, stage.bodies)
-      const base = feature.cornerRadius
-        ? drawRoundedRectangle(feature.width, feature.depth, feature.cornerRadius)
-        : drawRectangle(feature.width, feature.depth)
-      const solid = sketchOn(
-        base.translate(
-          feature.origin[0] + feature.width / 2,
-          feature.origin[1] + feature.depth / 2,
-        ),
-        frame,
-      ).extrude(feature.height)
+      const frame = planeOf(feature.plane)
+      const solid = feature.cornerRadius
+        ? tool(
+            sketchOn(
+              drawRoundedRectangle(feature.width, feature.depth, feature.cornerRadius).translate(
+                feature.origin[0] + feature.width / 2,
+                feature.origin[1] + feature.depth / 2,
+              ),
+              frame,
+            ).extrude(feature.height),
+            'box',
+          )
+        : namedBox(oc, {
+            featureId: feature.id,
+            frame,
+            origin: feature.origin,
+            size: [feature.width, feature.depth, feature.height],
+          })
       apply(feature.result, solid)
       return
     }
 
     case 'cylinder': {
-      const frame = frameFromPlaneRef(feature.plane, stage.bodies)
-      const solid = sketchOn(
-        drawCircle(feature.radius).translate(feature.centre[0], feature.centre[1]),
-        frame,
-      ).extrude(feature.height)
-      apply(feature.result, solid)
+      const frame = planeOf(feature.plane)
+      apply(
+        feature.result,
+        namedCylinder(oc, {
+          featureId: feature.id,
+          frame,
+          centre: feature.centre,
+          radius: feature.radius,
+          height: feature.height,
+        }),
+      )
       return
     }
 
     case 'sphere': {
-      const frame = frameFromPlaneRef(feature.plane, stage.bodies)
-      const world = frameToWorld(frame, feature.centre)
-      let ball: any = makeSphere(feature.radius).translate(world)
-      if (feature.half) {
-        const r = feature.radius
-        const cutter = sketchOn(
-          drawRectangle(r * 4, r * 4).translate(feature.centre[0], feature.centre[1]),
+      const frame = planeOf(feature.plane)
+      apply(
+        feature.result,
+        namedSphere(oc, {
+          featureId: feature.id,
           frame,
-          -r * 2,
-        ).extrude(r * 2)
-        ball = ball.cut(cutter)
-      }
-      apply(feature.result, ball)
+          centre: feature.centre,
+          radius: feature.radius,
+          half: feature.half,
+        }),
+      )
       return
     }
 
@@ -1066,12 +1166,31 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
     case 'chamfer': {
       const target = need(feature.bodyId)
       if (!target) return
-      const size = feature.kind === 'fillet' ? feature.radius : feature.distance
-      const match = edgeMatcher(feature.edges)
-      const config = (edge: any) => (match(edge) ? size : null)
+      const foreign = feature.edges.find(
+        (ref) => ref.bodyId !== feature.bodyId || ref.kind !== 'edge',
+      )
+      if (foreign) {
+        stage.report(
+          'error',
+          'An edge picked for this step belongs to a different body.',
+          'Edit this step and pick edges on the body it changes.',
+        )
+        return
+      }
+      const edges: readonly string[] | 'all' = feature.edges.length
+        ? feature.edges.map((ref) => ref.name)
+        : 'all'
+      const options = {
+        featureId: feature.id,
+        bodyId: feature.bodyId,
+        body: namedOf(target),
+        edges,
+      }
       set(
         feature.bodyId,
-        feature.kind === 'fillet' ? target.shape.fillet(config) : target.shape.chamfer(config),
+        feature.kind === 'fillet'
+          ? namedFillet(oc, { ...options, radius: feature.radius })
+          : namedChamfer(oc, { ...options, distance: feature.distance }),
       )
       return
     }
@@ -1088,26 +1207,36 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
         )
         return
       }
-      const resolved = resolveFace(target.shape, open)
-      const normal = resolved?.normal ?? open.normal
-      const centre = resolved?.centre ?? open.anchor
       stage.preShell.set(feature.id, {
         shape: target.shape.clone(),
-        frame: makeFrame(centre, normal),
+        frame: faceFrame(target, open, 0),
       })
-      set(
-        feature.bodyId,
-        target.shape.shell(Math.abs(feature.thickness), (f: any) =>
-          f.inPlane(new Plane(centre, null, normal)),
-        ),
-      )
+      let hollowed: NamedShape
+      try {
+        hollowed = namedShell(oc, {
+          featureId: feature.id,
+          bodyId: feature.bodyId,
+          body: namedOf(target),
+          openFaces: feature.openFaces.map((ref) => ref.name),
+          thickness: Math.abs(feature.thickness),
+        })
+      } catch (error) {
+        if (!opensBesideCurvedFace(target, feature.openFaces)) throw error
+        stage.report(
+          'error',
+          'OpenCascade cannot hollow through a face that a rounded edge blends into.',
+          'Hollow the part out before rounding the edges around the opening.',
+        )
+        return
+      }
+      set(feature.bodyId, hollowed)
       return
     }
 
     case 'hole': {
       const target = need(feature.bodyId)
       if (!target) return
-      const frame = frameFromPlaneRef(feature.plane, stage.bodies)
+      const frame = planeOf(feature.plane)
       const positions = resolvePositions(feature.source, frame, doc)
       if (!positions) {
         stage.report(
@@ -1119,12 +1248,12 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
       }
       if (positions.length === 0) return
       const cutter = buildHoleCutter(feature, frame, positions)
-      if (cutter) set(feature.bodyId, target.shape.cut(cutter))
+      if (cutter) cutWith(feature.bodyId, target, cutter, 'holes')
       return
     }
 
     case 'standoff': {
-      const frame = frameFromPlaneRef(feature.plane, stage.bodies)
+      const frame = planeOf(feature.plane)
       const positions = resolvePositions(feature.source, frame, doc)
       if (!positions) {
         stage.report(
@@ -1138,20 +1267,39 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
       const { solid, bores } = buildStandoffs(feature, frame, positions)
       if (!solid) return
       if (feature.result.kind === 'newBody') {
-        set(feature.result.bodyId, bores ? solid.cut(bores) : solid)
+        set(feature.result.bodyId, tool(bores ? solid.cut(bores) : solid, 'pillars'))
         return
       }
       const target = need(feature.result.bodyId)
       if (!target) return
-      const joined = target.shape.fuse(solid)
-      set(feature.result.bodyId, bores ? joined.cut(bores) : joined)
+      const pillars = tool(solid, 'pillars')
+      const joined = (() => {
+        try {
+          return fuse(oc, { featureId: feature.id, target: namedOf(target), tools: [pillars] })
+        } finally {
+          releaseNamed([pillars])
+        }
+      })()
+      if (!bores) {
+        set(feature.result.bodyId, joined)
+        return
+      }
+      const drilled = tool(bores, 'bores')
+      try {
+        set(
+          feature.result.bodyId,
+          cut(oc, { featureId: feature.id, target: joined, tools: [drilled] }),
+        )
+      } finally {
+        releaseNamed([drilled, joined])
+      }
       return
     }
 
     case 'vent': {
       const target = need(feature.bodyId)
       if (!target) return
-      const frame = frameFromPlaneRef(feature.plane, stage.bodies)
+      const frame = planeOf(feature.plane)
       const cutter = buildVentCutter(feature, frame, target.shape)
       if (!cutter) {
         stage.report(
@@ -1161,7 +1309,7 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
         )
         return
       }
-      set(feature.bodyId, target.shape.cut(cutter))
+      cutWith(feature.bodyId, target, cutter, 'vent')
       return
     }
 
@@ -1177,7 +1325,7 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
       }
       const wall = wallOfShell(doc, feature.shellFeatureId) ?? Math.abs(feature.thickness)
       const walls = stage.bodies.get(feature.sourceBodyId)?.shape ?? null
-      apply(feature.result, buildLid(feature, source, wall, walls))
+      apply(feature.result, tool(buildLid(feature, source, wall, walls), 'lid'))
       return
     }
 
@@ -1197,7 +1345,7 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
       if (!source) return
       const wall = wallOfShell(doc, lid.shellFeatureId) ?? Math.abs(lid.thickness)
       const cutter = seatCutter(lid, source, wall)
-      if (cutter) set(feature.bodyId, target.shape.cut(cutter))
+      if (cutter) cutWith(feature.bodyId, target, cutter, 'seat')
       return
     }
 
@@ -1207,18 +1355,13 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
       const tools = feature.toolBodyIds
         .filter((id) => id !== feature.bodyId)
         .map((id) => [id, need(id)] as const)
-      if (tools.some(([, tool]) => !tool)) return
-      let shape = target.shape
-      for (const [, tool] of tools) {
-        const other = tool!.shape.clone()
-        shape =
-          feature.operation === 'join'
-            ? shape.fuse(other)
-            : feature.operation === 'cut'
-              ? shape.cut(other)
-              : shape.intersect(other)
-      }
-      set(feature.bodyId, shape)
+      if (!tools.length || tools.some(([, tool]) => !tool)) return
+      combineInto(
+        feature.bodyId,
+        target,
+        feature.operation === 'join' ? 'fuse' : feature.operation === 'cut' ? 'cut' : 'common',
+        tools.map(([, state]) => namedOf(state!)),
+      )
       if (!feature.keepTools) for (const [id] of tools) stage.bodies.delete(id)
       return
     }
@@ -1236,7 +1379,7 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
         return
       }
       const cutter = buildPortCutters(placed, feature.connectorIds, feature.tolerance)
-      if (cutter) set(feature.bodyId, target.shape.cut(cutter))
+      if (cutter) cutWith(feature.bodyId, target, cutter, 'ports')
       return
     }
   }

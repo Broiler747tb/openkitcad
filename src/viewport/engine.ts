@@ -35,6 +35,7 @@ export interface PickResult {
   localPoint: Vec3
   localNormal: Vec3
   faceId: number
+  faceName: string
 }
 
 export interface SubPick {
@@ -42,9 +43,14 @@ export interface SubPick {
   bodyId: string
   kind: 'face' | 'edge' | 'vertex'
   id: string
+  name: string
   point: Vec3
   normal?: Vec3
   length?: number
+}
+
+function elementKey(prefix: 'f' | 'e', name: string, id: number): string {
+  return name ? `${prefix}:${name}` : `${prefix}#${id}`
 }
 
 export interface GizmoPose {
@@ -791,6 +797,10 @@ export class ViewportEngine {
       .applyMatrix3(new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld))
       .normalize()
     const local = hit.object.worldToLocal(hit.point.clone())
+    const triangle = (hit.faceIndex ?? 0) * 3
+    const group = this.geometries
+      .get(entry.instance.meshKey)
+      ?.data.faceGroups.find((g) => triangle >= g.start && triangle < g.start + g.count)
     return {
       instanceId: entry.instance.id,
       kind: entry.instance.kind,
@@ -801,6 +811,7 @@ export class ViewportEngine {
       localPoint: [local.x, local.y, local.z],
       localNormal: [localNormal.x, localNormal.y, localNormal.z],
       faceId: hit.faceIndex ?? -1,
+      faceName: group?.name ?? '',
     }
   }
 
@@ -867,6 +878,7 @@ export class ViewportEngine {
         bodyId: bestVertex.entry.instance.bodyId,
         kind: 'vertex',
         id: `v:${p[0].toFixed(3)},${p[1].toFixed(3)},${p[2].toFixed(3)}`,
+        name: '',
         point: p,
       }
     }
@@ -897,7 +909,8 @@ export class ViewportEngine {
           instanceId: entry.instance.id,
           bodyId: entry.instance.bodyId,
           kind: 'edge',
-          id: `e:${group.edgeId}`,
+          id: elementKey('e', group.name, group.edgeId),
+          name: group.name,
           point: this.edgeMidpoint(data, group),
           length: this.edgeLength(data, group),
         }
@@ -911,7 +924,8 @@ export class ViewportEngine {
       instanceId: entry.instance.id,
       bodyId: entry.instance.bodyId,
       kind: 'face',
-      id: `f:${group?.faceId ?? 'unknown'}`,
+      id: group ? elementKey('f', group.name, group.faceId) : 'f#unknown',
+      name: group?.name ?? '',
       point: [localHit.x, localHit.y, localHit.z],
       normal: [normal.x, normal.y, normal.z],
     }
@@ -1009,14 +1023,14 @@ export class ViewportEngine {
       if (pick.kind === 'vertex') {
         ;(isHover ? bucket.hoverCorners : bucket.corners).push(...pick.point)
       } else if (pick.kind === 'edge') {
-        const group = data.edgeGroups.find((g) => `e:${g.edgeId}` === pick.id)
+        const group = data.edgeGroups.find((g) => elementKey('e', g.name, g.edgeId) === pick.id)
         if (!group) continue
         const into = isHover ? bucket.hoverEdges : bucket.edges
         for (let i = group.start; i < group.start + group.count; i++) {
           into.push(data.lines[i * 3], data.lines[i * 3 + 1], data.lines[i * 3 + 2])
         }
       } else {
-        const group = data.faceGroups.find((g) => `f:${g.faceId}` === pick.id)
+        const group = data.faceGroups.find((g) => elementKey('f', g.name, g.faceId) === pick.id)
         if (!group) continue
         const into = isHover ? bucket.hoverFaces : bucket.faces
         for (let i = group.start; i < group.start + group.count; i++) {

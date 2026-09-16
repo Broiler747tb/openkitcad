@@ -75,6 +75,7 @@ export function failedResult(error: unknown): EvaluateResult {
     ],
     elapsedMs: 0,
     cache: { hits: 0, misses: 0, entries: 0 },
+    planes: [],
   }
 }
 

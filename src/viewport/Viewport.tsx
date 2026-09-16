@@ -31,8 +31,10 @@ import {
   findComponent,
   findOccurrence,
   invertRigidMatrix,
+  isElementRef,
   multiplyMatrices,
   pathMatrix,
+  remapElementName,
   transformPoint,
 } from '../doc/model'
 import { poseMatrix, poseOf } from '../doc/placement'
@@ -185,7 +187,10 @@ function pasteClipboard(): boolean {
     if (typeof value === 'string') return remap.get(value) ?? value
     if (Array.isArray(value)) return value.map(rename)
     if (value && typeof value === 'object') {
-      return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, rename(v)]))
+      const renamed = Object.fromEntries(Object.entries(value).map(([k, v]) => [k, rename(v)]))
+      return isElementRef(value)
+        ? { ...renamed, name: remapElementName(value.name, remap) }
+        : renamed
     }
     return value
   }
@@ -282,15 +287,20 @@ export function Viewport() {
     () => (activeSketch ? activeSketchFeature(useStore.getState()) : null),
     [doc, activeSketch],
   )
+  const planes = useStore((s) => s.planes)
+  const sketchPlane = sketchFeature
+    ? frameFromPlaneRefLocal(sketchFeature.plane, planes.get(sketchFeature.id))
+    : null
+  const planeKey = sketchPlane ? JSON.stringify(sketchPlane) : ''
   const frame: Frame | null = useMemo(
     () =>
-      sketchFeature
+      sketchFeature && sketchPlane
         ? transformFrame(
-            frameFromPlaneRefLocal(sketchFeature.plane),
+            sketchPlane,
             componentMatrix(useStore.getState().doc, sketchFeature.componentId),
           )
         : null,
-    [sketchFeature],
+    [sketchFeature, planeKey],
   )
 
   // --- engine lifecycle ----------------------------------------------------
@@ -392,9 +402,9 @@ export function Viewport() {
     // Hidden while sketching: the whole point of being in a sketch is to see
     // the outline, and a row of screws standing on it is in the way.
     engine.setFastenerGhosts(
-      showFasteners && !activeSketch ? fastenerGhosts(doc, instances, meshes) : [],
+      showFasteners && !activeSketch ? fastenerGhosts(doc, instances, meshes, planes) : [],
     )
-  }, [doc, instances, meshes, showFasteners, activeSketch])
+  }, [doc, instances, meshes, planes, showFasteners, activeSketch])
 
   useEffect(() => {
     const engine = engineRef.current
@@ -1168,6 +1178,7 @@ export function Viewport() {
                   ? {
                       bodyId: hit.bodyId,
                       instanceId: hit.instanceId,
+                      name: hit.faceName,
                       point: hit.localPoint,
                       normal: hit.localNormal,
                     }

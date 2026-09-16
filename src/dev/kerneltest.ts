@@ -183,6 +183,17 @@ function piPlateDoc(piTransform: Matrix4, withStandoffs: boolean): OkcDocument {
   )
 }
 
+function circleSketch(x: number, y: number, r: number): Sketch2D {
+  const s = emptySketch()
+  s.points.push({ id: 'c', x, y })
+  s.entities.push({ id: 'k', kind: 'circle', c: 'c', r, construction: false })
+  return s
+}
+
+function facePlane(bodyId: string, name: string, offset = 0): PlaneRef {
+  return { kind: 'face', face: { bodyId, kind: 'face', name }, offset }
+}
+
 function meshFor(result: EvaluateResult, instanceId: string): BodyMesh | undefined {
   const instance = result.instances.find((candidate) => candidate.id === instanceId)
   return instance ? result.meshes.find((mesh) => mesh.key === instance.meshKey) : undefined
@@ -526,7 +537,7 @@ export async function runKernelTest(): Promise<TestResult[]> {
               kind: 'shell',
               bodyId: 'box',
               thickness: WALL,
-              openFaces: [{ bodyId: 'box', anchor: [W / 2, D / 2, H], normal: [0, 0, 1] }],
+              openFaces: [{ bodyId: 'box', kind: 'face', name: 'bx:+z' }],
             },
             {
               id: 'ld',
@@ -667,6 +678,32 @@ export async function runKernelTest(): Promise<TestResult[]> {
       )
     } catch (e) {
       add('STEP export produces a real STEP file', false, (e as Error).message)
+    }
+
+    {
+      const failures: string[] = []
+      for (let round = 0; round < 25 && failures.length === 0; round++) {
+        try {
+          const r = await evaluate(
+            makeDocument(
+              'repeated export',
+              [body('rx', 'Exported')],
+              [boxFeature('rxb', 'rx', [0, 0], [20 + round, 10, 5])],
+            ),
+          )
+          if (r.errors.length) failures.push(`round ${round}: ${errorText(r)}`)
+          const step = await kernel.exportStep(['root|rx'], 'repeat')
+          if (step.byteLength < 1000) failures.push(`round ${round}: ${step.byteLength} bytes`)
+        } catch (e) {
+          failures.push(`round ${round}: ${(e as Error).message}`)
+        }
+      }
+      add(
+        'exporting STEP over and over leaves the kernel healthy',
+        failures.length === 0,
+        failures[0] ?? '25 exports',
+      )
+      await evaluate(piPlateDoc(translationMatrix([8, 7, PLATE_T]), true))
     }
 
     const circlesAt = async (instance: string, expected: number[][]) => {
@@ -1087,7 +1124,7 @@ export async function runKernelTest(): Promise<TestResult[]> {
             kind: 'fillet',
             bodyId: 'ok',
             radius: 2,
-            edges: [{ bodyId: 'ok', anchor: [500, 500, 500], length: 20 }],
+            edges: [{ bodyId: 'ok', kind: 'edge', name: 'ob:+x&+q' }],
           },
         ],
       )
@@ -1111,6 +1148,211 @@ export async function runKernelTest(): Promise<TestResult[]> {
         'a feature that throws leaves its body as it was',
         !!thrown && !!thrown.hint && Math.abs(intact - 8000) < 0.01,
         `${thrown?.message ?? 'no error'}; body ${intact.toFixed(1)} mm3`,
+      )
+    }
+
+    {
+      const knobDoc = (height: number): OkcDocument =>
+        makeDocument(
+          'face sketch',
+          [body('b', 'Block'), body('knob', 'Knob')],
+          [
+            boxFeature('bx', 'b', [0, 0], [40, 30, height]),
+            {
+              id: 'fs',
+              name: 'On top',
+              componentId: 'root',
+              kind: 'sketch',
+              plane: facePlane('b', 'bx:+z'),
+              sketch: circleSketch(12, 9, 3),
+              visible: true,
+            },
+            {
+              id: 'fx',
+              name: 'Knob',
+              componentId: 'root',
+              kind: 'extrude',
+              sketchId: 'fs',
+              distance: 4,
+              symmetric: false,
+              reverse: false,
+              result: { kind: 'newBody', bodyId: 'knob' },
+            },
+          ],
+        )
+
+      const low = await evaluate(knobDoc(20))
+      const block = meshFor(low, 'root|b')
+      const faceNames = block?.mesh.faceGroups.map((group) => group.name) ?? []
+      const edgeNames = block?.edges.edgeGroups.map((group) => group.name) ?? []
+      add(
+        'every face and edge of a built body is named',
+        faceNames.length === 6 &&
+          new Set(faceNames).size === 6 &&
+          faceNames.includes('bx:+z') &&
+          edgeNames.length === 12 &&
+          new Set(edgeNames).size === 12 &&
+          edgeNames.every((name) => name.length > 0),
+        `faces ${faceNames.join(', ')}; ${edgeNames.length} edges`,
+      )
+
+      for (const height of [20, 35]) {
+        const r = height === 20 ? low : await evaluate(knobDoc(height))
+        const knob = meshFor(r, 'root|knob')
+        const [x0, y0, z0, x1, y1, z1] = knob?.bounds ?? [0, 0, 0, 0, 0, 0]
+        const GAP = 0.05
+        add(
+          `a sketch on a face sits on that face when the block is ${height} mm tall`,
+          r.errors.length === 0 &&
+            Math.abs(x0 - 9) < GAP &&
+            Math.abs(x1 - 15) < GAP &&
+            Math.abs(y0 - 6) < GAP &&
+            Math.abs(y1 - 12) < GAP &&
+            Math.abs(z0 - height) < GAP &&
+            Math.abs(z1 - height - 4) < GAP,
+          r.errors.length
+            ? errorText(r)
+            : `knob x ${x0.toFixed(2)}..${x1.toFixed(2)}, y ${y0.toFixed(2)}..${y1.toFixed(2)}, z ${z0.toFixed(2)}..${z1.toFixed(2)}`,
+        )
+        const plane = r.planes.find((entry) => entry.featureId === 'fs')?.frame
+        add(
+          `the face plane comes back with its origin under the component origin (${height} mm)`,
+          !!plane &&
+            Math.hypot(plane.origin[0], plane.origin[1], plane.origin[2] - height) < 1e-6 &&
+            Math.abs(plane.normal[2] - 1) < 1e-9,
+          plane ? `origin ${plane.origin.join(', ')}, normal ${plane.normal.join(', ')}` : 'none',
+        )
+      }
+
+      const curved = await evaluate(
+        makeDocument(
+          'curved face',
+          [body('can', 'Can')],
+          [
+            {
+              id: 'cy',
+              name: 'Can',
+              componentId: 'root',
+              kind: 'cylinder',
+              plane: XY,
+              centre: [0, 0],
+              radius: 10,
+              height: 20,
+              result: { kind: 'newBody', bodyId: 'can' },
+            },
+            {
+              id: 'cs',
+              name: 'On the side',
+              componentId: 'root',
+              kind: 'sketch',
+              plane: facePlane('can', 'cy:side'),
+              sketch: circleSketch(0, 0, 2),
+              visible: true,
+            },
+          ],
+        ),
+      )
+      const refused = curved.errors.find((error) => error.featureId === 'cs')
+      add(
+        'a sketch cannot sit on a curved face',
+        !!refused && refused.message.includes('flat face'),
+        refused?.message ?? errorText(curved),
+      )
+
+      const topEdge = edgeNames.find((name) => name.includes('bx:+y') && name.includes('bx:+z'))
+      const RADIUS = 3
+      const removed = (1 - Math.PI / 4) * RADIUS * RADIUS * 40
+      for (const height of [20, 35]) {
+        const r = await evaluate(
+          makeDocument(
+            'named fillet',
+            [body('b', 'Block')],
+            [
+              boxFeature('bx', 'b', [0, 0], [40, 30, height]),
+              {
+                id: 'fl',
+                name: 'Round',
+                componentId: 'root',
+                kind: 'fillet',
+                bodyId: 'b',
+                radius: RADIUS,
+                edges: [{ bodyId: 'b', kind: 'edge', name: topEdge ?? 'none' }],
+              },
+            ],
+          ),
+        )
+        const volume = meshFor(r, 'root|b')?.volume ?? 0
+        const expected = 40 * 30 * height - removed
+        add(
+          `a fillet keeps its named edge when the block is ${height} mm tall`,
+          !!topEdge && r.errors.length === 0 && Math.abs(volume - expected) < 0.5,
+          r.errors.length
+            ? errorText(r)
+            : `${topEdge}: ${volume.toFixed(2)} mm3, expected ${expected.toFixed(2)}`,
+        )
+      }
+
+      const H = 20
+      const slotted = await evaluate(
+        makeDocument(
+          'negative slot',
+          [body('b', 'Block'), body('slot', 'Slot', { negative: true })],
+          [
+            boxFeature('bx', 'b', [0, 0], [40, 30, H]),
+            boxFeature('sx', 'slot', [15, -5], [10, 40, 10], {
+              plane: { kind: 'named', name: 'XY', offset: H - 5 },
+            }),
+          ],
+        ),
+      )
+      const cutBlock = meshFor(slotted, 'root|b')
+      const cutNames = cutBlock?.mesh.faceGroups.map((group) => group.name) ?? []
+      add(
+        'a negative body cuts the block it overlaps',
+        slotted.errors.length === 0 &&
+          Math.abs((cutBlock?.volume ?? 0) - (40 * 30 * H - 10 * 30 * 5)) < 0.5,
+        slotted.errors.length ? errorText(slotted) : `${cutBlock?.volume.toFixed(1)} mm3`,
+      )
+      add(
+        'faces split by a negative body keep the name of the face they came from',
+        cutNames.filter((name) => name === 'bx:+z').length === 2 &&
+          cutNames.filter((name) => name === '').length === 3 &&
+          cutNames.every((name) => !name.startsWith('~')),
+        cutNames.map((name) => name || '(none)').join(', '),
+      )
+
+      const blended = await evaluate(
+        makeDocument(
+          'rounded opening',
+          [body('b', 'Block')],
+          [
+            boxFeature('bx', 'b', [0, 0], [40, 30, 20]),
+            {
+              id: 'fl',
+              name: 'Round',
+              componentId: 'root',
+              kind: 'fillet',
+              bodyId: 'b',
+              radius: 2,
+              edges: [{ bodyId: 'b', kind: 'edge', name: topEdge ?? 'none' }],
+            },
+            {
+              id: 'sh',
+              name: 'Hollow',
+              componentId: 'root',
+              kind: 'shell',
+              bodyId: 'b',
+              thickness: 1.5,
+              openFaces: [{ bodyId: 'b', kind: 'face', name: 'bx:+z' }],
+            },
+          ],
+        ),
+      )
+      const blendError = blended.errors.find((error) => error.featureId === 'sh')
+      add(
+        'hollowing through a face a fillet blends into says why it failed',
+        !!blendError && blendError.message.includes('rounded edge'),
+        blendError?.message ?? errorText(blended) ?? 'no error',
       )
     }
   } catch (e) {
