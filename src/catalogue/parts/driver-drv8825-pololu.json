@@ -1,0 +1,195 @@
+{
+  "id": "driver-drv8825-pololu",
+  "name": "DRV8825 stepper driver carrier (Pololu 2133)",
+  "category": "motor",
+  "popularity": 58,
+  "family": "stepper-driver",
+  "variant": "Pololu DRV8825 (2133)",
+  "manufacturer": "Pololu",
+  "summary": "Higher-voltage drop-in for the A4988 carrier, with the same pins and size.",
+  "confidence": "datasheet",
+  "source": "Pololu product 2133 page and its dimension picture: board 0.6 x 0.8 inch (15.24 x 20.32 mm), two rows of 8 pins on a 0.1 inch grid 0.5 inch apart, 0.05 inch in from the edges. The part is shown component side up with the pins soldered underneath, as sold with headers. The DRV8825 drives up to about 1.5 A per phase without a heat sink and 2.2 A with good cooling, and runs its motor from up to 45 V.",
+  "look": {
+    "colour": "#1d7a3a",
+    "components": [
+      {
+        "kind": "header",
+        "x": 1.27,
+        "y": 1.27,
+        "rows": 8,
+        "cols": 1,
+        "height": 8.5,
+        "flip": true,
+        "label": "Logic pins"
+      },
+      {
+        "kind": "header",
+        "x": 13.97,
+        "y": 1.27,
+        "rows": 8,
+        "cols": 1,
+        "height": 8.5,
+        "flip": true,
+        "label": "Power pins"
+      },
+      {
+        "kind": "chip",
+        "x": 5.52,
+        "y": 5.3,
+        "w": 4.4,
+        "h": 9.7,
+        "height": 1.2,
+        "legs": "dual",
+        "label": "DRV8825"
+      },
+      {
+        "kind": "trimmer",
+        "x": 5.9,
+        "y": 14.2,
+        "w": 3.4,
+        "h": 3.4,
+        "height": 1.6,
+        "colour": "#f2f0ea",
+        "label": "Current limit pot"
+      },
+      {
+        "kind": "box",
+        "x": 3.2,
+        "y": 2.2,
+        "w": 3.2,
+        "h": 1.6,
+        "height": 0.6,
+        "finish": "chip",
+        "colour": "#1b1d20",
+        "label": "Sense resistor"
+      },
+      {
+        "kind": "box",
+        "x": 8.8,
+        "y": 2.2,
+        "w": 3.2,
+        "h": 1.6,
+        "height": 0.6,
+        "finish": "chip",
+        "colour": "#1b1d20",
+        "label": "Sense resistor"
+      },
+      {
+        "kind": "box",
+        "x": 10.3,
+        "y": 14.4,
+        "w": 2.0,
+        "h": 3.2,
+        "height": 1.2,
+        "finish": "chip",
+        "colour": "#c9a27a",
+        "label": "Motor supply capacitor"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 15.24,
+      "h": 20.32
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 5.1,
+        "y": 13.9,
+        "w": 4.4,
+        "h": 4.0,
+        "z": 1.6,
+        "height": 1.6,
+        "colour": "#f2f0ea",
+        "label": "Current limit pot"
+      }
+    ]
+  },
+  "pinHeaders": [
+    {
+      "id": "logic",
+      "label": "Logic pins",
+      "x": 1.27,
+      "y": 1.27,
+      "rows": 8,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "DIR",
+        "STEP",
+        "SLEEP",
+        "RESET",
+        "M2",
+        "M1",
+        "M0",
+        "EN"
+      ]
+    },
+    {
+      "id": "power",
+      "label": "Motor and power pins",
+      "x": 13.97,
+      "y": 1.27,
+      "rows": 8,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "GND",
+        "FAULT",
+        "A2",
+        "A1",
+        "B1",
+        "B2",
+        "GND",
+        "VMOT"
+      ]
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-pins",
+      "label": "Header pins underneath",
+      "x": 0,
+      "y": 0,
+      "w": 15.24,
+      "h": 20.32,
+      "z": -8.5,
+      "height": 8.5
+    },
+    {
+      "id": "k-heat",
+      "label": "Room for a heat sink and airflow",
+      "x": 2.0,
+      "y": 4.0,
+      "w": 11.24,
+      "h": 9.0,
+      "z": 1.6,
+      "height": 10
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      8.2,
+      45
+    ],
+    "currentPeak": 2.2,
+    "note": "Motor supply 8.2 to 45 V on VMOT; the logic side is powered from the driver itself."
+  },
+  "links": [
+    {
+      "label": "Product page",
+      "url": "https://www.pololu.com/product/2133"
+    }
+  ],
+  "tags": [
+    "drv8825",
+    "stepper",
+    "driver",
+    "pololu",
+    "3d printer",
+    "cnc"
+  ]
+}

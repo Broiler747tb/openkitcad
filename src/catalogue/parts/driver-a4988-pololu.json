@@ -1,0 +1,196 @@
+{
+  "id": "driver-a4988-pololu",
+  "name": "A4988 stepper driver carrier (Pololu 1182)",
+  "category": "motor",
+  "popularity": 70,
+  "family": "stepper-driver",
+  "variant": "Pololu A4988 (1182)",
+  "manufacturer": "Pololu",
+  "summary": "The classic 3D printer stepper driver: 15.2 x 20.3 mm with two 8-pin rows 12.7 mm apart.",
+  "confidence": "datasheet",
+  "source": "Pololu product 1182 page and its dimension picture: board 0.6 x 0.8 inch (15.24 x 20.32 mm), two rows of 8 pins on a 0.1 inch grid 0.5 inch apart, 0.05 inch in from the edges. The part is shown component side up with the pins soldered underneath, as sold with headers. The A4988 drives up to about 1 A per phase without a heat sink and 2 A with good cooling.",
+  "look": {
+    "colour": "#1d7a3a",
+    "components": [
+      {
+        "kind": "header",
+        "x": 1.27,
+        "y": 1.27,
+        "rows": 8,
+        "cols": 1,
+        "height": 8.5,
+        "flip": true,
+        "label": "Logic pins"
+      },
+      {
+        "kind": "header",
+        "x": 13.97,
+        "y": 1.27,
+        "rows": 8,
+        "cols": 1,
+        "height": 8.5,
+        "flip": true,
+        "label": "Power pins"
+      },
+      {
+        "kind": "chip",
+        "x": 5.12,
+        "y": 7.66,
+        "w": 5.0,
+        "h": 5.0,
+        "height": 0.9,
+        "legs": "none",
+        "label": "A4988"
+      },
+      {
+        "kind": "trimmer",
+        "x": 5.9,
+        "y": 14.2,
+        "w": 3.4,
+        "h": 3.4,
+        "height": 1.6,
+        "colour": "#f2f0ea",
+        "label": "Current limit pot"
+      },
+      {
+        "kind": "box",
+        "x": 3.2,
+        "y": 2.2,
+        "w": 3.2,
+        "h": 1.6,
+        "height": 0.6,
+        "finish": "chip",
+        "colour": "#1b1d20",
+        "label": "Sense resistor"
+      },
+      {
+        "kind": "box",
+        "x": 8.8,
+        "y": 2.2,
+        "w": 3.2,
+        "h": 1.6,
+        "height": 0.6,
+        "finish": "chip",
+        "colour": "#1b1d20",
+        "label": "Sense resistor"
+      },
+      {
+        "kind": "box",
+        "x": 10.3,
+        "y": 14.4,
+        "w": 2.0,
+        "h": 3.2,
+        "height": 1.2,
+        "finish": "chip",
+        "colour": "#c9a27a",
+        "label": "Motor supply capacitor"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 15.24,
+      "h": 20.32
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 5.1,
+        "y": 13.9,
+        "w": 4.4,
+        "h": 4.0,
+        "z": 1.6,
+        "height": 1.6,
+        "colour": "#f2f0ea",
+        "label": "Current limit pot"
+      }
+    ]
+  },
+  "pinHeaders": [
+    {
+      "id": "logic",
+      "label": "Logic pins",
+      "x": 1.27,
+      "y": 1.27,
+      "rows": 8,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "DIR",
+        "STEP",
+        "SLP",
+        "RST",
+        "MS3",
+        "MS2",
+        "MS1",
+        "EN"
+      ]
+    },
+    {
+      "id": "power",
+      "label": "Motor and power pins",
+      "x": 13.97,
+      "y": 1.27,
+      "rows": 8,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "GND",
+        "VDD",
+        "1B",
+        "1A",
+        "2A",
+        "2B",
+        "GND",
+        "VMOT"
+      ]
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-pins",
+      "label": "Header pins underneath",
+      "x": 0,
+      "y": 0,
+      "w": 15.24,
+      "h": 20.32,
+      "z": -8.5,
+      "height": 8.5
+    },
+    {
+      "id": "k-heat",
+      "label": "Room for a heat sink and airflow",
+      "x": 2.0,
+      "y": 4.0,
+      "w": 11.24,
+      "h": 9.0,
+      "z": 1.6,
+      "height": 10
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      8,
+      35
+    ],
+    "currentPeak": 2.0,
+    "note": "Motor supply 8 to 35 V on VMOT; logic 3 to 5.5 V on VDD. Set the current limit before connecting a motor."
+  },
+  "links": [
+    {
+      "label": "Product page",
+      "url": "https://www.pololu.com/product/1182"
+    }
+  ],
+  "tags": [
+    "a4988",
+    "stepper",
+    "driver",
+    "pololu",
+    "reprap",
+    "3d printer",
+    "cnc"
+  ]
+}

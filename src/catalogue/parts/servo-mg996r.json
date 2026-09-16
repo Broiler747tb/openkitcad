@@ -1,0 +1,222 @@
+{
+  "id": "servo-mg996r",
+  "name": "MG996R standard servo (TowerPro)",
+  "category": "motor",
+  "popularity": 76,
+  "manufacturer": "TowerPro",
+  "summary": "The 55 g metal gear standard servo. Tabs 54 mm long, body 40.9 x 20 mm hanging 26.8 mm below them.",
+  "confidence": "datasheet",
+  "source": "TowerPro product table for the MG996R against its lettered drawing: body B 40.9 x D 20 mm, 54 mm over the mounting tabs (E), 26.8 mm from the bottom of the body to the underside of the tabs (F), 37 mm to the top of the case (C) and 42.7 mm to the top of the output spline (A). The part sits with the underside of the tabs on z = 0 and the body hanging below as a keepout. Not on the drawing, and so taken from the common figures for standard-size servos: 2.5 mm tabs, four 4.5 mm holes on a 48 x 10 mm pattern and the output shaft 10 mm in from one end.",
+  "look": {
+    "finish": "plastic",
+    "colour": "#1f2226",
+    "components": [
+      {
+        "kind": "box",
+        "x": 6.55,
+        "y": 0,
+        "z": -26.8,
+        "w": 40.9,
+        "h": 20.0,
+        "height": 26.8,
+        "finish": "plastic",
+        "colour": "#1f2226",
+        "radius": 0.6,
+        "label": "Case"
+      },
+      {
+        "kind": "box",
+        "x": 6.55,
+        "y": 0,
+        "z": 2.5,
+        "w": 40.9,
+        "h": 20.0,
+        "height": 6.2,
+        "finish": "plastic",
+        "colour": "#1f2226",
+        "radius": 0.6,
+        "label": "Gear case"
+      },
+      {
+        "kind": "box",
+        "x": 6.55,
+        "y": 0,
+        "z": 8.7,
+        "w": 40.9,
+        "h": 20.0,
+        "height": 1.5,
+        "finish": "plastic",
+        "colour": "#2b2f34",
+        "radius": 0.6,
+        "label": "Gear case lid"
+      },
+      {
+        "kind": "cylinder",
+        "x": 16.55,
+        "y": 10.0,
+        "z": 10.2,
+        "d": 13.0,
+        "height": 1.8,
+        "finish": "plastic",
+        "colour": "#2b2f34",
+        "label": "Output boss"
+      },
+      {
+        "kind": "cylinder",
+        "x": 16.55,
+        "y": 10.0,
+        "z": 12.0,
+        "d": 5.8,
+        "height": 3.9,
+        "finish": "metal",
+        "colour": "#c9a46a",
+        "label": "Output spline"
+      },
+      {
+        "kind": "box",
+        "x": 47.45,
+        "y": 8.05,
+        "z": -23.8,
+        "w": 5.0,
+        "h": 1.3,
+        "height": 1.2,
+        "finish": "rubber",
+        "colour": "#6b4a2f",
+        "label": "Brown wire"
+      },
+      {
+        "kind": "box",
+        "x": 47.45,
+        "y": 9.35,
+        "z": -23.8,
+        "w": 5.0,
+        "h": 1.3,
+        "height": 1.2,
+        "finish": "rubber",
+        "colour": "#c8322b",
+        "label": "Red wire"
+      },
+      {
+        "kind": "box",
+        "x": 47.45,
+        "y": 10.65,
+        "z": -23.8,
+        "w": 5.0,
+        "h": 1.3,
+        "height": 1.2,
+        "finish": "rubber",
+        "colour": "#e8912a",
+        "label": "Orange wire"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 54.0,
+      "h": 20.0,
+      "cornerRadius": 1.5
+    },
+    "thickness": 2.5,
+    "bumps": [
+      {
+        "x": 6.55,
+        "y": 0,
+        "w": 40.9,
+        "h": 20.0,
+        "z": 2.5,
+        "height": 7.7,
+        "colour": "#1f2226",
+        "label": "Gear case"
+      },
+      {
+        "x": 13.65,
+        "y": 7.1,
+        "w": 5.8,
+        "h": 5.8,
+        "z": 10.2,
+        "height": 5.7,
+        "colour": "#c9a46a",
+        "label": "Output spline"
+      }
+    ]
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 3.0,
+      "y": 5.0,
+      "diameter": 4.5,
+      "screw": "M4"
+    },
+    {
+      "id": "h2",
+      "x": 3.0,
+      "y": 15.0,
+      "diameter": 4.5,
+      "screw": "M4"
+    },
+    {
+      "id": "h3",
+      "x": 51.0,
+      "y": 5.0,
+      "diameter": 4.5,
+      "screw": "M4"
+    },
+    {
+      "id": "h4",
+      "x": 51.0,
+      "y": 15.0,
+      "diameter": 4.5,
+      "screw": "M4"
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-body",
+      "label": "Servo body below the tabs",
+      "x": 6.55,
+      "y": 0,
+      "w": 40.9,
+      "h": 20.0,
+      "z": -26.8,
+      "height": 26.8
+    },
+    {
+      "id": "k-horn",
+      "label": "Horn sweep",
+      "x": -1.45,
+      "y": -8.0,
+      "w": 36,
+      "h": 36,
+      "z": 15.9,
+      "height": 6
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      4.8,
+      6
+    ],
+    "currentTypical": 0.5,
+    "currentPeak": 2.5,
+    "note": "Stalls near 2.5 A. Give it its own supply, never a board 5 V pin."
+  },
+  "links": [
+    {
+      "label": "Product page",
+      "url": "https://www.towerpro.com.tw/product/mg996r/"
+    }
+  ],
+  "tags": [
+    "servo",
+    "mg996r",
+    "metal gear",
+    "standard",
+    "hobby",
+    "motor",
+    "rc",
+    "towerpro"
+  ]
+}

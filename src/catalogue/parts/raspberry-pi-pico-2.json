@@ -1,0 +1,248 @@
+{
+  "id": "raspberry-pi-pico-2",
+  "name": "Raspberry Pi Pico 2",
+  "category": "mcu",
+  "popularity": 78,
+  "family": "raspberry-pi-pico",
+  "variant": "Pico 2 (RP2350)",
+  "manufacturer": "Raspberry Pi Ltd",
+  "summary": "RP2350 board in the Pico footprint: 51 x 21 mm, four 2.1 mm holes, 40 castellated pins.",
+  "confidence": "datasheet",
+  "source": "Raspberry Pi Pico 2 datasheet, mechanical figure (Raspberry Pi Ltd), with positions read from its vector geometry: board 51 x 21 mm and 1 mm thick, four 2.1 mm holes 2 mm from the short edges and 4.8 mm from the long edges, 40 castellated pins on a 2.54 mm grid in two rows 17.78 mm apart starting 1.37 mm from the USB end, and the micro USB socket overhanging the short edge by 1.3 mm. The layout matches the original Pico, with the flash and crystal moved slightly. Small passives are left out.",
+  "look": {
+    "colour": "#1f6f4a",
+    "components": [
+      {
+        "kind": "port",
+        "port": "micro-usb",
+        "x": -0.7,
+        "y": 10.49,
+        "facing": "-x",
+        "w": 7.5,
+        "h": 2.6,
+        "depth": 5.31,
+        "label": "micro USB"
+      },
+      {
+        "kind": "box",
+        "x": -1.3,
+        "y": 6.49,
+        "w": 0.6,
+        "h": 8.04,
+        "height": 2.6,
+        "finish": "metal",
+        "label": "micro USB flange"
+      },
+      {
+        "kind": "box",
+        "x": 9.81,
+        "y": 5.29,
+        "w": 4.4,
+        "h": 3.4,
+        "height": 1.5,
+        "finish": "plastic",
+        "colour": "#f2f0ea",
+        "radius": 0.2,
+        "label": "BOOTSEL button"
+      },
+      {
+        "kind": "cylinder",
+        "x": 12.01,
+        "y": 6.99,
+        "z": 2.5,
+        "d": 2.4,
+        "height": 0.5,
+        "finish": "plastic",
+        "colour": "#f7f6f2",
+        "label": "BOOTSEL cap"
+      },
+      {
+        "kind": "chip",
+        "x": 22.5,
+        "y": 6.99,
+        "w": 6.99,
+        "h": 7.01,
+        "height": 0.9,
+        "label": "RP2350"
+      },
+      {
+        "kind": "chip",
+        "x": 17.6,
+        "y": 5.29,
+        "w": 3.0,
+        "h": 2.0,
+        "height": 0.6,
+        "label": "Flash"
+      },
+      {
+        "kind": "crystal",
+        "x": 31.8,
+        "y": 5.99,
+        "w": 2.39,
+        "h": 3.21,
+        "height": 0.8,
+        "label": "12 MHz crystal"
+      },
+      {
+        "kind": "chip",
+        "x": 9.65,
+        "y": 12.14,
+        "w": 2.51,
+        "h": 2.51,
+        "height": 0.8,
+        "label": "Buck-boost regulator"
+      },
+      {
+        "kind": "box",
+        "x": 9.65,
+        "y": 15.49,
+        "w": 2.51,
+        "h": 2.0,
+        "height": 1.0,
+        "finish": "chip",
+        "colour": "#3b3e43",
+        "label": "Inductor"
+      },
+      {
+        "kind": "box",
+        "x": 5.21,
+        "y": 15.49,
+        "w": 2.8,
+        "h": 2.0,
+        "height": 0.9,
+        "finish": "chip",
+        "colour": "#2a2c30",
+        "label": "Schottky diode"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 51,
+      "h": 21,
+      "cornerRadius": 2
+    },
+    "thickness": 1.0,
+    "bumps": [
+      {
+        "x": -1.3,
+        "y": 6.49,
+        "w": 5.91,
+        "h": 8.04,
+        "z": 1.0,
+        "height": 2.6,
+        "colour": "#b9c0c7",
+        "label": "micro USB"
+      },
+      {
+        "x": 9.81,
+        "y": 5.29,
+        "w": 4.4,
+        "h": 3.4,
+        "z": 1.0,
+        "height": 2.0,
+        "colour": "#f2f0ea",
+        "label": "BOOTSEL button"
+      }
+    ]
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2.0,
+      "y": 4.8,
+      "diameter": 2.1,
+      "screw": "M2"
+    },
+    {
+      "id": "h2",
+      "x": 49.0,
+      "y": 4.8,
+      "diameter": 2.1,
+      "screw": "M2"
+    },
+    {
+      "id": "h3",
+      "x": 2.0,
+      "y": 16.2,
+      "diameter": 2.1,
+      "screw": "M2"
+    },
+    {
+      "id": "h4",
+      "x": 49.0,
+      "y": 16.2,
+      "diameter": 2.1,
+      "screw": "M2"
+    }
+  ],
+  "connectors": [
+    {
+      "id": "usb",
+      "label": "micro USB",
+      "side": "-x",
+      "x": 0,
+      "y": 10.49,
+      "z": 1.0,
+      "width": 8.0,
+      "height": 3.0,
+      "protrusion": 1.3
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "pins-1-20",
+      "label": "Pins 1 to 20",
+      "x": 1.37,
+      "y": 1.61,
+      "rows": 1,
+      "cols": 20,
+      "pitch": 2.54
+    },
+    {
+      "id": "pins-21-40",
+      "label": "Pins 21 to 40",
+      "x": 1.37,
+      "y": 19.39,
+      "rows": 1,
+      "cols": 20,
+      "pitch": 2.54
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-under",
+      "label": "Solder side clearance",
+      "x": 0,
+      "y": 0,
+      "w": 51,
+      "h": 21,
+      "z": -2,
+      "height": 2
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      1.8,
+      5.5
+    ],
+    "currentTypical": 0.025,
+    "note": "VSYS takes 1.8 to 5.5 V; USB supplies 5 V through VBUS."
+  },
+  "links": [
+    {
+      "label": "Pico 2 datasheet",
+      "url": "https://datasheets.raspberrypi.com/pico/pico-2-datasheet.pdf"
+    }
+  ],
+  "tags": [
+    "pico",
+    "pico 2",
+    "rp2350",
+    "raspberry",
+    "microcontroller",
+    "mcu"
+  ]
+}

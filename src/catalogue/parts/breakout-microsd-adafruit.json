@@ -1,0 +1,158 @@
+{
+  "id": "breakout-microsd-adafruit",
+  "name": "microSD card breakout, SPI or SDIO (Adafruit 4682)",
+  "category": "connector",
+  "popularity": 56,
+  "manufacturer": "Adafruit",
+  "summary": "microSD socket on a 25.4 x 22.9 mm board with two M2.5 holes and a 9-pin header.",
+  "confidence": "datasheet",
+  "source": "Adafruit's Eagle files for the MicroSD SPI or SDIO Card Breakout Board (product 4682): board 25.4 x 22.86 mm with 2.54 mm corners, two 2.5 mm holes 2.54 mm in from the top corners, a 9-pin header along the bottom edge and the push-push card socket opening on the top edge. It is 3.3 V only.",
+  "look": {
+    "colour": "#1d1f22",
+    "components": [
+      {
+        "kind": "box",
+        "x": 2.43,
+        "y": 7.549,
+        "w": 1.758,
+        "h": 1.16,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C1"
+      },
+      {
+        "kind": "box",
+        "x": 3.943,
+        "y": 15.593,
+        "w": 0.76,
+        "h": 1.334,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C2"
+      },
+      {
+        "kind": "box",
+        "x": 2.662,
+        "y": 10.404,
+        "w": 1.28,
+        "h": 2.56,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R1"
+      },
+      {
+        "kind": "box",
+        "x": 21.458,
+        "y": 10.404,
+        "w": 1.28,
+        "h": 2.56,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R2"
+      },
+      {
+        "kind": "port",
+        "port": "microsd",
+        "x": 12.64,
+        "y": 22.86,
+        "facing": "+y",
+        "w": 14.1,
+        "h": 1.9,
+        "depth": 15.5,
+        "label": "microSD socket"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 25.4,
+      "h": 22.86,
+      "cornerRadius": 2.54
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 5.59,
+        "y": 7.36,
+        "w": 14.1,
+        "h": 15.5,
+        "z": 1.6,
+        "height": 1.9,
+        "colour": "#b9c0c7",
+        "label": "microSD socket"
+      }
+    ]
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2.54,
+      "y": 20.32,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h2",
+      "x": 22.86,
+      "y": 20.32,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    }
+  ],
+  "connectors": [
+    {
+      "id": "sd",
+      "label": "microSD card",
+      "side": "+y",
+      "x": 12.64,
+      "y": 22.86,
+      "z": 1.6,
+      "width": 13.0,
+      "height": 2.2,
+      "protrusion": 0
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "jp1",
+      "label": "JP1",
+      "x": 2.54,
+      "y": 2.54,
+      "rows": 1,
+      "cols": 9,
+      "pitch": 2.54
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      3.3
+    ],
+    "note": "Logic and supply are 3.3 V only; use a level shifter with 5 V boards."
+  },
+  "links": [
+    {
+      "label": "Adafruit 4682",
+      "url": "https://www.adafruit.com/product/4682"
+    },
+    {
+      "label": "Eagle files",
+      "url": "https://github.com/adafruit/Adafruit-MicroSD-SPI-or-SDIO-card-breakout-PCB"
+    }
+  ],
+  "tags": [
+    "microsd",
+    "sd card",
+    "breakout",
+    "spi",
+    "sdio",
+    "storage",
+    "adafruit",
+    "4682"
+  ]
+}

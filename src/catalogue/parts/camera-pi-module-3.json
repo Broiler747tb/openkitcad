@@ -1,0 +1,183 @@
+{
+  "id": "camera-pi-module-3",
+  "name": "Raspberry Pi Camera Module 3",
+  "category": "sensor",
+  "popularity": 74,
+  "manufacturer": "Raspberry Pi Ltd",
+  "summary": "12 MP autofocus camera: 25 x 23.9 mm board, four 2.2 mm holes on a 21 x 12.5 mm pattern.",
+  "confidence": "datasheet",
+  "source": "Raspberry Pi Camera Module 3 (standard) mechanical drawing: board 25 x 23.862 mm and 1.12 mm thick, four 2.2 mm holes 2.0 mm in from the sides at 2.0 and 14.5 mm up, so a 21 x 12.5 mm pattern shared with the older camera modules. The 10.8 mm square lens housing is centred 12.5 mm across and 14.4 mm up; the housing front is 3.875 mm and the 5.75 mm lens 6.98 mm from the back of the board. The 19.61 x 5.71 mm cable connector sits on the back along the top edge, with 11.3 mm overall depth. Field of view 66 x 41 degrees.",
+  "look": {
+    "colour": "#1f6f4a",
+    "components": [
+      {
+        "kind": "box",
+        "x": 7.1,
+        "y": 9.0,
+        "w": 10.8,
+        "h": 10.8,
+        "height": 2.755,
+        "finish": "plastic",
+        "colour": "#15171a",
+        "radius": 0.3,
+        "label": "Lens housing"
+      },
+      {
+        "kind": "cylinder",
+        "x": 12.5,
+        "y": 14.4,
+        "z": 3.875,
+        "d": 5.75,
+        "height": 3.105,
+        "finish": "plastic",
+        "colour": "#15171a",
+        "label": "Lens barrel"
+      },
+      {
+        "kind": "cylinder",
+        "x": 12.5,
+        "y": 14.4,
+        "z": 6.98,
+        "d": 3.6,
+        "height": 0.03,
+        "finish": "glass",
+        "colour": "#2a3a55",
+        "label": "Lens"
+      },
+      {
+        "kind": "box",
+        "x": 2.695,
+        "y": 18.152,
+        "z": -4.32,
+        "w": 19.61,
+        "h": 5.71,
+        "height": 4.32,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "label": "Camera cable connector"
+      },
+      {
+        "kind": "box",
+        "x": 3.2,
+        "y": 18.6,
+        "z": -4.37,
+        "w": 18.6,
+        "h": 2.6,
+        "height": 0.05,
+        "finish": "plastic",
+        "colour": "#c9a46a",
+        "label": "Connector latch"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 25.0,
+      "h": 23.862,
+      "cornerRadius": 2.0
+    },
+    "thickness": 1.12,
+    "bumps": [
+      {
+        "x": 7.1,
+        "y": 9.0,
+        "w": 10.8,
+        "h": 10.8,
+        "z": 1.12,
+        "height": 2.755,
+        "colour": "#15171a",
+        "label": "Lens housing"
+      },
+      {
+        "x": 9.625,
+        "y": 11.525,
+        "w": 5.75,
+        "h": 5.75,
+        "z": 3.875,
+        "height": 3.105,
+        "colour": "#15171a",
+        "label": "Lens"
+      },
+      {
+        "x": 2.695,
+        "y": 18.152,
+        "w": 19.61,
+        "h": 5.71,
+        "z": -4.32,
+        "height": 4.32,
+        "colour": "#1b1d20",
+        "label": "Cable connector"
+      }
+    ]
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 2.0,
+      "y": 2.0,
+      "diameter": 2.2,
+      "screw": "M2"
+    },
+    {
+      "id": "h2",
+      "x": 23.0,
+      "y": 2.0,
+      "diameter": 2.2,
+      "screw": "M2"
+    },
+    {
+      "id": "h3",
+      "x": 2.0,
+      "y": 14.5,
+      "diameter": 2.2,
+      "screw": "M2"
+    },
+    {
+      "id": "h4",
+      "x": 23.0,
+      "y": 14.5,
+      "diameter": 2.2,
+      "screw": "M2"
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-view",
+      "label": "Field of view in front of the lens",
+      "x": 7.5,
+      "y": 9.4,
+      "w": 10.0,
+      "h": 10.0,
+      "z": 6.98,
+      "height": 10
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      3.3
+    ],
+    "currentTypical": 0.2,
+    "note": "Powered through the camera cable from the Pi."
+  },
+  "links": [
+    {
+      "label": "Mechanical drawing",
+      "url": "https://datasheets.raspberrypi.com/camera/camera-module-3-standard-mechanical-drawing.pdf"
+    },
+    {
+      "label": "Product page",
+      "url": "https://www.raspberrypi.com/products/camera-module-3/"
+    }
+  ],
+  "tags": [
+    "camera",
+    "raspberry",
+    "pi",
+    "imx708",
+    "autofocus",
+    "csi",
+    "module 3"
+  ]
+}

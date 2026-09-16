@@ -124,6 +124,11 @@
     "category": "control",
     "summary": "Endless knobs with detents and a push switch."
   },
+  "stepper-driver": {
+    "name": "Stepper driver carrier",
+    "category": "motor",
+    "summary": "0.6 x 0.8 inch stepper driver boards with two 8-pin rows."
+  },
   "stm32-pill": {
     "name": "STM32 pill board",
     "category": "mcu",

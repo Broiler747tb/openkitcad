@@ -1,0 +1,144 @@
+{
+  "id": "rtc-ds3231-adafruit",
+  "name": "DS3231 precision real-time clock (Adafruit 3013)",
+  "category": "sensor",
+  "popularity": 64,
+  "manufacturer": "Adafruit",
+  "summary": "Temperature-compensated clock that keeps time on a coin cell. 22.9 x 17.8 mm, two M2.5 holes.",
+  "confidence": "datasheet",
+  "source": "Adafruit's Eagle files for the DS3231 Precision RTC Breakout (product 3013): board 22.86 x 17.78 mm with 2.54 mm corners, two 2.5 mm holes 2.54 mm in from the top corners, a row of pins along the bottom edge and the CR1220 coin cell holder underneath. Part positions in the look come from the same files.",
+  "look": {
+    "colour": "#1d1f22",
+    "components": [
+      {
+        "kind": "box",
+        "x": 2.176,
+        "y": 5.517,
+        "w": 1.758,
+        "h": 1.16,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R2"
+      },
+      {
+        "kind": "box",
+        "x": 2.176,
+        "y": 7.549,
+        "w": 1.758,
+        "h": 1.16,
+        "height": 0.5,
+        "colour": "#1b1d20",
+        "finish": "chip",
+        "label": "R1"
+      },
+      {
+        "kind": "chip",
+        "x": 1.27,
+        "y": 4.064,
+        "w": 20.32,
+        "h": 13.208,
+        "height": 1.0,
+        "flip": true,
+        "z": 0,
+        "label": "CR1220"
+      },
+      {
+        "kind": "chip",
+        "x": 5.856,
+        "y": 5.224,
+        "w": 10.64,
+        "h": 10.38,
+        "height": 1.75,
+        "label": "DS3231/SO"
+      },
+      {
+        "kind": "box",
+        "x": 17.707,
+        "y": 5.732,
+        "w": 1.16,
+        "h": 1.758,
+        "height": 0.8,
+        "colour": "#c9a27a",
+        "finish": "plastic",
+        "label": "C1"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 22.86,
+      "h": 17.78,
+      "cornerRadius": 2.54
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 1.27,
+        "y": 4.06,
+        "w": 20.32,
+        "h": 13.21,
+        "z": -5.0,
+        "height": 5.0,
+        "colour": "#1b1d20",
+        "label": "CR1220 holder"
+      }
+    ]
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 20.32,
+      "y": 15.24,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    },
+    {
+      "id": "h2",
+      "x": 2.54,
+      "y": 15.24,
+      "diameter": 2.5,
+      "screw": "M2.5"
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "jp1",
+      "label": "JP1",
+      "x": 2.54,
+      "y": 2.54,
+      "rows": 1,
+      "cols": 8,
+      "pitch": 2.54
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      2.3,
+      5.5
+    ],
+    "currentTypical": 0.0,
+    "note": "I2C address 0x68. Keeps time on a CR1220 cell when the power is off."
+  },
+  "links": [
+    {
+      "label": "Adafruit 3013",
+      "url": "https://www.adafruit.com/product/3013"
+    },
+    {
+      "label": "Eagle files",
+      "url": "https://github.com/adafruit/Adafruit-DS3231-Precision-RTC-Breakout-PCB"
+    }
+  ],
+  "tags": [
+    "ds3231",
+    "rtc",
+    "clock",
+    "real-time clock",
+    "i2c",
+    "adafruit",
+    "3013"
+  ]
+}
