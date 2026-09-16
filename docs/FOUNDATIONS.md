@@ -54,7 +54,8 @@ stale notices, plural labels, narrow windows and dead code (§13).
 
 **P: parts.** The Components tab ranked by popularity, with families of versions and a picker,
 favourites, recently used, filters and a details card, drop on a face, and managing your own parts
-(§14). Then true-to-life looks with rendered previews, and every part pinned to a real, named product.
+(§14). Then true-to-life looks with rendered previews, and every part pinned to a real, named product
+where a maker publishes its sizes, with clones kept as labelled generic versions.
 
 ## 3. Document model v2
 
@@ -514,7 +515,8 @@ sizes (not approximate) and Mounting holes. With no search it shows Favourites, 
 Popular, the types with counts, and Your parts. Search results can be narrowed by type. A row opens
 the details card; its hover buttons star it or insert it at the origin. The details card has a drawn
 preview, the size, hole pattern, panel hole, thread, ports, headers and power, how the sizes were
-sourced, links, the other versions, Insert, and Edit or Copy and edit for rectangular boards. The
+sourced, links, the other versions, Insert, and Edit or Copy and edit for boards; a shaped outline
+such as the Uno's is copied as it is unless the width or depth is changed in the form. The
 version picker floats beside the panel with one card per version drawn at a shared scale. Previews
 are SVG drawings made from the part data (`PartSketch.tsx`). Favourites and recent parts are kept in
 localStorage. The panel widens to 320 px while it is open.
@@ -548,13 +550,34 @@ extruded with plated holes and pads, plus `look.components` in part coordinates:
 (with legs), module (shield and antenna), header (male or female), port (usb-c, micro-usb, mini-usb,
 usb-a, usb-a-stack, usb-b, hdmi, micro-hdmi, mini-hdmi, rj45, jack-35, barrel, microsd, sd, ffc, facing
 one side), screen, button, led, crystal, capacitor, transducer, antenna, trimmer, terminal and jst;
-`z` is the height above the part origin and defaults to the board top, `flip` mounts on the underside.
-A board without components draws its bumps and header pads. Panel parts pick a `look.style` (the
+`z` is the height above the part origin and defaults to the board top, `flip` mounts on the underside,
+and `turn` rotates a box or chip about its centre for parts fitted at an angle (the Nano's ATmega, the
+BlackPill's STM32). A board without components draws its bumps, and every pin row in `pinHeaders`
+that no fitted header covers is drawn as plated pads. Panel parts pick a `look.style` (the
 ports above, rocker, toggle, pot, encoder, led-holder, fan, jst-xh, terminal, xt, iec, banana, gx16,
 sma, rca, dsub); screws, inserts, standoffs, steppers, bearings (`style: linear` for LM8UU) and
 extrusion are drawn from their geometry. The selftest checks that every shipped look stays within 4 mm
-of the part's measured size and fills at least half of it, which caught the Pico's headers running
-across the board instead of along it.
+of the part's measured size, widened by a board's bumps and keep-outs so overhanging ports and pins
+under the board count, and fills at least half of it. It caught the Pico's headers running across the
+board instead of along it, and generic modules whose transducers, domes and cans were missing from
+their clearance heights.
+
+**Where the sizes come from.** A part is `datasheet` only when its outline, holes, pins and port
+openings come from something its maker published, and `source` says which document and how the
+numbers were read. Raspberry Pi boards use the official mechanical drawings, read from the PDFs' own
+vector geometry by scaling from the hole pattern or the 2.54 mm pin pitch rather than eyeballing a
+render; the Pico family uses the datasheet figures the same way. Arduino's Uno, Mega and Nano, SparkFun's
+Pro Micro and the Adafruit boards come from their Eagle board files, with outlines, holes, pin rows and
+part positions taken directly (parts on the underside are rotated, then mirrored). Espressif, WEMOS,
+the NodeMCU team, WeAct, Seeed, PJRC, BeagleBoard, Pololu, TowerPro, CNC Kitchen, Aosong and the
+connector makers supply drawings, dimension tables, footprints or layout prints. This found real
+errors: two Uno and Mega holes 10 mm off, the Pi 5 using the Pi 4's port layout, the Nano's headers
+across the board and its corner holes missing, the BeagleBone's off-rectangle holes, the D1 mini and
+Blue Pill clones given holes they do not have, and heat-set insert holes that matched no maker's table.
+Boards sold by many makers with no drawing keep `approximate`, say "(generic)" in the name and share
+a family with the pinned product, so the picker offers both. At the end of this round the catalogue
+holds 125 parts in 32 families: 86 from maker data, 38 generic and 1 measured by hand. Popularity
+is still a curated estimate, not measured usage.
 
 **Pictures.** Rows show a rendered thumbnail, made off screen by one shared renderer a few per frame
 and cached per part data (`src/ui/parts/render.ts`); the SVG drawing stands in until it is ready. The
@@ -566,7 +589,8 @@ from the card body or the handle under the details preview.
 
 - Agents never start other agents or workflows.
 - New and rewritten code has no comments. Touched files are formatted with Prettier.
-- Commits go on `fusion` locally, in the repo's message style. Nothing is pushed by an agent.
+- Commits go on `fusion`, in the repo's message style, and are pushed to `fusion` only. `main`
+  deploys GitHub Pages and is never pushed.
 - `src/doc/types.ts`, `src/doc/model.ts`, `src/kernel/types.ts` and `src/main.tsx` are the
   contract. They change only additively, only when work cannot proceed otherwise, and every
   change is listed in the agent's report.
