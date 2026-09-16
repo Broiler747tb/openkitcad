@@ -4,6 +4,7 @@ import { selectProfiles, sketchRegions } from '../sketch/regions'
 import { resolveConstraint, toggleFixes } from '../sketch/constraintTools'
 import { dimensionCandidate, dimensionGraphic } from '../sketch/dimensions'
 import { offsetChains } from '../sketch/offset'
+import { chainSegments, projectPolylines } from '../sketch/project'
 import {
   breakEntity,
   extendEntity,
@@ -1252,6 +1253,46 @@ export function runSketchTest(): TestResult[] {
         copies[0].p2 === copies[1].p1 &&
         v2.dist(at(bent, copies[0].p2), [18, 2]) < 1e-9,
       copies.map((c) => `${at(bent, c.p1)}->${at(bent, c.p2)}`).join(' '),
+    )
+  })
+
+  guard('project', () => {
+    const d = draft()
+    const ring: Vec2[] = []
+    for (let i = 0; i <= 48; i++) {
+      const t = (i / 48) * Math.PI * 2
+      ring.push([30 + 8 * Math.cos(t), 5 + 8 * Math.sin(t)])
+    }
+    const bend: Vec2[] = []
+    for (let i = 0; i <= 12; i++) {
+      const t = (i / 12) * (Math.PI / 2)
+      bend.push([-20 + 5 * Math.cos(t), 5 * Math.sin(t)])
+    }
+    const wave: Vec2[] = []
+    for (let i = 0; i <= 30; i++) wave.push([i, 40 + 3 * Math.sin(i / 4)])
+    const segments: Array<[Vec2, Vec2]> = [
+      [
+        [0, 0],
+        [5, 0],
+      ],
+      [
+        [10, 0],
+        [5, 0],
+      ],
+    ]
+    const joined = chainSegments(segments, 1e-6)
+    const result = projectPolylines(d.sketch, [...joined, ring, bend, wave], d.id)
+    const kinds = d.sketch.entities.map((e) => e.kind).join(',')
+    check(
+      'Project turns straight edges into lines, round edges into circles and arcs, and the rest into splines',
+      result.ok && kinds === 'line,circle,arc,spline',
+      kinds,
+    )
+    const status = solved(d)
+    check(
+      'projected geometry comes in fixed, so nothing about it is left to define',
+      status.ok && d.sketch.entities.every((e) => !status.freeEntities.includes(e.id)),
+      `dof ${status.dof}, free ${status.freeEntities.join(',')}`,
     )
   })
 

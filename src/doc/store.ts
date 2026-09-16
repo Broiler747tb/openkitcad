@@ -72,6 +72,7 @@ export type ToolId =
   | 'sketchFillet'
   | 'mirror'
   | 'circularPattern'
+  | 'project'
   | 'measure'
 
 export interface Selection {

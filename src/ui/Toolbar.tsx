@@ -109,6 +109,12 @@ export function Toolbar({
   })
   const sketchCreateExtras: ObjectAction[] = [
     modifyTool(
+      'project',
+      'Project',
+      'Brings the edges of a body into the sketch as fixed geometry.',
+      'Project: click an edge or face of a body.',
+    ),
+    modifyTool(
       'mirror',
       'Mirror',
       'Copies the selected geometry across a line, tied with symmetry.',
@@ -312,6 +318,13 @@ export function Toolbar({
         e.preventDefault()
         setPending(null)
         s.setTool(sketchMap[k])
+        return
+      }
+      if (s.activeSketch && k === 'p') {
+        e.preventDefault()
+        setPending(null)
+        s.setTool('project')
+        s.setStatus('Project: click an edge or face of a body.')
         return
       }
       if (s.activeSketch && k === 'm') {

@@ -57,6 +57,7 @@ import { parseAngle, parseInteger, parseLength } from '../ui/command/units'
 import { runConstraintTool } from '../ui/sketchConstraints'
 import { circularPatternAt, sketchEdit } from '../ui/sketchModify'
 import { breakEntity, extendEntity, mirrorAbout, trimEntity } from '../sketch/modify'
+import { chainSegments, projectPolylines } from '../sketch/project'
 import { findCorner, maxFilletRadius } from '../sketch/corner'
 import {
   dimensionCandidate,
@@ -1045,6 +1046,12 @@ export function Viewport() {
         return
       }
 
+      if (tool === 'project') {
+        engine.setHoverPick(engine.pickSub(e.clientX, e.clientY))
+        setCursorHint({ x: e.clientX, y: e.clientY, text: 'Project: click a body edge or face' })
+        return
+      }
+
       if (['trim', 'extend', 'break', 'mirror'].includes(tool)) {
         const hit = hitTestSketch(sketch, cursor, toleranceAt(), false)
         setCursorHint({ x: e.clientX, y: e.clientY, text: MODIFY_HINTS[tool] ?? '' })
@@ -1149,6 +1156,26 @@ export function Viewport() {
           tool === 'trim' ? trimEntity : tool === 'extend' ? extendEntity : breakEntity
         store.setSketchSelection([])
         sketchEdit(label, (draft) => operation(draft, hit.id, cursor, newId))
+        return
+      }
+
+      if (tool === 'project') {
+        const polylines = projectionAt(e.clientX, e.clientY)
+        if (!polylines?.length) {
+          store.setStatus('Project: click an edge or a face of a body.')
+          return
+        }
+        const tolerance = Math.max(1e-4, toleranceAt() * 1e-3)
+        if (
+          sketchEdit('Project', (draft) => {
+            const result = projectPolylines(draft, polylines, newId, tolerance)
+            return { ok: result.ok, message: result.message }
+          })
+        ) {
+          store.setStatus(
+            `Projected ${polylines.length} curve${polylines.length === 1 ? '' : 's'}.`,
+          )
+        }
         return
       }
 
@@ -1384,6 +1411,64 @@ export function Viewport() {
     store.setSubSelection(
       e.shiftKey ? (at >= 0 ? current.filter((_, i) => i !== at) : [...current, sub]) : [sub],
     )
+  }
+
+  function projectionAt(clientX: number, clientY: number): Vec2[][] | null {
+    const engine = engineRef.current
+    if (!engine || !frame) return null
+    const sub = engine.pickSub(clientX, clientY)
+    if (!sub || sub.kind === 'vertex') return null
+    const instance = committedInstances.find((candidate) => candidate.id === sub.instanceId)
+    const mesh = instance ? committedMeshes.get(instance.meshKey) : undefined
+    if (!instance || !mesh) return null
+    const toSketch = (x: number, y: number, z: number): Vec2 => {
+      const world = transformPoint(instance.matrix, [x, y, z])
+      const d: Vec3 = [
+        world[0] - frame.origin[0],
+        world[1] - frame.origin[1],
+        world[2] - frame.origin[2],
+      ]
+      return [
+        d[0] * frame.xDir[0] + d[1] * frame.xDir[1] + d[2] * frame.xDir[2],
+        d[0] * frame.yDir[0] + d[1] * frame.yDir[1] + d[2] * frame.yDir[2],
+      ]
+    }
+    const lines = mesh.edges.lines
+    const segmentsOf = (group: { start: number; count: number }) => {
+      const out: Array<[Vec2, Vec2]> = []
+      for (let i = group.start; i + 1 < group.start + group.count; i += 2) {
+        out.push([
+          toSketch(lines[i * 3], lines[i * 3 + 1], lines[i * 3 + 2]),
+          toSketch(lines[(i + 1) * 3], lines[(i + 1) * 3 + 1], lines[(i + 1) * 3 + 2]),
+        ])
+      }
+      return out
+    }
+    let groups = mesh.edges.edgeGroups.filter(
+      (group) => elementKey('e', group.name, group.edgeId) === sub.id,
+    )
+    if (sub.kind === 'face') {
+      const face = mesh.mesh.faceGroups.find(
+        (group) => elementKey('f', group.name, group.faceId) === sub.id,
+      )
+      if (!face) return null
+      const key = (x: number, y: number, z: number) =>
+        `${Math.round(x * 1e3)},${Math.round(y * 1e3)},${Math.round(z * 1e3)}`
+      const onFace = new Set<string>()
+      const vertices = mesh.mesh.vertices
+      for (let k = face.start; k < face.start + face.count; k++) {
+        const v = mesh.mesh.triangles[k] * 3
+        onFace.add(key(vertices[v], vertices[v + 1], vertices[v + 2]))
+      }
+      groups = mesh.edges.edgeGroups.filter((group) => {
+        for (let i = group.start; i < group.start + group.count; i++) {
+          if (!onFace.has(key(lines[i * 3], lines[i * 3 + 1], lines[i * 3 + 2]))) return false
+        }
+        return group.count > 0
+      })
+    }
+    const tolerance = Math.max(1e-4, toleranceAt() * 1e-3)
+    return groups.flatMap((group) => chainSegments(segmentsOf(group), tolerance))
   }
 
   function editDimension(id: string, x: number, y: number) {
