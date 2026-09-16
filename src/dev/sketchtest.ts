@@ -3,6 +3,7 @@ import { closestPoint, curveOf, intersectEntities, pointLookup, tessellate } fro
 import { selectProfiles, sketchRegions } from '../sketch/regions'
 import { resolveConstraint, toggleFixes } from '../sketch/constraintTools'
 import { dimensionCandidate, dimensionGraphic } from '../sketch/dimensions'
+import { offsetChains } from '../sketch/offset'
 import {
   breakEntity,
   extendEntity,
@@ -1141,6 +1142,116 @@ export function runSketchTest(): TestResult[] {
       'every dimension draws extension lines, arrows and a label spot',
       graphics.length >= 6 && graphics.every((g) => !!g && g.lines.length >= 2),
       `${graphics.length} graphics`,
+    )
+  })
+
+  guard('offset', () => {
+    const areas = (d: Draft) =>
+      sketchRegions(d.sketch)
+        .regions.map((region) => region.area.toFixed(2))
+        .join(' ')
+    const boxed = (w: number, h: number) => {
+      const d = draft()
+      const corners = [point(d, 0, 0), point(d, w, 0), point(d, w, h), point(d, 0, h)]
+      const edges = corners.map((p, i) =>
+        entity(d, { kind: 'line', p1: p, p2: corners[(i + 1) % 4], construction: false }),
+      )
+      return { d, edges }
+    }
+    const outward = boxed(40, 30)
+    const grown = offsetChains(outward.d.sketch, outward.edges, 5, outward.d.id)
+    const grownStatus = solved(outward.d)
+    check(
+      'Offset grows a closed rectangle outward and joins its corners',
+      grown.ok && areas(outward.d) === '1200.00 800.00' && grownStatus.ok,
+      `${areas(outward.d)} ${grownStatus.residual}`,
+    )
+    const inward = boxed(40, 30)
+    offsetChains(inward.d.sketch, inward.edges, -5, inward.d.id)
+    check(
+      'a negative offset shrinks it inward instead',
+      areas(inward.d) === '600.00 600.00',
+      areas(inward.d),
+    )
+
+    const rounded = draft()
+    const r = 5
+    const p = (x: number, y: number) => point(rounded, x, y)
+    const a1 = p(r, 0)
+    const a2 = p(40 - r, 0)
+    const b1 = p(40, r)
+    const b2 = p(40, 30 - r)
+    const c1 = p(40 - r, 30)
+    const c2 = p(r, 30)
+    const d1 = p(0, 30 - r)
+    const d2 = p(0, r)
+    const ids: string[] = []
+    for (const [s, e] of [
+      [a1, a2],
+      [b1, b2],
+      [c1, c2],
+      [d1, d2],
+    ]) {
+      ids.push(entity(rounded, { kind: 'line', p1: s, p2: e, construction: false }))
+    }
+    for (const [cx, cy, s, e] of [
+      [40 - r, r, a2, b1],
+      [40 - r, 30 - r, b2, c1],
+      [r, 30 - r, c2, d1],
+      [r, r, d2, a1],
+    ] as Array<[number, number, string, string]>) {
+      ids.push(
+        entity(rounded, {
+          kind: 'arc',
+          c: p(cx, cy),
+          p1: s,
+          p2: e,
+          ccw: true,
+          construction: false,
+        }),
+      )
+    }
+    offsetChains(rounded.sketch, ids, 3, rounded.id)
+    const expected = 46 * 36 - (4 - Math.PI) * 64
+    const outer = [...sketchRegions(rounded.sketch).regions].sort(
+      (x, y) => y.outer.area - x.outer.area,
+    )[0]
+    check(
+      'offsetting a rounded rectangle grows its corner arcs with it',
+      !!outer && Math.abs(outer.outer.area - expected) < 1e-6,
+      `${outer?.outer.area.toFixed(4)} expected ${expected.toFixed(4)}`,
+    )
+
+    const ringed = draft()
+    const ring = entity(ringed, {
+      kind: 'circle',
+      c: point(ringed, 0, 0),
+      r: 10,
+      construction: false,
+    })
+    offsetChains(ringed.sketch, [ring], 5, ringed.id)
+    check(
+      'offsetting a circle makes a concentric circle',
+      ringed.sketch.entities.some((e) => e.kind === 'circle' && Math.abs(e.r - 15) < 1e-9),
+      JSON.stringify(ringed.sketch.entities),
+    )
+
+    const bent = draft()
+    const q0 = point(bent, 0, 0)
+    const q1 = point(bent, 20, 0)
+    const q2 = point(bent, 20, 20)
+    const legs = [
+      entity(bent, { kind: 'line', p1: q0, p2: q1, construction: false }),
+      entity(bent, { kind: 'line', p1: q1, p2: q2, construction: false }),
+    ]
+    offsetChains(bent.sketch, legs, 2, bent.id)
+    const copies = bent.sketch.entities.slice(2) as Array<{ p1: string; p2: string }>
+    check(
+      'an open chain offsets with a single shared corner',
+      copies.length === 2 &&
+        copies[0].p2 === copies[1].p1 &&
+        v2.dist(at(bent, copies[0].p2), [18, 2]) < 1e-9,
+      copies.map((c) => `${at(bent, c.p1)}->${at(bent, c.p2)}`).join(' '),
     )
   })
 

@@ -1006,7 +1006,7 @@ export function runSelfTest(): TestResult[] {
     const circle = b.circle(centre, 5)
 
     const ids = (sel: Parameters<typeof sketchActions>[1], cursor?: [number, number]) =>
-      sketchActions(b.sketch, sel, cursor).filter((a) => a.group === 'Screws and pillars')
+      sketchActions(b.sketch, sel, cursor).filter((a) => a.group === 'Holes and Standoffs')
 
     const onPoint = ids([{ kind: 'point', id: corner }])
     check(onPoint.length === 7, `a picked corner offers ${onPoint.length} screw and pillar options`)
@@ -1088,30 +1088,30 @@ export function runSelfTest(): TestResult[] {
     )
     // A single-section menu should not waste a click on choosing the section.
     check(
-      !showHeadings([{ group: 'Set a size' }, { group: 'Set a size' }]),
+      !showHeadings([{ group: 'Dimensions' }, { group: 'Dimensions' }]),
       'a menu with one section is shown outright',
     )
 
     // The section column has to be in the same order every time it opens,
     // whichever way round the actions happened to be built.
     const shuffled = [
-      { group: 'Repeat or copy' },
-      { group: 'Hold it in place' },
-      { group: 'Change the shape' },
-      { group: 'Set a size' },
+      { group: 'Pattern' },
+      { group: 'Constraints' },
+      { group: 'Modify' },
+      { group: 'Dimensions' },
     ]
     const order = groupActions(shuffled, SKETCH_GROUP_ORDER).map(([g]) => g)
     check(
-      order.join(' > ') === 'Hold it in place > Set a size > Change the shape > Repeat or copy',
+      order.join(' > ') === 'Constraints > Dimensions > Modify > Pattern',
       `sections sort to the table order: ${order.join(' > ')}`,
     )
     // Sections the table does not name go to the back rather than vanishing.
     const withStray = groupActions(
-      [{ group: 'Nonsense' }, { group: 'Set a size' }],
+      [{ group: 'Nonsense' }, { group: 'Dimensions' }],
       SKETCH_GROUP_ORDER,
     ).map(([g]) => g)
     check(
-      withStray.join(' > ') === 'Set a size > Nonsense',
+      withStray.join(' > ') === 'Dimensions > Nonsense',
       `an unlisted section still shows, last: ${withStray.join(' > ')}`,
     )
   })

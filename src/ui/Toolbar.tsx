@@ -510,9 +510,7 @@ export function Toolbar({
               'MODIFY',
               [
                 ...sketchModifyActions,
-                ...sketchCommands.filter(
-                  (a) => a.group === 'Change the shape' || a.group === 'Repeat or copy',
-                ),
+                ...sketchCommands.filter((a) => a.group === 'Modify' || a.group === 'Pattern'),
               ],
               <>
                 {tool('Fillet', '◜', () => chooseAction(sketchModifyActions[0]))}
@@ -533,7 +531,7 @@ export function Toolbar({
                   group: 'Constraints',
                   run: () => startConstraintTool(constraint.id),
                 })),
-                ...sketchCommands.filter((a) => a.group === 'Set a size'),
+                ...sketchCommands.filter((a) => a.group === 'Dimensions'),
               ],
               <>
                 {tool('Sketch Dimension', '↔', () => pickTool('dimension'), 'D')}

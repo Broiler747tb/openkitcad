@@ -117,7 +117,7 @@ export interface SketchAction {
  */
 const SKETCH_GROUPS: Array<[string, string[]]> = [
   [
-    'Hold it in place',
+    'Constraints',
     [
       'horizontal',
       'vertical',
@@ -134,18 +134,18 @@ const SKETCH_GROUPS: Array<[string, string[]]> = [
       'symmetric',
     ],
   ],
-  ['Set a size', ['length', 'diameter', 'radius', 'angle', 'distance', 'distanceX', 'distanceY']],
+  ['Dimensions', ['length', 'diameter', 'radius', 'angle', 'distance', 'distanceX', 'distanceY']],
   [
-    'Change the shape',
+    'Modify',
     ['fillet-corner', 'chamfer-corner', 'fillet-between', 'trim', 'construction', 'delete'],
   ],
   [
-    'Repeat or copy',
+    'Pattern',
     ['linear-pattern', 'circular-pattern', 'mirror-vertical', 'mirror-horizontal', 'offset'],
   ],
-  ['Add a shape', ['add-polygon', 'add-slot']],
+  ['Create', ['add-polygon', 'add-slot']],
   [
-    'Screws and pillars',
+    'Holes and Standoffs',
     [
       'screw-clearance',
       'screw-counterbore',
@@ -349,26 +349,26 @@ export function sketchActions(
     const b = pts.get(line.p2)!
     push({
       id: 'horizontal',
-      label: 'Make horizontal',
+      label: 'Horizontal',
       hint: 'Lock it flat, left to right',
       build: () => constraint({ kind: 'horizontal', e: line.id }),
     })
     push({
       id: 'vertical',
-      label: 'Make vertical',
+      label: 'Vertical',
       hint: 'Lock it straight up and down',
       build: () => constraint({ kind: 'vertical', e: line.id }),
     })
     push({
       id: 'length',
-      label: 'Set its length',
+      label: 'Length',
       hint: 'Freeze how long it is',
       prompt: { label: 'Length', initial: Math.round(v2.dist(a, b) * 1000) / 1000, unit: 'mm' },
       build: (value) => constraint({ kind: 'distance', a: line.p1, b: line.p2, value }),
     })
     push({
       id: 'construction',
-      label: line.construction ? 'Make it a real edge' : 'Use only as a guide',
+      label: line.construction ? 'Normal' : 'Construction',
       hint: line.construction
         ? 'It will become part of the shape again'
         : 'Helps you line things up, but is not part of the shape',
@@ -377,14 +377,15 @@ export function sketchActions(
     if (cursor) {
       push({
         id: 'trim',
-        label: 'Trim this piece away',
+        label: 'Trim',
         hint: 'Cuts back to where it crosses something else',
         build: () => ({ kind: 'trim', entityId: line.id, at: cursor }),
       })
     }
     push({
       id: 'delete',
-      label: 'Delete this line',
+      label: 'Delete',
+      hint: 'Removes this line',
       build: () => ({ kind: 'deleteEntity', entityId: line.id }),
     })
   }
@@ -394,19 +395,20 @@ export function sketchActions(
     const [l1, l2] = straight as Array<Extract<SketchEntity, { kind: 'line' }>>
     push({
       id: 'parallel',
-      label: 'Make parallel',
+      label: 'Parallel',
       hint: 'Keep them running the same way',
       build: () => constraint({ kind: 'parallel', a: l1.id, b: l2.id }),
     })
     push({
       id: 'perpendicular',
-      label: 'Make square',
+      label: 'Perpendicular',
       hint: 'Hold them at a right angle',
       build: () => constraint({ kind: 'perpendicular', a: l1.id, b: l2.id }),
     })
     push({
       id: 'equal',
-      label: 'Make the same length',
+      label: 'Equal',
+      hint: 'Give them the same length',
       build: () => constraint({ kind: 'equal', a: l1.id, b: l2.id }),
     })
     const d1 = v2.sub(pts.get(l1.p2)!, pts.get(l1.p1)!)
@@ -414,7 +416,8 @@ export function sketchActions(
     const current = Math.abs((Math.atan2(v2.cross(d1, d2), v2.dot(d1, d2)) * 180) / Math.PI)
     push({
       id: 'angle',
-      label: 'Set the angle between them',
+      label: 'Angle',
+      hint: 'Set the angle between them',
       prompt: { label: 'Angle', initial: Math.round(current * 10) / 10, unit: 'deg' },
       build: (value) => constraint({ kind: 'angle', a: l1.id, b: l2.id, value }),
     })
@@ -426,14 +429,14 @@ export function sketchActions(
     const r = radiusOf(circle, pts)
     push({
       id: 'diameter',
-      label: 'Set the diameter',
+      label: 'Diameter',
       hint: 'The measurement across the whole circle',
       prompt: { label: 'Diameter', initial: Math.round(r * 2000) / 1000, unit: 'mm' },
       build: (value) => constraint({ kind: 'diameter', e: circle.id, value }),
     })
     push({
       id: 'radius',
-      label: 'Set the radius',
+      label: 'Radius',
       hint: 'The measurement from the centre out',
       prompt: { label: 'Radius', initial: Math.round(r * 1000) / 1000, unit: 'mm' },
       build: (value) => constraint({ kind: 'radius', e: circle.id, value }),
@@ -441,21 +444,22 @@ export function sketchActions(
     if (circle.kind === 'circle') {
       push({
         id: 'construction',
-        label: circle.construction ? 'Make it a real edge' : 'Use only as a guide',
+        label: circle.construction ? 'Normal' : 'Construction',
         build: () => ({ kind: 'toggleConstruction', entityId: circle.id }),
       })
     }
     if (cursor) {
       push({
         id: 'trim',
-        label: 'Trim this piece away',
+        label: 'Trim',
         hint: 'Cuts back to where it crosses something else',
         build: () => ({ kind: 'trim', entityId: circle.id, at: cursor }),
       })
     }
     push({
       id: 'delete',
-      label: 'Delete this circle',
+      label: 'Delete',
+      hint: 'Removes this circle',
       build: () => ({ kind: 'deleteEntity', entityId: circle.id }),
     })
   }
@@ -464,7 +468,8 @@ export function sketchActions(
   if (curved.length === 2 && entities.length === 2) {
     push({
       id: 'equal-radius',
-      label: 'Make the same size',
+      label: 'Equal',
+      hint: 'Give them the same size',
       build: () => constraint({ kind: 'equal', a: curved[0].id, b: curved[1].id }),
     })
   }
@@ -475,7 +480,7 @@ export function sketchActions(
     const circle = curved[0]
     push({
       id: 'tangent',
-      label: 'Make them touch smoothly',
+      label: 'Tangent',
       hint: 'The line will just graze the circle',
       build: () =>
         constraint({
@@ -501,7 +506,7 @@ export function sketchActions(
       const roomChamfer = maxChamferDistance(corner)
       push({
         id: 'fillet-corner',
-        label: 'Round this corner',
+        label: 'Fillet',
         hint: 'Replaces the sharp corner with a curve',
         prompt: {
           label: 'Radius',
@@ -512,7 +517,7 @@ export function sketchActions(
       })
       push({
         id: 'chamfer-corner',
-        label: 'Cut this corner off',
+        label: 'Chamfer',
         hint: 'Replaces the sharp corner with a flat',
         prompt: {
           label: 'Size',
@@ -526,7 +531,7 @@ export function sketchActions(
     if (id !== 'origin') {
       push({
         id: 'fix',
-        label: 'Pin it in place',
+        label: 'Fix',
         hint: 'Nothing will move this corner again',
         build: () => constraint({ kind: 'fix', p: id, x: p[0], y: p[1] }),
       })
@@ -540,26 +545,27 @@ export function sketchActions(
     const pb = pts.get(b)!
     push({
       id: 'coincident',
-      label: 'Join them together',
+      label: 'Coincident',
       hint: 'Treat the two corners as one',
       build: () => constraint({ kind: 'coincident', a, b }),
     })
     push({
       id: 'distance',
-      label: 'Set the distance apart',
+      label: 'Distance',
+      hint: 'Set the distance apart',
       prompt: { label: 'Distance', initial: Math.round(v2.dist(pa, pb) * 1000) / 1000, unit: 'mm' },
       build: (value) => constraint({ kind: 'distance', a, b, value }),
     })
     push({
       id: 'distanceX',
-      label: 'Set the distance across',
+      label: 'Horizontal Distance',
       hint: 'Left-to-right gap only',
       prompt: { label: 'Across', initial: Math.round((pb[0] - pa[0]) * 1000) / 1000, unit: 'mm' },
       build: (value) => constraint({ kind: 'distanceX', a, b, value }),
     })
     push({
       id: 'distanceY',
-      label: 'Set the distance up',
+      label: 'Vertical Distance',
       hint: 'Up-and-down gap only',
       prompt: { label: 'Up', initial: Math.round((pb[1] - pa[1]) * 1000) / 1000, unit: 'mm' },
       build: (value) => constraint({ kind: 'distanceY', a, b, value }),
@@ -573,13 +579,14 @@ export function sketchActions(
     if (p !== line.p1 && p !== line.p2) {
       push({
         id: 'point-on-line',
-        label: 'Put it on the line',
-        hint: 'It can slide along, but never off',
+        label: 'Coincident',
+        hint: 'It can slide along the line, but never off',
         build: () => constraint({ kind: 'pointOnLine', p, e: line.id }),
       })
       push({
         id: 'midpoint',
-        label: 'Put it at the middle',
+        label: 'MidPoint',
+        hint: 'Put it at the middle of the line',
         build: () => constraint({ kind: 'midpoint', p, e: line.id }),
       })
     }
@@ -589,7 +596,8 @@ export function sketchActions(
   if (pointIds.length === 1 && curved.length === 1 && entities.length === 1) {
     push({
       id: 'point-on-circle',
-      label: 'Put it on the circle',
+      label: 'Coincident',
+      hint: 'Put it on the circle',
       build: () => constraint({ kind: 'pointOnCircle', p: pointIds[0], e: curved[0].id }),
     })
   }
@@ -600,8 +608,8 @@ export function sketchActions(
     const suggested = 3
     push({
       id: 'fillet-between',
-      label: 'Round where these meet',
-      hint: 'Works even if they only cross, or do not touch at all',
+      label: 'Fillet',
+      hint: 'Rounds where these meet, even if they only cross or do not touch',
       prompt: { label: 'Radius', initial: suggested, unit: 'mm' },
       build: (radius) => ({
         kind: 'filletBetween',
@@ -624,8 +632,7 @@ export function sketchActions(
       for (const id of entityPointIds(e)) {
         const p = pts.get(id)
         if (!p) continue
-        const pad =
-          e.kind === 'circle' ? e.r : e.kind === 'ellipse' ? Math.max(e.rx, e.ry) : 0
+        const pad = e.kind === 'circle' ? e.r : e.kind === 'ellipse' ? Math.max(e.rx, e.ry) : 0
         minX = Math.min(minX, p[0] - pad)
         maxX = Math.max(maxX, p[0] + pad)
       }
@@ -635,8 +642,8 @@ export function sketchActions(
 
     push({
       id: 'linear-pattern',
-      label: 'Repeat in a row',
-      hint: 'Evenly spaced copies, held in place by their spacing',
+      label: 'Rectangular Pattern',
+      hint: 'Evenly spaced copies in a row, held in place by their spacing',
       prompt: { label: 'How many', initial: 4, unit: 'total' },
       prompt2: { label: 'Spacing', initial: suggested, unit: 'mm' },
       build: (count, spacing) => ({
@@ -649,26 +656,26 @@ export function sketchActions(
     })
     push({
       id: 'offset',
-      label: 'Make a parallel copy',
-      hint: 'A second outline a fixed distance away',
+      label: 'Offset',
+      hint: 'A second outline a fixed distance away. Negative goes the other way',
       prompt: { label: 'Distance', initial: 3, unit: 'mm' },
       build: (distance) => ({ kind: 'offset', entityIds: ids, distance }),
     })
     push({
       id: 'mirror-vertical',
-      label: 'Mirror left to right',
+      label: 'Mirror across Y',
       hint: 'Reflects across the upright axis through the origin',
       build: () => ({ kind: 'mirror', entityIds: ids, axis: 'vertical' }),
     })
     push({
       id: 'mirror-horizontal',
-      label: 'Mirror top to bottom',
+      label: 'Mirror across X',
       hint: 'Reflects across the flat axis through the origin',
       build: () => ({ kind: 'mirror', entityIds: ids, axis: 'horizontal' }),
     })
     push({
       id: 'circular-pattern',
-      label: 'Repeat in a ring',
+      label: 'Circular Pattern',
       hint: 'Copies swung around the sketch origin, for a bolt circle',
       prompt: { label: 'How many', initial: 6, unit: 'total' },
       prompt2: { label: 'Around', initial: 360, unit: 'deg' },
@@ -686,7 +693,7 @@ export function sketchActions(
   if (selection.length === 0 && cursor) {
     push({
       id: 'add-polygon',
-      label: 'Add a polygon here',
+      label: 'Polygon',
       hint: 'Hexagons, octagons and the rest, sized by the circle they fit in',
       prompt: { label: 'Sides', initial: 6, unit: '' },
       prompt2: { label: 'Across corners', initial: 20, unit: 'mm' },
@@ -699,7 +706,7 @@ export function sketchActions(
     })
     push({
       id: 'add-slot',
-      label: 'Add a slot here',
+      label: 'Slot',
       hint: 'A rounded slot, for something that needs to be adjustable',
       prompt: { label: 'Length', initial: 30, unit: 'mm' },
       prompt2: { label: 'Width', initial: 8, unit: 'mm' },
@@ -717,8 +724,8 @@ export function sketchActions(
     const line = straight[0] as Extract<SketchEntity, { kind: 'line' }>
     push({
       id: 'symmetric',
-      label: 'Mirror about this line',
-      hint: 'Keep the two corners opposite each other',
+      label: 'Symmetry',
+      hint: 'Keep the two corners opposite each other about this line',
       build: () => constraint({ kind: 'symmetric', a: pointIds[0], b: pointIds[1], line: line.id }),
     })
   }

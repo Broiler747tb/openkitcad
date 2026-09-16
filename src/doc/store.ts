@@ -1,5 +1,6 @@
 import type { SketchToolId } from '../sketch/tools/types'
 import { trimEntity } from '../sketch/modify'
+import { offsetChains } from '../sketch/offset'
 import type { ConstraintToolId } from '../sketch/constraintTools'
 import { create } from 'zustand'
 import { resolveParameters } from './parameters'
@@ -44,14 +45,7 @@ import type { SketchTarget } from '../sketch/inference'
 import type { SubPick } from '../viewport/engine'
 import type { ActionResult } from '../sketch/actions'
 import { chamferCorner, filletBetween, filletCorner, type CornerResult } from '../sketch/corner'
-import {
-  addPolygon,
-  addSlot,
-  circularPattern,
-  linearPattern,
-  mirrorEntities,
-  offsetEntities,
-} from '../sketch/edit'
+import { addPolygon, addSlot, circularPattern, linearPattern, mirrorEntities } from '../sketch/edit'
 import { getPart, userParts } from '../catalogue'
 import { planHole, planPillar } from '../fasteners'
 import { v3, type Frame, type Vec3 } from '../core/math'
@@ -1236,7 +1230,7 @@ export const useStore = create<AppState>((set, get) => ({
               outcome = mirrorEntities(sketch, result.entityIds, result.axis, newId)
               break
             case 'offset':
-              outcome = offsetEntities(sketch, result.entityIds, result.distance, newId)
+              outcome = offsetChains(sketch, result.entityIds, result.distance, newId)
               break
             case 'addPolygon':
               outcome = addPolygon(sketch, result.centre, result.sides, result.radius, newId)
