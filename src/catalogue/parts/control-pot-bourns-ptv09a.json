@@ -12,6 +12,7 @@
   "links": [
     { "label": "Bourns PTV09 datasheet", "url": "https://www.bourns.com/docs/product-datasheets/PTV09.pdf" }
   ],
+  "look": {"style": "pot"},
   "geometry": {
     "kind": "connector",
     "bodyWidth": 11.4,

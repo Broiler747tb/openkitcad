@@ -22,6 +22,93 @@ const GEOMETRY_FIELDS: Record<CataloguePart['geometry']['kind'], string[]> = {
 
 const CONFIDENCE = ['datasheet', 'measured', 'approximate']
 
+const FINISHES = [
+  'pcb',
+  'plastic',
+  'metal',
+  'gold',
+  'brass',
+  'chip',
+  'glass',
+  'rubber',
+  'anodised',
+  'translucent',
+]
+
+const LOOK_FIELDS: Record<string, string[]> = {
+  box: ['x', 'y', 'w', 'h', 'height'],
+  cylinder: ['x', 'y', 'd', 'height'],
+  chip: ['x', 'y', 'w', 'h'],
+  module: ['x', 'y', 'w', 'h', 'height'],
+  header: ['x', 'y', 'rows', 'cols'],
+  port: ['x', 'y'],
+  screen: ['x', 'y', 'w', 'h'],
+  button: ['x', 'y'],
+  led: ['x', 'y'],
+  crystal: ['x', 'y', 'w', 'h'],
+  capacitor: ['x', 'y', 'd', 'height'],
+  transducer: ['x', 'y', 'd', 'height'],
+  antenna: ['x', 'y', 'w', 'h'],
+  trimmer: ['x', 'y'],
+  terminal: ['x', 'y', 'pins'],
+  jst: ['x', 'y', 'pins'],
+}
+
+const PORTS = [
+  'usb-c',
+  'micro-usb',
+  'mini-usb',
+  'usb-a',
+  'usb-a-stack',
+  'usb-b',
+  'hdmi',
+  'micro-hdmi',
+  'mini-hdmi',
+  'rj45',
+  'jack-35',
+  'barrel',
+  'microsd',
+  'sd',
+  'ffc',
+]
+
+const COLOUR = /^#[0-9a-f]{6}$/i
+
+function lookProblems(look: unknown): string[] {
+  if (!look || typeof look !== 'object' || Array.isArray(look))
+    return ['"look" has to be an object.']
+  const value = look as Record<string, any>
+  const problems: string[] = []
+  for (const key of ['colour', 'accent'])
+    if (value[key] !== undefined && !COLOUR.test(value[key]))
+      problems.push(`"look.${key}" has to be a colour like #1f6f4a.`)
+  if (value.finish !== undefined && !FINISHES.includes(value.finish))
+    problems.push(`"look.finish" has to be one of ${FINISHES.join(', ')}.`)
+  if (value.components === undefined) return problems
+  if (!Array.isArray(value.components)) return [...problems, '"look.components" has to be a list.']
+  value.components.forEach((component: any, index: number) => {
+    const where = `"look.components[${index}]"`
+    const fields =
+      component && typeof component === 'object' ? LOOK_FIELDS[component.kind] : undefined
+    if (!fields) {
+      problems.push(`${where} has an unknown kind.`)
+      return
+    }
+    for (const key of fields)
+      if (!finite(component[key])) problems.push(`${where} needs a number for "${key}".`)
+    for (const key of ['w', 'h', 'd', 'height', 'rows', 'cols', 'pins'])
+      if (component[key] !== undefined && !positive(component[key]))
+        problems.push(`${where} "${key}" has to be above zero.`)
+    if (component.kind === 'port' && !PORTS.includes(component.port))
+      problems.push(`${where} "port" has to be one of ${PORTS.join(', ')}.`)
+    if (component.colour !== undefined && !COLOUR.test(component.colour))
+      problems.push(`${where} "colour" has to be a colour like #1f6f4a.`)
+    if (component.finish !== undefined && !FINISHES.includes(component.finish))
+      problems.push(`${where} "finish" is not a known finish.`)
+  })
+  return problems
+}
+
 function positive(value: unknown): boolean {
   return typeof value === 'number' && Number.isFinite(value) && value > 0
 }
@@ -116,6 +203,7 @@ export function partProblems(value: unknown): string[] {
       ))
   )
     problems.push('"mountingHoles" need "x", "y" and a "diameter" above zero.')
+  if (part.look !== undefined) problems.push(...lookProblems(part.look))
   for (const key of ['keepouts', 'connectors', 'pinHeaders', 'links', 'tags'])
     if (part[key] !== undefined && !Array.isArray(part[key]))
       problems.push(`"${key}" has to be a list.`)

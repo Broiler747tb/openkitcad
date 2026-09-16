@@ -12,6 +12,7 @@
   "links": [
     { "label": "ALPS Alpine EC11 catalogue", "url": "https://tech.alpsalpine.com/assets/catalog/product-catalog-ec-all.en.pdf" }
   ],
+  "look": {"style": "encoder"},
   "geometry": {
     "kind": "connector",
     "bodyWidth": 11.7,

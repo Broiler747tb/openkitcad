@@ -12,6 +12,7 @@
   "links": [
     { "label": "Taiwan Alpha RV16AF series", "url": "https://www.taiwanalpha.com/downloads?id=95&target=products" }
   ],
+  "look": {"style": "pot"},
   "geometry": {
     "kind": "connector",
     "bodyWidth": 17,

@@ -6,6 +6,7 @@
   "summary": "Slides on an 8 mm smooth rod. 15 mm outside, 24 mm long.",
   "confidence": "datasheet",
   "source": "LM8UU standard dimensions: 8 mm bore for an 8 mm linear rod, 15 mm outside diameter, 24 mm length. Housings usually clamp on the outside diameter.",
+  "look": {"style": "linear"},
   "geometry": {
     "kind": "bearing",
     "innerDiameter": 8,

@@ -30,6 +30,8 @@ import {
 } from '../doc/model'
 import { poseOf, withPose } from '../doc/placement'
 import { RECENT_LIMIT, useShelf } from '../ui/parts/shelf'
+import { renderPart } from '../ui/parts/render'
+import { lookPrototype } from '../viewport/partLook'
 import type { TestResult } from './selftest'
 
 export function runPartsTest(): TestResult[] {
@@ -154,6 +156,75 @@ export function runPartsTest(): TestResult[] {
     'browsing by type covers every part once',
     grouped.reduce((sum, group) => sum + group.count, 0) === CATALOGUE.length,
     grouped.map((g) => `${g.category} ${g.count}`).join(', '),
+  )
+
+  const lookFailures: string[] = []
+  for (const shipped of CATALOGUE) {
+    try {
+      const look = lookPrototype(shipped)
+      const [x0, y0, z0, x1, y1, z1] = partBounds(shipped)
+      const { min, max } = look.box
+      const slack = 4
+      const inside =
+        min.x >= x0 - slack &&
+        min.y >= y0 - slack &&
+        min.z >= z0 - slack &&
+        max.x <= x1 + slack &&
+        max.y <= y1 + slack &&
+        max.z <= z1 + slack
+      const covers = max.x - min.x >= (x1 - x0) * 0.5 && max.y - min.y >= (y1 - y0) * 0.5
+      if (!look.meshes.length) lookFailures.push(`${shipped.id} draws nothing`)
+      else if (!inside || !covers)
+        lookFailures.push(
+          `${shipped.id} look ${[min.x, min.y, min.z, max.x, max.y, max.z].map((n) => n.toFixed(1)).join(',')} vs ${[x0, y0, z0, x1, y1, z1].join(',')}`,
+        )
+    } catch (error) {
+      lookFailures.push(`${shipped.id} threw ${(error as Error).message}`)
+    }
+  }
+  check(
+    'every shipped part has a look that fills its measured size and stays inside it',
+    !lookFailures.length,
+    lookFailures.slice(0, 3).join(' | ') || `${CATALOGUE.length} looks`,
+  )
+  const picture = renderPart(part('arduino-uno-r3'), 96, 72)
+  let drawn = 0
+  if (picture) {
+    const probe = document.createElement('canvas')
+    probe.width = 96
+    probe.height = 72
+    const context = probe.getContext('2d')
+    context?.drawImage(picture, 0, 0)
+    const pixels = context?.getImageData(0, 0, 96, 72).data ?? new Uint8ClampedArray()
+    for (let i = 3; i < pixels.length; i += 4) if (pixels[i] > 0) drawn++
+  }
+  check(
+    'a part picture renders with the part in it',
+    drawn > 96 * 72 * 0.15,
+    `${drawn} of ${96 * 72} pixels drawn`,
+  )
+  const withLook: CataloguePart = {
+    ...part('raspberry-pi-4b'),
+    look: {
+      components: [
+        { kind: 'port', port: 'usb-c', x: 11.2, y: -1, facing: '-y' },
+        { kind: 'header', x: 8, y: 50, rows: 2, cols: 20, style: 'female' },
+        { kind: 'chip', x: 23, y: 24, w: 15, h: 15, legs: 'quad' },
+        { kind: 'jst', x: 40, y: 10, pins: 3, facing: '+z' },
+      ],
+    },
+  }
+  check(
+    'a hand-written look passes the part file check',
+    partProblems(withLook).length === 0,
+    partProblems(withLook).join(' | ') || 'ok',
+  )
+  check(
+    'a look with a mistake is refused with a reason',
+    partProblems({
+      ...withLook,
+      look: { components: [{ kind: 'port', port: 'usb-z', x: 1, y: 1 }] },
+    }).some((p) => /port/.test(p)),
   )
 
   const pi = part('raspberry-pi-4b')

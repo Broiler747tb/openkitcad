@@ -17,7 +17,7 @@ import {
 import { PartMaker } from '../PartMaker'
 import { endPartDrag, placePart, startPartDrag } from './actions'
 import { PartDetails } from './PartDetails'
-import { PartSketch } from './PartSketch'
+import { PartThumb } from './PartPicture'
 import { usePartsView, useShelf } from './shelf'
 import { VariantPicker } from './VariantPicker'
 import { YourParts } from './YourParts'
@@ -355,7 +355,7 @@ Click for details, or drag it onto a face in the view.`}
           show({ kind: 'details', partId: part.id, back: view })
         }}
       >
-        <PartSketch part={part} className="parts-thumb" />
+        <PartThumb part={part} className="parts-thumb" />
         <span className="parts-row-text">
           <strong>
             {favourite && (
@@ -420,7 +420,7 @@ Click to choose a version. Dragging places the most common one, ${top.variant ??
         onClick={() => usePartsView.getState().openPicker(entry.id)}
       >
         <span className="parts-thumb-stack">
-          <PartSketch part={top} className="parts-thumb" />
+          <PartThumb part={top} className="parts-thumb" />
         </span>
         <span className="parts-row-text">
           <strong>{entry.name}</strong>

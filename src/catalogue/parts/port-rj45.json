@@ -6,6 +6,7 @@
   "summary": "Network socket for a normal Ethernet cable. Needs a 16.5 x 15 mm panel hole plus two M3 screws 25 mm apart.",
   "confidence": "approximate",
   "source": "This models the common panel-mount RJ45 feedthrough coupler: a socket on each end with a screw flange in the middle, so a cable plugs in on the outside and another on the inside. The 8P8C plug that goes into it is standardised by ANSI/TIA-968, about 11.7 mm wide and 8.3 mm tall over the latch, and that part is dependable. Nothing else here is: the flange size, the 25 mm screw spacing, the 16.5 x 15.0 mm body cutout and the depths are typical of cheap couplers and vary noticeably between suppliers. Measure the one you actually bought. Be aware too that the other common panel RJ45 is a keystone jack, which snaps into a completely different rectangular opening of roughly 14.5 x 19.3 mm and uses no screws at all, so these numbers do not transfer to it.",
+  "look": {"style": "rj45"},
   "geometry": {
     "kind": "connector",
     "bodyWidth": 32.0,

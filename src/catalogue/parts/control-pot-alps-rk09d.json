@@ -12,6 +12,7 @@
   "links": [
     { "label": "ALPS Alpine RK09K/RK09D family", "url": "https://tech.alpsalpine.com/e/products/category/potentiometers/sub/02/series/rk09k/" }
   ],
+  "look": {"style": "pot"},
   "geometry": {
     "kind": "connector",
     "bodyWidth": 9.8,

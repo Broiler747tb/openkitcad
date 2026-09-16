@@ -6,6 +6,7 @@
   "summary": "The big chunky square port you find on printers. Needs a 13 x 12 mm panel hole.",
   "confidence": "approximate",
   "source": "The USB Series B plug shell is about 11.5 x 10.5 mm with the top two corners bevelled, and that shape is fixed by the USB specification. The rest is not verified. The 13.0 x 12.0 mm cutout here is a plain rectangle rather than the bevelled outline, so the plug will sit with a little slop, and it is sized to clear the shell only, not the plug's moulded body. The socket body behind the panel is a generic through-hole PCB receptacle and varies by a couple of millimetres between suppliers. This entry is the bare socket, which does not bolt on; panel-mount USB-B feedthroughs with screw flanges are a different part.",
+  "look": {"style": "usb-b"},
   "geometry": {
     "kind": "connector",
     "bodyWidth": 15.5,

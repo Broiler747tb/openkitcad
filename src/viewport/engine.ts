@@ -8,7 +8,9 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import type { FastenerGhost } from './ghosts'
+import { createLook, disposeLook, type LookInstance, type LookPrototype } from './partLook'
 import type { BodyMesh, Instance } from '../kernel/types'
 import type { Matrix4 } from '../doc/types'
 import type { Frame, Vec2, Vec3 } from '../core/math'
@@ -135,6 +137,7 @@ interface InstanceObject {
   mesh: THREE.Mesh
   outline: THREE.LineSegments
   instance: Instance
+  look?: LookInstance
 }
 
 /**
@@ -360,10 +363,11 @@ export class ViewportEngine {
       this.hemisphere.color.setHex(palette.hemisphereSky)
       this.hemisphere.groundColor.setHex(palette.hemisphereGround)
     }
-    for (const { outline, instance } of this.objects.values()) {
+    for (const { outline, instance, look } of this.objects.values()) {
       ;(outline.material as THREE.LineBasicMaterial).color.setHex(
         instance.previewTool ? palette.previewCut : palette.bodyEdge,
       )
+      look?.lines.color.setHex(palette.bodyEdge)
     }
     if (this.lastGrid) this.setGridPreferences(this.lastGrid.preferences, this.lastGrid.frame)
     this.paintProfiles()
@@ -467,6 +471,7 @@ export class ViewportEngine {
     meshes: ReadonlyMap<string, BodyMesh>,
     colourOf: (instance: Instance) => string,
     showPlacements: boolean,
+    lookOf?: (instance: Instance) => LookPrototype | null,
   ) {
     const seen = new Set<string>()
     for (const instance of instances) {
@@ -521,10 +526,31 @@ export class ViewportEngine {
       entry.mesh.matrixWorldNeedsUpdate = true
       entry.outline.matrixWorldNeedsUpdate = true
       ;(entry.mesh.material as THREE.MeshStandardMaterial).color.set(colourOf(instance))
+
+      const prototype = lookOf?.(instance) ?? null
+      if (entry.look && entry.look.key !== prototype?.key) this.dropLook(entry)
+      if (prototype && !entry.look) {
+        const look = createLook(prototype, {
+          clippingPlanes: this.sectionPlanes,
+          envMap: this.environment(),
+          edgeColour: this.palette.bodyEdge,
+        })
+        look.group.matrixAutoUpdate = false
+        for (const material of look.materials) this.applyLookOpacity(material)
+        this.solidGroup.add(look.group)
+        entry.look = look
+      }
+      if (entry.look) {
+        entry.look.group.matrix.fromArray(instance.matrix)
+        entry.look.group.matrixWorldNeedsUpdate = true
+      }
+      entry.mesh.visible = !entry.look
+      entry.outline.visible = !entry.look
     }
 
     for (const [id, entry] of [...this.objects]) {
       if (seen.has(id)) continue
+      this.dropLook(entry)
       this.solidGroup.remove(entry.mesh, entry.outline)
       ;(entry.mesh.material as THREE.Material).dispose()
       ;(entry.outline.material as THREE.Material).dispose()
@@ -542,6 +568,34 @@ export class ViewportEngine {
     this.rebuildHighlight()
   }
 
+  private dropLook(entry: InstanceObject) {
+    if (!entry.look) return
+    this.solidGroup.remove(entry.look.group)
+    disposeLook(entry.look)
+    entry.look = undefined
+  }
+
+  private envMap: THREE.Texture | null | undefined
+
+  private environment(): THREE.Texture | null {
+    if (this.envMap !== undefined) return this.envMap
+    try {
+      const generator = new THREE.PMREMGenerator(this.renderer)
+      this.envMap = generator.fromScene(new RoomEnvironment(), 0.04).texture
+      generator.dispose()
+    } catch {
+      this.envMap = null
+    }
+    return this.envMap
+  }
+
+  private applyLookOpacity(material: THREE.MeshStandardMaterial) {
+    const base = (material.userData.baseOpacity as number | undefined) ?? 1
+    material.transparent = this.dimmed || base < 1
+    material.opacity = base * (this.dimmed ? 0.28 : 1)
+    material.depthWrite = !this.dimmed && base >= 1
+  }
+
   setHighlight(hovered: string | null, selected: string | null) {
     this.highlightKeys = { hovered, selected }
     this.applyHighlight()
@@ -549,17 +603,18 @@ export class ViewportEngine {
 
   private applyHighlight() {
     const { hovered, selected } = this.highlightKeys
-    for (const { mesh, instance } of this.objects.values()) {
-      const material = mesh.material as THREE.MeshStandardMaterial
-      if (matchesKey(instance, selected)) {
-        material.emissive.setHex(this.palette.selection)
-        material.emissiveIntensity = 0.32
-      } else if (matchesKey(instance, hovered)) {
-        material.emissive.setHex(this.palette.selectionDim)
-        material.emissiveIntensity = 0.16
-      } else {
-        material.emissive.setHex(0x000000)
-        material.emissiveIntensity = 0
+    for (const { mesh, instance, look } of this.objects.values()) {
+      const [colour, intensity] = matchesKey(instance, selected)
+        ? [this.palette.selection, 0.32]
+        : matchesKey(instance, hovered)
+          ? [this.palette.selectionDim, 0.16]
+          : [0x000000, 0]
+      for (const material of [
+        mesh.material as THREE.MeshStandardMaterial,
+        ...(look?.materials ?? []),
+      ]) {
+        material.emissive.setHex(colour)
+        material.emissiveIntensity = intensity
       }
     }
   }
@@ -572,9 +627,11 @@ export class ViewportEngine {
 
   setOpacity(dimmed: boolean) {
     this.dimmed = dimmed
-    for (const { mesh, instance } of this.objects.values()) {
+    for (const { mesh, instance, look } of this.objects.values()) {
       if (instance.previewTool) continue
       this.applyOpacity(mesh.material as THREE.MeshStandardMaterial)
+      for (const material of look?.materials ?? []) this.applyLookOpacity(material)
+      if (look) look.lines.opacity = this.dimmed ? 0.1 : 0.3
     }
   }
 
@@ -606,9 +663,11 @@ export class ViewportEngine {
       ...(this.sectionEnabled ? [this.clipPlane] : []),
       ...(this.slicePlane ? [this.slicePlane] : []),
     ]
-    for (const { mesh, outline } of this.objects.values()) {
+    for (const { mesh, outline, look } of this.objects.values()) {
       ;(mesh.material as THREE.Material).clippingPlanes = this.sectionPlanes
       ;(outline.material as THREE.Material).clippingPlanes = this.sectionPlanes
+      for (const material of look?.materials ?? []) material.clippingPlanes = this.sectionPlanes
+      if (look) look.lines.clippingPlanes = this.sectionPlanes
     }
   }
 
@@ -2209,6 +2268,8 @@ export class ViewportEngine {
 
   dispose() {
     this.disposed = true
+    for (const entry of this.objects.values()) this.dropLook(entry)
+    this.envMap?.dispose()
     this.controls.dispose()
     this.renderer.dispose()
     this.renderer.domElement.remove()

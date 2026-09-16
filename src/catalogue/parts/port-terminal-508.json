@@ -6,6 +6,7 @@
   "summary": "Two screws you clamp bare wire ends into, soldered onto a circuit board. Needs a 12 x 9 mm slot if the wires come in through a wall.",
   "confidence": "approximate",
   "source": "The 5.08 mm pitch is exact, being 0.2 inch, so a 2-way block is 10.16 mm wide and its two board pins sit 5.08 mm apart. The body height and depth given here are typical of the common KF128 / DG128 style block and are not taken from any one datasheet: other 5.08 mm families are taller, and the plug-and-socket types add 20 mm or more in front. The 12 x 9 mm panel slot is a suggested wire-entry opening, not a manufacturer figure. This part solders to a board rather than clamping onto a panel, so it has no fixing holes of its own.",
+  "look": {"style": "terminal"},
   "geometry": {
     "kind": "connector",
     "bodyWidth": 10.16,

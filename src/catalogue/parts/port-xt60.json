@@ -8,6 +8,7 @@
   "summary": "High-current battery connector. Needs a 16 x 8 mm slot.",
   "confidence": "approximate",
   "source": "The XT60 shell is 16.2 x 8.1 mm across the flats. The 16.4 x 8.3 mm opening here leaves the quarter millimetre a printed panel needs. Rated 60 A by name, though the wire and the solder joint decide the real figure.",
+  "look": {"style": "xt"},
   "geometry": {
     "kind": "connector",
     "bodyWidth": 16.2,

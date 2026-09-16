@@ -12,7 +12,7 @@ import {
 } from '../../catalogue'
 import { useStore } from '../../doc/store'
 import { endPartDrag, placePart, startPartDrag } from './actions'
-import { PartSketch } from './PartSketch'
+import { PartPreview } from './PartPicture'
 import { usePartsView, useShelf, type PartsView } from './shelf'
 
 export function PartDetails({ partId, back }: { partId: string; back: PartsView }) {
@@ -53,14 +53,17 @@ export function PartDetails({ partId, back }: { partId: string; back: PartsView 
       <button className="parts-back" onClick={() => show(back)}>
         ‹ Back
       </button>
+      <div className="parts-preview">
+        <PartPreview part={part} />
+      </div>
       <div
-        className="parts-preview"
+        className="parts-drag"
         draggable
         title="Drag onto a face in the view to place it there"
         onDragStart={(e) => startPartDrag(e, part.id)}
         onDragEnd={endPartDrag}
       >
-        <PartSketch part={part} className="parts-preview-sketch" />
+        <span aria-hidden="true">⠿</span> Drag into the view
       </div>
       <h3>{part.name}</h3>
       <p className="parts-byline">
@@ -143,8 +146,8 @@ export function PartDetails({ partId, back }: { partId: string; back: PartsView 
         )}
       </div>
       <p className="parts-hint">
-        Or drag the picture onto a face in the view. It lands flat on that face, centred where you
-        let go.
+        Dragged onto a face, it lands flat on that face, centred where you let go. Drag the picture
+        to turn it round.
       </p>
     </div>
   )

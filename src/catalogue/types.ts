@@ -229,6 +229,216 @@ export type PartGeometry =
 export type VisualSpec =
   { kind: 'generated' } | { kind: 'glb'; src: string } | { kind: 'step'; src: string }
 
+export type Finish =
+  | 'pcb'
+  | 'plastic'
+  | 'metal'
+  | 'gold'
+  | 'brass'
+  | 'chip'
+  | 'glass'
+  | 'rubber'
+  | 'anodised'
+  | 'translucent'
+
+export type LookFacing = '+x' | '-x' | '+y' | '-y' | '+z'
+
+export type PortStyle =
+  | 'usb-c'
+  | 'micro-usb'
+  | 'mini-usb'
+  | 'usb-a'
+  | 'usb-a-stack'
+  | 'usb-b'
+  | 'hdmi'
+  | 'micro-hdmi'
+  | 'mini-hdmi'
+  | 'rj45'
+  | 'jack-35'
+  | 'barrel'
+  | 'microsd'
+  | 'sd'
+  | 'ffc'
+
+export type LookComponent =
+  | {
+      kind: 'box'
+      x: number
+      y: number
+      z?: number
+      w: number
+      h: number
+      height: number
+      radius?: number
+      colour?: string
+      finish?: Finish
+      flip?: boolean
+      label?: string
+    }
+  | {
+      kind: 'cylinder'
+      x: number
+      y: number
+      z?: number
+      d: number
+      height: number
+      top?: number
+      colour?: string
+      finish?: Finish
+      flip?: boolean
+      label?: string
+    }
+  | {
+      kind: 'chip'
+      x: number
+      y: number
+      z?: number
+      w: number
+      h: number
+      height?: number
+      legs?: 'quad' | 'dual' | 'none'
+      colour?: string
+      flip?: boolean
+      label?: string
+    }
+  | {
+      kind: 'module'
+      x: number
+      y: number
+      z?: number
+      w: number
+      h: number
+      height: number
+      antenna?: LookFacing
+      antennaLength?: number
+      label?: string
+    }
+  | {
+      kind: 'header'
+      x: number
+      y: number
+      z?: number
+      rows: number
+      cols: number
+      pitch?: number
+      style?: 'male' | 'female'
+      height?: number
+      colour?: string
+      flip?: boolean
+      label?: string
+    }
+  | {
+      kind: 'port'
+      port: PortStyle
+      x: number
+      y: number
+      z?: number
+      facing: LookFacing
+      w?: number
+      h?: number
+      depth?: number
+      colour?: string
+      flip?: boolean
+      label?: string
+    }
+  | {
+      kind: 'screen'
+      x: number
+      y: number
+      z?: number
+      w: number
+      h: number
+      height?: number
+      active?: [number, number, number, number]
+      colour?: string
+      backlight?: string
+      label?: string
+    }
+  | {
+      kind: 'button'
+      x: number
+      y: number
+      z?: number
+      size?: number
+      height?: number
+      colour?: string
+      flip?: boolean
+      label?: string
+    }
+  | { kind: 'led'; x: number; y: number; z?: number; colour: string; size?: number; label?: string }
+  | {
+      kind: 'crystal'
+      x: number
+      y: number
+      z?: number
+      w: number
+      h: number
+      height?: number
+      label?: string
+    }
+  | {
+      kind: 'capacitor'
+      x: number
+      y: number
+      z?: number
+      d: number
+      height: number
+      colour?: string
+      label?: string
+    }
+  | {
+      kind: 'transducer'
+      x: number
+      y: number
+      z?: number
+      d: number
+      height: number
+      label?: string
+    }
+  | { kind: 'antenna'; x: number; y: number; z?: number; w: number; h: number; label?: string }
+  | {
+      kind: 'trimmer'
+      x: number
+      y: number
+      z?: number
+      w?: number
+      h?: number
+      height?: number
+      colour?: string
+      label?: string
+    }
+  | {
+      kind: 'terminal'
+      x: number
+      y: number
+      z?: number
+      pins: number
+      pitch?: number
+      facing: LookFacing
+      colour?: string
+      label?: string
+    }
+  | {
+      kind: 'jst'
+      x: number
+      y: number
+      z?: number
+      pins: number
+      pitch?: number
+      facing: LookFacing
+      colour?: string
+      label?: string
+    }
+
+export interface PartLook {
+  colour?: string
+  finish?: Finish
+  style?: string
+  accent?: string
+  pins?: number
+  components?: LookComponent[]
+}
+
 export interface CataloguePart {
   id: string
   name: string
@@ -247,6 +457,7 @@ export interface CataloguePart {
   pinHeaders?: PinHeader[]
   links?: Array<{ label: string; url: string }>
   visual?: VisualSpec
+  look?: PartLook
   /** Free-text search terms, e.g. "pi", "sbc", "linux". */
   tags?: string[]
   /**

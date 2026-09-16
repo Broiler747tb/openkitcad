@@ -17,7 +17,7 @@ import { counted } from '../../core/words'
 import { downloadBlob } from '../../doc/persist'
 import { useStore } from '../../doc/store'
 import { partUses } from './actions'
-import { PartSketch } from './PartSketch'
+import { PartThumb } from './PartPicture'
 import { usePartsView, useShelf } from './shelf'
 
 function saveJson(value: unknown, filename: string) {
@@ -146,7 +146,7 @@ export function YourParts() {
               className="parts-row-main"
               onClick={() => show({ kind: 'details', partId: part.id, back: { kind: 'mine' } })}
             >
-              <PartSketch part={part} className="parts-thumb" />
+              <PartThumb part={part} className="parts-thumb" />
               <span className="parts-row-text">
                 <strong>
                   {part.name}

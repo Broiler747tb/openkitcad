@@ -12,6 +12,7 @@
   "links": [
     { "label": "Bourns PEC11R datasheet", "url": "https://bourns.com/docs/product-datasheets/pec11r.pdf" }
   ],
+  "look": {"style": "encoder"},
   "geometry": {
     "kind": "connector",
     "bodyWidth": 12.5,

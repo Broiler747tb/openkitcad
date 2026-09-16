@@ -6,6 +6,7 @@
   "summary": "The small flat port used on older phones and cheap dev boards. Needs an 8 x 3.2 mm panel slot.",
   "confidence": "approximate",
   "source": "The Micro-B plug shell is 6.85 x 1.8 mm, which is fixed by the USB Micro-B specification. The rest is not verified: the 8.0 x 3.2 mm cutout is a working opening with clearance added by hand, and the socket body is a generic surface-mount receptacle whose depth and height vary between suppliers. The plug's moulded body is roughly 11 x 6.5 mm, much larger than the shell, so the socket must sit right at the panel face on a thin panel or the plug will not push in far enough to latch.",
+  "look": {"style": "micro-usb"},
   "geometry": {
     "kind": "connector",
     "bodyWidth": 8.5,

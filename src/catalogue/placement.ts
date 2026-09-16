@@ -21,6 +21,14 @@ export interface PartDrop {
   normal?: Vec3
 }
 
+export function effectivePart(
+  part: CataloguePart,
+  overrides?: Record<string, number>,
+): CataloguePart {
+  if (part.geometry.kind !== 'extrusion' || overrides?.length === undefined) return part
+  return { ...part, geometry: { ...part.geometry, length: overrides.length } }
+}
+
 export function partBounds(part: CataloguePart): PartBounds {
   const g = part.geometry
   switch (g.kind) {

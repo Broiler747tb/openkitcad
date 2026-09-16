@@ -118,6 +118,7 @@
   width: 46px;
   height: 36px;
   padding: 2px;
+  object-fit: contain;
   background: var(--okc-surface-sunken);
   border-radius: 3px;
 }
@@ -294,16 +295,39 @@
   color: var(--okc-text);
 }
 .parts-preview {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 150px;
-  margin: 4px 10px 10px;
-  padding: 12px;
+  height: 180px;
+  margin: 4px 10px 0;
   background: var(--okc-surface-sunken);
   border: 1px solid var(--okc-line-soft);
-  border-radius: 4px;
+  border-radius: 4px 4px 0 0;
+  overflow: hidden;
+}
+.part-preview {
+  display: block;
+  width: 100%;
+  height: 100%;
   cursor: grab;
+  touch-action: none;
+}
+.part-preview:active {
+  cursor: grabbing;
+}
+.parts-drag {
+  margin: 0 10px 10px;
+  padding: 5px 8px;
+  font-size: 11px;
+  color: var(--okc-text-muted);
+  text-align: center;
+  background: var(--okc-surface-panel-raised);
+  border: 1px solid var(--okc-line-soft);
+  border-top: 0;
+  border-radius: 0 0 4px 4px;
+  cursor: grab;
+  user-select: none;
+}
+.parts-drag:hover {
+  color: var(--okc-accent-text);
+  background: var(--okc-hover);
 }
 .parts-preview-sketch,
 .variant-sketch {
@@ -523,12 +547,9 @@
   box-shadow: var(--okc-shadow-sm);
 }
 .variant-preview {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 110px;
+  height: 130px;
   margin-bottom: 6px;
-  padding: 10px;
+  overflow: hidden;
   background: var(--okc-surface-sunken);
   border-radius: 3px;
 }

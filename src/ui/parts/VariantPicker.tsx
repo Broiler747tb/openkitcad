@@ -10,7 +10,8 @@ import {
 } from '../../catalogue'
 import { useStore } from '../../doc/store'
 import { endPartDrag, placePart, startPartDrag } from './actions'
-import { PartSketch, sketchSpan } from './PartSketch'
+import { PartPreview } from './PartPicture'
+import { lookRadius } from './render'
 import { usePartsView, useShelf } from './shelf'
 
 const ACCURACY_SHORT: Record<CataloguePart['confidence'], string> = {
@@ -70,7 +71,7 @@ export function VariantPicker() {
     }
   }, [familyId])
 
-  const span = Math.max(0, ...parts.map(sketchSpan))
+  const radius = useMemo(() => Math.max(0, ...parts.map(lookRadius)), [parts])
   if (!family || !parts.length) return null
   const close = () => usePartsView.getState().openPicker(null)
 
@@ -98,7 +99,7 @@ export function VariantPicker() {
             part={part}
             size={sizeSummary(part, units)}
             holes={holeSummary(part, units)}
-            span={span}
+            radius={radius}
             onDragging={setDragging}
             onDone={close}
           />
@@ -113,14 +114,14 @@ function VariantCard({
   part,
   size,
   holes,
-  span,
+  radius,
   onDragging,
   onDone,
 }: {
   part: CataloguePart
   size: string
   holes: string | null
-  span: number
+  radius: number
   onDragging: (dragging: boolean) => void
   onDone: () => void
 }) {
@@ -130,6 +131,10 @@ function VariantCard({
       className="variant-card"
       draggable
       onDragStart={(e) => {
+        if ((e.target as Element).closest?.('.part-preview')) {
+          e.preventDefault()
+          return
+        }
         startPartDrag(e, part.id)
         setTimeout(() => onDragging(true))
       }}
@@ -140,7 +145,7 @@ function VariantCard({
       }}
     >
       <div className="variant-preview">
-        <PartSketch part={part} span={span} className="variant-sketch" />
+        <PartPreview part={part} radius={radius} />
       </div>
       <strong className="variant-label">{part.variant ?? part.name}</strong>
       <span className="variant-name">{part.name}</span>

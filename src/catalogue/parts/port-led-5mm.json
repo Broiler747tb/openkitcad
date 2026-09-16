@@ -6,6 +6,7 @@
   "summary": "Chrome ring that holds a 5 mm indicator LED in a panel. Needs a 7 mm round hole.",
   "confidence": "approximate",
   "source": "The 5 mm LED itself is a fixed size, but the holders sold for it are not. This entry describes the common chrome bezel type with a threaded barrel and a nut on the inside, which wants a 7 mm hole. Other holders you will find need 6.4 mm (plastic snap-in), 7.9 mm, or 8 mm, and the barrel length and bezel height vary between suppliers. Measure the holder in your hand before you drill.",
+  "look": {"style": "led-holder", "accent": "#e23b3b"},
   "geometry": {
     "kind": "connector",
     "bodyWidth": 10,

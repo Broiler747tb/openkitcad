@@ -8,6 +8,7 @@
   "summary": "The big HDMI port you see on a TV or a laptop. Needs a 15 x 6 mm panel slot.",
   "confidence": "approximate",
   "source": "The HDMI Type A plug shell is 13.9 x 4.45 mm, which is fixed by the HDMI connector specification. Everything else here is a working figure, not a verified drawing: the 15.0 x 6.0 mm cutout is the shell plus clearance, and the socket body behind the panel is a typical through-hole receptacle. Receptacle bodies differ between manufacturers, so check yours. Note also that many HDMI cables have a fat moulded plug body starting right behind the metal shell; if yours does, and the panel is thick or the socket is set back from it, the plug will bottom out on the panel before it seats. In that case either mount the socket hard against the panel, or open the hole out to roughly 21 x 10 mm so the whole plug body passes through.",
+  "look": {"style": "hdmi"},
   "geometry": {
     "kind": "connector",
     "bodyWidth": 15.5,

@@ -124,11 +124,13 @@ import { isUpright, poseMatrix, poseOf, withPose } from '../doc/placement'
 import {
   CATEGORY_COLOUR,
   dropPlacement,
+  effectivePart,
   getPart,
   partBounds,
   type CataloguePart,
 } from '../catalogue'
 import { draggedPart, PART_MIME, placePart } from '../ui/parts/actions'
+import { lookPrototype } from './partLook'
 import { lengthLabel } from '../core/units'
 import { useTheme } from '../theme/theme'
 import { readPalette } from '../theme/palette'
@@ -562,7 +564,14 @@ export function Viewport() {
       }
       return findBody(doc, instance.bodyId)?.body.colour ?? DEFAULT_BODY_COLOUR
     }
-    engine.setScene(instances, meshes, colourOf, showPlacements)
+    const lookOf = (instance: Instance) => {
+      if (instance.previewTool || instance.negative || instance.kind !== 'catalogue') return null
+      const component = findComponent(doc, instance.componentId)
+      if (component?.source.kind !== 'catalogue') return null
+      const part = getPart(component.source.partId)
+      return part ? lookPrototype(effectivePart(part, component.source.overrides)) : null
+    }
+    engine.setScene(instances, meshes, colourOf, showPlacements, lookOf)
   }, [instances, meshes, showPlacements, doc])
 
   useEffect(() => {

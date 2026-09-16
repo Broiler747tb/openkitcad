@@ -538,6 +538,30 @@ refused part), Export all, and per part Edit, Duplicate, Export and Delete, whic
 is placed. A user part with a shipped id overrides the shipped part and is marked. Edit keeps the id
 and everything the form does not show.
 
+**Looks.** A part's look is decoration drawn by three.js from its JSON, never used for geometry
+(`src/viewport/partLook.ts`). The engineering solid from the kernel stays in the scene, hidden but
+still picked, so selection, snapping, joints and measuring are unchanged; the look follows the same
+matrix, takes the selection tint, dims and is clipped by section views. A look is built once per part
+data hash and merged into one mesh per finish (pcb, plastic, metal, gold, brass, chip, glass, rubber,
+anodised, translucent), lit with a room environment so metal reads as metal. Boards are the outline
+extruded with plated holes and pads, plus `look.components` in part coordinates: box, cylinder, chip
+(with legs), module (shield and antenna), header (male or female), port (usb-c, micro-usb, mini-usb,
+usb-a, usb-a-stack, usb-b, hdmi, micro-hdmi, mini-hdmi, rj45, jack-35, barrel, microsd, sd, ffc, facing
+one side), screen, button, led, crystal, capacitor, transducer, antenna, trimmer, terminal and jst;
+`z` is the height above the part origin and defaults to the board top, `flip` mounts on the underside.
+A board without components draws its bumps and header pads. Panel parts pick a `look.style` (the
+ports above, rocker, toggle, pot, encoder, led-holder, fan, jst-xh, terminal, xt, iec, banana, gx16,
+sma, rca, dsub); screws, inserts, standoffs, steppers, bearings (`style: linear` for LM8UU) and
+extrusion are drawn from their geometry. The selftest checks that every shipped look stays within 4 mm
+of the part's measured size and fills at least half of it, which caught the Pico's headers running
+across the board instead of along it.
+
+**Pictures.** Rows show a rendered thumbnail, made off screen by one shared renderer a few per frame
+and cached per part data (`src/ui/parts/render.ts`); the SVG drawing stands in until it is ready. The
+details card and the version picker show live previews that turn when dragged and reset on double
+click; the picker draws every version at one scale so sizes compare. Dragging into the view starts
+from the card body or the handle under the details preview.
+
 ## 15. How the work is done
 
 - Agents never start other agents or workflows.
