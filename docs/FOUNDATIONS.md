@@ -471,6 +471,20 @@ profile's own sketch, usually a construction centreline, picked in the view with
 the sketch X or Y axis when nothing is picked. The step stores the line's id (`axisLine`), so moving
 the line in the sketch moves the axis.
 
+**Select and the right-click menus.** Every ribbon, the sketch one included, ends in a SELECT group.
+Its Select tool is highlighted while nothing else is running; clicking it (or Esc) stops the current
+tool, command or plane pick and goes back to picking without dropping the selection. The menu holds
+Clear Selection, plus Select All and Invert Selection in a sketch. The marking ring measures itself,
+moves back on screen near an edge and tells the action list where it is; the list goes below the ring,
+above it, beside it with a scrollbar, or shortened, but never on top of it (`placeAround` in
+`ContextMenu.tsx`).
+
+**Negative distances cut.** Extrude takes a negative distance, and Box and Cylinder a negative
+height, and build the other way. Box and Cylinder used to accept one and then fail to build; the
+primitives now build down from the plane. When the profile or the placement plane is a face of a body,
+going into that body switches the operation to Cut on it, and coming back out switches it to Join, as
+Fusion does. The switch runs through a `derive` hook on command specs that reacts to one field changing.
+
 **Tidying.** Counts read "1 body" and "2 bodies" (`src/core/words.ts`). The Inspector hides while a
 command panel is open, and surface bodies no longer offer edge rounding. The Shortcuts dialog no
 longer claims surfaces and Press Pull are missing, and P outside a sketch says Project needs one.
@@ -525,7 +539,10 @@ are gone.
   six times around Z, mirror it across YZ, split a box on XZ and scale a body by 2. Unstitch a box
   into six surfaces, Stitch them back into a solid and Reverse Normal one of the surfaces first.
   Double-click each step on the timeline, change a value and OK. Undo back through every step.
-- **J smoke test.** Click Create Sketch and then the XZ plane, finish, click Create Sketch again and
+- **J smoke test.** Sketch a circle on the top of a box and extrude it -4 mm: the operation turns to Cut
+  and a red pocket shows. Put a Box on the top face with a height of -3 and see it cut too. Start the
+  Line tool in a sketch and click Select. Right-click low on the screen and see the list sit beside or
+  above the ring. Click Create Sketch and then the XZ plane, finish, click Create Sketch again and
   click the top of a box. Make an Offset Plane 20 mm above XY, sketch on it and extrude, then edit the
   plane to 30 mm and see the extrude follow. Select the top face of a box and press Q: the Press Pull panel pulls it 8 mm with
   the arrow. Select an edge and press Q to get Fillet; select a sketch and press Q to get Extrude.

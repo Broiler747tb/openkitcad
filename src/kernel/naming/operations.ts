@@ -696,10 +696,20 @@ function primitive(
 
 export function box(oc: OC, options: BoxOptions): NamedShape {
   const { frame } = options
-  const [width, depth, height] = options.size
+  const [signedWidth, signedDepth, signedHeight] = options.size
+  const [width, depth, height] = options.size.map(Math.abs)
   const scratch = new Scratch()
   try {
-    const corner = inFrame(frame, options.origin ?? [0, 0])
+    const corner = add(
+      inFrame(frame, options.origin ?? [0, 0]),
+      add(
+        scale(frame.xDir, Math.min(0, signedWidth)),
+        add(
+          scale(frame.yDir, Math.min(0, signedDepth)),
+          scale(frame.normal, Math.min(0, signedHeight)),
+        ),
+      ),
+    )
     const builder = scratch.track(
       new oc.BRepPrimAPI_MakeBox_5(axes(oc, frame, corner, scratch), width, depth, height),
     )
@@ -729,16 +739,16 @@ export function cylinder(oc: OC, options: CylinderOptions): NamedShape {
   const { frame } = options
   const scratch = new Scratch()
   try {
-    const base = inFrame(frame, options.centre)
+    const height = Math.abs(options.height)
+    const base = add(
+      inFrame(frame, options.centre),
+      scale(frame.normal, Math.min(0, options.height)),
+    )
     const builder = scratch.track(
-      new oc.BRepPrimAPI_MakeCylinder_3(
-        axes(oc, frame, base, scratch),
-        options.radius,
-        options.height,
-      ),
+      new oc.BRepPrimAPI_MakeCylinder_3(axes(oc, frame, base, scratch), options.radius, height),
     )
     build(oc, builder, 'Cylinder')
-    const middle = add(base, scale(frame.normal, options.height / 2))
+    const middle = add(base, scale(frame.normal, height / 2))
     return primitive(oc, options.featureId, builder.Shape(), (face, centroid) =>
       isPlanarFace(oc, face)
         ? dot(sub(centroid, middle), frame.normal) < 0

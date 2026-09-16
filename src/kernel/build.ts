@@ -1437,7 +1437,8 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
                 feature.origin[1] + feature.depth / 2,
               ),
               frame,
-            ).extrude(feature.height),
+              Math.min(0, feature.height),
+            ).extrude(Math.abs(feature.height)),
             'box',
           )
         : namedBox(oc, {

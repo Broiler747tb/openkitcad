@@ -189,6 +189,11 @@ export interface CommandSpec<I extends readonly CommandInput[] = readonly Comman
   build(values: CommandValues<I>, context: CommandContext): Feature[]
   validate?(values: CommandValues<I>, context: CommandContext): CommandValidation<I[number]['id']>
   handles?(values: CommandValues<I>, context: CommandContext): CommandHandle[]
+  derive?(
+    values: CommandValues<I>,
+    changed: string,
+    context: CommandContext,
+  ): Readonly<Record<string, CommandValue>> | null
   adjust?(
     doc: OkcDocument,
     features: Feature[],

@@ -5,7 +5,7 @@ import { useStore } from '../../../doc/store'
 import type { BodyOperation, OkcDocument, PlaneRef, SketchFeature } from '../../../doc/types'
 import { cachedRegions } from '../../../sketch/regions'
 import { bodyPick, pickSketchId, planePick, profilePick } from '../picks'
-import type { CommandContext, LooseCommandValues, SelectionPick } from '../types'
+import type { CommandContext, CommandValue, LooseCommandValues, SelectionPick } from '../types'
 
 export const OPERATIONS = [
   { value: 'newBody', label: 'New Body', hint: 'The result becomes a body of its own.' },
@@ -54,6 +54,25 @@ export function operationProblem(values: LooseCommandValues): Record<string, str
   const bodies = values.bodies as readonly SelectionPick[]
   if (values.operation === 'join' && bodies.length > 1) {
     return { bodies: 'Join adds to one body. Pick just one.' }
+  }
+  return null
+}
+
+export function autoCut(
+  doc: OkcDocument,
+  bodyId: string | undefined,
+  inward: boolean,
+  values: LooseCommandValues,
+): Record<string, CommandValue> | null {
+  const target = bodyId ? bodyPick(doc, bodyId) : null
+  if (!target) return null
+  const bodies = values.bodies as readonly SelectionPick[]
+  if (inward && (values.operation === 'join' || values.operation === 'newBody')) {
+    return { operation: 'cut', bodies: [target] }
+  }
+  const onTarget = bodyIdsOf(bodies).every((id) => id === bodyId)
+  if (!inward && values.operation === 'cut' && bodies.length <= 1 && onTarget) {
+    return { operation: 'join', bodies: [target] }
   }
   return null
 }

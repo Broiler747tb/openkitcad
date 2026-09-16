@@ -2,6 +2,7 @@ import { frameToWorld, v3 } from '../../../core/math'
 import type { ExtrudeFeature, RevolveFeature } from '../../../doc/types'
 import { defineCommand, type LooseCommandValues, type SelectionPick } from '../types'
 import {
+  autoCut,
   mergeProfilePicks,
   OPERATIONS,
   operationProblem,
@@ -74,10 +75,8 @@ export const extrudeCommand = defineCommand({
       id: 'distance',
       kind: 'length',
       label: 'Distance',
-      hint: 'How far the profile is pushed.',
+      hint: 'How far the profile is pushed. A negative distance goes the other way, and into a body it cuts.',
       default: 10,
-      min: 0,
-      exclusiveMin: true,
       field: 'distance',
     },
     {
@@ -91,9 +90,22 @@ export const extrudeCommand = defineCommand({
     ...OPERATION_INPUTS,
   ],
   validate(values, context) {
+    if (!values.distance) return { distance: 'The distance cannot be zero.' }
     if (values.surface)
       return sketchOf(context.doc, values.profile) ? null : { profile: 'Pick a sketch.' }
     return profileProblem(context.doc, values.profile) ?? operationProblem(values)
+  },
+  derive(values, changed, context) {
+    if (changed !== 'distance' && changed !== 'flip') return null
+    if (values.surface || values.direction === 'symmetric' || !values.distance) return null
+    const sketch = sketchOf(context.doc, values.profile)
+    if (sketch?.plane.kind !== 'face') return null
+    return autoCut(
+      context.doc,
+      sketch.plane.face.bodyId,
+      values.distance < 0 !== values.flip,
+      values,
+    )
   },
   build(values, context) {
     const sketch = sketchOf(context.doc, values.profile)!

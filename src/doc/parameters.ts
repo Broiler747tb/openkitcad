@@ -84,7 +84,13 @@ export function resolveParameters(doc: OkcDocument, dropMissing = false): void {
     const zeroAllowed = ['cornerRadius', 'draftAngle', 'boreDiameter', 'boreDepth'].includes(
       link.field,
     )
-    if (Math.abs(value) > 1e6 || (!isAngle && (zeroAllowed ? value < 0 : value <= 0)))
+    const signed =
+      (feature.kind === 'extrude' && link.field === 'distance') ||
+      ((feature.kind === 'box' || feature.kind === 'cylinder') && link.field === 'height')
+    if (
+      Math.abs(value) > 1e6 ||
+      (!isAngle && (signed ? value === 0 : zeroAllowed ? value < 0 : value <= 0))
+    )
       throw new Error(`Invalid dimension for ${feature.name}.${link.field}: ${value}`)
     writes.push({ feature, field: link.field, value })
   }

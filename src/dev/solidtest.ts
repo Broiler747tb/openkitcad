@@ -878,6 +878,90 @@ export async function runSolidTest(): Promise<TestResult[]> {
         }
       },
     )
+
+    await check(
+      'a negative extrude from the top of a box cuts down into it',
+      doc(
+        [
+          box('bx', 'cube', [0, 0], [20, 20, 10]),
+          sketch(
+            'top',
+            { kind: 'face', face: { bodyId: 'cube', kind: 'face', name: 'bx:+z' }, offset: 0 },
+            circle(10, 10, 3),
+          ),
+          {
+            id: 'pocket',
+            name: 'Extrude',
+            componentId: 'root',
+            kind: 'extrude',
+            sketchId: 'top',
+            distance: -4,
+            symmetric: false,
+            reverse: false,
+            result: { kind: 'cut', bodyIds: ['cube'] },
+          },
+        ],
+        ['cube'],
+      ),
+      (result) => {
+        const cube = meshFor(result, 'cube')
+        const expected = 4000 - Math.PI * 9 * 4
+        return {
+          pass: near(cube?.volume, expected, 0.5),
+          detail: `${cube?.volume.toFixed(2)} mm3 of ${expected.toFixed(2)}`,
+        }
+      },
+    )
+
+    await check(
+      'a box and a cylinder with negative heights build down and cut a pocket',
+      doc(
+        [
+          box('bx', 'cube', [0, 0], [20, 20, 10]),
+          {
+            id: 'pocket',
+            name: 'Box',
+            componentId: 'root',
+            kind: 'box',
+            plane: {
+              kind: 'face',
+              face: { bodyId: 'cube', kind: 'face', name: 'bx:+z' },
+              offset: 0,
+            },
+            origin: [2, 2],
+            width: 5,
+            depth: 5,
+            height: -3,
+            result: { kind: 'cut', bodyIds: ['cube'] },
+          },
+          {
+            id: 'post',
+            name: 'Cylinder',
+            componentId: 'root',
+            kind: 'cylinder',
+            plane: XY,
+            centre: [40, 0],
+            radius: 3,
+            height: -6,
+            result: { kind: 'newBody', bodyId: 'peg' },
+          },
+        ],
+        ['cube', 'peg'],
+      ),
+      (result) => {
+        const cube = meshFor(result, 'cube')
+        const peg = meshFor(result, 'peg')
+        const pegVolume = Math.PI * 9 * 6
+        return {
+          pass:
+            near(cube?.volume, 4000 - 75, 0.5) &&
+            near(peg?.volume, pegVolume, 0.5) &&
+            near(peg?.bounds[2], -6, 0.05) &&
+            near(peg?.bounds[5], 0, 0.05),
+          detail: `cube ${cube?.volume.toFixed(2)}, peg ${peg?.volume.toFixed(2)} of ${pegVolume.toFixed(2)} z ${peg?.bounds[2].toFixed(2)}..${peg?.bounds[5].toFixed(2)}`,
+        }
+      },
+    )
   } catch (error) {
     add('solid test ran', false, `${(error as Error).message}`)
   } finally {

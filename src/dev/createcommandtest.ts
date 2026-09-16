@@ -25,7 +25,8 @@ import {
   unstitchCommand,
 } from '../ui/command/specs/create'
 import { extrudeCommand } from '../ui/command/specs/sketchBased'
-import { createCommandState, evaluateCommand } from '../ui/command/state'
+import { boxCommand } from '../ui/command/specs/primitives'
+import { createCommandState, evaluateCommand, reduceCommand } from '../ui/command/state'
 import type {
   AnyCommandSpec,
   CommandContext,
@@ -219,6 +220,79 @@ export function runCreateCommandTest(): TestResult[] {
     check(
       feature?.kind === 'extrude' && feature.surface === true && feature.result.kind === 'newBody',
       JSON.stringify(feature ?? surface),
+    )
+  })
+
+  test('dragging an extrude into the body it sits on turns it into a cut and back', () => {
+    const onFace = testDocument()
+    onFace.timeline.push({
+      id: 'lid',
+      kind: 'sketch',
+      name: 'lid',
+      componentId: onFace.rootComponentId,
+      plane: { kind: 'face', face: { bodyId: 'b1', kind: 'face', name: 'bx:+z' }, offset: 0 },
+      sketch: rectangle(),
+      visible: true,
+    })
+    const context = { ...contextFor(), doc: onFace }
+    const command = extrudeCommand as unknown as AnyCommandSpec
+    let state = createCommandState(command, context, {
+      profile: [sketchPick('lid')],
+      operation: 'join',
+      bodies: [bodyPick('b1')],
+    })
+    const operation = () => {
+      const field = state.fields.operation
+      return field?.kind === 'choice' ? field.value : ''
+    }
+    state = reduceCommand(command, state, { type: 'text', id: 'distance', text: '-4' }, context)
+    const inward = operation()
+    const cut = evaluateCommand(command, state, context, { build: true }).features?.[0]
+    state = reduceCommand(command, state, { type: 'toggle', id: 'flip', value: true }, context)
+    const flippedBack = operation()
+    state = reduceCommand(command, state, { type: 'text', id: 'distance', text: '6' }, context)
+    const flippedIn = operation()
+    const zero = evaluateCommand(
+      command,
+      reduceCommand(command, state, { type: 'text', id: 'distance', text: '0' }, context),
+      context,
+    )
+    check(
+      inward === 'cut' &&
+        cut?.kind === 'extrude' &&
+        cut.distance === -4 &&
+        cut.result.kind === 'cut' &&
+        cut.result.bodyIds.join() === 'b1' &&
+        flippedBack === 'join' &&
+        flippedIn === 'cut' &&
+        !!zero.fieldErrors.distance,
+      `${inward} ${JSON.stringify(cut)} ${flippedBack} ${flippedIn} ${JSON.stringify(zero.fieldErrors)}`,
+    )
+  })
+
+  test('a box pushed down into the face it sits on cuts that body', () => {
+    const command = boxCommand as unknown as AnyCommandSpec
+    const context = contextFor()
+    const face: SelectionPick = {
+      kind: 'face',
+      id: 'b1|bx:+z',
+      bodyId: 'b1',
+      label: 'Face of One',
+      face: { bodyId: 'b1', kind: 'face', name: 'bx:+z' },
+    }
+    let state = createCommandState(command, context, { plane: [face] })
+    state = reduceCommand(command, state, { type: 'text', id: 'height', text: '-3' }, context)
+    const built = evaluateCommand(command, state, context, { build: true }).features?.[0]
+    state = reduceCommand(command, state, { type: 'text', id: 'height', text: '3' }, context)
+    const back = state.fields.operation
+    check(
+      built?.kind === 'box' &&
+        built.height === -3 &&
+        built.result.kind === 'cut' &&
+        built.result.bodyIds.join() === 'b1' &&
+        back?.kind === 'choice' &&
+        back.value === 'join',
+      `${JSON.stringify(built)} then ${JSON.stringify(back)}`,
     )
   })
 

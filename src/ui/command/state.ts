@@ -213,14 +213,20 @@ function addPick(
 function applyFills(
   spec: AnyCommandSpec,
   state: CommandState,
-  fills: Readonly<Record<string, number | string | boolean>>,
+  fills: Readonly<Record<string, CommandValue>>,
   units: UnitContext,
 ): CommandState {
   let next = state
   for (const [id, value] of Object.entries(fills)) {
     const input = findInput(spec, id)
     if (!input) continue
-    if (
+    if (input.kind === 'selection' && Array.isArray(value)) {
+      const picks = uniquePicks(value.filter((pick) => acceptsPick(input, pick)))
+      next = withField(next, id, {
+        kind: 'selection',
+        picks: picks.slice(0, input.max ?? picks.length),
+      })
+    } else if (
       (input.kind === 'length' ||
         input.kind === 'angle' ||
         input.kind === 'integer' ||
@@ -262,6 +268,27 @@ export function reduceCommand(
   state: CommandState,
   action: CommandAction,
   units: UnitContext = DEFAULT_UNITS,
+): CommandState {
+  const next = reduceFields(spec, state, action, units)
+  if (next === state || !spec.derive || !('doc' in units)) return next
+  if (
+    action.type !== 'text' &&
+    action.type !== 'choice' &&
+    action.type !== 'toggle' &&
+    action.type !== 'step'
+  ) {
+    return next
+  }
+  const { values } = readCommand(spec, next, units)
+  const derived = spec.derive(values, action.id, units as CommandContext)
+  return derived ? settleActive(spec, applyFills(spec, next, derived, units), units) : next
+}
+
+function reduceFields(
+  spec: AnyCommandSpec,
+  state: CommandState,
+  action: CommandAction,
+  units: UnitContext,
 ): CommandState {
   switch (action.type) {
     case 'text': {

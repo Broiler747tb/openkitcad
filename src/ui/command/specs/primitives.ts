@@ -2,7 +2,14 @@ import { frameToWorld, v3, type Frame } from '../../../core/math'
 import type { BoxFeature, CylinderFeature, SphereFeature, TorusFeature } from '../../../doc/types'
 import { defineCommand } from '../types'
 import { OPERATION_INPUTS } from './sketchBased'
-import { operationProblem, pickedFrame, placementComponent, planeOf, resultOf } from './shared'
+import {
+  autoCut,
+  operationProblem,
+  pickedFrame,
+  placementComponent,
+  planeOf,
+  resultOf,
+} from './shared'
 
 const PLANE_INPUT = {
   id: 'plane',
@@ -61,6 +68,10 @@ export const boxCommand = defineCommand({
   ],
   validate(values) {
     return nonZero(values.height, 'height') ?? operationProblem(values)
+  },
+  derive(values, changed, context) {
+    if (changed !== 'height' || !values.height) return null
+    return autoCut(context.doc, values.plane[0]?.face?.bodyId, values.height < 0, values)
   },
   build(values, context) {
     const feature: BoxFeature = {
@@ -130,6 +141,10 @@ export const cylinderCommand = defineCommand({
   ],
   validate(values) {
     return nonZero(values.height, 'height') ?? operationProblem(values)
+  },
+  derive(values, changed, context) {
+    if (changed !== 'height' || !values.height) return null
+    return autoCut(context.doc, values.plane[0]?.face?.bodyId, values.height < 0, values)
   },
   build(values, context) {
     const feature: CylinderFeature = {

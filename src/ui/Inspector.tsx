@@ -741,8 +741,9 @@ function FeatureInspector({ featureId }: { featureId: string }) {
           <Num
             label="Thickness"
             value={feature.distance}
-            min={0.1}
-            onChange={(v) => patch({ distance: v } as Partial<Feature>)}
+            onChange={(v) => {
+              if (v) patch({ distance: v } as Partial<Feature>)
+            }}
           />
           <div className="row">
             <label>Direction</label>
