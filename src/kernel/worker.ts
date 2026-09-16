@@ -490,7 +490,21 @@ function run(
   let chain = rootKey
   for (const feature of features) {
     const { name: _name, ...shape } = feature
-    const geometry = feature.kind === 'sketch' ? { ...shape, visible: true } : shape
+    const geometry =
+      feature.kind === 'sketch'
+        ? {
+            ...shape,
+            visible: true,
+            sketch: {
+              ...feature.sketch,
+              constraints: feature.sketch.constraints.map((constraint) => {
+                if (!('at' in constraint)) return constraint
+                const { at: _at, ...rest } = constraint
+                return rest
+              }),
+            },
+          }
+        : shape
     chain = hash(chain, canonicalJson(geometry), canonicalJson(externalInputs(doc, feature)))
     keys.push(chain)
   }

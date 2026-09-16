@@ -2,6 +2,7 @@ import { v2, type Vec2 } from '../core/math'
 import { closestPoint, curveOf, intersectEntities, pointLookup, tessellate } from '../sketch/curves'
 import { selectProfiles, sketchRegions } from '../sketch/regions'
 import { resolveConstraint, toggleFixes } from '../sketch/constraintTools'
+import { dimensionCandidate, dimensionGraphic } from '../sketch/dimensions'
 import {
   breakEntity,
   extendEntity,
@@ -1049,6 +1050,97 @@ export function runSketchTest(): TestResult[] {
       'Move turns and shifts geometry without changing its area',
       regionArea(grown) === '200.00' && Math.abs(at(grown, gc[1])[0] - 5) < 1e-9,
       `${regionArea(grown)} ${at(grown, gc[1])}`,
+    )
+  })
+
+  guard('dimensions', () => {
+    const d = draft()
+    const a = point(d, 0, 0)
+    const b = point(d, 10, 10)
+    const slant = entity(d, { kind: 'line', p1: a, p2: b, construction: false })
+    const flat = entity(d, {
+      kind: 'line',
+      p1: point(d, 0, -5),
+      p2: point(d, 20, -5),
+      construction: false,
+    })
+    const upright = entity(d, {
+      kind: 'line',
+      p1: point(d, 30, 0),
+      p2: point(d, 30, 20),
+      construction: false,
+    })
+    const hole = entity(d, { kind: 'circle', c: point(d, 50, 0), r: 4, construction: false })
+    const loose = point(d, 12, 3)
+    const pick = (kind: 'point' | 'entity', id: string) => ({ kind, id })
+    const kindAt = (picks: Array<{ kind: 'point' | 'entity'; id: string }>, cursor: Vec2) =>
+      dimensionCandidate(d.sketch, picks, cursor)?.kind ?? 'none'
+    check(
+      'a dimension on a slanted line follows the cursor: aligned beside it, horizontal above it',
+      kindAt([pick('entity', slant)], [2, 8]) === 'distance' &&
+        kindAt([pick('entity', slant)], [5, 25]) === 'distanceX' &&
+        kindAt([pick('entity', slant)], [25, 5]) === 'distanceY',
+      `${kindAt([pick('entity', slant)], [2, 8])} ${kindAt([pick('entity', slant)], [5, 25])} ${kindAt([pick('entity', slant)], [25, 5])}`,
+    )
+    const angle = dimensionCandidate(
+      d.sketch,
+      [pick('entity', flat), pick('entity', upright)],
+      [25, 5],
+    )
+    check(
+      'two lines that cross get an angle, a circle gets a diameter',
+      angle?.kind === 'angle' &&
+        Math.abs(Math.abs(angle.value) - 90) < 1e-9 &&
+        kindAt([pick('entity', hole)], [60, 5]) === 'diameter',
+      `${angle?.kind} ${angle?.value}`,
+    )
+    const gap = dimensionCandidate(d.sketch, [pick('point', loose), pick('entity', flat)], [12, 0])
+    check(
+      'a point and a line get the distance between them',
+      gap?.kind === 'pointLineDistance' && Math.abs(gap.value - 8) < 1e-9,
+      `${gap?.kind} ${gap?.value}`,
+    )
+    if (gap) {
+      constrain(d, { ...gap, value: 15 })
+      constrain(d, {
+        kind: 'fix',
+        p: (d.sketch.entities.find((e) => e.id === flat) as { p1: string }).p1,
+        x: 0,
+        y: -5,
+      })
+      constrain(d, { kind: 'horizontal', e: flat })
+      const result = solved(d)
+      check(
+        'changing a point to line distance moves the point to match',
+        result.ok && Math.abs(at(d, loose)[1] - 10) < 1e-6,
+        `${at(d, loose)} ${result.residual}`,
+      )
+    }
+    const kinds = [
+      'distance',
+      'distanceX',
+      'distanceY',
+      'pointLineDistance',
+      'radius',
+      'diameter',
+      'angle',
+    ]
+    const graphics = d.sketch.constraints
+      .concat(
+        [
+          dimensionCandidate(d.sketch, [pick('entity', slant)], [2, 8]),
+          dimensionCandidate(d.sketch, [pick('entity', slant)], [5, 25]),
+          dimensionCandidate(d.sketch, [pick('entity', slant)], [25, 5]),
+          dimensionCandidate(d.sketch, [pick('entity', hole)], [60, 5]),
+          angle,
+        ].flatMap((c) => (c ? [{ ...c, id: 'preview' } as never] : [])),
+      )
+      .filter((c) => kinds.includes(c.kind))
+      .map((c) => dimensionGraphic(d.sketch, c as never, 0.1))
+    check(
+      'every dimension draws extension lines, arrows and a label spot',
+      graphics.length >= 6 && graphics.every((g) => !!g && g.lines.length >= 2),
+      `${graphics.length} graphics`,
     )
   })
 

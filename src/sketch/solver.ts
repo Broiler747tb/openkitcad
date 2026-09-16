@@ -1369,6 +1369,16 @@ function buildRows(
         b.push(c.id, r.v - target, r.g)
         break
       }
+      case 'pointLineDistance': {
+        const e = ent(c.e)
+        if (e?.kind !== 'line' || !pointSet.has(c.p) || c.p === e.p1 || c.p === e.p2) break
+        const d = dirOf(e)!
+        const wx = b.px(c.p) - x[d.ix1]
+        const wy = b.py(c.p) - x[d.iy1]
+        const side = wx * d.uy - wy * d.ux >= 0 ? 1 : -1
+        lineDistanceRow(c.id, [[c.p, 1]], d, -side * c.value)
+        break
+      }
       case 'angle': {
         const A = ent(c.a),
           B = ent(c.b)

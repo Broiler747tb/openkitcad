@@ -63,6 +63,14 @@ export interface SketchOverlay {
   profiles: boolean
 }
 
+export interface DimensionSource {
+  frame: Frame
+  build: (pixel: number) => {
+    lines: Vec2[][]
+    labels: Array<{ id: string; text: string; at: Vec2 }>
+  }
+}
+
 export interface ProfileHit {
   sketchId: string
   key: string
@@ -86,6 +94,7 @@ export interface HandleScreen {
 }
 
 const OVERLAY_LINE = 0x3d4b5c
+const DIMENSION_LINE = 0x2c5a8c
 const OVERLAY_CONSTRUCTION = 0x9097a0
 const PROFILE_IDLE = 0xf1cf9b
 const PROFILE_HOVER = 0xf0a64a
@@ -178,6 +187,15 @@ export class ViewportEngine {
   onHandleScreens: ((handles: HandleScreen[]) => void) | null = null
   private handleGroup = new THREE.Group()
   private sketchOverlayGroup = new THREE.Group()
+  private dimensionGroup = new THREE.Group()
+  private dimensionSource: DimensionSource | null = null
+  private dimensionPixel = 0
+  private dimensionLabels: Array<{
+    id: string
+    text: string
+    at: Vec3
+    kind: ScreenLabel['kind']
+  }> = []
   private sketchOverlays: SketchOverlay[] = []
   private profileMeshes = new Map<string, THREE.Mesh>()
   private profileState: { picked: ReadonlySet<string>; hovered: string | null } = {
@@ -223,6 +241,7 @@ export class ViewportEngine {
     this.scene.add(
       this.solidGroup,
       this.sketchOverlayGroup,
+      this.dimensionGroup,
       this.sketchGroup,
       this.overlayGroup,
       this.gridGroup,
@@ -521,6 +540,51 @@ export class ViewportEngine {
   // -------------------------------------------------------------------------
   // Sketch overlay
   // -------------------------------------------------------------------------
+
+  setDimensionSource(source: DimensionSource | null) {
+    this.dimensionSource = source
+    this.refreshDimensions()
+  }
+
+  refreshDimensions() {
+    for (const child of [...this.dimensionGroup.children]) {
+      this.dimensionGroup.remove(child)
+      ;(child as THREE.LineSegments).geometry?.dispose?.()
+      ;((child as THREE.LineSegments).material as THREE.Material | undefined)?.dispose?.()
+    }
+    const source = this.dimensionSource
+    if (!source) {
+      this.dimensionLabels = []
+      this.dimensionPixel = 0
+      return
+    }
+    const pixel = this.pixelSize(source.frame.origin)
+    this.dimensionPixel = pixel
+    const { lines, labels } = source.build(pixel)
+    const points: THREE.Vector3[] = []
+    for (const chain of lines) {
+      for (let i = 0; i + 1 < chain.length; i++) {
+        points.push(
+          new THREE.Vector3(...frameToWorld(source.frame, chain[i])),
+          new THREE.Vector3(...frameToWorld(source.frame, chain[i + 1])),
+        )
+      }
+    }
+    if (points.length) {
+      const segments = new THREE.LineSegments(
+        new THREE.BufferGeometry().setFromPoints(points),
+        new THREE.LineBasicMaterial({ color: DIMENSION_LINE, depthTest: false }),
+      )
+      segments.renderOrder = 12
+      this.dimensionGroup.add(segments)
+    }
+    this.dimensionLabels = labels.map((label) => ({
+      id: label.id,
+      text: label.text,
+      at: frameToWorld(source.frame, label.at),
+      kind: 'dimension' as const,
+    }))
+  }
 
   clearSketch() {
     for (const child of [...this.sketchGroup.children]) {
@@ -1599,13 +1663,18 @@ export class ViewportEngine {
     requestAnimationFrame(this.animate)
     this.controls.update()
     this.scaleHandles()
+    if (this.dimensionSource && this.dimensionPixel > 0) {
+      const pixel = this.pixelSize(this.dimensionSource.frame.origin)
+      if (Math.abs(pixel - this.dimensionPixel) / this.dimensionPixel > 0.04)
+        this.refreshDimensions()
+    }
     this.renderer.render(this.scene, this.camera)
     this.projectHandles()
 
     if (this.onLabels) {
       const rect = this.renderer.domElement.getBoundingClientRect()
       const next: ScreenLabel[] = []
-      for (const label of this.worldLabels) {
+      for (const label of [...this.worldLabels, ...this.dimensionLabels]) {
         const v = new THREE.Vector3(...label.at).project(this.camera)
         if (v.z > 1) continue
         next.push({

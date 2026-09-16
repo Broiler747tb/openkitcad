@@ -58,6 +58,14 @@ import { runConstraintTool } from '../ui/sketchConstraints'
 import { circularPatternAt, sketchEdit } from '../ui/sketchModify'
 import { breakEntity, extendEntity, mirrorAbout, trimEntity } from '../sketch/modify'
 import { findCorner, maxFilletRadius } from '../sketch/corner'
+import {
+  dimensionCandidate,
+  dimensionGraphic,
+  isDimensionConstraint,
+  type DimensionGraphic,
+  type NewDimension,
+} from '../sketch/dimensions'
+import type { LabelAt } from '../sketch/types'
 import type { ConstraintToolId } from '../sketch/constraintTools'
 import { sketchActions } from '../sketch/actions'
 import { isAndroidApp, usePenMode } from '../platform/android'
@@ -288,6 +296,7 @@ export function Viewport() {
     setHeadsUpState(next)
   }
   const toolActionsRef = useRef<ToolActions | null>(null)
+  const dimensionPreviewRef = useRef<NewDimension | null>(null)
   const draggingRef = useRef<{ pointId: string; moved: boolean } | null>(null)
   const penContactRef = useRef(false)
   const downRef = useRef<{ x: number; y: number } | null>(null)
@@ -311,16 +320,6 @@ export function Viewport() {
   const handleDragRef = useRef<ActiveHandle | null>(null)
   const [cursorHint, setCursorHint] = useState<{ x: number; y: number; text: string } | null>(null)
   const [prompt, setPrompt] = useState<DimensionPrompt | null>(null)
-  useEffect(() => {
-    if (!prompt) return
-    chooseAction({
-      id: 'dimension-value',
-      label: 'Set dimension',
-      prompt: { label: 'Value', initial: Number(prompt.value), unit: prompt.unit },
-      run: (value) => prompt.apply(value),
-    })
-    setPrompt(null)
-  }, [prompt])
   const [, forceRender] = useState(0)
 
   const committedInstances = useStore((s) => s.instances)
@@ -697,6 +696,8 @@ export function Viewport() {
     if (activeSketch && frame) engineRef.current?.lookAtFrame(frame)
     if (!activeSketch) {
       engineRef.current?.clearSketch()
+      engineRef.current?.setDimensionSource(null)
+      dimensionPreviewRef.current = null
       resetTool()
     }
     // Only when entering or leaving sketch mode.
@@ -742,8 +743,22 @@ export function Viewport() {
       selectionHighlight(sketchSelection),
       looseGeometry(sketchFeature.sketch, sketchStatus),
     )
-    engine.setLabels(sketchLabels(sketchFeature.sketch, frame, doc.units))
-  }, [doc, sketchFeature, frame, sketchSelection, sketchStatus, tool])
+    engine.setLabels(sketchLabels(sketchFeature.sketch, frame))
+    const sketch = sketchFeature.sketch
+    const units = doc.units
+    engine.setDimensionSource({
+      frame,
+      build: (pixel) => dimensionScene(sketch, pixel, units, dimensionPreviewRef.current),
+    })
+  }, [
+    doc,
+    sketchFeature,
+    frame,
+    sketchSelection,
+    sketchStatus,
+    tool,
+    preferences.sketchShowDimensions,
+  ])
 
   useEffect(() => {
     engineRef.current?.setGridPreferences(preferences, frame)
@@ -1006,6 +1021,30 @@ export function Viewport() {
         return
       }
 
+      if (tool === 'dimension') {
+        const picks = store.sketchSelection.filter((t) => t.kind !== 'constraint')
+        const hit = hitTestSketch(sketch, cursor, toleranceAt())
+        dimensionPreviewRef.current = picks.length
+          ? dimensionCandidate(sketch, picks, cursor)
+          : null
+        engine.setSketch(
+          sketch,
+          frame,
+          null,
+          selectionHighlight(hit ? [...picks, hit] : picks),
+          looseGeometry(sketch, store.sketchStatus),
+        )
+        engine.refreshDimensions()
+        setCursorHint({
+          x: e.clientX,
+          y: e.clientY,
+          text: dimensionPreviewRef.current
+            ? 'Click to place the dimension'
+            : 'Sketch Dimension: pick a curve, two points, or a point and a line',
+        })
+        return
+      }
+
       if (['trim', 'extend', 'break', 'mirror'].includes(tool)) {
         const hit = hitTestSketch(sketch, cursor, toleranceAt(), false)
         setCursorHint({ x: e.clientX, y: e.clientY, text: MODIFY_HINTS[tool] ?? '' })
@@ -1095,7 +1134,7 @@ export function Viewport() {
       }
 
       if (tool === 'dimension') {
-        openDimensionFor(cursor, e.clientX, e.clientY)
+        placeDimension(sketch, cursor)
         return
       }
 
@@ -1347,51 +1386,65 @@ export function Viewport() {
     )
   }
 
-  /** Dimension tool: click an entity, type a number. */
-  function openDimensionFor(cursor: Vec2, screenX: number, screenY: number) {
-    const store = useStore.getState()
-    const sketch = activeSketchFeature(store)?.sketch
-    if (!sketch) return
-    const tolerance = toleranceAt()
-    const pts = new Map(sketch.points.map((p) => [p.id, [p.x, p.y] as Vec2]))
+  function editDimension(id: string, x: number, y: number) {
+    const constraint = activeSketchFeature(useStore.getState())?.sketch.constraints.find(
+      (c) => c.id === id,
+    )
+    if (!constraint || !isDimensionConstraint(constraint)) return
+    const sign = Math.sign(constraint.value) || 1
+    setPrompt({
+      x,
+      y,
+      value: fmt(Math.abs(constraint.value)),
+      unit: constraint.kind === 'angle' ? '°' : 'mm',
+      apply: (value) => {
+        const store = useStore.getState()
+        store.editSketch((sketch) => {
+          const c = sketch.constraints.find((x) => x.id === id)
+          if (c && 'value' in c) c.value = sign * Math.abs(value)
+        })
+        const result = store.solveActiveSketch()
+        if (result && !result.ok) {
+          store.setStatus('That size cannot be reached with the other constraints in the sketch.')
+        }
+      },
+    })
+  }
 
-    for (const entity of sketch.entities) {
-      if (entity.kind === 'line') {
-        const a = pts.get(entity.p1)!
-        const b = pts.get(entity.p2)!
-        const mid = v2.mid(a, b)
-        if (v2.dist(cursor, mid) > Math.max(tolerance * 3, v2.dist(a, b) / 2)) continue
-        const ab = v2.sub(b, a)
-        const len2 = v2.dot(ab, ab)
-        const t = Math.max(0, Math.min(1, v2.dot(v2.sub(cursor, a), ab) / len2))
-        const on: Vec2 = [a[0] + ab[0] * t, a[1] + ab[1] * t]
-        if (v2.dist(cursor, on) > tolerance * 2) continue
-        setPrompt({
-          x: screenX,
-          y: screenY,
-          value: fmt(v2.dist(a, b)),
-          unit: 'mm',
-          apply: (value) => {
-            store.addConstraint({ kind: 'distance', a: entity.p1, b: entity.p2, value })
-          },
-        })
-        return
-      }
-      if (entity.kind === 'circle') {
-        const c = pts.get(entity.c)!
-        if (Math.abs(v2.dist(cursor, c) - entity.r) > tolerance * 2) continue
-        setPrompt({
-          x: screenX,
-          y: screenY,
-          value: fmt(entity.r * 2),
-          unit: 'mm',
-          apply: (value) => {
-            store.addConstraint({ kind: 'diameter', e: entity.id, value })
-          },
-        })
-        return
-      }
+  function placeDimension(sketch: Sketch2D, cursor: Vec2) {
+    const store = useStore.getState()
+    const engine = engineRef.current
+    const picks = store.sketchSelection.filter((t) => t.kind !== 'constraint')
+    const hit = hitTestSketch(sketch, cursor, toleranceAt())
+    const already = hit && picks.some((t) => t.kind === hit.kind && t.id === hit.id)
+    if (hit && !already && picks.length < 2) {
+      store.setSketchSelection([...picks, hit])
+      return
     }
+    const candidate = picks.length ? dimensionCandidate(sketch, picks, cursor) : null
+    if (!candidate) {
+      store.setSketchSelection([])
+      store.setStatus('Sketch Dimension: pick a curve, two points, or a point and a line.')
+      return
+    }
+    const id = newId('c')
+    store.editSketch((draft) => {
+      draft.constraints.push({ ...candidate, id } as Constraint)
+    })
+    const result = store.solveActiveSketch()
+    store.setSketchSelection([])
+    dimensionPreviewRef.current = null
+    if (result?.failing.includes(id)) {
+      store.editSketch((draft) => {
+        draft.constraints = draft.constraints.filter((c) => c.id !== id)
+      })
+      store.solveActiveSketch()
+      store.setStatus('That dimension would over-constrain the sketch, so it was not added.')
+      return
+    }
+    const screen =
+      engine && frame ? engine.toScreen(frameToWorld(frame, candidate.at as Vec2)) : null
+    editDimension(id, screen?.[0] ?? 0, screen?.[1] ?? 0)
   }
 
   // --- keyboard ------------------------------------------------------------
@@ -1719,25 +1772,42 @@ export function Viewport() {
                 store.setSketchSelection(
                   e.shiftKey ? toggleSelection(store.sketchSelection, target) : [target],
                 )
-              } else {
-                const constraint = activeSketchFeature(
-                  useStore.getState(),
-                )?.sketch.constraints.find((c) => c.id === label.id)
-                if (!constraint || !('value' in constraint)) return
-                setPrompt({
-                  x: e.clientX,
-                  y: e.clientY,
-                  value: String(constraint.value),
-                  unit: constraint.kind === 'angle' ? '°' : 'mm',
-                  apply: (value) => {
-                    const store = useStore.getState()
-                    store.editSketch((sketch) => {
+              } else if (label.id !== 'dimension-preview') {
+                const start = { x: e.clientX, y: e.clientY }
+                let moved = false
+                const move = (event: PointerEvent) => {
+                  if (
+                    !moved &&
+                    Math.hypot(event.clientX - start.x, event.clientY - start.y) <= CLICK_SLOP_PX
+                  ) {
+                    return
+                  }
+                  const engine = engineRef.current
+                  const place =
+                    engine && frame ? engine.pickOnPlane(event.clientX, event.clientY, frame) : null
+                  if (!place) return
+                  const store = useStore.getState()
+                  if (!moved) {
+                    moved = true
+                    store.beginTransient()
+                  }
+                  store.editSketch(
+                    (sketch) => {
                       const c = sketch.constraints.find((x) => x.id === label.id)
-                      if (c && 'value' in c) c.value = value
-                    })
-                    store.solveActiveSketch()
-                  },
-                })
+                      if (c && isDimensionConstraint(c))
+                        (c as { at?: LabelAt }).at = [place[0], place[1]]
+                    },
+                    { transient: true },
+                  )
+                }
+                const up = (event: PointerEvent) => {
+                  window.removeEventListener('pointermove', move)
+                  window.removeEventListener('pointerup', up)
+                  if (moved) useStore.getState().endTransient()
+                  else editDimension(label.id, event.clientX, event.clientY)
+                }
+                window.addEventListener('pointermove', move)
+                window.addEventListener('pointerup', up)
               }
             }}
           >
@@ -1761,6 +1831,51 @@ export function Viewport() {
             </span>
           </div>
         ))}
+
+      {prompt && (
+        <form
+          key={`${prompt.x},${prompt.y},${prompt.value}`}
+          className="vp-prompt"
+          style={{ left: prompt.x, top: prompt.y }}
+          onSubmit={(e) => {
+            e.preventDefault()
+            const input = e.currentTarget.elements.namedItem('value') as HTMLInputElement
+            const store = useStore.getState()
+            try {
+              const value =
+                prompt.unit === '°'
+                  ? parseAngle(input.value)
+                  : parseLength(input.value, store.doc.units)
+              if (!Number.isFinite(value) || (prompt.unit !== '°' && value <= 0)) {
+                throw new Error('Enter a size above zero.')
+              }
+              setPrompt(null)
+              prompt.apply(value)
+            } catch (error) {
+              store.setStatus((error as Error).message)
+            }
+          }}
+        >
+          <input
+            name="value"
+            defaultValue={prompt.value}
+            aria-label="Dimension value"
+            ref={(input) => {
+              if (input) {
+                requestAnimationFrame(() => {
+                  input.focus()
+                  input.select()
+                })
+              }
+            }}
+            onKeyDown={(e) => {
+              e.stopPropagation()
+              if (e.key === 'Escape') setPrompt(null)
+            }}
+          />
+          <span className="vp-prompt-unit">{prompt.unit === '°' ? '°' : doc.units}</span>
+        </form>
+      )}
 
       {cursorHint && (
         <div className="vp-snap-hint" style={{ left: cursorHint.x + 14, top: cursorHint.y + 14 }}>
@@ -1876,7 +1991,39 @@ const GLYPH: Partial<Record<Constraint['kind'], string>> = {
   smooth: '∿',
 }
 
-function sketchLabels(sketch: Sketch2D, frame: Frame, unit: LengthUnit) {
+function dimensionText(graphic: DimensionGraphic, unit: LengthUnit): string {
+  if (graphic.angular) return `${fmt(graphic.value)}°`
+  return `${graphic.prefix}${lengthLabel(Math.abs(graphic.value), unit, false)}`
+}
+
+function dimensionScene(
+  sketch: Sketch2D,
+  pixel: number,
+  unit: LengthUnit,
+  preview: NewDimension | null,
+): { lines: Vec2[][]; labels: Array<{ id: string; text: string; at: Vec2 }> } {
+  const lines: Vec2[][] = []
+  const labels: Array<{ id: string; text: string; at: Vec2 }> = []
+  const show = usePreferences.getState().values.sketchShowDimensions
+  const pts = pointLookup(sketch)
+  for (const c of show ? sketch.constraints : []) {
+    if (!isDimensionConstraint(c)) continue
+    const graphic = dimensionGraphic(sketch, c, pixel, pts)
+    if (!graphic) continue
+    lines.push(...graphic.lines)
+    labels.push({ id: c.id, text: dimensionText(graphic, unit), at: graphic.text })
+  }
+  if (preview) {
+    const graphic = dimensionGraphic(sketch, preview, pixel, pts)
+    if (graphic) {
+      lines.push(...graphic.lines)
+      labels.push({ id: 'dimension-preview', text: dimensionText(graphic, unit), at: graphic.text })
+    }
+  }
+  return { lines, labels }
+}
+
+function sketchLabels(sketch: Sketch2D, frame: Frame) {
   const pts = new Map(sketch.points.map((p) => [p.id, [p.x, p.y] as Vec2]))
   const out: Array<{
     id: string
@@ -1884,7 +2031,6 @@ function sketchLabels(sketch: Sketch2D, frame: Frame, unit: LengthUnit) {
     at: [number, number, number]
     kind: 'dimension' | 'constraint'
   }> = []
-  const length = (mm: number) => lengthLabel(mm, unit, false)
 
   const entityAnchor = (entityId: string): Vec2 | null => {
     const entity = sketch.entities.find((e) => e.id === entityId)
@@ -1900,7 +2046,6 @@ function sketchLabels(sketch: Sketch2D, frame: Frame, unit: LengthUnit) {
     return polyline[Math.floor(polyline.length / 2)] ?? null
   }
 
-  // Spread glyphs that land on the same spot so they do not stack up.
   const used = new Map<string, number>()
   const nudge = (p: Vec2): Vec2 => {
     const key = `${Math.round(p[0])},${Math.round(p[1])}`
@@ -1910,41 +2055,7 @@ function sketchLabels(sketch: Sketch2D, frame: Frame, unit: LengthUnit) {
   }
 
   for (const c of sketch.constraints) {
-    if (c.kind === 'distance' || c.kind === 'distanceX' || c.kind === 'distanceY') {
-      const a = pts.get(c.a)
-      const b = pts.get(c.b)
-      if (!a || !b) continue
-      out.push({
-        id: c.id,
-        text: length(c.value),
-        at: frameToWorld(frame, v2.mid(a, b)),
-        kind: 'dimension',
-      })
-      continue
-    }
-    if (c.kind === 'radius' || c.kind === 'diameter') {
-      const anchor = entityAnchor(c.e)
-      if (!anchor) continue
-      out.push({
-        id: c.id,
-        text: c.kind === 'radius' ? `R${length(c.value)}` : `⌀${length(c.value)}`,
-        at: frameToWorld(frame, anchor),
-        kind: 'dimension',
-      })
-      continue
-    }
-    if (c.kind === 'angle') {
-      const anchor = entityAnchor(c.a)
-      if (!anchor) continue
-      out.push({
-        id: c.id,
-        text: `${fmt(c.value)}°`,
-        at: frameToWorld(frame, anchor),
-        kind: 'dimension',
-      })
-      continue
-    }
-
+    if (isDimensionConstraint(c)) continue
     const glyph = GLYPH[c.kind]
     if (!glyph) continue
     // The origin's own pin is noise: it is there in every sketch and can never

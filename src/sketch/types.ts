@@ -12,6 +12,8 @@ export type PointId = string
 export type EntityId = string
 export type ConstraintId = string
 
+export type LabelAt = [number, number]
+
 export interface SketchPoint {
   id: PointId
   x: number
@@ -153,13 +155,35 @@ export type Constraint =
    */
   | { id: ConstraintId; kind: 'tangentArcs'; a: EntityId; b: EntityId; side: 1 | -1 }
   | { id: ConstraintId; kind: 'symmetric'; a: PointId; b: PointId; line: EntityId }
-  | { id: ConstraintId; kind: 'distance'; a: PointId; b: PointId; value: number }
-  | { id: ConstraintId; kind: 'distanceX'; a: PointId; b: PointId; value: number }
-  | { id: ConstraintId; kind: 'distanceY'; a: PointId; b: PointId; value: number }
-  | { id: ConstraintId; kind: 'radius'; e: EntityId; value: number; axis?: 'major' | 'minor' }
-  | { id: ConstraintId; kind: 'diameter'; e: EntityId; value: number; axis?: 'major' | 'minor' }
+  | { id: ConstraintId; kind: 'distance'; a: PointId; b: PointId; value: number; at?: LabelAt }
+  | { id: ConstraintId; kind: 'distanceX'; a: PointId; b: PointId; value: number; at?: LabelAt }
+  | { id: ConstraintId; kind: 'distanceY'; a: PointId; b: PointId; value: number; at?: LabelAt }
+  | {
+      id: ConstraintId
+      kind: 'pointLineDistance'
+      p: PointId
+      e: EntityId
+      value: number
+      at?: LabelAt
+    }
+  | {
+      id: ConstraintId
+      kind: 'radius'
+      e: EntityId
+      value: number
+      axis?: 'major' | 'minor'
+      at?: LabelAt
+    }
+  | {
+      id: ConstraintId
+      kind: 'diameter'
+      e: EntityId
+      value: number
+      axis?: 'major' | 'minor'
+      at?: LabelAt
+    }
   /** Angle between two lines, in degrees. */
-  | { id: ConstraintId; kind: 'angle'; a: EntityId; b: EntityId; value: number }
+  | { id: ConstraintId; kind: 'angle'; a: EntityId; b: EntityId; value: number; at?: LabelAt }
   | { id: ConstraintId; kind: 'collinear'; a: EntityId; b: EntityId }
   | { id: ConstraintId; kind: 'concentric'; a: EntityId; b: EntityId }
   | { id: ConstraintId; kind: 'pointOnCurve'; p: PointId; e: EntityId }
@@ -213,6 +237,7 @@ export const DIMENSION_KINDS: ConstraintKind[] = [
   'distance',
   'distanceX',
   'distanceY',
+  'pointLineDistance',
   'radius',
   'diameter',
   'angle',
@@ -268,4 +293,5 @@ export const CONSTRAINT_LABELS: Record<ConstraintKind, string> = {
   symmetricEntities: 'Mirrored',
   ellipseAxis: 'Along the axis',
   fixShape: 'Pinned',
+  pointLineDistance: 'Distance to line',
 }

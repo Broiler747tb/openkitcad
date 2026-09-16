@@ -931,13 +931,18 @@ input[type='checkbox'] {
 }
 
 .vp-label-dimension {
-  cursor: pointer;
+  border-color: transparent;
+  background: rgba(244, 247, 250, 0.92);
+  color: #1d3f63;
+  font: 600 11.5px var(--mono);
+  cursor: grab;
   pointer-events: auto;
 }
 
 .vp-label-dimension:hover {
-  background: var(--accent);
-  color: #201400;
+  border-color: var(--accent);
+  background: #fff;
+  color: #10263d;
 }
 
 /* The section list, and the panel of actions that opens beside it. */
