@@ -164,7 +164,19 @@ export function runPartsTest(): TestResult[] {
   for (const shipped of CATALOGUE) {
     try {
       const look = lookPrototype(shipped)
-      const [x0, y0, z0, x1, y1, z1] = partBounds(shipped)
+      const bounds = partBounds(shipped)
+      let [x0, y0, z0, x1, y1, z1] = bounds
+      const g = shipped.geometry
+      for (const box of g.kind === 'board'
+        ? [...(g.bumps ?? []), ...(shipped.keepouts ?? [])]
+        : []) {
+        x0 = Math.min(x0, box.x)
+        y0 = Math.min(y0, box.y)
+        z0 = Math.min(z0, box.z)
+        x1 = Math.max(x1, box.x + box.w)
+        y1 = Math.max(y1, box.y + box.h)
+        z1 = Math.max(z1, box.z + box.height)
+      }
       const { min, max } = look.box
       const slack = 4
       const inside =
@@ -174,7 +186,9 @@ export function runPartsTest(): TestResult[] {
         max.x <= x1 + slack &&
         max.y <= y1 + slack &&
         max.z <= z1 + slack
-      const covers = max.x - min.x >= (x1 - x0) * 0.5 && max.y - min.y >= (y1 - y0) * 0.5
+      const covers =
+        max.x - min.x >= (bounds[3] - bounds[0]) * 0.5 &&
+        max.y - min.y >= (bounds[4] - bounds[1]) * 0.5
       if (!look.meshes.length) lookFailures.push(`${shipped.id} draws nothing`)
       else if (!inside || !covers)
         lookFailures.push(
@@ -342,7 +356,21 @@ export function runPartsTest(): TestResult[] {
       rebuilt.id === pi.id &&
       rebuilt.popularity === pi.popularity,
   )
-  check('only rectangular boards open in the part form', partToDraft(screw) === null)
+  check('only boards open in the part form', partToDraft(screw) === null)
+  const uno = part('arduino-uno-r3')
+  const unoDraft = partToDraft(uno)
+  const unoCopy = unoDraft ? editedPart(uno, unoDraft, 'arduino-uno-r3-2') : undefined
+  const widened = unoDraft ? editedPart(uno, { ...unoDraft, width: 80 }) : undefined
+  check(
+    'a board with a shaped outline keeps its shape unless its size is changed',
+    unoDraft?.width === 68.58 &&
+      unoDraft.depth === 53.34 &&
+      JSON.stringify(unoCopy?.geometry) === JSON.stringify(uno.geometry) &&
+      widened?.geometry.kind === 'board' &&
+      widened.geometry.outline.shape === 'rect' &&
+      widened.geometry.outline.w === 80,
+    show([unoDraft?.width ?? 0, unoDraft?.depth ?? 0]),
+  )
   check(
     'a copy gets a fresh id',
     uniquePartId('raspberry-pi-4b', new Set(['raspberry-pi-4b', 'raspberry-pi-4b-2'])) ===

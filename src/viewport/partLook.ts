@@ -902,6 +902,15 @@ function drawComponent(look: Look, c: LookComponent, top: number, bottom: number
       }
     }
   }
+  if ((c.kind === 'box' || c.kind === 'chip') && c.turn) {
+    const [cx, cy] = [c.x + c.w / 2, c.y + c.h / 2]
+    const frame = new THREE.Matrix4()
+      .makeTranslation(cx, cy, 0)
+      .multiply(new THREE.Matrix4().makeRotationZ(THREE.MathUtils.degToRad(c.turn)))
+      .multiply(new THREE.Matrix4().makeTranslation(-cx, -cy, 0))
+    look.within(frame, () => drawComponent(look, { ...c, turn: 0 }, top, bottom))
+    return
+  }
   if (!('flip' in c && c.flip)) return draw()
   const centreY =
     c.kind === 'box' || c.kind === 'chip'

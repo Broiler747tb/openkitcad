@@ -99,6 +99,8 @@ function lookProblems(look: unknown): string[] {
     for (const key of ['w', 'h', 'd', 'height', 'rows', 'cols', 'pins'])
       if (component[key] !== undefined && !positive(component[key]))
         problems.push(`${where} "${key}" has to be above zero.`)
+    if (component.turn !== undefined && !finite(component.turn))
+      problems.push(`${where} "turn" has to be a number of degrees.`)
     if (component.kind === 'port' && !PORTS.includes(component.port))
       problems.push(`${where} "port" has to be one of ${PORTS.join(', ')}.`)
     if (component.colour !== undefined && !COLOUR.test(component.colour))

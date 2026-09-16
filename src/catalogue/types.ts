@@ -270,6 +270,7 @@ export type LookComponent =
       h: number
       height: number
       radius?: number
+      turn?: number
       colour?: string
       finish?: Finish
       flip?: boolean
@@ -297,6 +298,7 @@ export type LookComponent =
       h: number
       height?: number
       legs?: 'quad' | 'dual' | 'none'
+      turn?: number
       colour?: string
       flip?: boolean
       label?: string

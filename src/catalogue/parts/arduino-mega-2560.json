@@ -1,45 +1,702 @@
 {
   "id": "arduino-mega-2560",
-  "name": "Arduino Mega 2560",
+  "name": "Arduino Mega 2560 R3",
   "category": "mcu",
   "popularity": 74,
   "manufacturer": "Arduino",
-  "summary": "101.5 x 53.3 mm. Keeps the Uno hole positions so Uno shields still fit.",
+  "summary": "101.6 x 53.3 mm. Keeps the Uno hole positions so Uno shields still fit.",
   "confidence": "datasheet",
-  "source": "Outline and six mounting holes from the published Arduino Mega 2560 R3 board footprint. The first four holes match the Uno exactly, which is why Uno shields bolt straight on.",
+  "source": "Arduino MEGA 2560 Rev3 reference design (Arduino, Eagle board file): board 101.6 x 53.34 mm with the notched right end, six 3.2 mm holes at (13.97, 2.54), (15.24, 50.8), (66.04, 7.62), (66.04, 35.56), (90.17, 50.8) and (96.52, 2.54). The first four match the Uno, which is why Uno shields bolt on. Headers along y 2.54 and 50.8 plus the 2 x 18 header for pins 22 to 53 at x 93.98. USB-B and DC jack as on the Uno. Part positions in the look come from the same file; resistors and small capacitors are left out.",
+  "look": {
+    "colour": "#0f6f94",
+    "components": [
+      {
+        "kind": "header",
+        "x": 27.94,
+        "y": 2.54,
+        "rows": 1,
+        "cols": 8,
+        "style": "female",
+        "height": 8.5,
+        "label": "Power header"
+      },
+      {
+        "kind": "header",
+        "x": 50.8,
+        "y": 2.54,
+        "rows": 1,
+        "cols": 8,
+        "style": "female",
+        "height": 8.5,
+        "label": "Analog header 0 to 7"
+      },
+      {
+        "kind": "header",
+        "x": 73.66,
+        "y": 2.54,
+        "rows": 1,
+        "cols": 8,
+        "style": "female",
+        "height": 8.5,
+        "label": "Analog header 8 to 15"
+      },
+      {
+        "kind": "header",
+        "x": 18.796,
+        "y": 50.8,
+        "rows": 1,
+        "cols": 10,
+        "style": "female",
+        "height": 8.5,
+        "label": "Digital header 8 to 13"
+      },
+      {
+        "kind": "header",
+        "x": 45.72,
+        "y": 50.8,
+        "rows": 1,
+        "cols": 8,
+        "style": "female",
+        "height": 8.5,
+        "label": "PWM header 0 to 7"
+      },
+      {
+        "kind": "header",
+        "x": 68.58,
+        "y": 50.8,
+        "rows": 1,
+        "cols": 8,
+        "style": "female",
+        "height": 8.5,
+        "label": "Communication header"
+      },
+      {
+        "kind": "header",
+        "x": 93.98,
+        "y": 7.62,
+        "rows": 18,
+        "cols": 2,
+        "style": "female",
+        "height": 8.5,
+        "label": "Digital header 22 to 53"
+      },
+      {
+        "kind": "chip",
+        "x": 43.8,
+        "y": 21.35,
+        "w": 14.0,
+        "h": 14.0,
+        "height": 1.2,
+        "legs": "quad",
+        "label": "ATmega2560"
+      },
+      {
+        "kind": "port",
+        "port": "usb-b",
+        "x": -6.34,
+        "y": 38.1,
+        "facing": "-x",
+        "w": 12.0,
+        "h": 10.9,
+        "depth": 15.75,
+        "label": "USB-B"
+      },
+      {
+        "kind": "port",
+        "port": "barrel",
+        "x": -1.8,
+        "y": 7.795,
+        "facing": "-x",
+        "w": 9.0,
+        "h": 11.0,
+        "depth": 13.49,
+        "label": "DC jack"
+      },
+      {
+        "kind": "chip",
+        "x": 17.44,
+        "y": 32.3,
+        "w": 5.0,
+        "h": 5.0,
+        "height": 0.9,
+        "label": "ATmega16U2 USB chip"
+      },
+      {
+        "kind": "crystal",
+        "x": 12.7,
+        "y": 23.75,
+        "w": 11.43,
+        "h": 4.57,
+        "height": 3.5,
+        "label": "16 MHz crystal"
+      },
+      {
+        "kind": "box",
+        "x": 37.55,
+        "y": 13.21,
+        "w": 1.6,
+        "h": 2.8,
+        "height": 0.9,
+        "finish": "plastic",
+        "colour": "#d8c7a0",
+        "label": "16 MHz resonator"
+      },
+      {
+        "kind": "capacitor",
+        "x": 18.41,
+        "y": 9.14,
+        "d": 6.3,
+        "height": 5.4,
+        "colour": "#c9ced3",
+        "label": "47 µF capacitor"
+      },
+      {
+        "kind": "capacitor",
+        "x": 25.53,
+        "y": 9.14,
+        "d": 6.3,
+        "height": 5.4,
+        "colour": "#c9ced3",
+        "label": "47 µF capacitor"
+      },
+      {
+        "kind": "chip",
+        "x": 5.39,
+        "y": 16.035,
+        "w": 6.5,
+        "h": 3.5,
+        "height": 1.6,
+        "label": "5 V regulator"
+      },
+      {
+        "kind": "chip",
+        "x": 19.69,
+        "y": 1.0,
+        "w": 4.3,
+        "h": 3.6,
+        "height": 2.3,
+        "label": "M7 diode"
+      },
+      {
+        "kind": "button",
+        "x": 74.17,
+        "y": 27.815,
+        "size": 4.0,
+        "height": 2.5,
+        "label": "Reset button"
+      },
+      {
+        "kind": "led",
+        "x": 76.2,
+        "y": 36.835,
+        "colour": "#39d06b",
+        "size": 2.0,
+        "label": "ON LED"
+      },
+      {
+        "kind": "led",
+        "x": 27.94,
+        "y": 34.295,
+        "colour": "#ffd23a",
+        "size": 2.0,
+        "label": "RX LED"
+      },
+      {
+        "kind": "led",
+        "x": 27.94,
+        "y": 36.575,
+        "colour": "#ffd23a",
+        "size": 2.0,
+        "label": "TX LED"
+      },
+      {
+        "kind": "led",
+        "x": 27.94,
+        "y": 42.165,
+        "colour": "#ffd23a",
+        "size": 2.0,
+        "label": "L LED"
+      },
+      {
+        "kind": "header",
+        "x": 63.627,
+        "y": 25.4,
+        "rows": 3,
+        "cols": 2,
+        "height": 8.5,
+        "label": "ICSP header"
+      },
+      {
+        "kind": "header",
+        "x": 15.748,
+        "y": 44.958,
+        "rows": 2,
+        "cols": 3,
+        "height": 8.5,
+        "label": "ICSP header for the USB chip"
+      }
+    ]
+  },
   "geometry": {
     "kind": "board",
-    "outline": { "shape": "rect", "w": 101.52, "h": 53.3, "cornerRadius": 2 },
+    "outline": {
+      "shape": "poly",
+      "points": [
+        [
+          1,
+          0
+        ],
+        [
+          98.06,
+          0.0
+        ],
+        [
+          98.443,
+          0.076
+        ],
+        [
+          98.767,
+          0.293
+        ],
+        [
+          98.984,
+          0.617
+        ],
+        [
+          99.06,
+          1.0
+        ],
+        [
+          99.06,
+          1.27
+        ],
+        [
+          101.6,
+          3.81
+        ],
+        [
+          101.6,
+          38.1
+        ],
+        [
+          99.06,
+          40.64
+        ],
+        [
+          99.06,
+          50.8
+        ],
+        [
+          96.52,
+          53.34
+        ],
+        [
+          1,
+          53.34
+        ],
+        [
+          0.617,
+          53.264
+        ],
+        [
+          0.293,
+          53.047
+        ],
+        [
+          0.076,
+          52.723
+        ],
+        [
+          0.0,
+          52.34
+        ],
+        [
+          0.0,
+          1.0
+        ],
+        [
+          0.076,
+          0.617
+        ],
+        [
+          0.293,
+          0.293
+        ],
+        [
+          0.617,
+          0.076
+        ]
+      ]
+    },
     "thickness": 1.6,
     "bumps": [
-      { "x": 30, "y": 20, "w": 16, "h": 16, "z": 1.6, "height": 1.2, "colour": "#20262c", "label": "ATmega2560" },
-      { "x": 1.5, "y": 30, "w": 12, "h": 16, "z": 1.6, "height": 11, "colour": "#8b9096", "label": "USB-B" },
-      { "x": 1.5, "y": 3, "w": 9, "h": 11, "z": 1.6, "height": 11, "colour": "#2a2f34", "label": "Barrel jack" },
-      { "x": 17, "y": 48.4, "w": 78, "h": 2.6, "z": 1.6, "height": 8.5, "colour": "#111417", "label": "Digital headers" },
-      { "x": 17, "y": 2.5, "w": 60, "h": 2.6, "z": 1.6, "height": 8.5, "colour": "#111417", "label": "Analog + power" }
+      {
+        "x": 42.6,
+        "y": 20.15,
+        "w": 16.4,
+        "h": 16.4,
+        "z": 1.6,
+        "height": 1.2,
+        "colour": "#20262c",
+        "label": "ATmega2560"
+      },
+      {
+        "x": -6.34,
+        "y": 32.1,
+        "w": 15.75,
+        "h": 12.0,
+        "z": 1.6,
+        "height": 10.9,
+        "colour": "#b9c0c7",
+        "label": "USB-B"
+      },
+      {
+        "x": -1.8,
+        "y": 3.295,
+        "w": 13.49,
+        "h": 9.0,
+        "z": 1.6,
+        "height": 11.0,
+        "colour": "#1b1d20",
+        "label": "DC jack"
+      },
+      {
+        "x": 26.67,
+        "y": 1.27,
+        "w": 66.04,
+        "h": 2.54,
+        "z": 1.6,
+        "height": 8.5,
+        "colour": "#1b1d20",
+        "label": "Power and analog headers"
+      },
+      {
+        "x": 17.526,
+        "y": 49.53,
+        "w": 70.104,
+        "h": 2.54,
+        "z": 1.6,
+        "height": 8.5,
+        "colour": "#1b1d20",
+        "label": "Digital headers"
+      },
+      {
+        "x": 92.71,
+        "y": 6.35,
+        "w": 5.08,
+        "h": 45.72,
+        "z": 1.6,
+        "height": 8.5,
+        "colour": "#1b1d20",
+        "label": "Digital header 22 to 53"
+      },
+      {
+        "x": 15.26,
+        "y": 5.99,
+        "w": 13.42,
+        "h": 6.3,
+        "z": 1.6,
+        "height": 5.4,
+        "colour": "#c9ced3",
+        "label": "47 µF capacitors"
+      }
     ]
   },
   "mountingHoles": [
-    { "id": "h1", "x": 13.97, "y": 2.54, "diameter": 3.2, "screw": "M3" },
-    { "id": "h2", "x": 15.24, "y": 50.8, "diameter": 3.2, "screw": "M3" },
-    { "id": "h3", "x": 66.04, "y": 17.78, "diameter": 3.2, "screw": "M3" },
-    { "id": "h4", "x": 66.04, "y": 45.72, "diameter": 3.2, "screw": "M3" },
-    { "id": "h5", "x": 90.17, "y": 50.8, "diameter": 3.2, "screw": "M3" },
-    { "id": "h6", "x": 96.52, "y": 2.54, "diameter": 3.2, "screw": "M3" }
-  ],
-  "keepouts": [
-    { "id": "k-under", "label": "Solder side clearance", "x": 0, "y": 0, "w": 101.52, "h": 53.3, "z": -3, "height": 3 },
-    { "id": "k-shield", "label": "Shield stacking space", "x": 0, "y": 0, "w": 101.52, "h": 53.3, "z": 1.6, "height": 12 }
+    {
+      "id": "h1",
+      "x": 13.97,
+      "y": 2.54,
+      "diameter": 3.2,
+      "screw": "M3"
+    },
+    {
+      "id": "h2",
+      "x": 15.24,
+      "y": 50.8,
+      "diameter": 3.2,
+      "screw": "M3"
+    },
+    {
+      "id": "h3",
+      "x": 66.04,
+      "y": 7.62,
+      "diameter": 3.2,
+      "screw": "M3"
+    },
+    {
+      "id": "h4",
+      "x": 66.04,
+      "y": 35.56,
+      "diameter": 3.2,
+      "screw": "M3"
+    },
+    {
+      "id": "h5",
+      "x": 90.17,
+      "y": 50.8,
+      "diameter": 3.2,
+      "screw": "M3"
+    },
+    {
+      "id": "h6",
+      "x": 96.52,
+      "y": 2.54,
+      "diameter": 3.2,
+      "screw": "M3"
+    }
   ],
   "connectors": [
-    { "id": "usb", "label": "USB-B", "side": "-x", "x": 0, "y": 38, "z": 1.6, "width": 12.5, "height": 11.5, "protrusion": 2 },
-    { "id": "power", "label": "Barrel jack 2.1 mm", "side": "-x", "x": 0, "y": 8.5, "z": 1.6, "width": 9.5, "height": 11, "protrusion": 1.5 }
+    {
+      "id": "usb",
+      "label": "USB-B",
+      "side": "-x",
+      "x": 0,
+      "y": 38.1,
+      "z": 1.6,
+      "width": 12.5,
+      "height": 11.5,
+      "protrusion": 6.34
+    },
+    {
+      "id": "power",
+      "label": "DC jack",
+      "side": "-x",
+      "x": 0,
+      "y": 7.795,
+      "z": 1.6,
+      "width": 9.5,
+      "height": 11.5,
+      "protrusion": 1.8
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "power",
+      "label": "Power",
+      "x": 27.94,
+      "y": 2.54,
+      "rows": 1,
+      "cols": 8,
+      "pitch": 2.54,
+      "pins": [
+        "NC",
+        "IOREF",
+        "RESET",
+        "3V3",
+        "5V",
+        "GND",
+        "GND",
+        "VIN"
+      ]
+    },
+    {
+      "id": "analog-lo",
+      "label": "Analog in 0 to 7",
+      "x": 50.8,
+      "y": 2.54,
+      "rows": 1,
+      "cols": 8,
+      "pitch": 2.54,
+      "pins": [
+        "A0",
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7"
+      ]
+    },
+    {
+      "id": "analog-hi",
+      "label": "Analog in 8 to 15",
+      "x": 73.66,
+      "y": 2.54,
+      "rows": 1,
+      "cols": 8,
+      "pitch": 2.54,
+      "pins": [
+        "A8",
+        "A9",
+        "A10",
+        "A11",
+        "A12",
+        "A13",
+        "A14",
+        "A15"
+      ]
+    },
+    {
+      "id": "digital-lo",
+      "label": "Digital 8 to 13, AREF, I2C",
+      "x": 18.796,
+      "y": 50.8,
+      "rows": 1,
+      "cols": 10,
+      "pitch": 2.54,
+      "pins": [
+        "SCL",
+        "SDA",
+        "AREF",
+        "GND",
+        "13",
+        "12",
+        "11",
+        "10",
+        "9",
+        "8"
+      ]
+    },
+    {
+      "id": "pwm",
+      "label": "PWM 0 to 7",
+      "x": 45.72,
+      "y": 50.8,
+      "rows": 1,
+      "cols": 8,
+      "pitch": 2.54,
+      "pins": [
+        "7",
+        "6",
+        "5",
+        "4",
+        "3",
+        "2",
+        "1 TX0",
+        "0 RX0"
+      ]
+    },
+    {
+      "id": "communication",
+      "label": "Communication",
+      "x": 68.58,
+      "y": 50.8,
+      "rows": 1,
+      "cols": 8,
+      "pitch": 2.54,
+      "pins": [
+        "14 TX3",
+        "15 RX3",
+        "16 TX2",
+        "17 RX2",
+        "18 TX1",
+        "19 RX1",
+        "20 SDA",
+        "21 SCL"
+      ]
+    },
+    {
+      "id": "digital-hi",
+      "label": "Digital 22 to 53",
+      "x": 93.98,
+      "y": 7.62,
+      "rows": 18,
+      "cols": 2,
+      "pitch": 2.54,
+      "pins": [
+        "GND",
+        "52",
+        "50",
+        "48",
+        "46",
+        "44",
+        "42",
+        "40",
+        "38",
+        "36",
+        "34",
+        "32",
+        "30",
+        "28",
+        "26",
+        "24",
+        "22",
+        "5V",
+        "GND",
+        "53",
+        "51",
+        "49",
+        "47",
+        "45",
+        "43",
+        "41",
+        "39",
+        "37",
+        "35",
+        "33",
+        "31",
+        "29",
+        "27",
+        "25",
+        "23",
+        "5V"
+      ]
+    },
+    {
+      "id": "icsp",
+      "label": "ICSP",
+      "x": 63.627,
+      "y": 25.4,
+      "rows": 3,
+      "cols": 2,
+      "pitch": 2.54,
+      "pins": [
+        "RESET",
+        "SCK",
+        "MISO",
+        "GND",
+        "MOSI",
+        "5V"
+      ]
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-under",
+      "label": "Solder side clearance",
+      "x": 0,
+      "y": 0,
+      "w": 101.6,
+      "h": 53.34,
+      "z": -3,
+      "height": 3
+    },
+    {
+      "id": "k-shield",
+      "label": "Shield stacking space",
+      "x": 0,
+      "y": 0,
+      "w": 101.6,
+      "h": 53.34,
+      "z": 1.6,
+      "height": 12
+    }
   ],
   "electrical": {
-    "voltage": [5, 7, 12],
+    "voltage": [
+      5,
+      7,
+      12
+    ],
     "currentTypical": 0.08,
     "currentPeak": 0.8
   },
-  "links": [{ "label": "Product page", "url": "https://docs.arduino.cc/hardware/mega-2560/" }],
-  "tags": ["arduino", "mega", "2560", "microcontroller"]
+  "links": [
+    {
+      "label": "Product page",
+      "url": "https://docs.arduino.cc/hardware/mega-2560/"
+    },
+    {
+      "label": "Eagle design files",
+      "url": "https://www.arduino.cc/en/uploads/Main/arduino-mega2560_R3-reference-design.zip"
+    }
+  ],
+  "tags": [
+    "arduino",
+    "mega",
+    "2560",
+    "microcontroller"
+  ]
 }

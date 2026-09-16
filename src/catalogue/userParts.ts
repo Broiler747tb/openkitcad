@@ -173,18 +173,28 @@ export function draftProblems(draft: PartDraft): { blocking: string[]; warnings:
   return { blocking, warnings }
 }
 
+type BoardOutline = Extract<CataloguePart['geometry'], { kind: 'board' }>['outline']
+
+function outlineSize(outline: BoardOutline): { w: number; h: number } {
+  if (outline.shape === 'rect') return { w: outline.w, h: outline.h }
+  const xs = outline.points.map(([x]) => x)
+  const ys = outline.points.map(([, y]) => y)
+  return { w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys) }
+}
+
 export function partToDraft(part: CataloguePart): PartDraft | null {
   const g = part.geometry
-  if (g.kind !== 'board' || g.outline.shape !== 'rect') return null
+  if (g.kind !== 'board') return null
+  const size = outlineSize(g.outline)
   return {
     name: part.name,
     category: part.category,
     manufacturer: part.manufacturer ?? '',
     summary: part.summary,
-    width: g.outline.w,
-    depth: g.outline.h,
+    width: size.w,
+    depth: size.h,
     thickness: g.thickness,
-    cornerRadius: g.outline.cornerRadius ?? 0,
+    cornerRadius: g.outline.shape === 'rect' ? (g.outline.cornerRadius ?? 0) : 0,
     holes: (part.mountingHoles ?? []).map((hole) => ({ ...hole })),
     confidence: part.confidence,
     source: part.source,
@@ -196,8 +206,21 @@ export function partToDraft(part: CataloguePart): PartDraft | null {
 export function editedPart(base: CataloguePart, draft: PartDraft, id = base.id): CataloguePart {
   const made = draftToPart(draft)
   const bumps = base.geometry.kind === 'board' ? base.geometry.bumps : undefined
+  const shape = base.geometry.kind === 'board' ? base.geometry.outline : undefined
+  const size = shape && outlineSize(shape)
+  const keepShape =
+    shape?.shape === 'poly' &&
+    !!size &&
+    Math.abs(size.w - draft.width) < 1e-6 &&
+    Math.abs(size.h - draft.depth) < 1e-6
   const geometry =
-    made.geometry.kind === 'board' && bumps?.length ? { ...made.geometry, bumps } : made.geometry
+    made.geometry.kind === 'board'
+      ? {
+          ...made.geometry,
+          ...(keepShape && shape ? { outline: shape } : {}),
+          ...(bumps?.length ? { bumps } : {}),
+        }
+      : made.geometry
   const links = [
     ...(base.links ?? []).filter((link) => link.label !== 'Datasheet'),
     ...(made.links ?? []),
