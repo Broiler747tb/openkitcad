@@ -34,6 +34,9 @@ names, and a broken reference is a timeline error.
 manipulators (§7), every existing command migrated to it, a draggable marker, reordering with
 dependency checks, groups, editing in place.
 
+**S: sketch parity.** Profiles from regions, Fusion's sketch tools with heads-up input, the
+constraint panel, placed dimensions, the modify tools and projection (§8).
+
 ## 3. Document model v2
 
 Types live in `src/doc/types.ts`. Pure helpers every layer shares live in `src/doc/model.ts`
@@ -262,7 +265,51 @@ Suppress Features, Roll History Marker Here, Group Selected and Delete. Groups a
 them. Failed steps are red, warnings amber, rolled-back and suppressed steps faded, and while a step
 is being edited the steps after it fade too.
 
-## 8. How the work is done
+## 8. Sketch (S)
+
+**Regions and profiles.** `src/sketch/regions.ts` builds a planar arrangement of every
+non-construction curve: curves split where they cross, touch or end on each other, dangling pieces
+are pruned, faces are traced with the clockwise-next rule, bridges drop out and islands nest as holes
+of the smallest face around them. A region's key is its sorted piece labels, each label naming the
+entity and the causes of both of its ends, so keys survive dimension changes and only change when
+topology does. A region is solid when an even number of hole rings enclose it. Extrude and Revolve
+store `profiles` (region keys); without them the step uses every solid region. The union of picked
+regions is traced from the half-edges no other picked region shares, contiguous pieces of one entity
+are joined back together, and a key that no longer exists fails the step. The kernel builds each
+loop from exact curves: segments, circular and elliptical arcs trimmed by parameter, B-spline
+segments cut with `Segment`, full circles and ellipses as one periodic edge. Side faces are named by
+piece: `feature:side:entity` when a piece is the whole entity, `feature:side:entity[start|end]`
+when it is part of one.
+
+**Viewport.** Visible sketches draw as thin lines with their profiles shaded; a command that takes
+profiles hovers and toggles them, and picking a sketch in the Browser means all of its solid
+profiles until a single profile is clicked. A step that uses a sketch hides it. Show Profile shades
+the active sketch too.
+
+**Tools.** `src/sketch/tools` is one framework for every drawing tool: a spec has click prompts, a
+`frame` that turns the state and the snapped cursor into preview curves and heads-up fields, and a
+`build` that writes entities and constraints through a writer that also adds the constraint for
+whatever the click snapped to. Typed values lock a field, Tab moves on, Enter places, and locked
+values become dimensions. Lines chain until the loop closes. Tools stay active until Escape.
+
+**Constraints and dimensions.** The CONSTRAINTS panel applies to the selection or waits for the picks
+it needs (`src/sketch/constraintTools.ts`). Glyphs are selectable and Delete removes them. Sketch
+Dimension picks geometry, follows the cursor to choose aligned, horizontal or vertical, and places the
+dimension where it is clicked with an inline value box (`src/sketch/dimensions.ts`). Dimensions keep
+their label spot in `at`, draw extension lines and arrows at constant screen size and drag without a
+rebuild, because `at` is left out of the cache key.
+
+**Modify.** Trim, Extend and Break work on every curve kind and pin new ends to the curve they met
+(`src/sketch/modify.ts`); splines are cut exactly into control point pieces. Offset walks connected
+chains and rebuilds their corners (`src/sketch/offset.ts`). Mirror copies across a picked line with
+symmetry constraints; Move/Copy, Sketch Scale and the patterns act on the selection. Project brings a
+body edge, or every edge of a face, in as fixed lines, circles, arcs or splines; it is a copy, not a
+link.
+
+**Rebuilds.** Edits inside the active sketch update only the sketch. The model rebuilds once when the
+sketch is finished.
+
+## 9. How the work is done
 
 - Agents never start other agents or workflows.
 - New and rewritten code has no comments. Touched files are formatted with Prettier.
@@ -285,3 +332,8 @@ is being edited the steps after it fade too.
   tool before OK. Double-click the first extrude on the timeline, change its distance and OK. Drag
   the marker back one step and forward again, drag a step to a new place, try to drag a fillet
   before its body and see it refused, group two steps and expand the group.
+- **S smoke test.** On XY draw a 40 x 30 rectangle by typing both sizes, a circle across its right
+  edge and a line through it, trim the part of the circle inside the rectangle, fillet one corner and
+  dimension the line. Finish the sketch, extrude two of the regions and check the preview only covers
+  those two. Sketch on the top face, project the face, offset it 3 mm inward and extrude the ring as a
+  cut. Undo back through every step.
