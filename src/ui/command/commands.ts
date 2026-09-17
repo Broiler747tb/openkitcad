@@ -22,9 +22,10 @@ import {
   pressPullCommand,
   shellCommand,
   shellEditCommand,
+  lidEditCommand,
 } from './specs/modify'
 import { holeCommand, pointOnFace, ventCommand } from './specs/placed'
-import { FIT_COMMANDS, fitEditOptions, fitStartOptions } from './specs/fit'
+import { classGap, FIT_COMMANDS, fitEditOptions, fitStartOptions } from './specs/fit'
 import { boxCommand, cylinderCommand, sphereCommand, torusCommand } from './specs/primitives'
 import { operationValues, planeValues, profilePicksOf, resultIds } from './specs/shared'
 import { extrudeCommand, revolveCommand } from './specs/sketchBased'
@@ -264,7 +265,7 @@ function startOptions(id: string): CommandStart {
     }
     case 'shell':
     case 'hollow':
-      return { initial: { faces } }
+      return { initial: { faces, clearance: classGap(doc, 'snug') } }
     case 'combine':
       return { initial: { target: bodies } }
     case 'move':
@@ -612,6 +613,37 @@ function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, Comma
         },
       ]
     }
+    case 'lid':
+      return [
+        spec(lidEditCommand),
+        {
+          initial: {
+            thickness: feature.thickness,
+            fit: feature.fit,
+            fitClass: feature.fitClass ?? 'custom',
+            clearance: feature.clearance,
+            ...(feature.hooks
+              ? {
+                  hookCount: String(feature.hooks.count),
+                  hookLength: feature.hooks.length,
+                  hookThickness: feature.hooks.thickness,
+                  hookWidth: feature.hooks.width,
+                  hookDepth: feature.hooks.hookDepth,
+                  retention: feature.hooks.retention,
+                  material: feature.hooks.material,
+                  through: feature.hooks.through,
+                }
+              : {}),
+            ...(feature.hinge
+              ? {
+                  hingeSide: feature.hinge.side,
+                  knuckles: feature.hinge.knuckles,
+                  knuckleDiameter: feature.hinge.diameter,
+                }
+              : {}),
+          },
+        },
+      ]
     case 'shell':
       return [
         spec(shellEditCommand),

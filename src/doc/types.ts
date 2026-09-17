@@ -229,7 +229,26 @@ export interface VentFeature extends FeatureBase {
   depth: 'through' | number
 }
 
-export type LidFit = 'friction' | 'ledge' | 'snap'
+export type LidFit = 'friction' | 'ledge' | 'snap' | 'hooks' | 'hinge'
+
+export type LidSide = 'back' | 'front' | 'left' | 'right'
+
+export interface LidHooks {
+  count: number
+  length: number
+  thickness: number
+  width: number
+  hookDepth: number
+  retention: SnapRetention
+  material: SnapMaterial
+  through: boolean
+}
+
+export interface LidHinge {
+  side: LidSide
+  knuckles: number
+  diameter: number
+}
 
 export interface LidFeature extends FeatureBase {
   kind: 'lid'
@@ -238,6 +257,9 @@ export interface LidFeature extends FeatureBase {
   thickness: number
   clearance: number
   fit: LidFit
+  fitClass?: FitClass
+  hooks?: LidHooks
+  hinge?: LidHinge
   result: NewBodyOperation
 }
 

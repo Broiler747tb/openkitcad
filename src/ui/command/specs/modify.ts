@@ -4,11 +4,18 @@ import type {
   DraftFeature,
   Feature,
   FilletFeature,
+  LidFeature,
   LidFit,
+  LidSide,
+  LidSocketFeature,
   MoveFeature,
   OffsetFaceFeature,
+  OkcDocument,
   ShellFeature,
+  SnapMaterial,
+  SnapRetention,
 } from '../../../doc/types'
+import { isFitClass, linkFitClass, SNAP_MATERIALS } from '../../../doc/fits'
 import { v3 } from '../../../core/math'
 import { findBody } from '../../../doc/model'
 import { useStore } from '../../../doc/store'
@@ -17,8 +24,11 @@ import {
   type AnyCommandSpec,
   type CommandContext,
   type CommandHandle,
+  type CommandValue,
+  type LooseCommandValues,
   type SelectionPick,
 } from '../types'
+import { classGap, FIT_OPTIONS, RETENTIONS } from './fit'
 import { bodyIdsOf, componentOfBody, planeOf, singleBody } from './shared'
 
 const EDGES_INPUT = {
@@ -186,6 +196,270 @@ function shellFeature(
   }
 }
 
+const LID_FITS = [
+  {
+    value: 'ledge',
+    label: 'Rests on a ledge',
+    hint: 'A step is cut into the wall so the lid sits on it and cannot fall through.',
+  },
+  {
+    value: 'snap',
+    label: 'Snaps in',
+    hint: 'A thin skirt with a ridge clicks into a groove in the wall. Needs walls of about 2 mm.',
+  },
+  {
+    value: 'hooks',
+    label: 'Snap hooks',
+    hint: 'Springy hooks under the lid click into catches cut in the walls.',
+  },
+  {
+    value: 'hinge',
+    label: 'Hinged',
+    hint: 'The lid swings open on a hinge printed in place along one side.',
+  },
+  {
+    value: 'friction',
+    label: 'Just drops in',
+    hint: 'Nothing holds it but the fit. It lifts straight out.',
+  },
+]
+
+const LID_SIDES = [
+  { value: 'back', label: 'Back', hint: 'The side facing +Y.' },
+  { value: 'front', label: 'Front', hint: 'The side facing -Y.' },
+  { value: 'left', label: 'Left', hint: 'The side facing -X.' },
+  { value: 'right', label: 'Right', hint: 'The side facing +X.' },
+]
+
+const SEAT_NAMES: Record<Exclude<LidFit, 'friction'>, string> = {
+  ledge: 'Ledge for the lid',
+  snap: 'Groove for the lid',
+  hooks: 'Catches for the lid',
+  hinge: 'Hinge for the lid',
+}
+
+function lidInputs(shown: (values: LooseCommandValues) => boolean) {
+  const hooks = (values: LooseCommandValues) => shown(values) && values.fit === 'hooks'
+  const hinge = (values: LooseCommandValues) => shown(values) && values.fit === 'hinge'
+  return [
+    {
+      id: 'fit',
+      kind: 'choice',
+      label: 'Lid Fit',
+      options: LID_FITS,
+      default: 'ledge',
+      visible: shown,
+    },
+    {
+      id: 'fitClass',
+      kind: 'choice',
+      label: 'Fit',
+      hint: 'How tight the lid goes in. Each class takes its gap from your printer fit table.',
+      options: FIT_OPTIONS,
+      default: 'snug',
+      visible: shown,
+    },
+    {
+      id: 'clearance',
+      kind: 'length',
+      label: 'Lid Gap',
+      hint: 'The gap left all round the lid so it fits.',
+      default: 0.2,
+      min: 0,
+      max: 5,
+      field: 'clearance',
+      visible: shown,
+    },
+    {
+      id: 'hookCount',
+      kind: 'choice',
+      label: 'Hooks',
+      options: [
+        { value: '2', label: 'Two', hint: 'One in the middle of each long side.' },
+        { value: '4', label: 'Four', hint: 'One in the middle of every side.' },
+      ],
+      default: '2',
+      display: 'buttons',
+      visible: hooks,
+    },
+    {
+      id: 'hookLength',
+      kind: 'length',
+      label: 'Arm Length',
+      hint: 'How far each arm hangs below the lid. Longer bends more gently.',
+      default: 12,
+      min: 0,
+      exclusiveMin: true,
+      visible: hooks,
+    },
+    {
+      id: 'hookThickness',
+      kind: 'length',
+      label: 'Arm Thickness',
+      default: 1.6,
+      min: 0,
+      exclusiveMin: true,
+      visible: hooks,
+    },
+    {
+      id: 'hookWidth',
+      kind: 'length',
+      label: 'Arm Width',
+      default: 6,
+      min: 0,
+      exclusiveMin: true,
+      visible: hooks,
+    },
+    {
+      id: 'hookDepth',
+      kind: 'length',
+      label: 'Hook Depth',
+      hint: 'How far each hook reaches into the wall. Has to be more than the lid gap.',
+      default: 1,
+      min: 0,
+      exclusiveMin: true,
+      visible: hooks,
+    },
+    {
+      id: 'retention',
+      kind: 'choice',
+      label: 'Catch',
+      options: RETENTIONS,
+      default: 'removable',
+      display: 'buttons',
+      visible: hooks,
+    },
+    {
+      id: 'material',
+      kind: 'choice',
+      label: 'Material',
+      hint: 'Sets how far the arms may bend before they risk cracking.',
+      options: SNAP_MATERIALS.map(({ value, label, hint }) => ({ value, label, hint })),
+      default: 'petg',
+      visible: hooks,
+    },
+    {
+      id: 'through',
+      kind: 'toggle',
+      label: 'Window Through Wall',
+      hint: 'Cut the catches right through, so the hooks can be pressed from outside to open the lid.',
+      default: false,
+      visible: hooks,
+    },
+    {
+      id: 'hingeSide',
+      kind: 'choice',
+      label: 'Hinge Side',
+      options: LID_SIDES,
+      default: 'back',
+      visible: hinge,
+    },
+    {
+      id: 'knuckles',
+      kind: 'integer',
+      label: 'Knuckles',
+      default: 5,
+      min: 2,
+      max: 15,
+      visible: hinge,
+    },
+    {
+      id: 'knuckleDiameter',
+      kind: 'length',
+      label: 'Knuckle Diameter',
+      default: 5,
+      min: 0,
+      exclusiveMin: true,
+      visible: hinge,
+    },
+  ] as const
+}
+
+function lidDetails(values: LooseCommandValues) {
+  const fit = values.fit as LidFit
+  return {
+    clearance: values.clearance as number,
+    fit,
+    ...(isFitClass(values.fitClass) ? { fitClass: values.fitClass } : {}),
+    ...(fit === 'hooks'
+      ? {
+          hooks: {
+            count: Number(values.hookCount),
+            length: values.hookLength as number,
+            thickness: values.hookThickness as number,
+            width: values.hookWidth as number,
+            hookDepth: values.hookDepth as number,
+            retention: values.retention as SnapRetention,
+            material: values.material as SnapMaterial,
+            through: values.through as boolean,
+          },
+        }
+      : {}),
+    ...(fit === 'hinge'
+      ? {
+          hinge: {
+            side: values.hingeSide as LidSide,
+            knuckles: values.knuckles as number,
+            diameter: values.knuckleDiameter as number,
+          },
+        }
+      : {}),
+  }
+}
+
+function seatFor(lid: LidFeature, context: CommandContext): LidSocketFeature | null {
+  if (lid.fit === 'friction') return null
+  return {
+    id: context.id('seat'),
+    kind: 'lidSocket',
+    name: SEAT_NAMES[lid.fit],
+    componentId: lid.componentId,
+    bodyId: lid.sourceBodyId,
+    lidFeatureId: lid.id,
+  }
+}
+
+function deriveLid(
+  values: LooseCommandValues,
+  changed: string,
+  context: CommandContext,
+): Record<string, CommandValue> | null {
+  if (changed === 'fitClass' && isFitClass(values.fitClass)) {
+    return { clearance: classGap(context.doc, values.fitClass) }
+  }
+  if (
+    changed === 'clearance' &&
+    isFitClass(values.fitClass) &&
+    Math.abs((values.clearance as number) - classGap(context.doc, values.fitClass)) > 1e-9
+  ) {
+    return { fitClass: 'custom' }
+  }
+  if (changed === 'fit') {
+    const wanted = values.fit === 'hinge' ? 'loose' : 'snug'
+    if (values.fitClass === (values.fit === 'hinge' ? 'snug' : 'loose')) {
+      return { fitClass: wanted, clearance: classGap(context.doc, wanted) }
+    }
+  }
+  return null
+}
+
+function linkLid(doc: OkcDocument, features: Feature[], values: LooseCommandValues) {
+  const lid = features.find((feature) => feature.kind === 'lid')
+  if (!lid) return
+  const fit = isFitClass(values.fitClass) ? values.fitClass : undefined
+  linkFitClass(doc, lid.id, fit, fit ? classGap(doc, fit) : 0, 'clearance')
+  const defaults: string[] = Object.values(SEAT_NAMES)
+  for (const feature of doc.timeline) {
+    if (
+      feature.kind === 'lidSocket' &&
+      feature.lidFeatureId === lid.id &&
+      lid.fit !== 'friction' &&
+      defaults.includes(feature.name)
+    )
+      feature.name = SEAT_NAMES[lid.fit]
+  }
+}
+
 export const shellCommand = defineCommand({
   id: 'shell',
   label: 'Shell',
@@ -200,39 +474,7 @@ export const shellCommand = defineCommand({
       label: 'Make a Lid',
       hint: 'Also make a separate lid that closes the first opening.',
     },
-    {
-      id: 'fit',
-      kind: 'choice',
-      label: 'Lid Fit',
-      options: [
-        {
-          value: 'ledge',
-          label: 'Rests on a ledge',
-          hint: 'A step is cut into the wall so the lid sits on it and cannot fall through.',
-        },
-        {
-          value: 'snap',
-          label: 'Snaps in',
-          hint: 'A thin skirt with a ridge clicks into a groove in the wall. Needs walls of about 2 mm.',
-        },
-        {
-          value: 'friction',
-          label: 'Just drops in',
-          hint: 'Nothing holds it but the fit. It lifts straight out.',
-        },
-      ],
-      default: 'ledge',
-      visible: (values) => values.lid === true,
-    },
-    {
-      id: 'clearance',
-      kind: 'length',
-      label: 'Lid Gap',
-      hint: 'The gap left all round the lid so it fits.',
-      default: 0.2,
-      min: 0,
-      visible: (values) => values.lid === true,
-    },
+    ...lidInputs((values) => values.lid === true),
   ],
   validate(values, context) {
     return singleBody(context.doc, values.faces, 'faces')
@@ -241,35 +483,59 @@ export const shellCommand = defineCommand({
     const shell = shellFeature(values, context)
     const features: Feature[] = [shell]
     if (!values.lid) return features
-    const lidId = context.id('lid')
-    const fit = values.fit as LidFit
-    features.push({
-      id: lidId,
+    const lid: LidFeature = {
+      id: context.id('lid'),
       kind: 'lid',
       name: 'Lid',
       componentId: shell.componentId,
       sourceBodyId: shell.bodyId,
       shellFeatureId: shell.id,
       thickness: values.thickness,
-      clearance: values.clearance,
-      fit,
+      ...lidDetails(values),
       result: { kind: 'newBody', bodyId: context.id('lidBody') },
-    })
-    if (fit !== 'friction') {
-      features.push({
-        id: context.id('seat'),
-        kind: 'lidSocket',
-        name: fit === 'ledge' ? 'Ledge for the lid' : 'Groove for the lid',
-        componentId: shell.componentId,
-        bodyId: shell.bodyId,
-        lidFeatureId: lidId,
-      })
     }
-    return features
+    const seat = seatFor(lid, context)
+    return seat ? [...features, lid, seat] : [...features, lid]
   },
+  derive: deriveLid,
+  adjust: (doc, features, _context, values) => linkLid(doc, features, values),
   handles(values, context) {
     return thicknessHandles(context, values.faces)
   },
+})
+
+export const lidEditCommand = defineCommand({
+  id: 'lid',
+  label: 'Lid',
+  hint: 'The lid made when hollowing out, and how it holds on.',
+  icon: '▭',
+  inputs: [
+    {
+      id: 'thickness',
+      kind: 'length',
+      label: 'Lid Thickness',
+      default: 2,
+      min: 0,
+      exclusiveMin: true,
+      field: 'thickness',
+    },
+    ...lidInputs(() => true),
+  ],
+  build(values, context) {
+    const editing = context.editing
+    if (editing?.kind !== 'lid') return []
+    const lid: LidFeature = { ...editing, thickness: values.thickness, ...lidDetails(values) }
+    if (lid.fit !== 'hooks') delete lid.hooks
+    if (lid.fit !== 'hinge') delete lid.hinge
+    if (!isFitClass(values.fitClass)) delete lid.fitClass
+    const seated = context.doc.timeline.some(
+      (feature) => feature.kind === 'lidSocket' && feature.lidFeatureId === editing.id,
+    )
+    const seat = seated ? null : seatFor(lid, context)
+    return seat ? [lid, seat] : [lid]
+  },
+  derive: deriveLid,
+  adjust: (doc, features, _context, values) => linkLid(doc, features, values),
 })
 
 export const shellEditCommand = defineCommand({

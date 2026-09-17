@@ -31,6 +31,8 @@ import type {
   HingeFeature,
   LipGrooveFeature,
   SnapFitFeature,
+  SnapMaterial,
+  SnapRetention,
   SnapRingFeature,
 } from '../doc/types'
 import {
@@ -103,7 +105,7 @@ function localFrame(frame: Frame, position: Vec2, angle: number): Frame {
   }
 }
 
-function place(shape: any, frame: Frame): any {
+export function place(shape: any, frame: Frame): any {
   const oc = getOC() as any
   const { xDir: x, yDir: y, normal: z, origin: o } = frame
   const trsf = new oc.gp_Trsf_1()
@@ -300,7 +302,7 @@ function roundFace(
   }
 }
 
-function positive(stage: SolidStage, values: Record<string, number>): boolean {
+function positive(stage: Pick<SolidStage, 'report'>, values: Record<string, number>): boolean {
   const bad = Object.entries(values).filter(([, value]) => !(value > 0))
   if (!bad.length) return true
   stage.report(
@@ -310,7 +312,7 @@ function positive(stage: SolidStage, values: Record<string, number>): boolean {
   return false
 }
 
-function gapOk(stage: SolidStage, gap: number): boolean {
+function gapOk(stage: Pick<SolidStage, 'report'>, gap: number): boolean {
   if (gap >= 0 && gap <= 5) return true
   stage.report('error', 'The gap has to be between 0 and 5 mm.')
   return false
@@ -320,56 +322,113 @@ function mateShape(stage: SolidStage, feature: FitFeature): any {
   return feature.mateBodyId ? (stage.bodies.get(feature.mateBodyId)?.shape ?? null) : null
 }
 
-function snapFitGeometry(stage: SolidStage, feature: SnapFitFeature): FitGeometry | null {
-  const { thickness: t, width: w, length: l, hookDepth: h, gap: g } = feature
+export interface HookSize {
+  length: number
+  thickness: number
+  width: number
+  hookDepth: number
+  retention: SnapRetention
+}
+
+export function hookArmEnd(size: HookSize): number {
+  const back = size.retention === 'removable' ? size.hookDepth : 0
+  return size.length - size.hookDepth / LEAD - SNAP_LAND - back
+}
+
+export function checkHook(
+  stage: Pick<SolidStage, 'report'>,
+  size: HookSize & { material: SnapMaterial },
+  gap: number,
+): boolean {
+  const { thickness: t, width: w, length: l, hookDepth: h } = size
   if (
     !positive(stage, { Length: l, Thickness: t, Width: w, 'Hook depth': h }) ||
-    !gapOk(stage, g)
+    !gapOk(stage, gap)
   ) {
-    return null
+    return false
   }
-  const lead = h / LEAD
-  const back = feature.retention === 'removable' ? h : 0
-  const armEnd = l - lead - SNAP_LAND - back
-  if (armEnd < t) {
+  const back = size.retention === 'removable' ? h : 0
+  if (hookArmEnd(size) < t) {
     stage.report(
       'error',
       'The arm is too short for a hook this deep.',
-      `Make it at least ${(lead + SNAP_LAND + back + t).toFixed(1)} mm long, or the hook shallower.`,
+      `Make it at least ${(h / LEAD + SNAP_LAND + back + t).toFixed(1)} mm long, or the hook shallower.`,
     )
-    return null
+    return false
   }
-  const strain = snapStrain(feature)
-  const limit = snapStrainLimit(feature.material)
+  const strain = snapStrain(size)
+  const limit = snapStrainLimit(size.material)
   if (strain > limit) {
-    const material = SNAP_MATERIALS.find((entry) => entry.value === feature.material)?.label
+    const material = SNAP_MATERIALS.find((entry) => entry.value === size.material)?.label
     stage.report(
       'warning',
       `This hook bends ${(strain * 100).toFixed(1)}% as it clicks in, more than ${material ?? 'the plastic'} takes (${(limit * 100).toFixed(0)}%), so it may crack.`,
-      `Make the arm at least ${shortestSnapArm(feature).toFixed(1)} mm long, thinner, or the hook shallower.`,
+      `Make the arm at least ${shortestSnapArm(size).toFixed(1)} mm long, thinner, or the hook shallower.`,
     )
   }
+  return true
+}
+
+export function hookSolids(
+  frame: Frame,
+  size: HookSize,
+  gap: number,
+  depth: number,
+  outerRoot: boolean,
+): { arm: any; cuts: any[] } {
+  const { thickness: t, width: w, length: l, hookDepth: h } = size
+  const g = gap
+  const back = size.retention === 'removable' ? h : 0
+  const armEnd = hookArmEnd(size)
   const root = Math.min(t * 0.5, armEnd * 0.3)
-  const frame = localFrame(stage.planeOf(feature.plane), feature.position, feature.angle)
-  const arm = place(
-    prismAcross(
-      [
+  const tip: Profile = [
+    [0, armEnd],
+    [h, armEnd + back],
+    [h, armEnd + back + SNAP_LAND],
+    [0, l],
+    [-t, l],
+    [-t, root],
+    [-t - root, 0],
+  ]
+  const foot: Profile = outerRoot
+    ? [
         [-t - root, -EMBED],
         [root, -EMBED],
         [root, 0],
         [0, root],
-        [0, armEnd],
-        [h, armEnd + back],
-        [h, armEnd + back + SNAP_LAND],
-        [0, l],
-        [-t, l],
-        [-t, root],
-        [-t - root, 0],
-      ],
-      w,
-    ),
-    frame,
-  )
+      ]
+    : [
+        [-t - root, -EMBED],
+        [0, -EMBED],
+      ]
+  const arm = place(prismAcross([...foot, ...tip], w), frame)
+  const cuts = [
+    place(makeBox([-t - root - h - g, -w / 2 - g, -EMBED], [g, w / 2 + g, l + g]), frame),
+  ]
+  if (outerRoot) {
+    cuts.push(
+      place(
+        prismAcross(
+          [
+            [-g, -EMBED],
+            [root + 2 * g + EMBED, -EMBED],
+            [-g, root + 3 * g],
+          ],
+          w + 2 * g,
+        ),
+        frame,
+      ),
+    )
+  }
+  cuts.push(place(makeBox([-g, -w / 2 - g, armEnd - g], [depth, w / 2 + g, l + g]), frame))
+  return { arm, cuts }
+}
+
+function snapFitGeometry(stage: SolidStage, feature: SnapFitFeature): FitGeometry | null {
+  const { length: l, hookDepth: h, gap: g } = feature
+  if (!checkHook(stage, feature, g)) return null
+  const armEnd = hookArmEnd(feature)
+  const frame = localFrame(stage.planeOf(feature.plane), feature.position, feature.angle)
   const mate = mateShape(stage, feature)
   let depth = h + g
   if (mate) {
@@ -388,25 +447,10 @@ function snapFitGeometry(stage: SolidStage, feature: SnapFitFeature): FitGeometr
       depth = Math.max(depth, span[1] + 0.5)
     }
   }
-  const clearance = place(
-    makeBox([-t - root - h - g, -w / 2 - g, -EMBED], [g, w / 2 + g, l + g]),
-    frame,
-  )
-  const notch = place(
-    prismAcross(
-      [
-        [-g, -EMBED],
-        [root + 2 * g + EMBED, -EMBED],
-        [-g, root + 3 * g],
-      ],
-      w + 2 * g,
-    ),
-    frame,
-  )
-  const window = place(makeBox([-g, -w / 2 - g, armEnd - g], [depth, w / 2 + g, l + g]), frame)
+  const { arm, cuts } = hookSolids(frame, feature, g, depth, true)
   return {
     male: [{ kind: 'fuse', solids: [arm] }],
-    mate: [{ kind: 'cut', solids: [clearance, notch, window] }],
+    mate: [{ kind: 'cut', solids: cuts }],
   }
 }
 
@@ -877,26 +921,59 @@ function bayonetGeometry(stage: SolidStage, feature: BayonetFeature): FitGeometr
   }
 }
 
-function hingeGeometry(stage: SolidStage, feature: HingeFeature): FitGeometry | null {
-  const { length: l, diameter, gap: g } = feature
-  const knuckles = Math.round(feature.knuckles)
-  if (!positive(stage, { Length: l, Diameter: diameter }) || !gapOk(stage, g)) return null
+export interface HingeSize {
+  length: number
+  knuckles: number
+  diameter: number
+}
+
+export interface HingeKnuckles {
+  solids: any[]
+  clearances: any[]
+  cones: any[]
+  sockets: any[]
+}
+
+function hingeCone(size: HingeSize): number {
+  return Math.min((size.diameter / 2) * 0.45, (size.length / Math.round(size.knuckles)) * 0.35)
+}
+
+export function checkHinge(
+  stage: Pick<SolidStage, 'report'>,
+  size: HingeSize,
+  gap: number,
+): boolean {
+  const knuckles = Math.round(size.knuckles)
+  if (!positive(stage, { Length: size.length, Diameter: size.diameter }) || !gapOk(stage, gap)) {
+    return false
+  }
   if (!(knuckles >= 2 && knuckles <= 15)) {
     stage.report('error', 'Use between 2 and 15 knuckles.')
-    return null
+    return false
   }
-  const pitch = l / knuckles
-  const radius = diameter / 2
-  const cone = Math.min(radius * 0.45, pitch * 0.35)
-  if (pitch < 2 * g + 2 * cone || cone < 0.4) {
+  const cone = hingeCone(size)
+  if (size.length / knuckles < 2 * gap + 2 * cone || cone < 0.4) {
     stage.report(
       'error',
       'The knuckles are too short for this diameter and gap.',
       'Use fewer knuckles, a longer hinge, or a smaller gap.',
     )
-    return null
+    return false
   }
-  const frame = localFrame(stage.planeOf(feature.plane), feature.position, feature.angle)
+  return true
+}
+
+export function hingeSolids(
+  frame: Frame,
+  size: HingeSize,
+  gap: number,
+): { mine: HingeKnuckles; theirs: HingeKnuckles } {
+  const l = size.length
+  const g = gap
+  const knuckles = Math.round(size.knuckles)
+  const pitch = l / knuckles
+  const radius = size.diameter / 2
+  const cone = hingeCone(size)
   const coneFrame = (at: number, forward: boolean): Frame => ({
     origin: v3.add(frame.origin, v3.scale(frame.xDir, at)),
     xDir: frame.yDir,
@@ -904,7 +981,7 @@ function hingeGeometry(stage: SolidStage, feature: HingeFeature): FitGeometry | 
     normal: forward ? frame.xDir : v3.scale(frame.xDir, -1),
   })
   const reach = cone + g * Math.SQRT2
-  const knucklesOf = (own: 0 | 1) => {
+  const knucklesOf = (own: 0 | 1): HingeKnuckles => {
     const solids: any[] = []
     const clearances: any[] = []
     const cones: any[] = []
@@ -957,8 +1034,14 @@ function hingeGeometry(stage: SolidStage, feature: HingeFeature): FitGeometry | 
     }
     return { solids, clearances, cones, sockets }
   }
-  const mine = knucklesOf(0)
-  const theirs = knucklesOf(1)
+  return { mine: knucklesOf(0), theirs: knucklesOf(1) }
+}
+
+function hingeGeometry(stage: SolidStage, feature: HingeFeature): FitGeometry | null {
+  const g = feature.gap
+  if (!checkHinge(stage, feature, g)) return null
+  const frame = localFrame(stage.planeOf(feature.plane), feature.position, feature.angle)
+  const { mine, theirs } = hingeSolids(frame, feature, g)
   const male = stage.bodies.get(feature.bodyId)?.shape
   const mate = mateShape(stage, feature)
   if (male && !overlaps(male, mine.solids[0])) {

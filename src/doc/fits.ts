@@ -50,13 +50,14 @@ export function linkFitClass(
   featureId: string,
   fit: FitClass | undefined,
   printerGap: number,
+  field = 'gap',
 ): void {
   const classNames = FIT_CLASSES.map((candidate) => fitParameterName(candidate.value))
   doc.bindings = doc.bindings.filter(
     (binding) =>
       !(
         binding.featureId === featureId &&
-        binding.field === 'gap' &&
+        binding.field === field &&
         (fit || classNames.includes(binding.expression.trim()))
       ),
   )
@@ -72,7 +73,7 @@ export function linkFitClass(
       comment: `${label} fit: gap per side`,
     })
   }
-  doc.bindings.push({ featureId, field: 'gap', expression: name })
+  doc.bindings.push({ featureId, field, expression: name })
 }
 
 export const SNAP_MATERIALS: ReadonlyArray<{

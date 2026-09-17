@@ -47,12 +47,12 @@ import {
 import { pointOnFace } from './placed'
 import { componentOfBody, pickedFrame, planeValues } from './shared'
 
-const FIT_OPTIONS = [
+export const FIT_OPTIONS = [
   ...FIT_CLASSES.map(({ value, label, hint }) => ({ value, label, hint })),
   { value: 'custom', label: 'Custom', hint: 'A gap of your own, not tied to the printer table.' },
 ]
 
-const RETENTIONS = [
+export const RETENTIONS = [
   { value: 'permanent', label: 'Permanent', hint: 'A square catch. Stays shut.' },
   {
     value: 'removable',

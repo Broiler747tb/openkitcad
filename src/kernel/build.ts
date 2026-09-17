@@ -30,6 +30,7 @@ import type {
   Feature,
   HoleFeature,
   LidFeature,
+  LidSide,
   Matrix4,
   OkcDocument,
   PlaneRef,
@@ -88,11 +89,12 @@ import {
 } from './meshSteps'
 import { meshBounds, transformMesh, triangleCount, type TriMesh } from '../mesh/types'
 import { runSolidStep, type SolidStage } from './solidSteps'
-import { runFitStep } from './fitSteps'
+import { checkHinge, checkHook, hingeSolids, hookSolids, place, runFitStep } from './fitSteps'
 import { sketchChains } from '../sketch/chains'
 import { chainBlueprint } from './profile'
 
 export const CUT_MARGIN = 0.5
+const LID_EMBED = 0.2
 const THROUGH_LENGTH = 1000
 const LID_REACH = 4000
 
@@ -837,6 +839,146 @@ function wallOfShell(doc: OkcDocument, shellFeatureId: string): number | null {
   return shell?.kind === 'shell' ? Math.abs(shell.thickness) : null
 }
 
+function boundsInFrame(shape: any, frame: Frame): [number, number, number, number, number, number] {
+  const oc = occ() as any
+  const { xDir: x, yDir: y, normal: z, origin: o } = frame
+  const local = transformShape(
+    shape,
+    invertRigidMatrix([
+      x[0],
+      x[1],
+      x[2],
+      0,
+      y[0],
+      y[1],
+      y[2],
+      0,
+      z[0],
+      z[1],
+      z[2],
+      0,
+      o[0],
+      o[1],
+      o[2],
+      1,
+    ]),
+  )
+  const box = new oc.Bnd_Box_1()
+  try {
+    oc.BRepBndLib.AddOptimal(local.wrapped, box, false, false)
+    const low = box.CornerMin()
+    const high = box.CornerMax()
+    const out: [number, number, number, number, number, number] = [
+      low.X(),
+      low.Y(),
+      low.Z(),
+      high.X(),
+      high.Y(),
+      high.Z(),
+    ]
+    low.delete()
+    high.delete()
+    return out
+  } finally {
+    box.delete()
+    local.delete()
+  }
+}
+
+interface LidWall {
+  frame: Frame
+  span: number
+}
+
+function lidWalls(source: PreShell, wall: number): Record<LidSide, LidWall> & { depth: number } {
+  const [x0, y0, z0, x1, y1] = boundsInFrame(source.shape, source.frame)
+  const f = source.frame
+  const side = (x: number, y: number, along: Vec3, outward: Vec3, span: number): LidWall => ({
+    frame: { origin: frameToWorld(f, [x, y]), xDir: along, yDir: outward, normal: f.normal },
+    span: span - 2 * wall,
+  })
+  const back = v3.scale(f.xDir, -1)
+  const down = v3.scale(f.yDir, -1)
+  return {
+    back: side((x0 + x1) / 2, y1, f.xDir, f.yDir, x1 - x0),
+    front: side((x0 + x1) / 2, y0, back, down, x1 - x0),
+    right: side(x1, (y0 + y1) / 2, down, f.xDir, y1 - y0),
+    left: side(x0, (y0 + y1) / 2, f.yDir, back, y1 - y0),
+    depth: -z0 - wall,
+  }
+}
+
+function offsetFrame3(frame: Frame, along: number, outward: number, up: number): Vec3 {
+  return v3.add(
+    frame.origin,
+    v3.add(
+      v3.add(v3.scale(frame.xDir, along), v3.scale(frame.yDir, outward)),
+      v3.scale(frame.normal, up),
+    ),
+  )
+}
+
+function lidHookFrames(lid: LidFeature, source: PreShell, wall: number): LidWall[] {
+  const walls = lidWalls(source, wall)
+  const t = Math.abs(lid.thickness)
+  const c = lid.clearance ?? 0
+  const sides: LidSide[] =
+    (lid.hooks?.count ?? 2) >= 4
+      ? ['back', 'front', 'left', 'right']
+      : walls.back.span >= walls.right.span
+        ? ['back', 'front']
+        : ['left', 'right']
+  return sides.map((name) => {
+    const { frame, span } = walls[name]
+    const down = v3.scale(frame.normal, -1)
+    return {
+      span,
+      frame: {
+        origin: offsetFrame3(frame, 0, -wall - c, -t),
+        xDir: frame.yDir,
+        yDir: v3.cross(down, frame.yDir),
+        normal: down,
+      },
+    }
+  })
+}
+
+function lidHookDepth(lid: LidFeature, wall: number): number {
+  const c = lid.clearance ?? 0
+  const h = lid.hooks?.hookDepth ?? 0
+  return lid.hooks?.through || h >= wall - 0.4 ? c + wall + 1 : h + c
+}
+
+function lidHinge(lid: LidFeature, source: PreShell, wall: number) {
+  const hinge = lid.hinge!
+  const { frame, span } = lidWalls(source, wall)[hinge.side]
+  const t = Math.abs(lid.thickness)
+  const c = lid.clearance ?? 0
+  const axis: Frame = { ...frame, origin: offsetFrame3(frame, 0, 0, -t - c / 2) }
+  return {
+    frame,
+    span,
+    size: { length: span - 2 * c, knuckles: hinge.knuckles, diameter: hinge.diameter },
+    solids: () =>
+      hingeSolids(
+        axis,
+        { length: span - 2 * c, knuckles: hinge.knuckles, diameter: hinge.diameter },
+        c,
+      ),
+  }
+}
+
+function fuseAll(solids: any[]): any | null {
+  if (!solids.length) return null
+  let out = solids[0]
+  for (const solid of solids.slice(1)) {
+    const next = out.fuse(solid)
+    if (out !== solids[0]) out.delete()
+    out = next
+  }
+  return out
+}
+
 function seatCutter(lid: LidFeature, source: PreShell, wall: number): any | null {
   const fit = lid.fit ?? 'friction'
   if (fit === 'friction') return null
@@ -847,6 +989,31 @@ function seatCutter(lid: LidFeature, source: PreShell, wall: number): any | null
     return insetSolid(source.shape, wall - prop.ledge, source.frame).intersect(
       frameSlab(source.frame, -t, 0),
     )
+  }
+  if (fit === 'hooks') {
+    if (!lid.hooks) return null
+    const cuts = lidHookFrames(lid, source, wall).flatMap(({ frame }) => {
+      const { arm, cuts } = hookSolids(frame, lid.hooks!, c, lidHookDepth(lid, wall), false)
+      arm.delete()
+      return cuts
+    })
+    return fuseAll(cuts)
+  }
+  if (fit === 'hinge') {
+    if (!lid.hinge) return null
+    const layout = lidHinge(lid, source, wall)
+    const { mine, theirs } = layout.solids()
+    for (const solid of [...mine.solids, ...mine.cones, ...mine.sockets, ...theirs.solids])
+      solid.delete()
+    for (const solid of [...theirs.clearances, ...theirs.cones, ...theirs.sockets]) solid.delete()
+    const rebate = place(
+      makeBox(
+        [-layout.span / 2, -wall - LID_EMBED, -t - c],
+        [layout.span / 2, LID_EMBED, LID_EMBED],
+      ),
+      layout.frame,
+    )
+    return fuseAll([rebate, ...mine.clearances])
   }
   return insetSolid(source.shape, wall - prop.bead, source.frame).intersect(
     frameSlab(source.frame, -(prop.bandLo + c), -(prop.bandHi - c)),
@@ -874,11 +1041,96 @@ function buildLid(lid: LidFeature, source: PreShell, wall: number, walls: any | 
     const ring = proud.cut(inner).intersect(frameSlab(source.frame, -prop.bandLo, -prop.bandHi))
     cap = cap.fuse(ring)
   }
+  if (fit === 'hooks' && lid.hooks) {
+    for (const { frame } of lidHookFrames(lid, source, wall)) {
+      const { arm, cuts } = hookSolids(frame, lid.hooks, c, lidHookDepth(lid, wall), false)
+      cap = cap.fuse(arm)
+      for (const cut of cuts) cut.delete()
+    }
+  }
+  if (fit === 'hinge' && lid.hinge) {
+    const layout = lidHinge(lid, source, wall)
+    cap = cap.fuse(
+      place(
+        makeBox([-layout.span / 2 + c, -wall - c - LID_EMBED, -t], [layout.span / 2 - c, 0, 0]),
+        layout.frame,
+      ),
+    )
+    const { mine, theirs } = layout.solids()
+    for (const clearance of theirs.clearances) cap = cap.cut(clearance)
+    for (const solid of [...mine.solids, ...mine.cones]) cap = cap.fuse(solid)
+    for (const solid of [
+      ...mine.clearances,
+      ...mine.sockets,
+      ...theirs.solids,
+      ...theirs.cones,
+      ...theirs.sockets,
+      ...theirs.clearances,
+    ])
+      solid.delete()
+  }
   if (walls) {
     const seat = seatCutter(lid, source, wall)
     cap = cap.cut(seat ? walls.cut(seat) : walls)
   }
   return cap
+}
+
+function lidProblem(
+  lid: LidFeature,
+  source: PreShell,
+  wall: number,
+  report: (severity: 'error' | 'warning', message: string, hint?: string) => void,
+): boolean {
+  const c = lid.clearance ?? 0
+  const t = Math.abs(lid.thickness)
+  if (lid.fit === 'hooks') {
+    if (!lid.hooks) {
+      report('error', 'This lid has no hooks set up.', 'Edit the lid and choose its hooks again.')
+      return true
+    }
+    if (!checkHook({ report }, lid.hooks, c)) return true
+    const walls = lidWalls(source, wall)
+    const room = walls.depth - t
+    if (lid.hooks.length > room - 0.3) {
+      report(
+        'error',
+        'The hooks are longer than the box is deep.',
+        `Make them at most ${Math.max(0, room - 0.3).toFixed(1)} mm long.`,
+      )
+      return true
+    }
+    const narrow = lidHookFrames(lid, source, wall).some(
+      ({ span }) => lid.hooks!.width + 2 * c > span - 2,
+    )
+    if (narrow) {
+      report('error', 'The hooks are wider than a wall of the box.', 'Make them narrower.')
+      return true
+    }
+    if (lid.hooks.hookDepth <= c + 0.2) {
+      report(
+        'warning',
+        'The hooks barely reach past the gap round the lid, so it may not stay shut.',
+        `Make the hooks deeper than ${(c + 0.2).toFixed(1)} mm or the gap smaller.`,
+      )
+    }
+  }
+  if (lid.fit === 'hinge') {
+    if (!lid.hinge) {
+      report('error', 'This lid has no hinge set up.', 'Edit the lid and choose its hinge again.')
+      return true
+    }
+    if (lid.hinge.diameter / 2 < t / 2 + c) {
+      report(
+        'error',
+        'The hinge is too thin to hold onto the lid.',
+        `Make the knuckles at least ${(t + 2 * c).toFixed(1)} mm across.`,
+      )
+      return true
+    }
+    if (!checkHinge({ report }, lidHinge(lid, source, wall).size, c)) return true
+  }
+  return false
 }
 
 function hintForFailure(feature: Feature, message: string): string | undefined {
@@ -1669,6 +1921,7 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
         return
       }
       const wall = wallOfShell(doc, feature.shellFeatureId) ?? Math.abs(feature.thickness)
+      if (lidProblem(feature, source, wall, stage.report)) return
       const walls = stage.bodies.get(feature.sourceBodyId)?.shape ?? null
       apply(feature.result, tool(buildLid(feature, source, wall, walls), 'lid'))
       return
@@ -1691,6 +1944,31 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
       const wall = wallOfShell(doc, lid.shellFeatureId) ?? Math.abs(lid.thickness)
       const cutter = seatCutter(lid, source, wall)
       if (cutter) cutWith(feature.bodyId, target, cutter, 'seat')
+      if (lid.fit === 'hinge' && lid.hinge) {
+        const { mine, theirs } = lidHinge(lid, source, wall).solids()
+        for (const solid of [
+          ...mine.solids,
+          ...mine.cones,
+          ...mine.clearances,
+          ...theirs.cones,
+          ...theirs.sockets,
+          ...theirs.clearances,
+        ])
+          solid.delete()
+        for (const [kind, solids, role] of [
+          ['fuse', theirs.solids, 'knuckle'],
+          ['cut', mine.sockets, 'socket'],
+        ] as const) {
+          const body = need(feature.bodyId)
+          if (!body || !solids.length) continue
+          const tools = solids.map((solid, index) => tool(solid, `${role}${index}`))
+          try {
+            combineInto(feature.bodyId, body, kind, tools)
+          } finally {
+            releaseNamed(tools)
+          }
+        }
+      }
       return
     }
 

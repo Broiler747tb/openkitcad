@@ -128,7 +128,9 @@ against every dependency in the timeline.
 - A fillet or chamfer with no edges applies to every edge of its body.
 - A `through` hole or vent cuts past the far side whatever the thickness.
 - A vent's `margin` is the solid border left round the outside.
-- A lid's `clearance` is the gap per side between the lid and the walls it drops between.
+- A lid's `clearance` is the gap per side between the lid and the walls it drops between. Its `fit`
+  is `ledge`, `snap` (a ridge skirt), `hooks`, `hinge` or `friction`; `hooks` and `hinge` carry
+  their sizes (§15).
 - Move turns the combined bounding-box centre of its bodies about X, then Y, then Z, then
   translates. It is a timeline step so that sketches drawn on a face before the move stay attached.
 - A negative body or occurrence is cut out of everything it overlaps instead of being material.
@@ -649,6 +651,19 @@ and a 0.25 mm bump that the lug clicks over at the end of the turn. Hinge: alter
 the gap line with 45° cones into matching sockets, each knuckle cleared by the gap in the other part,
 so two plates printed side by side come off the bed joined and fold flat onto each other.
 
+**Lids.** Shell's Make a Lid, and the Lid panel that reopens a lid from the timeline, offer Snap
+hooks and Hinged beside Rests on a ledge, Snaps in and Just drops in, and set the lid gap by fit
+class like the other fits (Hinged moves Snug to Loose). Both are built in the lid and seat steps from
+the shape before hollowing, with the box's outline measured in the opening's own frame. Snap hooks
+hang from the lid's underside in the middle of the two long walls, or all four, flush with the lid's
+edge and without the outer root chamfer so they never touch the wall; the seat cuts their catches
+into the walls, through them when the hook would leave less than 0.4 mm. Hooks longer than the box is
+deep, or wider than a wall, are refused, and hooks that barely reach past the gap warn. Hinged gives
+the lid a flange over one wall, lowers that wall by the lid's thickness plus the gap, and runs the
+knuckles along its top outer edge: the lid carries the end knuckles and cones, the box the rest and
+the sockets. Changing a lid's fit adds the seat step if it had none, and renames a seat that still
+has its default name.
+
 **Ribbon and tests.** A FIT group on the SOLID tab shows Snap Fit and lists all seven; the icons are
 in `src/ui/icons/fit`. `?selftest&suite=fits` builds every fit, compares volumes with hand
 calculations, intersects the two halves to prove they never overlap, checks each body is still one
@@ -723,5 +738,7 @@ an edit moving the link.
   box and use Section across the arm to see the hook in its catch. Edit the fit, make the arm 6 mm and
   read the crack warning. Put two plates side by side 0.6 mm apart, choose Print-in-place Hinge and
   click one of them near the gap: the line lands in the gap. Open fx Parameters, set Snug to 0.25,
-  press Use these gaps in this design and Apply: the snap fit rebuilds with a 0.25 mm gap. Undo back
-  through every step.
+  press Use these gaps in this design and Apply: the snap fit rebuilds with a 0.25 mm gap. Shell a
+  60 x 40 x 30 mm box through its top with Make a Lid set to Hinged and see the fit move to Loose and
+  the knuckles run along the back edge. Double-click the lid on the timeline, switch it to Snap hooks
+  and see the seat step renamed Catches for the lid. Undo back through every step.

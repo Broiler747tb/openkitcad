@@ -12,8 +12,14 @@ import { useStore } from '../doc/store'
 import { editFeature } from '../ui/command/commands'
 import { useCommand } from '../ui/command/session'
 import { classGap, FIT_COMMANDS, fitStartOptions } from '../ui/command/specs/fit'
+import { shellCommand } from '../ui/command/specs/modify'
 import { createCommandState, evaluateCommand, reduceCommand } from '../ui/command/state'
-import type { CommandContext, CommandInitialValues, SelectionPick } from '../ui/command/types'
+import type {
+  AnyCommandSpec,
+  CommandContext,
+  CommandInitialValues,
+  SelectionPick,
+} from '../ui/command/types'
 import type {
   BayonetFeature,
   Body,
@@ -22,6 +28,7 @@ import type {
   Feature,
   FitPinsFeature,
   HingeFeature,
+  LidFeature,
   LipGrooveFeature,
   OkcDocument,
   PlaneRef,
@@ -652,6 +659,130 @@ export async function runFitTest(): Promise<TestResult[]> {
         said(tight),
       )
     })
+    const lidded = (lid: Partial<LidFeature>, depth = 20): Feature[] => [
+      box('bx', 'case', [0, 0], [40, 30, depth]),
+      {
+        ...base,
+        id: 'sh',
+        name: 'Hollow',
+        kind: 'shell',
+        bodyId: 'case',
+        thickness: 2,
+        openFaces: [face('case', 'bx:+z')],
+      },
+      {
+        ...base,
+        id: 'ld',
+        name: 'Lid',
+        kind: 'lid',
+        sourceBodyId: 'case',
+        shellFeatureId: 'sh',
+        thickness: 2,
+        clearance: 0.2,
+        fit: 'friction',
+        result: { kind: 'newBody', bodyId: 'lid' },
+        ...lid,
+      } as LidFeature,
+      {
+        ...base,
+        id: 'seat',
+        name: 'Seat',
+        kind: 'lidSocket',
+        bodyId: 'case',
+        lidFeatureId: 'ld',
+      },
+    ]
+    const hooks = {
+      count: 2,
+      length: 12,
+      thickness: 1.6,
+      width: 6,
+      hookDepth: 1,
+      retention: 'removable' as const,
+      material: 'petg' as const,
+      through: false,
+    }
+
+    await check('lid hooks', async () => {
+      const result = await evaluate(doc(lidded({ fit: 'hooks', hooks }), ['case', 'lid']))
+      const lid = meshFor(result, 'lid')
+      const shell = meshFor(result, 'case')
+      const plug = 35.6 * 25.6 * 2
+      const lead = 1 / Math.tan(Math.PI / 6)
+      const armEnd = 12 - lead - 0.4 - 1
+      const armArea = 1.6 * 12 + 0.5 * 0.8 * 0.8 + 0.5 * (12 + 0.4 - armEnd)
+      const arms = 2 * 6 * armArea
+      const windows = 2 * 1 * 6.4 * (12.2 - (armEnd - 0.2))
+      const caseVolume = 40 * 30 * 20 - 36 * 26 * 18
+      add(
+        'a hollowed box can take a lid held by two snap hooks',
+        clean(result) &&
+          Math.abs((lid?.volume ?? 0) - plug - arms) < 2 &&
+          Math.abs(caseVolume - (shell?.volume ?? 0) - windows) < 2,
+        `${said(result)}; lid ${lid?.volume.toFixed(1)} of ${(plug + arms).toFixed(1)}, catches ${(caseVolume - (shell?.volume ?? 0)).toFixed(1)} of ${windows.toFixed(1)}`,
+      )
+      add(
+        'the hooked lid and the box are one piece each and never touch',
+        piecesOf(lid) === 1 &&
+          piecesOf(shell) === 1 &&
+          (await overlap(lidded({ fit: 'hooks', hooks }), ['case', 'lid'], 'lid', 'case')).volume <
+            0.01,
+        `${piecesOf(lid)} and ${piecesOf(shell)} pieces`,
+      )
+      const four = await evaluate(
+        doc(lidded({ fit: 'hooks', hooks: { ...hooks, count: 4 } }), ['case', 'lid']),
+      )
+      add(
+        'four hooks put one on every side',
+        clean(four) && Math.abs((meshFor(four, 'lid')?.volume ?? 0) - plug - 2 * arms) < 3,
+        `${said(four)}; lid ${meshFor(four, 'lid')?.volume.toFixed(1)}`,
+      )
+      const shallow = await evaluate(doc(lidded({ fit: 'hooks', hooks }, 8), ['case', 'lid']))
+      add(
+        'hooks longer than the box is deep are refused',
+        problems(shallow, 'error').some((e) => e.message.includes('longer than the box is deep')),
+        said(shallow),
+      )
+    })
+
+    await check('lid hinge', async () => {
+      const hinged = lidded({
+        fit: 'hinge',
+        clearance: 0.45,
+        hinge: { side: 'back', knuckles: 5, diameter: 5 },
+      })
+      const result = await evaluate(doc(hinged, ['case', 'lid']))
+      const lid = meshFor(result, 'lid')
+      const shell = meshFor(result, 'case')
+      add(
+        'a hollowed box can take a lid on a print-in-place hinge',
+        clean(result) && (lid?.bounds[4] ?? 0) > 30 + 1.5 && (shell?.bounds[4] ?? 0) > 30 + 1.5,
+        `${said(result)}; knuckles reach y ${lid?.bounds[4].toFixed(2)} and ${shell?.bounds[4].toFixed(2)}`,
+      )
+      add(
+        'the hinged lid and the box are one piece each and never touch',
+        piecesOf(lid) === 1 &&
+          piecesOf(shell) === 1 &&
+          (await overlap(hinged, ['case', 'lid'], 'lid', 'case')).volume < 0.01,
+        `${piecesOf(lid)} and ${piecesOf(shell)} pieces`,
+      )
+      const thin = await evaluate(
+        doc(
+          lidded({
+            fit: 'hinge',
+            clearance: 0.45,
+            hinge: { side: 'right', knuckles: 5, diameter: 1.5 },
+          }),
+          ['case', 'lid'],
+        ),
+      )
+      add(
+        'a hinge too thin to hold the lid is refused',
+        problems(thin, 'error').some((e) => e.message.includes('too thin')),
+        said(thin),
+      )
+    })
+
     const saved = useStore.getState()
     const facePick = (bodyId: string, name: string, point: Vec3, normal: Vec3): SelectionPick => ({
       kind: 'face',
@@ -698,6 +829,87 @@ export async function runFitTest(): Promise<TestResult[]> {
     }
 
     try {
+      await check('lid panels', async () => {
+        const d = await stage([box('bx', 'case', [0, 0], [40, 30, 20])], ['case'])
+        const spec = shellCommand as unknown as AnyCommandSpec
+        let serial = 0
+        const context: CommandContext = {
+          doc: d,
+          unit: d.units,
+          componentId: 'root',
+          id: (role) => `${role}-${++serial}`,
+        }
+        let state = createCommandState(spec, context, {
+          faces: [facePick('case', 'bx:+z', [20, 15, 20], [0, 0, 1])],
+          lid: true,
+          clearance: classGap(d, 'snug'),
+        })
+        state = reduceCommand(spec, state, { type: 'choice', id: 'fit', value: 'hinge' }, context)
+        const evaluation = evaluateCommand(spec, state, context, { build: true })
+        const features = evaluation.features ?? []
+        const lid = features.find((f) => f.kind === 'lid') as LidFeature | undefined
+        const linked = structuredClone(d)
+        spec.adjust?.(linked, features, context, evaluation.values)
+        add(
+          'choosing Hinged in Make a Lid switches the gap to Loose and links it',
+          lid?.fit === 'hinge' &&
+            lid.fitClass === 'loose' &&
+            lid.hinge?.side === 'back' &&
+            features.some((f) => f.kind === 'lidSocket' && f.name === 'Hinge for the lid') &&
+            linked.bindings.some(
+              (b) =>
+                b.featureId === lid.id && b.field === 'clearance' && b.expression === 'fit_loose',
+            ),
+          JSON.stringify({ fit: lid?.fit, fitClass: lid?.fitClass, bindings: linked.bindings }),
+        )
+
+        const plain = doc(lidded({ fit: 'friction' }).slice(0, 3), ['case', 'lid'])
+        useStore.setState({ doc: plain })
+        const opened = editFeature(plain.timeline[2])
+        const session = useCommand.getState().session
+        if (!opened || !session) {
+          add('a lid reopens in its own panel', false, 'no panel')
+          return
+        }
+        useCommand.getState().dispatch({ type: 'choice', id: 'fit', value: 'hooks' })
+        const current = useCommand.getState().session!
+        const edited = evaluateCommand(current.spec, current.state, current.context, {
+          build: true,
+        })
+        useCommand.getState().commit(edited.features!, edited.values)
+        const after = useStore.getState().doc
+        const lidAfter = after.timeline.find((f) => f.id === 'ld') as LidFeature
+        add(
+          'editing a dropped-in lid to snap hooks adds the catches step once',
+          lidAfter.fit === 'hooks' &&
+            !!lidAfter.hooks &&
+            after.timeline.filter((f) => f.kind === 'lidSocket').length === 1 &&
+            after.timeline.some(
+              (f) => f.kind === 'lidSocket' && f.name === 'Catches for the lid',
+            ) &&
+            after.timeline.findIndex((f) => f.kind === 'lidSocket') ===
+              after.timeline.findIndex((f) => f.id === 'ld') + 1,
+          after.timeline.map((f) => f.kind).join(),
+        )
+        if (!editFeature(lidAfter)) {
+          add('a lid with snap hooks reopens in its panel', false, 'no panel')
+          return
+        }
+        useCommand.getState().dispatch({ type: 'choice', id: 'fit', value: 'hinge' })
+        const again = useCommand.getState().session!
+        const rehinged = evaluateCommand(again.spec, again.state, again.context, { build: true })
+        useCommand.getState().commit(rehinged.features!, rehinged.values)
+        const seats = useStore
+          .getState()
+          .doc.timeline.filter((f) => f.kind === 'lidSocket')
+          .map((f) => f.name)
+        add(
+          'and turning it into a hinged lid renames that step instead of adding another',
+          seats.length === 1 && seats[0] === 'Hinge for the lid',
+          seats.join(', '),
+        )
+      })
+
       await check('clicking a face', async () => {
         const d = await stage(enclosure, ['case', 'lid'])
         const start = fitStartOptions('snapFit', [

@@ -24,6 +24,7 @@ const fields = [
   'inset',
   'bead',
   'flankAngle',
+  'clearance',
 ]
 
 export function parameterFields(f: Feature): string[] {
@@ -94,6 +95,7 @@ export function resolveParameters(doc: OkcDocument, dropMissing = false): void {
       'boreDepth',
       'gap',
       'inset',
+      'clearance',
     ].includes(link.field)
     const signed =
       (feature.kind === 'extrude' && link.field === 'distance') ||
