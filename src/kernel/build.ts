@@ -42,6 +42,7 @@ import type {
 import type { KernelError } from './types'
 import { sketchToProfile } from './profile'
 import { runEmbossStep } from './embossStep'
+import { runRibStep } from './ribStep'
 import {
   featureDependencies,
   findBody,
@@ -1162,6 +1163,9 @@ function hintForFailure(feature: Feature, message: string): string | undefined {
   if (feature.kind === 'emboss') {
     return 'A smaller depth, or text kept clear of the edges of the face, usually builds.'
   }
+  if (feature.kind === 'rib' || feature.kind === 'web') {
+    return 'A thinner wall, or lines that sit squarely over the part, usually build.'
+  }
   if (m.includes('null') || m.includes('undefined')) {
     return 'Something this step depends on is missing. Check the steps before it.'
   }
@@ -1378,7 +1382,8 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
   if (
     runSolidStep(feature, solidStage) ||
     runFitStep(feature, solidStage) ||
-    runEmbossStep(feature, solidStage)
+    runEmbossStep(feature, solidStage) ||
+    runRibStep(feature, solidStage)
   ) {
     return
   }

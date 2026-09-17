@@ -101,6 +101,9 @@ export function featureModifiesBodies(feature: Feature): string[] {
       return [feature.bodyId]
     case 'emboss':
       return [feature.face.bodyId]
+    case 'rib':
+    case 'web':
+      return [feature.bodyId]
     case 'snapFit':
     case 'fitPins':
     case 'lipGroove':
@@ -192,6 +195,7 @@ export function featureDependencies(doc: OkcDocument, feature: Feature): string[
     if (ref?.kind === 'construction') dependencies.add(ref.featureId)
   }
   if (feature.kind === 'patch' || feature.kind === 'emboss') dependencies.add(feature.sketchId)
+  if (feature.kind === 'rib' || feature.kind === 'web') dependencies.add(feature.sketchId)
   if (feature.kind === 'lid') dependencies.add(feature.shellFeatureId)
   if (feature.kind === 'lidSocket') dependencies.add(feature.lidFeatureId)
   if (feature.kind === 'motionLink') {

@@ -459,6 +459,25 @@ export interface ThickenFeature extends FeatureBase {
   result: BodyOperation
 }
 
+export type WallDepth = 'toNext' | 'finite'
+
+export interface RibFeature extends FeatureBase {
+  kind: 'rib'
+  sketchId: string
+  curves?: string[]
+  bodyId: string
+  thickness: number
+  sides: 'both' | 'one'
+  flipSide: boolean
+  depth: WallDepth
+  distance: number
+  flip: boolean
+}
+
+export interface WebFeature extends Omit<RibFeature, 'kind'> {
+  kind: 'web'
+}
+
 export type EmbossEffect = 'emboss' | 'deboss'
 
 export interface EmbossFeature extends FeatureBase {
@@ -728,6 +747,8 @@ export type Feature =
   | PipeFeature
   | ThickenFeature
   | PatchFeature
+  | RibFeature
+  | WebFeature
   | EmbossFeature
   | BodyPatternFeature
   | MirrorFeature
@@ -843,6 +864,8 @@ export const FEATURE_LABEL: Record<FeatureKind, string> = {
   bayonet: 'Bayonet',
   hinge: 'Print-in-place Hinge',
   emboss: 'Emboss',
+  rib: 'Rib',
+  web: 'Web',
   move: 'Move',
   joint: 'Joint',
   jointOrigin: 'Joint Origin',
@@ -905,6 +928,8 @@ export const FEATURE_HINT: Record<FeatureKind, string> = {
   bayonet: 'Lugs that push in and turn to lock in L-shaped slots on the other part.',
   hinge: 'A knuckle hinge printed already assembled, joining two parts.',
   emboss: 'Raises or sinks sketch text and shapes on a flat or round face.',
+  rib: 'A thin wall along a sketch line, grown down onto the part to brace it.',
+  web: 'A set of thin walls along crossing sketch lines, grown down onto the part.',
   move: 'Moves and turns bodies by exact amounts.',
   joint: 'Holds two components together, with the motion left between them.',
   jointOrigin: 'A saved snap point on a component that joints can use.',
@@ -967,6 +992,8 @@ export const FEATURE_ICON: Record<FeatureKind, string> = {
   bayonet: '⟳',
   hinge: '⎍',
   emboss: 'Ⓐ',
+  rib: '◺',
+  web: '⋕',
   move: '✚',
   joint: '⚭',
   jointOrigin: '⊕',

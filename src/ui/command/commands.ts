@@ -30,6 +30,7 @@ import { boxCommand, cylinderCommand, sphereCommand, torusCommand } from './spec
 import { operationValues, planeValues, profilePicksOf, resultIds } from './specs/shared'
 import { extrudeCommand, revolveCommand } from './specs/sketchBased'
 import { embossCommand } from './specs/emboss'
+import { ribCommand, webCommand } from './specs/rib'
 import { midplaneCommand, offsetPlaneCommand, planeAtAngleCommand } from './specs/construct'
 import {
   coilCommand,
@@ -87,6 +88,8 @@ const spec = (command: unknown) => command as AnyCommandSpec
 export const COMMANDS: Readonly<Record<string, AnyCommandSpec>> = {
   extrude: spec(extrudeCommand),
   emboss: spec(embossCommand),
+  rib: spec(ribCommand),
+  web: spec(webCommand),
   revolve: spec(revolveCommand),
   box: spec(boxCommand),
   cylinder: spec(cylinderCommand),
@@ -249,6 +252,9 @@ function startOptions(id: string): CommandStart {
       return { initial: { profile: sketchPicks() } }
     case 'emboss':
       return { initial: { profile: sketchPicks(), face: faces.slice(0, 1) } }
+    case 'rib':
+    case 'web':
+      return { initial: { body: bodies } }
     case 'extrude':
     case 'revolve': {
       const sketch = selectedSketch(doc)
@@ -349,6 +355,25 @@ function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, Comma
   const fit = fitEditOptions(doc, feature)
   if (fit) return fit
   switch (feature.kind) {
+    case 'rib':
+    case 'web':
+      return [
+        COMMANDS[feature.kind],
+        {
+          initial: {
+            curves: (feature.curves ?? []).flatMap(
+              (entityId) => curvePick(doc, feature.sketchId, entityId) ?? [],
+            ),
+            body: bodyPicks([feature.bodyId]),
+            thickness: feature.thickness,
+            sides: feature.sides,
+            flipSide: feature.flipSide,
+            depth: feature.depth,
+            distance: feature.distance,
+            flip: feature.flip,
+          },
+        },
+      ]
     case 'emboss':
       return [
         COMMANDS.emboss,

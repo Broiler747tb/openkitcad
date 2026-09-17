@@ -63,7 +63,8 @@ classes that live in the design as parameters (§15).
 
 **EM: text and emboss.** Sketch text in the fonts on this computer, kept in the design as letter
 shapes, usable as a profile anywhere a profile is, and Emboss to raise or sink it on a flat face or
-round the side of a cylinder (§16).
+round the side of a cylinder (§16). Then Rib and Web, the thin walls that brace a printed part
+(§17).
 
 ## 3. Document model v2
 
@@ -720,7 +721,30 @@ and through a `.ttc` wrapper, and compares volumes with hand calculations: lette
 overlapping strokes merged, a plate with the letters cut out of it, a letter hanging over an edge,
 text raised and sunk on a block, and text wrapped round a rod.
 
-## 17. How the work is done
+## 17. Ribs and webs (EM)
+
+**Two commands, one step.** Rib takes one run of sketch lines, Web takes a set of them, and both
+run in `src/kernel/ribStep.ts`. A rib lies in its sketch plane: the line is the top of the wall, the
+thickness is measured across the plane, and the wall grows down the plane's own down direction, so a
+line drawn across an inside corner becomes a gusset. A web stands up from its sketch plane: each
+line becomes a wall that drops along the plane's normal with the thickness across the line, so lines
+drawn over the part, crossing or not, become a set of walls that meet where they cross. Flip turns
+either around. Thickness sits either side of the line or on one side of it, and the line's own side
+is the sketch normal.
+
+**How far down.** To the Part measures the deepest place the wall lands: a wider copy of the wall is
+intersected with the body, the faces of that piece which look back up the wall are found, and the
+wall is cut off at the deepest of them. What that leaves buried inside the body costs nothing once
+the wall is joined on, and it means a wall that hangs over the edge of the part keeps its full
+thickness instead of being sliced away. Distance grows the wall exactly as far as it is told. A wall
+that never touches the part is refused by name, and a rib given lines that do not join up says to
+use Web.
+
+**Tests.** `?selftest&suite=walls` builds a gusset across a corner, a rib over a step, a rib given a
+distance, a wall centred on its line and on each side of it, a web of two crossing lines, and both
+refusals, each against a hand calculation.
+
+## 18. How the work is done
 
 - Agents never start other agents or workflows.
 - New and rewritten code has no comments. Touched files are formatted with Prettier.
@@ -782,6 +806,11 @@ text raised and sunk on a block, and text wrapped round a rod.
   headers: the pins go and the plated holes show. Tick Pin headers on the Pico: male pins appear under
   both long edges. Put a 3 mm plate just under the Nano, run the clearance check with and without its
   headers, and swap the Pico for a Pico 2 to see the pins stay. Undo back through every step.
+- **EM smoke test (ribs).** On a 50 x 30 x 4 mm plate with a 4 mm upright along one edge, sketch on a
+  plane through the middle of it and draw one line from the upright down to the plate. Run Rib, pick
+  the line and the body, set 4 mm and OK: a gusset fills the corner. Double-click it, switch Depth to
+  Distance and watch it stop short. On the same plate sketch two crossing lines on a plane above it,
+  run Web with 2 mm and OK: two walls stand on the plate and meet. Undo back through every step.
 - **EM smoke test.** Sketch on the top of a 60 x 40 x 10 mm block, click Text, click near a corner and
   type a word; pick a font and a height of 8 mm and OK. Finish the sketch, run Emboss, click the text
   and the top face, set 1 mm and OK: the letters stand on the block. Double-click the step, switch it
