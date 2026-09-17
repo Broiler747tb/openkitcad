@@ -18,6 +18,12 @@ const fields = [
   'counterboreDiameter',
   'counterboreDepth',
   'countersinkAngle',
+  'gap',
+  'length',
+  'hookDepth',
+  'inset',
+  'bead',
+  'flankAngle',
 ]
 
 export function parameterFields(f: Feature): string[] {
@@ -81,9 +87,14 @@ export function resolveParameters(doc: OkcDocument, dropMissing = false): void {
     seen.add(key)
     const isAngle = link.field.toLowerCase().includes('angle')
     const value = quantity(link.expression, isAngle ? '°' : 'mm', read)
-    const zeroAllowed = ['cornerRadius', 'draftAngle', 'boreDiameter', 'boreDepth'].includes(
-      link.field,
-    )
+    const zeroAllowed = [
+      'cornerRadius',
+      'draftAngle',
+      'boreDiameter',
+      'boreDepth',
+      'gap',
+      'inset',
+    ].includes(link.field)
     const signed =
       (feature.kind === 'extrude' && link.field === 'distance') ||
       ((feature.kind === 'box' || feature.kind === 'cylinder') && link.field === 'height')

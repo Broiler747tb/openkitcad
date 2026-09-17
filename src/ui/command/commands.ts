@@ -24,6 +24,7 @@ import {
   shellEditCommand,
 } from './specs/modify'
 import { holeCommand, pointOnFace, ventCommand } from './specs/placed'
+import { FIT_COMMANDS, fitEditOptions, fitStartOptions } from './specs/fit'
 import { boxCommand, cylinderCommand, sphereCommand, torusCommand } from './specs/primitives'
 import { operationValues, planeValues, profilePicksOf, resultIds } from './specs/shared'
 import { extrudeCommand, revolveCommand } from './specs/sketchBased'
@@ -137,6 +138,7 @@ export const COMMANDS: Readonly<Record<string, AnyCommandSpec>> = {
   revolveSurface: revolveSurfaceCommand,
   loftSurface: loftSurfaceCommand,
   sweepSurface: sweepSurfaceCommand,
+  ...FIT_COMMANDS,
 }
 
 function variantOf(kind: string, surface: boolean | undefined): AnyCommandSpec {
@@ -206,6 +208,8 @@ function startOptions(id: string): CommandStart {
     const sketch = selectedSketch(doc)
     return sketch ? [sketchPick(doc, sketch.id)!] : []
   }
+  const fit = fitStartOptions(id, faces)
+  if (fit) return fit
   switch (id) {
     case 'offsetFace':
     case 'pressPull':
@@ -337,6 +341,8 @@ export function startCommand(id: string, initial?: CommandStart['initial']): boo
 
 function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, CommandStart] | null {
   const bodyPicks = (ids: readonly string[]) => ids.flatMap((id) => bodyPick(doc, id) ?? [])
+  const fit = fitEditOptions(doc, feature)
+  if (fit) return fit
   switch (feature.kind) {
     case 'extrude':
     case 'revolve': {

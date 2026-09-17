@@ -539,7 +539,7 @@ button.workspace-tab {
 .file-menu kbd {
   float: right;
 }
-@media (max-width: 1279px) {
+@media (max-width: 1365px) {
   .ribbon {
     padding-left: 3px;
     padding-right: 3px;
@@ -552,17 +552,19 @@ button.workspace-tab {
     padding: 5px;
     font-size: 9px;
   }
+  .fusion-group.standalone {
+    padding: 0 2px;
+  }
+}
+@media (max-width: 1279px) {
   .document-tab {
     min-width: 140px;
   }
   .navigation-bar span {
     display: none;
   }
-  .fusion-group.standalone {
-    padding: 0 2px;
-  }
 }
-@media (max-width: 1023px) {
+@media (max-width: 1365px) {
   .ribbon {
     overflow-x: auto;
     overflow-y: hidden;
@@ -654,6 +656,34 @@ button.workspace-tab {
   gap: 8px;
   margin: 10px 0;
   align-items: center;
+}
+.fit-class-table {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 10px;
+}
+.fit-class-row {
+  display: grid;
+  grid-template-columns: 70px 90px 24px 1fr;
+  gap: 8px;
+  align-items: center;
+}
+.fit-class-row input {
+  min-width: 0;
+  width: 100%;
+  padding: 6px 8px;
+  box-sizing: border-box;
+}
+.fit-class-row small {
+  color: var(--okc-text-muted);
+}
+@media (max-width: 560px) {
+  .fit-class-row {
+    grid-template-columns: 70px 90px 24px;
+  }
+  .fit-class-row small {
+    grid-column: 1 / -1;
+  }
 }
 .parameters-dialog > button {
   background: var(--okc-accent-soft);

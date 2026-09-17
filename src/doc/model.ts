@@ -99,6 +99,16 @@ export function featureModifiesBodies(feature: Feature): string[] {
     case 'lidSocket':
     case 'combine':
       return [feature.bodyId]
+    case 'snapFit':
+    case 'fitPins':
+    case 'lipGroove':
+    case 'dovetail':
+    case 'snapRing':
+    case 'bayonet':
+    case 'hinge':
+      return feature.mateBodyId && feature.mateBodyId !== feature.bodyId
+        ? [feature.bodyId, feature.mateBodyId]
+        : [feature.bodyId]
     case 'move':
     case 'meshReverse':
     case 'scale':
@@ -152,6 +162,7 @@ export function featureReadsBodies(feature: Feature): string[] {
   if (feature.kind === 'stitch') bodies.push(...feature.bodyIds.slice(1))
   if (feature.kind === 'combine') bodies.push(...feature.toolBodyIds)
   if (feature.kind === 'lid') bodies.push(feature.sourceBodyId)
+  if (feature.kind === 'snapRing' || feature.kind === 'bayonet') bodies.push(feature.face.bodyId)
   return bodies
 }
 

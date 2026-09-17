@@ -67,7 +67,7 @@ export interface SelectionInput<Id extends string = string> extends InputBase<Id
   max?: number
   clearable?: boolean
   prompt?: string
-  fills?: (pick: SelectionPick) => Readonly<Record<string, number | string | boolean>>
+  fills?: (pick: SelectionPick) => Readonly<Record<string, CommandValue>>
   merge?: (current: readonly SelectionPick[], pick: SelectionPick) => SelectionPick[] | null
 }
 

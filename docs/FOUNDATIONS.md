@@ -57,6 +57,10 @@ favourites, recently used, filters and a details card, drop on a face, and manag
 (§14). Then true-to-life looks with rendered previews, and every part pinned to a real, named product
 where a maker publishes its sizes, with clones kept as labelled generic versions.
 
+**FT: fits.** Seven fits tuned for 3D printing, each placed by clicking a face: Snap Fit, Alignment
+Pins, Lip and Groove, Dovetail, Snap Ring, Bayonet and Print-in-place Hinge, with printer-wide fit
+classes that live in the design as parameters (§15).
+
 ## 3. Document model v2
 
 Types live in `src/doc/types.ts`. Pure helpers every layer shares live in `src/doc/model.ts`
@@ -438,8 +442,9 @@ the rest. Unstitch gives every face its own surface body; if the body gains face
 extra faces stay together in the last body with a warning. Reverse Normal turns surfaces inside out.
 
 **Ribbon.** The SOLID tab shows Extrude, Revolve, Sweep, Loft and Hole under CREATE and Press Pull,
-Fillet, Shell and Move under MODIFY; everything else is in the group menus, and the whole ribbon
-fits a 1280 px window. The SURFACE tab shows Extrude, Revolve, Loft, Patch, Offset and Thicken, then
+Fillet, Shell and Move under MODIFY and Snap Fit under FIT; everything else is in the group menus,
+and the whole ribbon fits a 1280 px window (tools draw compact below 1366 px, and the ribbon scrolls
+if it still overflows). The SURFACE tab shows Extrude, Revolve, Loft, Patch, Offset and Thicken, then
 Stitch, Unstitch and Reverse Normal. Torus sits with Box, Cylinder and Sphere in the CREATE menu.
 Trim, Extend, Ruled, Boundary Fill, Rib, Web, Emboss, Thread and Pattern on Path are not implemented.
 
@@ -585,7 +590,62 @@ details card and the version picker show live previews that turn when dragged an
 click; the picker draws every version at one scale so sizes compare. Dragging into the view starts
 from the card body or the handle under the details preview.
 
-## 15. How the work is done
+## 15. Fits (FT)
+
+**Seven fits.** Snap Fit (a cantilever hook), Alignment Pins, Lip and Groove, Dovetail, Snap Ring,
+Bayonet and Print-in-place Hinge. Each is one timeline step that changes two bodies in the same
+component: `bodyId` gets the half that is added (hook, pins, lip, rail, bead, lugs, every other
+knuckle) and `mateBodyId` gets the half that is cut (catch, sockets, groove, slot, groove, L-slots,
+the other knuckles). Without a mate only the first half is built. They run in
+`src/kernel/fitSteps.ts` right after the solid tools: each half is built from replicad primitives in
+a local frame, placed with one transform and applied with the naming booleans, so later steps can pick
+faces a fit made. A raw OpenCascade failure reads "Could not cut the fit into Case." instead of a
+number.
+
+**Placement.** Flat fits take a face, a position in that face's frame and an angle. Snap Ring and
+Bayonet take a round face and the clicked point, which chooses the end the other part goes on from;
+Other End flips it. Face picks in a command now carry the click point and normal, so a click places a
+fit where it lands (Hole places its hole there too). The panel finds the other part from the meshes:
+the nearest body of the same component beyond the face. Snap Fit then slides the arm onto the nearest
+wall of that part and turns the hook into it, and Hinge puts its line in the middle of the gap between
+the two parts. Alignment Pins adds a pin per click on one face and removes a pin when it is clicked
+again (`merge` inputs now run `fills` for their first pick).
+
+**Fit classes.** Press, Snug, Sliding and Loose are gaps per side, set once per printer in the
+Parameters dialog and kept with the preferences (0.1, 0.2, 0.3 and 0.45 mm to start). Choosing a
+class links the fit's `gap` to the design parameter `fit_press`, `fit_snug`, `fit_sliding` or
+`fit_loose`, created from the printer table the first time a class is used; Use these gaps in this
+design copies the whole table in. Typing a gap makes the fit Custom and drops the class link but keeps
+a link to any other parameter. Editing a fit keeps or moves its link: `commit` in
+`src/ui/command/session.ts` now drops a step's stale links before `adjust` adds new ones.
+
+**Checks.** Snap Fit works out the strain as the hook clicks in (1.5·t·y/L², with L the arm up to
+the hook) and warns past the material's limit (PLA 2%, ABS or ASA 3%, PETG 4%, nylon 6%), naming the
+shortest safe arm; an arm too short for its hook is refused. Every fit probes the other body and warns
+when the hook, sockets, groove, slot, lug slots or knuckles do not reach it. Pins warn when the other
+part is too thin for the sockets, lips when they are wider than the wall they stand on, hinges when the
+parts are closer than the gap, and bayonets when the lugs and twist do not fit round the face or the
+twist leaves no room for a click stop. A window through the wall is cut to the far side of that wall
+and no further.
+
+**Shapes.** Hook: 30° lead-in, 0.4 mm land, a square catch (Permanent) or a 45° one (Removable), root
+chamfers, and a relief of the gap along the arm and round the root in the wall. Pins: a chamfered tip;
+sockets with a 45° lead-in and room under the tip. Lip and groove: inward offsets of the face's outer
+edge, so they follow any outline; the groove is the lip grown by the gap. Dovetail: flanks leaning out
+at the flank angle, the slot a gap wider at right angles to every face and open at the start or both
+ends. Snap Ring: a bead with the hook's profile, optional flex slots in a post, and a clearance sleeve
+and groove in the other part. Bayonet: lugs, an entry slot and a turn slot per lug, a clearance sleeve
+and a 0.25 mm bump that the lug clicks over at the end of the turn. Hinge: alternating knuckles on
+the gap line with 45° cones into matching sockets, each knuckle cleared by the gap in the other part,
+so two plates printed side by side come off the bed joined and fold flat onto each other.
+
+**Ribbon and tests.** A FIT group on the SOLID tab shows Snap Fit and lists all seven; the icons are
+in `src/ui/icons/fit`. `?selftest&suite=fits` builds every fit, compares volumes with hand
+calculations, intersects the two halves to prove they never overlap, checks each body is still one
+piece, triggers every warning, and drives the panel: clicks against real meshes, class switching and
+an edit moving the link.
+
+## 16. How the work is done
 
 - Agents never start other agents or workflows.
 - New and rewritten code has no comments. Touched files are formatted with Prettier.
@@ -643,3 +703,11 @@ from the card body or the handle under the details preview.
   Right-click a side face and choose Draft, pick XY as the plane and tilt it 10°. Scale a body by 2.5
   in an inch document and read 2.5, not a length. Open any command and see the Inspector step aside.
   Narrow the window to 950 px and scroll the ribbon. Undo back through every step.
+- **FT smoke test.** Make a 60 x 40 x 2 mm plate and a 60 x 40 x 25 mm box standing on it, hollow the
+  box through its bottom face and hide it. Choose Snap Fit and click the plate near an edge: the arm
+  stands against the box's wall with the hook pointing into it and Other Part filled in. OK, show the
+  box and use Section across the arm to see the hook in its catch. Edit the fit, make the arm 6 mm and
+  read the crack warning. Put two plates side by side 0.6 mm apart, choose Print-in-place Hinge and
+  click one of them near the gap: the line lands in the gap. Open fx Parameters, set Snug to 0.25,
+  press Use these gaps in this design and Apply: the snap fit rebuilds with a 0.25 mm gap. Undo back
+  through every step.

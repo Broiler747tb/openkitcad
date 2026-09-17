@@ -247,6 +247,105 @@ export interface LidSocketFeature extends FeatureBase {
   lidFeatureId: string
 }
 
+export type FitClass = 'press' | 'snug' | 'sliding' | 'loose'
+
+export type SnapRetention = 'permanent' | 'removable'
+
+export type SnapMaterial = 'pla' | 'petg' | 'abs' | 'nylon'
+
+interface FitBase extends FeatureBase {
+  bodyId: string
+  mateBodyId?: string
+  gap: number
+  fitClass?: FitClass
+}
+
+export interface SnapFitFeature extends FitBase {
+  kind: 'snapFit'
+  plane: PlaneRef
+  position: Vec2
+  angle: number
+  length: number
+  thickness: number
+  width: number
+  hookDepth: number
+  retention: SnapRetention
+  material: SnapMaterial
+  through: boolean
+}
+
+export interface FitPinsFeature extends FitBase {
+  kind: 'fitPins'
+  plane: PlaneRef
+  positions: Vec2[]
+  diameter: number
+  height: number
+}
+
+export interface LipGrooveFeature extends FitBase {
+  kind: 'lipGroove'
+  plane: PlaneRef
+  width: number
+  height: number
+  inset: number
+}
+
+export interface DovetailFeature extends FitBase {
+  kind: 'dovetail'
+  plane: PlaneRef
+  position: Vec2
+  angle: number
+  length: number
+  width: number
+  height: number
+  flankAngle: number
+  through: boolean
+}
+
+export interface SnapRingFeature extends FitBase {
+  kind: 'snapRing'
+  face: ElementRef
+  anchor: Vec3
+  flipEnd: boolean
+  distance: number
+  bead: number
+  retention: SnapRetention
+  slots: number
+}
+
+export interface BayonetFeature extends FitBase {
+  kind: 'bayonet'
+  face: ElementRef
+  anchor: Vec3
+  flipEnd: boolean
+  distance: number
+  lugs: number
+  width: number
+  height: number
+  thickness: number
+  angle: number
+  detent: boolean
+}
+
+export interface HingeFeature extends FitBase {
+  kind: 'hinge'
+  plane: PlaneRef
+  position: Vec2
+  angle: number
+  length: number
+  knuckles: number
+  diameter: number
+}
+
+export type FitFeature =
+  | SnapFitFeature
+  | FitPinsFeature
+  | LipGrooveFeature
+  | DovetailFeature
+  | SnapRingFeature
+  | BayonetFeature
+  | HingeFeature
+
 export interface MoveFeature extends FeatureBase {
   kind: 'move'
   bodyIds: string[]
@@ -572,6 +671,7 @@ export type Feature =
   | VentFeature
   | LidFeature
   | LidSocketFeature
+  | FitFeature
   | MoveFeature
   | JointFeature
   | JointOriginFeature
@@ -700,6 +800,13 @@ export const FEATURE_LABEL: Record<FeatureKind, string> = {
   vent: 'Vent Pattern',
   lid: 'Lid',
   lidSocket: 'Lid Seat',
+  snapFit: 'Snap Fit',
+  fitPins: 'Alignment Pins',
+  lipGroove: 'Lip and Groove',
+  dovetail: 'Dovetail',
+  snapRing: 'Snap Ring',
+  bayonet: 'Bayonet',
+  hinge: 'Print-in-place Hinge',
   move: 'Move',
   joint: 'Joint',
   jointOrigin: 'Joint Origin',
@@ -754,6 +861,13 @@ export const FEATURE_HINT: Record<FeatureKind, string> = {
   vent: 'A grid of ventilation holes inside a solid border.',
   lid: 'A lid that fits the opening a Shell left.',
   lidSocket: 'The ledge or groove a lid sits in.',
+  snapFit: 'A flexing arm with a hook, and the catch it clicks into on the other part.',
+  fitPins: 'Pegs with chamfered tips, and the holes they press into on the other part.',
+  lipGroove: 'A raised lip along a seam, and the groove it sits in on the other part.',
+  dovetail: 'A dovetail rail, and the slot it slides along on the other part.',
+  snapRing: 'A bead round a round plug or bore that clicks into a groove on the other part.',
+  bayonet: 'Lugs that push in and turn to lock in L-shaped slots on the other part.',
+  hinge: 'A knuckle hinge printed already assembled, joining two parts.',
   move: 'Moves and turns bodies by exact amounts.',
   joint: 'Holds two components together, with the motion left between them.',
   jointOrigin: 'A saved snap point on a component that joints can use.',
@@ -808,6 +922,13 @@ export const FEATURE_ICON: Record<FeatureKind, string> = {
   vent: '⁙',
   lid: '▭',
   lidSocket: '⊓',
+  snapFit: '⌐',
+  fitPins: '⫯',
+  lipGroove: '⊔',
+  dovetail: '⏢',
+  snapRing: '◉',
+  bayonet: '⟳',
+  hinge: '⎍',
   move: '✚',
   joint: '⚭',
   jointOrigin: '⊕',

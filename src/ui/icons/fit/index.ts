@@ -1,0 +1,7 @@
+export { SnapFitIcon } from './SnapFitIcon'
+export { FitPinsIcon } from './FitPinsIcon'
+export { LipGrooveIcon } from './LipGrooveIcon'
+export { DovetailIcon } from './DovetailIcon'
+export { SnapRingIcon } from './SnapRingIcon'
+export { BayonetIcon } from './BayonetIcon'
+export { HingeIcon } from './HingeIcon'

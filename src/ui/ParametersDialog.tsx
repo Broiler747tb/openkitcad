@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { newId, useStore } from '../doc/store'
 import { parameterFields, resolveParameters } from '../doc/parameters'
+import { FIT_CLASSES, fitParameterName } from '../doc/fits'
+import { usePreferences } from '../doc/preferences'
 
 export function ParametersDialog({ onClose }: { onClose: () => void }) {
   const state = useStore(),
@@ -26,6 +28,29 @@ export function ParametersDialog({ onClose }: { onClose: () => void }) {
     resolveParameters(preview)
   } catch (e) {
     error = (e as Error).message
+  }
+  const printer = usePreferences((p) => p.values)
+  const setPreference = usePreferences((p) => p.set)
+  const useFits = () => {
+    let next = [...parameters]
+    for (const fit of FIT_CLASSES) {
+      const name = fitParameterName(fit.value)
+      const gap = printer[fit.preference]
+      const expression = `${gap} mm`
+      next = next.some((p) => p.name === name)
+        ? next.map((p) => (p.name === name ? { ...p, value: gap, expression } : p))
+        : [
+            ...next,
+            {
+              id: newId('param'),
+              name,
+              value: gap,
+              expression,
+              comment: `${fit.label} fit: gap per side`,
+            },
+          ]
+    }
+    setParameters(next)
   }
   const add = () => {
     let name = 'parameter_1',
@@ -111,6 +136,33 @@ export function ParametersDialog({ onClose }: { onClose: () => void }) {
         pi, mm/cm/m/in/ft. References may point to later rows. Rename referenced names in formulas
         too.
       </p>
+      <h3>Printer fit classes</h3>
+      <p className="hint">
+        The gap each side of a fit, tuned to your printer. Saved in this browser for every design.
+        Snap fits, pins, lips and the other fits read them through the fit_ parameters above.
+      </p>
+      <div className="fit-class-table">
+        {FIT_CLASSES.map((fit) => (
+          <label key={fit.value} className="fit-class-row" title={fit.hint}>
+            <span>{fit.label}</span>
+            <input
+              type="number"
+              min={0}
+              max={2}
+              step={0.05}
+              aria-label={`${fit.label} fit gap`}
+              defaultValue={printer[fit.preference]}
+              onChange={(e) => {
+                const value = e.target.valueAsNumber
+                if (Number.isFinite(value)) setPreference({ [fit.preference]: value })
+              }}
+            />
+            <span>mm</span>
+            <small>{fit.hint}</small>
+          </label>
+        ))}
+      </div>
+      <button onClick={useFits}>Use these gaps in this design</button>
       <h3>Linked feature dimensions</h3>
       <p className="hint">
         Numeric edits in Properties detach that field's link. Unlink keeps its last applied value.

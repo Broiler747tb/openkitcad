@@ -21,6 +21,10 @@ export const DEFAULT_PREFERENCES = {
   sketchShowDimensions: true,
   sketchShowConstraints: true,
   sketchSlice: false,
+  fitPress: 0.1,
+  fitSnug: 0.2,
+  fitSliding: 0.3,
+  fitLoose: 0.45,
 }
 export type Preferences = typeof DEFAULT_PREFERENCES
 const bounds: Partial<Record<keyof Preferences, [number, number]>> = {
@@ -31,6 +35,10 @@ const bounds: Partial<Record<keyof Preferences, [number, number]>> = {
   moveSnap: [0, 1000],
   angleSnap: [0, 180],
   gridOpacity: [0.05, 1],
+  fitPress: [0, 2],
+  fitSnug: [0, 2],
+  fitSliding: [0, 2],
+  fitLoose: [0, 2],
 }
 export function normalizePreferences(input: Partial<Preferences>): Preferences {
   const out = { ...DEFAULT_PREFERENCES }

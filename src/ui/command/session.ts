@@ -206,10 +206,10 @@ export const useCommand = create<CommandStore>((set, get) => ({
         return
       }
       replaceFeatureInDocument(doc, editing, features)
-      adjust()
       doc.bindings = doc.bindings.filter(
         (link) => link.featureId !== editing || kept.has(link.field),
       )
+      adjust()
     })
   },
 

@@ -44,6 +44,7 @@ import {
   UnstitchIcon,
 } from './icons/surface'
 import { AsBuiltJointIcon, JointIcon, JointOriginIcon } from './icons/assemble'
+import { SnapFitIcon } from './icons/fit'
 import { FilletIcon, MoveCopyIcon as SolidMoveIcon, PressPullIcon, ShellIcon } from './icons/modify'
 import {
   BreakIcon,
@@ -114,6 +115,13 @@ const DESIGN_COMMANDS = [
   'meshCombine',
 ]
 const labels: Record<string, string> = {
+  snapFit: 'Snap Fit',
+  fitPins: 'Alignment Pins',
+  lipGroove: 'Lip and Groove',
+  dovetail: 'Dovetail',
+  snapRing: 'Snap Ring',
+  bayonet: 'Bayonet',
+  hinge: 'Print-in-place Hinge',
   extrude: 'Extrude',
   revolve: 'Revolve',
   fillet: 'Fillet',
@@ -1085,6 +1093,13 @@ export function Toolbar({
                 {tool('Shell', <ShellIcon className="okc-icon" />, () => invoke('hollow'))}
                 {tool('Move', <SolidMoveIcon className="okc-icon" />, () => invoke('move'), 'M')}
               </>,
+            )}
+            {group(
+              'FIT',
+              ['snapFit', 'lipGroove', 'fitPins', 'dovetail', 'snapRing', 'bayonet', 'hinge'].map(
+                (id) => ({ ...cmd(id), group: 'Fit' }),
+              ),
+              tool('Snap Fit', <SnapFitIcon className="okc-icon" />, () => invoke('snapFit')),
             )}
             {group(
               'ASSEMBLE',

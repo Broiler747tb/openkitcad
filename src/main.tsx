@@ -52,6 +52,7 @@ if (params.has('selftest') || params.has('kerneltest')) {
     ['naming', async () => (await import('./dev/namingtest')).runNamingTest()],
     ['kernel', async () => (await import('./dev/kerneltest')).runKernelTest()],
     ['solids', async () => (await import('./dev/solidtest')).runSolidTest()],
+    ['fits', async () => (await import('./dev/fittest')).runFitTest()],
   )
   const only = params.get('suite')?.split(',').filter(Boolean)
   ;(async () => {

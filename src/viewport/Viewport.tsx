@@ -1682,6 +1682,7 @@ export function Viewport() {
                   store.doc,
                   { bodyId: face.bodyId, kind: 'face', name: face.faceName },
                   face.instanceId,
+                  { point: face.localPoint, normal: face.localNormal },
                 )
               : null
         if (offerPick(picked)) return

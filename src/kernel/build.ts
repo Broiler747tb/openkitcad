@@ -87,7 +87,8 @@ import {
   type MeshBodyState,
 } from './meshSteps'
 import { meshBounds, transformMesh, triangleCount, type TriMesh } from '../mesh/types'
-import { runSolidStep } from './solidSteps'
+import { runSolidStep, type SolidStage } from './solidSteps'
+import { runFitStep } from './fitSteps'
 import { sketchChains } from '../sketch/chains'
 import { chainBlueprint } from './profile'
 
@@ -893,6 +894,17 @@ function hintForFailure(feature: Feature, message: string): string | undefined {
   if (feature.kind === 'lidSocket') {
     return 'The wall may be too thin for this kind of fit. Try a thicker wall or a plain drop-in lid.'
   }
+  if (
+    feature.kind === 'snapFit' ||
+    feature.kind === 'fitPins' ||
+    feature.kind === 'lipGroove' ||
+    feature.kind === 'dovetail' ||
+    feature.kind === 'snapRing' ||
+    feature.kind === 'bayonet' ||
+    feature.kind === 'hinge'
+  ) {
+    return 'Moving it a little away from edges and corners, or making it smaller, usually lets it build.'
+  }
   if (m.includes('null') || m.includes('undefined')) {
     return 'Something this step depends on is missing. Check the steps before it.'
   }
@@ -1085,29 +1097,28 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
     }
   }
 
-  if (
-    runSolidStep(feature, {
-      bodies: stage.bodies,
-      report: stage.report,
-      bodyName,
-      need,
-      set,
-      apply,
-      planeOf,
-      sketch: (id) => {
-        const sketchFeature = stage.sketches.get(id)
-        if (!sketchFeature) return null
-        return {
-          feature: sketchFeature,
-          frame:
-            stage.planes.get(sketchFeature.id) ??
-            frameFromPlaneRef(sketchFeature.plane, stage.bodies, stage.planes),
-        }
-      },
-      toPlane: (frame) => toReplicadPlane(frame),
-      profileFace,
-    })
-  ) {
+  const solidStage: SolidStage = {
+    bodies: stage.bodies,
+    report: stage.report,
+    bodyName,
+    need,
+    set,
+    apply,
+    planeOf,
+    sketch: (id) => {
+      const sketchFeature = stage.sketches.get(id)
+      if (!sketchFeature) return null
+      return {
+        feature: sketchFeature,
+        frame:
+          stage.planes.get(sketchFeature.id) ??
+          frameFromPlaneRef(sketchFeature.plane, stage.bodies, stage.planes),
+      }
+    },
+    toPlane: (frame) => toReplicadPlane(frame),
+    profileFace,
+  }
+  if (runSolidStep(feature, solidStage) || runFitStep(feature, solidStage)) {
     return
   }
 
