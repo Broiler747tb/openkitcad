@@ -46,6 +46,7 @@ import { runRibStep } from './ribStep'
 import { runCouponStep } from './couponStep'
 import { runCableStep } from './cableSteps'
 import { runClipStep } from './clipSteps'
+import { runScrewStep } from './screwStep'
 import {
   featureDependencies,
   findBody,
@@ -1395,7 +1396,8 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
     runRibStep(feature, solidStage) ||
     runCouponStep(feature, solidStage) ||
     runCableStep(feature, solidStage) ||
-    runClipStep(feature, solidStage, doc)
+    runClipStep(feature, solidStage, doc) ||
+    runScrewStep(feature, solidStage)
   ) {
     return
   }

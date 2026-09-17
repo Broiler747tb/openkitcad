@@ -460,6 +460,24 @@ export interface ThickenFeature extends FeatureBase {
   result: BodyOperation
 }
 
+export type ThreadProfile = 'trapezoid' | 'triangle'
+
+export interface ScrewLidFeature extends FeatureBase {
+  kind: 'screwLid'
+  face: ElementRef
+  anchor: Vec3
+  flipEnd: boolean
+  pitch: number
+  turns: number
+  profile: ThreadProfile
+  gap: number
+  fitClass?: FitClass
+  wall: number
+  top: number
+  grip: boolean
+  capBodyId: string
+}
+
 export interface BoardClipsFeature extends FeatureBase {
   kind: 'boardClips'
   bodyId: string
@@ -798,6 +816,7 @@ export type Feature =
   | FitCouponFeature
   | CableEntryFeature
   | BoardClipsFeature
+  | ScrewLidFeature
   | EmbossFeature
   | BodyPatternFeature
   | MirrorFeature
@@ -918,6 +937,7 @@ export const FEATURE_LABEL: Record<FeatureKind, string> = {
   fitCoupon: 'Fit Test Coupon',
   cableEntry: 'Cable Entry',
   boardClips: 'Board Clips',
+  screwLid: 'Screw Lid',
   move: 'Move',
   joint: 'Joint',
   jointOrigin: 'Joint Origin',
@@ -984,6 +1004,7 @@ export const FEATURE_HINT: Record<FeatureKind, string> = {
   fitCoupon: 'Two cards to print that measure what gap your printer really leaves.',
   cableEntry: 'A way for a cable to leave the box: a hole, a gland, a zip-tie anchor or a clamp.',
   boardClips: 'Clips along two edges of a placed board that hold it without screws.',
+  screwLid: 'A thread round an opening and a cap that screws onto it.',
   web: 'A set of thin walls along crossing sketch lines, grown down onto the part.',
   move: 'Moves and turns bodies by exact amounts.',
   joint: 'Holds two components together, with the motion left between them.',
@@ -1052,6 +1073,7 @@ export const FEATURE_ICON: Record<FeatureKind, string> = {
   fitCoupon: '⌗',
   cableEntry: '⌁',
   boardClips: '⊐',
+  screwLid: '⊚',
   move: '✚',
   joint: '⚭',
   jointOrigin: '⊕',

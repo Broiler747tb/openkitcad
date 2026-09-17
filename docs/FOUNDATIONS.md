@@ -65,8 +65,8 @@ classes that live in the design as parameters (§15).
 shapes, usable as a profile anywhere a profile is, and Emboss to raise or sink it on a flat face or
 round the side of a cylinder (§16). Then Rib and Web, the thin walls that brace a printed part
 (§17), the fit test coupon that measures what a printer really leaves (§18), the
-cable entries that get a lead out of a box (§19), and the clips that hold a board without screws
-(§20).
+cable entries that get a lead out of a box (§19), the clips that hold a board without screws
+(§20), and the screw lid that closes a round opening (§21).
 
 ## 3. Document model v2
 
@@ -807,7 +807,33 @@ dropping a probe under the clip and taking the top of what it hits.
 exactly a board thickness plus the hook and lead above the floor, that more clips add more material,
 and that a step whose board has been deleted says so.
 
-## 21. How the work is done
+## 21. Screw lid (EM)
+
+**A thread on a face you pick.** Screw Lid takes the round side of an opening, picked near the end
+the cap goes on, and gives it a thread. Which end is decided by where the click landed, and Other
+End moves it to the far one. The face tells the step everything else: its radius, how long it is,
+and whether the material is outside it or inside. A neck gets a male thread and a cap that screws
+over it; a bore gets a groove cut into it and a plug that screws in. A thread longer than the face
+is a warning, not an error.
+
+**One ridge, swept.** `src/kernel/screwStep.ts` draws the thread as a profile in the XZ plane, a
+blunt trapezoid or a vee, and sweeps it along a helix of the chosen pitch. The same ridge makes both
+halves: rooted 0.2 mm inside the material and grown by the fit gap on every side when it is the
+groove, so the two never touch. The cap is a plain cylinder with the bore and the groove cut out of
+it, and the ribbed grip is a knurled ring glued on afterwards. Order matters: cutting a helix out of
+a knurled cylinder takes seconds, out of a plain one a few hundred milliseconds, because every face
+of the target is intersected against the helical ones.
+
+**The booleans are our own.** replicad simplifies the result of every boolean, which never finishes
+on helical faces, so the lid is built with `BRepAlgoAPI_Fuse`/`Cut` directly. The knurl is joined
+with `BOPAlgo_GlueFull`, which tells OpenCascade the two only touch along one cylinder and saves it
+looking for intersections that are not there.
+
+**Tests.** `?selftest&suite=screw` threads a jar both ways round, screws the cap and the plug into
+place and intersects them with the jar to prove nothing touches, builds the vee profile, and checks
+the warning when the thread outgrows its face.
+
+## 22. How the work is done
 
 - Agents never start other agents or workflows.
 - New and rewritten code has no comments. Touched files are formatted with Prettier.
@@ -869,6 +895,10 @@ and that a step whose board has been deleted says so.
   headers: the pins go and the plated holes show. Tick Pin headers on the Pico: male pins appear under
   both long edges. Put a 3 mm plate just under the Nano, run the clearance check with and without its
   headers, and swap the Pico for a Pico 2 to see the pins stay. Undo back through every step.
+- **EM smoke test (screw lid).** Make a 30 mm tall cylinder of radius 15 and cut a 12 mm bore into
+  it. Run Screw Lid from the FIT group and click the outside of the tube near the top: a ribbed cap
+  appears over a threaded neck. Change Turns to 4 and Thread Shape to Vee, then OK. Hide the cap and
+  the thread is on the jar. Undo back through every step.
 - **EM smoke test (clips).** Insert a Raspberry Pi 4 and put a plate under it. Right-click the Pi and
   choose Board Clips: four clips appear along its long edges. Change Clips per Edge to 3 and the fit
   to Sliding, then OK. Move the Pi 5 mm along the plate: the clips follow. Undo back through every

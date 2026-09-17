@@ -85,6 +85,8 @@ export function featureCreatesBodies(feature: Feature): string[] {
       return [feature.newBodyId]
     case 'fitCoupon':
       return [feature.pinBodyId, feature.holeBodyId]
+    case 'screwLid':
+      return [feature.capBodyId]
     case 'cableEntry':
       return feature.barBodyId ? [feature.barBodyId] : []
   }
@@ -108,6 +110,8 @@ export function featureModifiesBodies(feature: Feature): string[] {
     case 'cableEntry':
     case 'boardClips':
       return [feature.bodyId]
+    case 'screwLid':
+      return [feature.face.bodyId]
     case 'rib':
     case 'web':
       return [feature.bodyId]

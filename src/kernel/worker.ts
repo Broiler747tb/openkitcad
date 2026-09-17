@@ -297,11 +297,27 @@ function referenceName(
   return references ? (references[kind].get(name) ?? '') : name
 }
 
+function emptyTessellation(): Tessellation {
+  return {
+    mesh: {
+      vertices: new Float32Array(0),
+      triangles: new Uint32Array(0),
+      normals: new Float32Array(0),
+      faceGroups: [],
+    },
+    edges: { lines: new Float32Array(0), edgeGroups: [] },
+    volume: 0,
+    bounds: [0, 0, 0, 0, 0, 0],
+    kind: 'solid',
+  }
+}
+
 function tessellate(
   shape: any,
   map?: ElementMap<OcShape>,
   references?: ReferenceNames,
 ): Tessellation {
+  if (!shape.faces.length) return emptyTessellation()
   const raw = shape.mesh({ tolerance: MESH_TOLERANCE, angularTolerance: MESH_ANGULAR_TOLERANCE })
   const rawEdges = shape.meshEdges({ keepMesh: true })
   const rawFaceGroups: any[] = raw.faceGroups ?? []

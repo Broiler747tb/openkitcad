@@ -34,6 +34,7 @@ import { ribCommand, webCommand } from './specs/rib'
 import { fitCouponCommand } from './specs/coupon'
 import { cableEntryCommand } from './specs/cable'
 import { boardClipsCommand } from './specs/clips'
+import { screwLidCommand } from './specs/screw'
 import { midplaneCommand, offsetPlaneCommand, planeAtAngleCommand } from './specs/construct'
 import {
   coilCommand,
@@ -96,6 +97,7 @@ export const COMMANDS: Readonly<Record<string, AnyCommandSpec>> = {
   fitCoupon: spec(fitCouponCommand),
   cableEntry: spec(cableEntryCommand),
   boardClips: spec(boardClipsCommand),
+  screwLid: spec(screwLidCommand),
   revolve: spec(revolveCommand),
   box: spec(boxCommand),
   cylinder: spec(cylinderCommand),
@@ -264,6 +266,8 @@ function startOptions(id: string): CommandStart {
       }
     case 'boardClips':
       return { initial: { board: selectedOccurrence(doc), body: bodies } }
+    case 'screwLid':
+      return { initial: { face: faces.slice(0, 1) } }
     case 'rib':
     case 'web':
       return { initial: { body: bodies } }
@@ -405,6 +409,25 @@ function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, Comma
             nutRoom: feature.nutRoom,
           },
           ...(feature.barBodyId ? { ids: { bar: feature.barBodyId } } : {}),
+        },
+      ]
+    case 'screwLid':
+      return [
+        COMMANDS.screwLid,
+        {
+          initial: {
+            face: [elementPick(doc, feature.face)].flatMap((pick) => pick ?? []),
+            pitch: feature.pitch,
+            turns: feature.turns,
+            profile: feature.profile,
+            fit: feature.fitClass ?? 'custom',
+            gap: feature.gap,
+            wall: feature.wall,
+            top: feature.top,
+            grip: feature.grip,
+            flipEnd: feature.flipEnd,
+          },
+          ids: { cap: feature.capBodyId },
         },
       ]
     case 'fitCoupon':
