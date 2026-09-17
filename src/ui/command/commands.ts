@@ -33,6 +33,7 @@ import { embossCommand } from './specs/emboss'
 import { ribCommand, webCommand } from './specs/rib'
 import { fitCouponCommand } from './specs/coupon'
 import { cableEntryCommand } from './specs/cable'
+import { boardClipsCommand } from './specs/clips'
 import { midplaneCommand, offsetPlaneCommand, planeAtAngleCommand } from './specs/construct'
 import {
   coilCommand,
@@ -94,6 +95,7 @@ export const COMMANDS: Readonly<Record<string, AnyCommandSpec>> = {
   web: spec(webCommand),
   fitCoupon: spec(fitCouponCommand),
   cableEntry: spec(cableEntryCommand),
+  boardClips: spec(boardClipsCommand),
   revolve: spec(revolveCommand),
   box: spec(boxCommand),
   cylinder: spec(cylinderCommand),
@@ -260,6 +262,8 @@ function startOptions(id: string): CommandStart {
       return {
         initial: { face: faces.slice(0, 1), ...(faces[0] ? pointOnFace(faces[0]) : {}) },
       }
+    case 'boardClips':
+      return { initial: { board: selectedOccurrence(doc), body: bodies } }
     case 'rib':
     case 'web':
       return { initial: { body: bodies } }
@@ -363,6 +367,24 @@ function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, Comma
   const fit = fitEditOptions(doc, feature)
   if (fit) return fit
   switch (feature.kind) {
+    case 'boardClips':
+      return [
+        COMMANDS.boardClips,
+        {
+          initial: {
+            board: [
+              occurrencePick(doc, feature.occurrencePath[feature.occurrencePath.length - 1]),
+            ].flatMap((pick) => pick ?? []),
+            body: bodyPicks([feature.bodyId]),
+            count: feature.count,
+            width: feature.width,
+            grip: feature.grip,
+            post: feature.post,
+            fit: feature.fitClass ?? 'custom',
+            gap: feature.gap,
+          },
+        },
+      ]
     case 'cableEntry':
       return [
         COMMANDS.cableEntry,

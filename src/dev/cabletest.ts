@@ -1,7 +1,8 @@
 import * as Comlink from 'comlink'
 import type { Vec2, Vec3 } from '../core/math'
+import { getPart } from '../catalogue'
 import { glandSpec, tieSpec } from '../doc/cables'
-import type { BodyOperation, Feature, OkcDocument } from '../doc/types'
+import type { BodyOperation, Feature, Matrix4, OkcDocument } from '../doc/types'
 import { emptyDocument } from '../doc/types'
 import type { EvaluateResult, KernelApi } from '../kernel/types'
 import type { TestResult } from './selftest'
@@ -54,6 +55,49 @@ function entryDoc(patch: Record<string, unknown>, bodies: Feature[] = [PLATE]): 
       tie: 'large',
       screw: 'M3',
       nutRoom: true,
+      ...patch,
+    } as Feature,
+  ]
+  return doc
+}
+
+const PI: Matrix4 = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, -42.5, -28, 6, 1]
+
+function clipsDoc(patch: Record<string, unknown> = {}): OkcDocument {
+  const doc = emptyDocument('Clips')
+  doc.components[0].bodies = [{ id: 'part', name: 'Case', visible: true, colour: '#cccccc' }]
+  doc.components.push({
+    id: 'pi-part',
+    name: 'Raspberry Pi 4 Model B',
+    source: { kind: 'catalogue', partId: 'raspberry-pi-4b' },
+    bodies: [],
+  })
+  doc.occurrences.push({
+    id: 'pi',
+    parentComponentId: doc.rootComponentId,
+    componentId: 'pi-part',
+    name: 'Raspberry Pi 4 Model B',
+    transform: PI,
+    visible: true,
+    grounded: true,
+  })
+  doc.timeline = [
+    box('floor', [-50, -35], [100, 70, 6], 0, { kind: 'newBody', bodyId: 'part' }),
+    {
+      id: 'cl',
+      name: 'Clips',
+      componentId: 'root',
+      kind: 'boardClips',
+      bodyId: 'part',
+      occurrencePath: ['pi'],
+      contextPath: [],
+      count: 2,
+      width: 8,
+      post: 2.4,
+      grip: 1.2,
+      ledge: 1.2,
+      hook: 1.2,
+      gap: 0.2,
       ...patch,
     } as Feature,
   ]
@@ -150,6 +194,37 @@ export async function runCableTest(): Promise<TestResult[]> {
           bar.volume > 50 &&
           bar.bounds[2] > 3,
         `${said(result)}; part ${volumeOf(result).toFixed(1)}, bar ${bar?.volume.toFixed(1)} from z ${bar?.bounds[2].toFixed(2)}`,
+      )
+    })
+    await check('board clips', async () => {
+      const result = await evaluate(clipsDoc())
+      const mesh = meshOf(result, 'part')
+      const floor = 100 * 70 * 6
+      const part = getPart('raspberry-pi-4b')
+      const board = part?.geometry.kind === 'board' ? part.geometry.thickness : 1.4
+      const top = 6 + board + 0.1 + 1.2 + (0.2 + 1.2 + 2.4)
+      add(
+        'clips stand on the floor and reach over a placed board',
+        result.errors.length === 0 &&
+          !!mesh &&
+          mesh.volume > floor &&
+          Math.abs((mesh?.bounds[5] ?? 0) - top) < 0.1,
+        `${said(result)}; volume ${(mesh?.volume ?? 0).toFixed(1)} over ${floor}, top ${mesh?.bounds[5].toFixed(2)} of ${top.toFixed(2)}`,
+      )
+      const four = await evaluate(clipsDoc({ count: 3 }))
+      const more = meshOf(four, 'part')
+      add(
+        'more clips per edge add more material',
+        four.errors.length === 0 && (more?.volume ?? 0) > (mesh?.volume ?? 0),
+        `${said(four)}; ${(more?.volume ?? 0).toFixed(1)} against ${(mesh?.volume ?? 0).toFixed(1)}`,
+      )
+      const gone = clipsDoc()
+      gone.occurrences = []
+      const missing = await evaluate(gone)
+      add(
+        'clips whose board has gone say so',
+        missing.errors.some((error) => error.message.includes('board these clips')),
+        said(missing),
       )
     })
   } catch (error) {

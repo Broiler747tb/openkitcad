@@ -460,6 +460,21 @@ export interface ThickenFeature extends FeatureBase {
   result: BodyOperation
 }
 
+export interface BoardClipsFeature extends FeatureBase {
+  kind: 'boardClips'
+  bodyId: string
+  occurrencePath: string[]
+  contextPath: string[]
+  count: number
+  width: number
+  post: number
+  grip: number
+  ledge: number
+  hook: number
+  gap: number
+  fitClass?: FitClass
+}
+
 export interface CableEntryFeature extends FeatureBase {
   kind: 'cableEntry'
   entry: CableEntryKind
@@ -782,6 +797,7 @@ export type Feature =
   | WebFeature
   | FitCouponFeature
   | CableEntryFeature
+  | BoardClipsFeature
   | EmbossFeature
   | BodyPatternFeature
   | MirrorFeature
@@ -901,6 +917,7 @@ export const FEATURE_LABEL: Record<FeatureKind, string> = {
   web: 'Web',
   fitCoupon: 'Fit Test Coupon',
   cableEntry: 'Cable Entry',
+  boardClips: 'Board Clips',
   move: 'Move',
   joint: 'Joint',
   jointOrigin: 'Joint Origin',
@@ -966,6 +983,7 @@ export const FEATURE_HINT: Record<FeatureKind, string> = {
   rib: 'A thin wall along a sketch line, grown down onto the part to brace it.',
   fitCoupon: 'Two cards to print that measure what gap your printer really leaves.',
   cableEntry: 'A way for a cable to leave the box: a hole, a gland, a zip-tie anchor or a clamp.',
+  boardClips: 'Clips along two edges of a placed board that hold it without screws.',
   web: 'A set of thin walls along crossing sketch lines, grown down onto the part.',
   move: 'Moves and turns bodies by exact amounts.',
   joint: 'Holds two components together, with the motion left between them.',
@@ -1033,6 +1051,7 @@ export const FEATURE_ICON: Record<FeatureKind, string> = {
   web: '⋕',
   fitCoupon: '⌗',
   cableEntry: '⌁',
+  boardClips: '⊐',
   move: '✚',
   joint: '⚭',
   jointOrigin: '⊕',

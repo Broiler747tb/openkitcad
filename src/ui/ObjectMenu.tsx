@@ -33,7 +33,7 @@ import { canEditInPanel, editFeature, startCommand } from './command/commands'
 import { setGrounded, updateJoint } from './command/specs/assemble'
 import { animateJoint } from './jointAnimation'
 import { motionDofs } from '../assembly/motion'
-import { bodyPick, elementPick } from './command/picks'
+import { bodyPick, elementPick, occurrencePick } from './command/picks'
 import { counted } from '../core/words'
 
 interface PromptField {
@@ -702,6 +702,18 @@ function buildObjectActions(
         label: 'Standoffs',
         prompt: { label: 'Height', initial: 6, unit: 'mm' },
         run: (height) => add('standoffs', height),
+      })
+    }
+    if (targetBody && part?.geometry.kind === 'board') {
+      out.push({
+        id: 'clips',
+        label: 'Board Clips',
+        hint: 'Clips along two edges, so the board snaps in without screws',
+        run: () =>
+          startCommand('boardClips', {
+            board: [occurrencePick(doc, id, selection.instanceId)].flatMap((pick) => pick ?? []),
+            body: [bodyPick(doc, targetBody)].flatMap((pick) => pick ?? []),
+          }),
       })
     }
     if (targetBody && part?.connectors?.length) {

@@ -64,8 +64,9 @@ classes that live in the design as parameters (§15).
 **EM: text and emboss.** Sketch text in the fonts on this computer, kept in the design as letter
 shapes, usable as a profile anywhere a profile is, and Emboss to raise or sink it on a flat face or
 round the side of a cylinder (§16). Then Rib and Web, the thin walls that brace a printed part
-(§17), the fit test coupon that measures what a printer really leaves (§18), and the
-cable entries that get a lead out of a box (§19).
+(§17), the fit test coupon that measures what a printer really leaves (§18), the
+cable entries that get a lead out of a box (§19), and the clips that hold a board without screws
+(§20).
 
 ## 3. Document model v2
 
@@ -787,7 +788,26 @@ so an entry works on any flat face at any angle.
 hole and chamfer formulas, proves the nut room never eats the wall, and builds the clamp with its
 bar.
 
-## 20. How the work is done
+## 20. Board clips (EM)
+
+**The board is the input.** Board Clips takes a board already placed in the design and the body the
+clips stand on, so the clips read the board's outline and thickness from the catalogue and move with
+it, like mounting holes do. It is in the FIT list and on a placed board's right-click menu. Clips go
+along the board's two longer edges, two per edge to start with, set in from the corners.
+
+**One profile, four places.** Each clip is a profile drawn in `src/kernel/clipSteps.ts` and swept
+across the clip's width: a post standing outside the board edge by the fit gap, a hook that reaches
+over the top of the board with a 45 degree lead-in so the board pushes past it, and a ledge under
+the board edge to rest on. Where the board already sits on the floor the ledge is left out and the
+post starts there. Everything is built in the board's own coordinates and placed with the board's
+matrix, so clips follow the board wherever it is put. The floor each clip stands on is found by
+dropping a probe under the clip and taking the top of what it hits.
+
+**Tests.** `?selftest&suite=cables` clips a real Raspberry Pi to a plate, checks the hooks finish
+exactly a board thickness plus the hook and lead above the floor, that more clips add more material,
+and that a step whose board has been deleted says so.
+
+## 21. How the work is done
 
 - Agents never start other agents or workflows.
 - New and rewritten code has no comments. Touched files are formatted with Prettier.
@@ -849,6 +869,10 @@ bar.
   headers: the pins go and the plated holes show. Tick Pin headers on the Pico: male pins appear under
   both long edges. Put a 3 mm plate just under the Nano, run the clearance check with and without its
   headers, and swap the Pico for a Pico 2 to see the pins stay. Undo back through every step.
+- **EM smoke test (clips).** Insert a Raspberry Pi 4 and put a plate under it. Right-click the Pi and
+  choose Board Clips: four clips appear along its long edges. Change Clips per Edge to 3 and the fit
+  to Sliding, then OK. Move the Pi 5 mm along the plate: the clips follow. Undo back through every
+  step.
 - **EM smoke test (cables).** On a hollowed box, run Cable Entry and click a wall: a grommet hole
   appears where you clicked. Change Kind to Cable Gland, pick PG9 and read the cable range; set the
   cable to 13 mm and see the panel say the gland does not grip it. Change Kind to Zip-tie Anchor and

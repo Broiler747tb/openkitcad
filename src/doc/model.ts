@@ -106,6 +106,7 @@ export function featureModifiesBodies(feature: Feature): string[] {
     case 'emboss':
       return [feature.face.bodyId]
     case 'cableEntry':
+    case 'boardClips':
       return [feature.bodyId]
     case 'rib':
     case 'web':

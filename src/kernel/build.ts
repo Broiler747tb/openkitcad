@@ -45,6 +45,7 @@ import { runEmbossStep } from './embossStep'
 import { runRibStep } from './ribStep'
 import { runCouponStep } from './couponStep'
 import { runCableStep } from './cableSteps'
+import { runClipStep } from './clipSteps'
 import {
   featureDependencies,
   findBody,
@@ -413,7 +414,7 @@ function occurrenceInputs(
     feature.source.kind === 'occurrence'
   )
     return [feature.source]
-  if (feature.kind === 'portCutout') return [feature]
+  if (feature.kind === 'portCutout' || feature.kind === 'boardClips') return [feature]
   return []
 }
 
@@ -1168,6 +1169,9 @@ function hintForFailure(feature: Feature, message: string): string | undefined {
   if (feature.kind === 'cableEntry') {
     return 'Moving it away from edges and corners, or using a smaller cable, usually builds.'
   }
+  if (feature.kind === 'boardClips') {
+    return 'A thinner post, a smaller grip, or a board sitting squarely over the floor usually builds.'
+  }
   if (feature.kind === 'rib' || feature.kind === 'web') {
     return 'A thinner wall, or lines that sit squarely over the part, usually build.'
   }
@@ -1390,7 +1394,8 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
     runEmbossStep(feature, solidStage) ||
     runRibStep(feature, solidStage) ||
     runCouponStep(feature, solidStage) ||
-    runCableStep(feature, solidStage)
+    runCableStep(feature, solidStage) ||
+    runClipStep(feature, solidStage, doc)
   ) {
     return
   }
