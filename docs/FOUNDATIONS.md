@@ -64,7 +64,8 @@ classes that live in the design as parameters (§15).
 **EM: text and emboss.** Sketch text in the fonts on this computer, kept in the design as letter
 shapes, usable as a profile anywhere a profile is, and Emboss to raise or sink it on a flat face or
 round the side of a cylinder (§16). Then Rib and Web, the thin walls that brace a printed part
-(§17), and the fit test coupon that measures what a printer really leaves (§18).
+(§17), the fit test coupon that measures what a printer really leaves (§18), and the
+cable entries that get a lead out of a box (§19).
 
 ## 3. Document model v2
 
@@ -764,7 +765,29 @@ wide. `?selftest&suite=walls` builds a coupon, measures both cards, and pushes p
 hair under and a hair over each rung's size into the holes to prove every hole is the pin plus twice
 its gap.
 
-## 19. How the work is done
+## 19. Cable entries (EM)
+
+**One command, four kinds.** Cable Entry sits in the FIT group and is placed by clicking the wall,
+like a fit. Grommet Hole cuts a rounded hole of the cable plus its clearance, chamfered on both
+sides so a printed edge never bites the lead. Cable Gland cuts the panel hole a screw-in gland
+needs, from a table of PG7 to PG16 and M12 to M25 in `src/doc/cables.ts`, with the cable range each
+one grips; the panel says so when the cable does not suit the gland picked, and Room for the Nut
+clears the space the lock nut needs on the inside. Zip-tie Anchor stands a small bridge on the wall
+with a slot under it for a 2.5, 3.6 or 4.8 mm tie. Strain Relief puts two screw posts either side of
+the cable and makes a second body, a bar with a groove and two clearance holes, that screws down and
+pinches the lead.
+
+**The wall measures itself.** A hole has to know how thick the wall under it is, so
+`src/kernel/cableSteps.ts` drops a cylinder the width of the hole down the face normal, intersects
+it with the body and takes the near piece: that is the wall, and the chamfers land on its two faces
+wherever it sits. Everything else is built in the entry's own frame and placed with one transform,
+so an entry works on any flat face at any angle.
+
+**Tests.** `?selftest&suite=cables` cuts each kind into a plate and checks the volume against the
+hole and chamfer formulas, proves the nut room never eats the wall, and builds the clamp with its
+bar.
+
+## 20. How the work is done
 
 - Agents never start other agents or workflows.
 - New and rewritten code has no comments. Touched files are formatted with Prettier.
@@ -826,6 +849,10 @@ its gap.
   headers: the pins go and the plated holes show. Tick Pin headers on the Pico: male pins appear under
   both long edges. Put a 3 mm plate just under the Nano, run the clearance check with and without its
   headers, and swap the Pico for a Pico 2 to see the pins stay. Undo back through every step.
+- **EM smoke test (cables).** On a hollowed box, run Cable Entry and click a wall: a grommet hole
+  appears where you clicked. Change Kind to Cable Gland, pick PG9 and read the cable range; set the
+  cable to 13 mm and see the panel say the gland does not grip it. Change Kind to Zip-tie Anchor and
+  then to Strain Relief: a bar body appears beside the box. Undo back through every step.
 - **EM smoke test (coupon).** Run Fit Test Coupon from the FIT group and OK: two cards appear, one
   with seven pins and one with seven holes numbered 10 to 40. Export them as STL, print them, and
   push pin one into hole one and on along the row. Open fx Parameters and type the number that felt

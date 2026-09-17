@@ -126,6 +126,7 @@ const labels: Record<string, string> = {
   bayonet: 'Bayonet',
   hinge: 'Print-in-place Hinge',
   fitCoupon: 'Fit Test Coupon',
+  cableEntry: 'Cable Entry',
   extrude: 'Extrude',
   rib: 'Rib',
   web: 'Web',
@@ -1131,6 +1132,7 @@ export function Toolbar({
                 'bayonet',
                 'hinge',
                 'fitCoupon',
+                'cableEntry',
               ].map((id) => ({ ...cmd(id), group: 'Fit' })),
               tool('Snap Fit', <SnapFitIcon className="okc-icon" />, () => invoke('snapFit')),
             )}

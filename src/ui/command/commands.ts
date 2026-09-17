@@ -32,6 +32,7 @@ import { extrudeCommand, revolveCommand } from './specs/sketchBased'
 import { embossCommand } from './specs/emboss'
 import { ribCommand, webCommand } from './specs/rib'
 import { fitCouponCommand } from './specs/coupon'
+import { cableEntryCommand } from './specs/cable'
 import { midplaneCommand, offsetPlaneCommand, planeAtAngleCommand } from './specs/construct'
 import {
   coilCommand,
@@ -92,6 +93,7 @@ export const COMMANDS: Readonly<Record<string, AnyCommandSpec>> = {
   rib: spec(ribCommand),
   web: spec(webCommand),
   fitCoupon: spec(fitCouponCommand),
+  cableEntry: spec(cableEntryCommand),
   revolve: spec(revolveCommand),
   box: spec(boxCommand),
   cylinder: spec(cylinderCommand),
@@ -254,6 +256,10 @@ function startOptions(id: string): CommandStart {
       return { initial: { profile: sketchPicks() } }
     case 'emboss':
       return { initial: { profile: sketchPicks(), face: faces.slice(0, 1) } }
+    case 'cableEntry':
+      return {
+        initial: { face: faces.slice(0, 1), ...(faces[0] ? pointOnFace(faces[0]) : {}) },
+      }
     case 'rib':
     case 'web':
       return { initial: { body: bodies } }
@@ -357,6 +363,28 @@ function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, Comma
   const fit = fitEditOptions(doc, feature)
   if (fit) return fit
   switch (feature.kind) {
+    case 'cableEntry':
+      return [
+        COMMANDS.cableEntry,
+        {
+          initial: {
+            face: [
+              elementPick(doc, feature.plane.kind === 'face' ? feature.plane.face : null!),
+            ].flatMap((pick) => pick ?? []),
+            entry: feature.entry,
+            x: feature.position[0],
+            y: feature.position[1],
+            angle: feature.angle,
+            cable: feature.cable,
+            clearance: feature.clearance,
+            gland: feature.gland,
+            tie: feature.tie,
+            screw: feature.screw,
+            nutRoom: feature.nutRoom,
+          },
+          ...(feature.barBodyId ? { ids: { bar: feature.barBodyId } } : {}),
+        },
+      ]
     case 'fitCoupon':
       return [
         COMMANDS.fitCoupon,

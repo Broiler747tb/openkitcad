@@ -44,6 +44,7 @@ import { sketchToProfile } from './profile'
 import { runEmbossStep } from './embossStep'
 import { runRibStep } from './ribStep'
 import { runCouponStep } from './couponStep'
+import { runCableStep } from './cableSteps'
 import {
   featureDependencies,
   findBody,
@@ -1164,6 +1165,9 @@ function hintForFailure(feature: Feature, message: string): string | undefined {
   if (feature.kind === 'emboss') {
     return 'A smaller depth, or text kept clear of the edges of the face, usually builds.'
   }
+  if (feature.kind === 'cableEntry') {
+    return 'Moving it away from edges and corners, or using a smaller cable, usually builds.'
+  }
   if (feature.kind === 'rib' || feature.kind === 'web') {
     return 'A thinner wall, or lines that sit squarely over the part, usually build.'
   }
@@ -1385,7 +1389,8 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
     runFitStep(feature, solidStage) ||
     runEmbossStep(feature, solidStage) ||
     runRibStep(feature, solidStage) ||
-    runCouponStep(feature, solidStage)
+    runCouponStep(feature, solidStage) ||
+    runCableStep(feature, solidStage)
   ) {
     return
   }

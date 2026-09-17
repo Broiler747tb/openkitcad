@@ -4,6 +4,7 @@ import type { FastenerKind, ThreadSize } from '../fasteners'
 import type { CataloguePart } from '../catalogue/types'
 import type { DofLimits, DofReference, JointMotion } from '../assembly/types'
 import type { EncodedMesh } from '../mesh/blob'
+import type { CableEntryKind } from './cables'
 
 export type LengthUnit = 'mm' | 'cm' | 'm' | 'in' | 'ft'
 
@@ -459,6 +460,22 @@ export interface ThickenFeature extends FeatureBase {
   result: BodyOperation
 }
 
+export interface CableEntryFeature extends FeatureBase {
+  kind: 'cableEntry'
+  entry: CableEntryKind
+  bodyId: string
+  plane: PlaneRef
+  position: Vec2
+  angle: number
+  cable: number
+  clearance: number
+  gland: string
+  tie: string
+  screw: ThreadSize
+  nutRoom: boolean
+  barBodyId?: string
+}
+
 export interface FitCouponFeature extends FeatureBase {
   kind: 'fitCoupon'
   plane: PlaneRef
@@ -764,6 +781,7 @@ export type Feature =
   | RibFeature
   | WebFeature
   | FitCouponFeature
+  | CableEntryFeature
   | EmbossFeature
   | BodyPatternFeature
   | MirrorFeature
@@ -882,6 +900,7 @@ export const FEATURE_LABEL: Record<FeatureKind, string> = {
   rib: 'Rib',
   web: 'Web',
   fitCoupon: 'Fit Test Coupon',
+  cableEntry: 'Cable Entry',
   move: 'Move',
   joint: 'Joint',
   jointOrigin: 'Joint Origin',
@@ -946,6 +965,7 @@ export const FEATURE_HINT: Record<FeatureKind, string> = {
   emboss: 'Raises or sinks sketch text and shapes on a flat or round face.',
   rib: 'A thin wall along a sketch line, grown down onto the part to brace it.',
   fitCoupon: 'Two cards to print that measure what gap your printer really leaves.',
+  cableEntry: 'A way for a cable to leave the box: a hole, a gland, a zip-tie anchor or a clamp.',
   web: 'A set of thin walls along crossing sketch lines, grown down onto the part.',
   move: 'Moves and turns bodies by exact amounts.',
   joint: 'Holds two components together, with the motion left between them.',
@@ -1012,6 +1032,7 @@ export const FEATURE_ICON: Record<FeatureKind, string> = {
   rib: '◺',
   web: '⋕',
   fitCoupon: '⌗',
+  cableEntry: '⌁',
   move: '✚',
   joint: '⚭',
   jointOrigin: '⊕',

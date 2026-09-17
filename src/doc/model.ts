@@ -85,6 +85,8 @@ export function featureCreatesBodies(feature: Feature): string[] {
       return [feature.newBodyId]
     case 'fitCoupon':
       return [feature.pinBodyId, feature.holeBodyId]
+    case 'cableEntry':
+      return feature.barBodyId ? [feature.barBodyId] : []
   }
   const operation = operationOf(feature)
   return operation?.kind === 'newBody' ? [operation.bodyId] : []
@@ -103,6 +105,8 @@ export function featureModifiesBodies(feature: Feature): string[] {
       return [feature.bodyId]
     case 'emboss':
       return [feature.face.bodyId]
+    case 'cableEntry':
+      return [feature.bodyId]
     case 'rib':
     case 'web':
       return [feature.bodyId]
