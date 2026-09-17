@@ -84,5 +84,38 @@ export function runUiTest(): TestResult[] {
     check(`the right-click list never covers the marking ring ${where}`, ok, JSON.stringify(placed))
   }
 
+  const stage = document.createElement('div')
+  stage.style.cssText = 'position:fixed;inset:0;'
+  stage.innerHTML =
+    '<header class="workspace-header" style="position:fixed;left:0;top:0;width:420px;height:40px">' +
+    '<div class="fusion-group" style="position:absolute;left:0;top:0">' +
+    '<div class="fusion-dropdown" style="position:fixed;left:20px;top:60px;width:260px;height:160px"></div>' +
+    '</div></header>' +
+    '<div class="viewport" style="position:absolute;left:0;top:40px;width:420px;height:320px">' +
+    '<div class="view-cube" style="left:10px;top:30px;width:120px;height:120px">' +
+    '<button class="view-cube-face" style="left:0;top:0;width:120px;height:120px"></button></div>' +
+    '<div class="okc-cmd" style="position:absolute;left:150px;top:30px;width:200px;height:200px"></div>' +
+    '</div>'
+  document.body.appendChild(stage)
+  try {
+    const header = stage.querySelector('header')!
+    const menu = stage.querySelector('.fusion-dropdown')!
+    const onTop = () =>
+      [
+        [60, 120],
+        [240, 150],
+      ].every(([x, y]) => menu.contains(document.elementFromPoint(x, y)))
+    const closed = onTop()
+    header.classList.add('menu-open')
+    const open = onTop()
+    check(
+      'an open ribbon menu draws over the view cube and a command panel',
+      !closed && open,
+      `covered while the header is at rest: ${!closed}, on top once a menu is open: ${open}`,
+    )
+  } finally {
+    stage.remove()
+  }
+
   return results
 }

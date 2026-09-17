@@ -102,6 +102,9 @@
   z-index: 20;
   box-shadow: 0 1px 5px #0002;
 }
+.workspace-header.menu-open {
+  z-index: var(--okc-z-menu);
+}
 .app-header {
   min-height: 38px;
   height: 38px;
@@ -571,8 +574,8 @@ button.workspace-tab {
   }
   .fusion-dropdown {
     position: fixed;
-    top: 158px;
-    left: 10px !important;
+    top: var(--menu-top, 158px);
+    left: var(--menu-left, 10px) !important;
     right: auto !important;
     max-height: calc(100vh - 220px);
   }
@@ -594,8 +597,8 @@ button.workspace-tab {
   }
   .fusion-dropdown {
     position: fixed;
-    top: 158px;
-    left: 10px !important;
+    top: var(--menu-top, 158px);
+    left: var(--menu-left, 10px) !important;
     right: auto !important;
     max-height: calc(100vh - 220px);
   }

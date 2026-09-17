@@ -197,6 +197,8 @@ export function Toolbar({
   const [palette, setPalette] = useState(false),
     [help, setHelp] = useState(false)
   const [parametersOpen, setParametersOpen] = useState(false)
+  const [anchor, setAnchor] = useState<React.CSSProperties | undefined>(undefined)
+  const [fileOpen, setFileOpen] = useState(false)
   const [pending, setPending] = useState<string | null>(null),
     [menu, setMenu] = useState<string | null>(null)
   const [variants, setVariants] = useState<Record<string, ToolId>>({})
@@ -510,18 +512,32 @@ export function Toolbar({
       <span>{label}</span>
     </button>
   )
+  const toggleMenu = (key: string, from: HTMLElement) => {
+    const box = (from.closest('.ribbon-split, .fusion-group') ?? from).getBoundingClientRect()
+    const top = root.current?.getBoundingClientRect().bottom ?? box.bottom
+    setAnchor({
+      ['--menu-left' as string]: `${Math.round(Math.max(10, Math.min(box.left, window.innerWidth - 310)))}px`,
+      ['--menu-top' as string]: `${Math.round(top)}px`,
+    })
+    setMenu(menu === key ? null : key)
+  }
   const group = (label: string, items: ObjectAction[], children: React.ReactNode) => (
     <div className="fusion-group">
       <div className="fusion-group-tools">{children}</div>
       <button
         className="group-trigger"
         aria-expanded={menu === label}
-        onClick={() => setMenu(menu === label ? null : label)}
+        onClick={(e) => toggleMenu(label, e.currentTarget)}
       >
         {label} ▾
       </button>
       {menu === label && (
-        <div className="fusion-dropdown" role="region" aria-label={label + ' commands'}>
+        <div
+          className="fusion-dropdown"
+          role="region"
+          aria-label={label + ' commands'}
+          style={anchor}
+        >
           {items.length ? (
             <FlyoutMenu
               actions={items}
@@ -638,7 +654,7 @@ export function Toolbar({
     </button>,
   )
   return (
-    <header className="workspace-header" ref={root}>
+    <header className={'workspace-header' + (menu || fileOpen ? ' menu-open' : '')} ref={root}>
       <div className="app-header">
         <span className="brand">
           <BrandMark size={26} />
@@ -647,7 +663,7 @@ export function Toolbar({
         <button className="tb" onClick={() => setParametersOpen(true)}>
           fx Parameters
         </button>
-        <details className="file-menu">
+        <details className="file-menu" onToggle={(e) => setFileOpen(e.currentTarget.open)}>
           <summary>File ▾</summary>
           <div onClick={(e) => e.currentTarget.closest('details')?.removeAttribute('open')}>
             <button onClick={newDesign}>
@@ -778,13 +794,13 @@ export function Toolbar({
                         className="ribbon-split-arrow"
                         aria-label={name + ' options'}
                         aria-expanded={menu === flyout}
-                        onClick={() => setMenu(menu === flyout ? null : flyout)}
+                        onClick={(e) => toggleMenu(flyout, e.currentTarget)}
                       >
                         ▾
                       </button>
                     )}
                     {menu === flyout && (
-                      <div className="fusion-dropdown ribbon-split-menu" role="menu">
+                      <div className="fusion-dropdown ribbon-split-menu" role="menu" style={anchor}>
                         {tools.map((tool) => (
                           <button
                             key={tool.id}
