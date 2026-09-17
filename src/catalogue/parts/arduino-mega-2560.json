@@ -368,7 +368,8 @@
         "z": 1.6,
         "height": 8.5,
         "colour": "#1b1d20",
-        "label": "Power and analog headers"
+        "label": "Power and analog headers",
+        "header": true
       },
       {
         "x": 17.526,
@@ -378,7 +379,8 @@
         "z": 1.6,
         "height": 8.5,
         "colour": "#1b1d20",
-        "label": "Digital headers"
+        "label": "Digital headers",
+        "header": true
       },
       {
         "x": 92.71,
@@ -388,7 +390,8 @@
         "z": 1.6,
         "height": 8.5,
         "colour": "#1b1d20",
-        "label": "Digital header 22 to 53"
+        "label": "Digital header 22 to 53",
+        "header": true
       },
       {
         "x": 15.26,

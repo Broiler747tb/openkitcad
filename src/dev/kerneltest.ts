@@ -1873,6 +1873,56 @@ export async function runKernelTest(): Promise<TestResult[]> {
       refused.errors.some((error) => error.message.includes('mesh body')),
       errorText(refused) || 'no error',
     )
+
+    {
+      const boardDoc = (partId: string, headers: boolean | undefined, lift: number) =>
+        makeDocument(
+          `headers-${partId}`,
+          [body('base', 'Base')],
+          [boxFeature('bx', 'base', [0, 0], [80, 60, 3])],
+          {
+            components: [
+              {
+                id: 'board-part',
+                name: partId,
+                source: {
+                  kind: 'catalogue',
+                  partId,
+                  ...(headers === undefined ? {} : { headers }),
+                },
+                bodies: [],
+              },
+            ],
+            occurrences: [
+              occurrence('board', 'root', 'board-part', translationMatrix([5, 5, lift]), {
+                name: partId,
+              }),
+            ],
+          },
+        )
+      const volume = async (headers: boolean | undefined) =>
+        meshFor(await evaluate(boardDoc('raspberry-pi-4b', headers, 20)), 'board|board-part')
+          ?.volume ?? 0
+      const fitted = await volume(undefined)
+      const bare = await volume(false)
+      const header = 50.81 * 5 * 8.5
+      add(
+        'a Pi 4 without pin headers loses exactly the solid of its 40-pin header',
+        Math.abs(fitted - bare - header) < 1,
+        `${(fitted - bare).toFixed(1)} mm3 less, header ${header.toFixed(1)}`,
+      )
+      const clashes = async (headers: boolean | undefined) =>
+        (await kernel.clearance(boardDoc('arduino-nano', headers, 8))).filter((clash) =>
+          `${clash.aLabel} ${clash.bLabel}`.includes('Header pins below'),
+        ).length
+      const withPins = await clashes(undefined)
+      const withoutPins = await clashes(false)
+      add(
+        'a Nano sitting just above a plate clashes through its pins, and not once they are off',
+        withPins > 0 && withoutPins === 0,
+        `${withPins} clash(es) with pins, ${withoutPins} without`,
+      )
+    }
   } catch (e) {
     add('kernel test ran', false, `${(e as Error).message}\n${(e as Error).stack ?? ''}`)
   }

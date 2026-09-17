@@ -23,7 +23,13 @@ import {
   transformPoint,
 } from '../doc/model'
 import { resolveParameters } from '../doc/parameters'
-import { CATEGORY_COLOUR, getPart, setCustomParts, type CataloguePart } from '../catalogue'
+import {
+  CATEGORY_COLOUR,
+  effectivePart,
+  getPart,
+  setCustomParts,
+  type CataloguePart,
+} from '../catalogue'
 import {
   buildPartLocal,
   emptySnapshot,
@@ -484,8 +490,9 @@ function catalogueSolid(
 ): { shape: any; key: string; part: CataloguePart } | null {
   if (component.source.kind !== 'catalogue') return null
   const { partId, overrides } = component.source
-  const part = getPart(partId)
-  if (!part) return null
+  const shipped = getPart(partId)
+  if (!shipped) return null
+  const part = effectivePart(shipped, component.source)
   const key = hash('part', partId, canonicalJson(overrides ?? null), canonicalJson(part))
   let entry = partSolids.get(key)
   if (!entry) {
@@ -1065,7 +1072,8 @@ const api: KernelApi = {
       if (!node.visible) continue
       const component = findComponent(doc, node.componentId)
       if (component?.source.kind !== 'catalogue') continue
-      const part = getPart(component.source.partId)
+      const shipped = getPart(component.source.partId)
+      const part = shipped && effectivePart(shipped, component.source)
       const owner = node.path.length
         ? (findOccurrence(doc, node.path[node.path.length - 1])?.name ?? component.name)
         : component.name

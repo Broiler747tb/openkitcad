@@ -6,6 +6,7 @@ import {
   transformDirection,
   transformPoint,
 } from '../doc/model'
+import { withHeaders } from './headers'
 import { partFootprint, type CataloguePart } from './types'
 
 export type PartBounds = [number, number, number, number, number, number]
@@ -23,10 +24,12 @@ export interface PartDrop {
 
 export function effectivePart(
   part: CataloguePart,
-  overrides?: Record<string, number>,
+  source?: { overrides?: Record<string, number>; headers?: boolean },
 ): CataloguePart {
-  if (part.geometry.kind !== 'extrusion' || overrides?.length === undefined) return part
-  return { ...part, geometry: { ...part.geometry, length: overrides.length } }
+  const fitted = withHeaders(part, source?.headers)
+  const length = source?.overrides?.length
+  if (fitted.geometry.kind !== 'extrusion' || length === undefined) return fitted
+  return { ...fitted, geometry: { ...fitted.geometry, length } }
 }
 
 export function partBounds(part: CataloguePart): PartBounds {

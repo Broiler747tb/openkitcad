@@ -540,6 +540,16 @@ and so do the move arrows and paste.
 the part in place (`swapCataloguePart`), keeping the placement and renaming the component and its
 occurrences if they still had the old name.
 
+**Pin headers.** Properties shows Pin headers for any board with pin rows. It starts as the board is
+usually sold (a Nano or D1 mini with pins, a Pico or Pi Zero bare) and is stored on the component
+source as `headers`, so linked copies share it, a version swap keeps it, and a design saved before
+it opens unchanged. `withHeaders` in `src/catalogue/headers.ts` makes the part the look, the kernel
+solid, clearance and port cutouts all use (through `effectivePart`). Switching off removes every
+`header` look component and every bump, keepout or look box marked `"header": true`, so the pads
+show instead. Switching on adds male headers to every pin row that has none: under the board with a
+keepout for the pins, or on top as a solid bump for an SBC. Keepouts that mixed pins with other
+parts were split, so a bare PIR sensor still keeps room for its pots.
+
 **Your parts.** New part, Import (one part or a list, checked by `partProblems`, with a line per
 refused part), Export all, and per part Edit, Duplicate, Export and Delete, which warns when the part
 is placed. A user part with a shipped id overrides the shipped part and is marked. Edit keeps the id
@@ -703,6 +713,10 @@ an edit moving the link.
   Right-click a side face and choose Draft, pick XY as the plane and tilt it 10°. Scale a body by 2.5
   in an inch document and read 2.5, not a length. Open any command and see the Inspector step aside.
   Narrow the window to 950 px and scroll the ribbon. Undo back through every step.
+- **P smoke test.** Insert an Arduino Nano and a Raspberry Pi Pico. Select the Nano and untick Pin
+  headers: the pins go and the plated holes show. Tick Pin headers on the Pico: male pins appear under
+  both long edges. Put a 3 mm plate just under the Nano, run the clearance check with and without its
+  headers, and swap the Pico for a Pico 2 to see the pins stay. Undo back through every step.
 - **FT smoke test.** Make a 60 x 40 x 2 mm plate and a 60 x 40 x 25 mm box standing on it, hollow the
   box through its bottom face and hide it. Choose Snap Fit and click the plate near an edge: the arm
   stands against the box's wall with the hook pointing into it and Other Part filled in. OK, show the

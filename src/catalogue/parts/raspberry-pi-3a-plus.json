@@ -205,7 +205,8 @@
         "z": 1.4,
         "height": 8.5,
         "colour": "#111417",
-        "label": "40-pin header"
+        "label": "40-pin header",
+        "header": true
       },
       {
         "x": 20.01,
@@ -396,7 +397,8 @@
       "w": 50.81,
       "h": 5.0,
       "z": 1.4,
-      "height": 16
+      "height": 16,
+      "header": true
     }
   ],
   "links": [

@@ -224,7 +224,8 @@
       "w": 58,
       "h": 31,
       "z": -8.5,
-      "height": 8.5
+      "height": 8.5,
+      "header": true
     }
   ],
   "tags": [

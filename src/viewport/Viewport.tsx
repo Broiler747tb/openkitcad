@@ -288,7 +288,7 @@ function pasteClipboard(): boolean {
         }),
         negative: occurrence.negative,
       })
-      if (component.source.overrides)
+      if (component.source.overrides || component.source.headers !== undefined)
         store.updateComponent(inserted.componentId, { source: component.source })
     }
     store.select({ kind: 'occurrence', id })
@@ -569,7 +569,7 @@ export function Viewport() {
       const component = findComponent(doc, instance.componentId)
       if (component?.source.kind !== 'catalogue') return null
       const part = getPart(component.source.partId)
-      return part ? lookPrototype(effectivePart(part, component.source.overrides)) : null
+      return part ? lookPrototype(effectivePart(part, component.source)) : null
     }
     engine.setScene(instances, meshes, colourOf, showPlacements, lookOf)
   }, [instances, meshes, showPlacements, doc])

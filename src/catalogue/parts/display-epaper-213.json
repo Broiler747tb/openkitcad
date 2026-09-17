@@ -127,7 +127,8 @@
       "w": 3.2,
       "h": 20.9,
       "z": -8.5,
-      "height": 8.5
+      "height": 8.5,
+      "header": true
     }
   ],
   "tags": [

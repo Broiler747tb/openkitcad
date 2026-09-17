@@ -101,6 +101,8 @@ function lookProblems(look: unknown): string[] {
         problems.push(`${where} "${key}" has to be above zero.`)
     if (component.turn !== undefined && !finite(component.turn))
       problems.push(`${where} "turn" has to be a number of degrees.`)
+    if (component.header !== undefined && typeof component.header !== 'boolean')
+      problems.push(`${where} "header" has to be true or false.`)
     if (component.kind === 'port' && !PORTS.includes(component.port))
       problems.push(`${where} "port" has to be one of ${PORTS.join(', ')}.`)
     if (component.colour !== undefined && !COLOUR.test(component.colour))
@@ -181,7 +183,8 @@ export function partProblems(value: unknown): string[] {
               finite(bump.z) &&
               positive(bump.w) &&
               positive(bump.h) &&
-              positive(bump.height),
+              positive(bump.height) &&
+              (bump.header === undefined || typeof bump.header === 'boolean'),
           ))
       )
         problems.push('"geometry.bumps" need x, y, z and a size above zero.')
@@ -209,6 +212,14 @@ export function partProblems(value: unknown): string[] {
   for (const key of ['keepouts', 'connectors', 'pinHeaders', 'links', 'tags'])
     if (part[key] !== undefined && !Array.isArray(part[key]))
       problems.push(`"${key}" has to be a list.`)
+  if (
+    Array.isArray(part.keepouts) &&
+    part.keepouts.some(
+      (keepout: any) =>
+        keepout && keepout.header !== undefined && typeof keepout.header !== 'boolean',
+    )
+  )
+    problems.push('"header" on a keepout has to be true or false.')
   return problems
 }
 

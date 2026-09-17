@@ -67,6 +67,7 @@ export interface Keepout {
   z: number
   /** How tall the keepout is from `z`. */
   height: number
+  header?: boolean
 }
 
 /**
@@ -130,6 +131,7 @@ export interface Bump {
   height: number
   colour: string
   label?: string
+  header?: boolean
 }
 
 /**
@@ -275,6 +277,7 @@ export type LookComponent =
       finish?: Finish
       flip?: boolean
       label?: string
+      header?: boolean
     }
   | {
       kind: 'cylinder'

@@ -908,6 +908,7 @@ export const useStore = create<AppState>((set, get) => ({
         kind: 'catalogue',
         partId,
         ...(sameKind && target.source.overrides ? { overrides: target.source.overrides } : {}),
+        ...(target.source.headers !== undefined ? { headers: target.source.headers } : {}),
       }
       const oldName = target.name
       if (previous && oldName !== previous.name) return

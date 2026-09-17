@@ -193,13 +193,24 @@
   "keepouts": [
     {
       "id": "k-under",
-      "label": "Pots, chip and pins underneath",
+      "label": "Pots and chip underneath",
       "x": 0,
       "y": 0,
       "w": 32,
       "h": 24,
+      "z": -4.5,
+      "height": 4.5
+    },
+    {
+      "id": "k-pins",
+      "label": "Header pins underneath",
+      "x": 12.19,
+      "y": 0.93,
+      "w": 7.62,
+      "h": 2.54,
       "z": -8.5,
-      "height": 8.5
+      "height": 8.5,
+      "header": true
     }
   ],
   "tags": [

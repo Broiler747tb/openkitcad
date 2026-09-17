@@ -157,7 +157,8 @@
       "w": 15.24,
       "h": 20.32,
       "z": -8.5,
-      "height": 8.5
+      "height": 8.5,
+      "header": true
     },
     {
       "id": "k-heat",

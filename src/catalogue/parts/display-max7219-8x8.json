@@ -859,14 +859,36 @@
   ],
   "keepouts": [
     {
-      "id": "k-pins",
-      "label": "Chip and pins underneath",
+      "id": "k-under",
+      "label": "Chip underneath",
       "x": 0,
       "y": 0,
       "w": 32,
       "h": 32,
+      "z": -2.5,
+      "height": 2.5
+    },
+    {
+      "id": "k-pins-in",
+      "label": "Header pins underneath",
+      "x": 0.23,
+      "y": 9.65,
+      "w": 2.54,
+      "h": 12.7,
       "z": -8.5,
-      "height": 8.5
+      "height": 8.5,
+      "header": true
+    },
+    {
+      "id": "k-pins-out",
+      "label": "Header pins underneath",
+      "x": 29.23,
+      "y": 9.65,
+      "w": 2.54,
+      "h": 12.7,
+      "z": -8.5,
+      "height": 8.5,
+      "header": true
     }
   ],
   "tags": [

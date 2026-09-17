@@ -719,7 +719,8 @@ export interface Body {
 }
 
 export type ComponentSource =
-  { kind: 'design' } | { kind: 'catalogue'; partId: string; overrides?: Record<string, number> }
+  | { kind: 'design' }
+  | { kind: 'catalogue'; partId: string; overrides?: Record<string, number>; headers?: boolean }
 
 export interface Component {
   id: string

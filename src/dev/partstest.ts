@@ -7,6 +7,8 @@ import {
   FAMILIES,
   getPart,
   groupedEntries,
+  hasHeaderChoice,
+  headersFitted,
   holeSummary,
   partBounds,
   partProblems,
@@ -15,6 +17,7 @@ import {
   searchEntries,
   surfaceMatrix,
   uniquePartId,
+  withHeaders,
   type CataloguePart,
 } from '../catalogue'
 import type { Vec3 } from '../core/math'
@@ -161,7 +164,16 @@ export function runPartsTest(): TestResult[] {
   )
 
   const lookFailures: string[] = []
-  for (const shipped of CATALOGUE) {
+  const lookCases: Array<[string, CataloguePart]> = CATALOGUE.flatMap((shipped) =>
+    hasHeaderChoice(shipped)
+      ? ([
+          [shipped.id, shipped],
+          [`${shipped.id} without headers`, withHeaders(shipped, false)],
+          [`${shipped.id} with headers`, withHeaders(shipped, true)],
+        ] as Array<[string, CataloguePart]>)
+      : ([[shipped.id, shipped]] as Array<[string, CataloguePart]>),
+  )
+  for (const [name, shipped] of lookCases) {
     try {
       const look = lookPrototype(shipped)
       const bounds = partBounds(shipped)
@@ -189,20 +201,74 @@ export function runPartsTest(): TestResult[] {
       const covers =
         max.x - min.x >= (bounds[3] - bounds[0]) * 0.5 &&
         max.y - min.y >= (bounds[4] - bounds[1]) * 0.5
-      if (!look.meshes.length) lookFailures.push(`${shipped.id} draws nothing`)
+      if (!look.meshes.length) lookFailures.push(`${name} draws nothing`)
       else if (!inside || !covers)
         lookFailures.push(
-          `${shipped.id} look ${[min.x, min.y, min.z, max.x, max.y, max.z].map((n) => n.toFixed(1)).join(',')} vs ${[x0, y0, z0, x1, y1, z1].join(',')}`,
+          `${name} look ${[min.x, min.y, min.z, max.x, max.y, max.z].map((n) => n.toFixed(1)).join(',')} vs ${[x0, y0, z0, x1, y1, z1].join(',')}`,
         )
     } catch (error) {
-      lookFailures.push(`${shipped.id} threw ${(error as Error).message}`)
+      lookFailures.push(`${name} threw ${(error as Error).message}`)
     }
   }
   check(
-    'every shipped part has a look that fills its measured size and stays inside it',
+    'every shipped part has a look that fills its measured size and stays inside it, with and without headers',
     !lookFailures.length,
-    lookFailures.slice(0, 3).join(' | ') || `${CATALOGUE.length} looks`,
+    lookFailures.slice(0, 3).join(' | ') || `${lookCases.length} looks`,
   )
+
+  const withRows = CATALOGUE.filter(hasHeaderChoice)
+  const headerProblems = withRows.flatMap((shipped) => {
+    const bare = withHeaders(shipped, false)
+    const fitted = withHeaders(shipped, true)
+    const origins = (fitted.look?.components ?? [])
+      .filter((component) => component.kind === 'header')
+      .map((component) => `${component.x.toFixed(2)},${component.y.toFixed(2)}`)
+    return [
+      withHeaders(shipped, undefined) !== shipped ? `${shipped.id} changes when left alone` : '',
+      headersFitted(bare) ? `${shipped.id} keeps a header when bare` : '',
+      !headersFitted(fitted) ? `${shipped.id} has no header when fitted` : '',
+      withHeaders(fitted, true) !== fitted ? `${shipped.id} adds headers twice` : '',
+      new Set(origins).size !== origins.length ? `${shipped.id} doubles a header` : '',
+    ].filter(Boolean)
+  })
+  check(
+    'every board with pin rows can have its headers taken off or fitted, once',
+    !headerProblems.length,
+    headerProblems.slice(0, 4).join(', ') || `${withRows.length} boards`,
+  )
+  {
+    const nano = withHeaders(part('arduino-nano'), false)
+    const pico = withHeaders(part('raspberry-pi-pico'), true)
+    const zero = withHeaders(part('raspberry-pi-zero-2w'), true)
+    const pi = withHeaders(part('raspberry-pi-4b'), false)
+    const pir = withHeaders(part('sensor-pir-hc-sr501'), false)
+    const picoHeaders = (pico.look?.components ?? []).filter((c) => c.kind === 'header')
+    const zeroBumps = zero.geometry.kind === 'board' ? (zero.geometry.bumps ?? []) : []
+    const piBumps = pi.geometry.kind === 'board' ? (pi.geometry.bumps ?? []) : []
+    check(
+      'a bare Nano loses its pins and their keepout, a Pico gains pins below and a Pi Zero on top',
+      !(nano.keepouts ?? []).length &&
+        picoHeaders.length === 2 &&
+        picoHeaders.every((c) => c.kind === 'header' && c.flip) &&
+        (pico.keepouts ?? []).filter((k) => k.header && k.z === -8.5).length === 2 &&
+        zeroBumps.some((b) => b.header && b.z === 1.4 && b.height === 8.5),
+      `Nano keepouts ${(nano.keepouts ?? []).length}, Pico headers ${picoHeaders.length}, Zero header bump ${zeroBumps.some((b) => b.header)}`,
+    )
+    check(
+      'a bare Pi 4 drops its GPIO header and HAT space but keeps the solder side clearance',
+      !piBumps.some((b) => b.label === '40-pin header') &&
+        (pi.keepouts ?? []).map((k) => k.label).join() === 'Solder side clearance' &&
+        (pir.keepouts ?? []).map((k) => k.label).join() === 'Pots and chip underneath',
+      `${(pi.keepouts ?? []).map((k) => k.label).join()} / ${(pir.keepouts ?? []).map((k) => k.label).join()}`,
+    )
+    const hc = part('sensor-hc-sr04')
+    check(
+      'an HC-SR04 already has its edge pins, so fitting headers leaves it alone',
+      withHeaders(hc, true) === hc &&
+        !(withHeaders(hc, false).keepouts ?? []).some((k) => k.header),
+      'unchanged',
+    )
+  }
   const picture = renderPart(part('arduino-uno-r3'), 96, 72)
   let drawn = 0
   if (picture) {
@@ -431,6 +497,10 @@ export function runPartsTest(): TestResult[] {
       !!inserted && near(inserted.transform, transform),
     )
     const componentId = inserted!.componentId
+    const placed = useStore.getState().doc.components.find((c) => c.id === componentId)!
+    useStore.getState().updateComponent(componentId, {
+      source: { ...placed.source, headers: false } as typeof placed.source,
+    })
     useStore.getState().swapCataloguePart(componentId, 'display-oled-sh1106-130')
     const after = useStore.getState().doc
     const component = after.components.find((c) => c.id === componentId)
@@ -444,6 +514,11 @@ export function runPartsTest(): TestResult[] {
         occurrence?.name === next.name &&
         near(occurrence.transform, transform),
       `${component?.name} / ${occurrence?.name}`,
+    )
+    check(
+      'and keeps the choice of pin headers',
+      component?.source.kind === 'catalogue' && component.source.headers === false,
+      JSON.stringify(component?.source),
     )
   } finally {
     useStore.setState(saved)

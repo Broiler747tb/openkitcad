@@ -54,7 +54,7 @@ import {
   translationMatrix,
 } from '../doc/model'
 import { datumFrame, midplaneFrame, offsetFrame } from '../doc/planes'
-import { getPart, type CataloguePart } from '../catalogue'
+import { effectivePart, getPart, type CataloguePart } from '../catalogue'
 import {
   box as namedBox,
   chamfer as namedChamfer,
@@ -392,8 +392,9 @@ export function placedPart(
   const componentId = pathComponent(doc, occurrencePath)
   const component = componentId ? findComponent(doc, componentId) : undefined
   if (!partMatrix || !contextMatrix || component?.source.kind !== 'catalogue') return null
+  const part = getPart(component.source.partId)
   return {
-    part: getPart(component.source.partId),
+    part: part && effectivePart(part, component.source),
     matrix: multiplyMatrices(invertRigidMatrix(contextMatrix), partMatrix),
   }
 }

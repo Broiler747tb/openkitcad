@@ -326,7 +326,8 @@
         "z": 1.6,
         "height": 8.5,
         "colour": "#1b1d20",
-        "label": "P9 expansion header"
+        "label": "P9 expansion header",
+        "header": true
       },
       {
         "x": 19.05,
@@ -336,7 +337,8 @@
         "z": 1.6,
         "height": 8.5,
         "colour": "#1b1d20",
-        "label": "P8 expansion header"
+        "label": "P8 expansion header",
+        "header": true
       },
       {
         "x": -2.62,

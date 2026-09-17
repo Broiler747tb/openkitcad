@@ -266,7 +266,8 @@
       "w": 38.1,
       "h": 17.78,
       "z": -8.5,
-      "height": 8.5
+      "height": 8.5,
+      "header": true
     }
   ],
   "electrical": {

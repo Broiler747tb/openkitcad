@@ -94,7 +94,8 @@
         "z": -9.57,
         "height": 9.57,
         "colour": "#1b1d20",
-        "label": "Pins behind"
+        "label": "Pins behind",
+        "header": true
       },
       {
         "x": 4.0,

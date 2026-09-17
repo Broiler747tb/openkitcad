@@ -75,6 +75,7 @@ export function getPart(id: string): CataloguePart | undefined {
 }
 
 export * from './describe'
+export * from './headers'
 export * from './placement'
 export * from './search'
 export * from './types'

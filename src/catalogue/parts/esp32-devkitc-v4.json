@@ -244,7 +244,8 @@
       "w": 48.26,
       "h": 27.94,
       "z": -8.5,
-      "height": 8.5
+      "height": 8.5,
+      "header": true
     },
     {
       "id": "k-antenna",

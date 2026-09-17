@@ -9,7 +9,14 @@ import { activeSketchFeature, bodyBounds, newId, targetBodies, useStore } from '
 import { usePreferences } from '../doc/preferences'
 import { startConstraintTool } from './sketchConstraints'
 import { sketchActions } from '../sketch/actions'
-import { allParts, byPopularity, CONFIDENCE_LABEL, getPart } from '../catalogue'
+import {
+  allParts,
+  byPopularity,
+  CONFIDENCE_LABEL,
+  getPart,
+  hasHeaderChoice,
+  headersFitted,
+} from '../catalogue'
 import { fmt } from '../core/math'
 import type { BodyOperation, Feature, JointFeature } from '../doc/types'
 import type { DofLimits } from '../assembly/types'
@@ -471,6 +478,24 @@ function OccurrenceInspector({ id, instanceId }: { id: string; instanceId?: stri
             onChange={(e) => setPose({ flipped: e.target.checked })}
           />
         </div>
+        {source.kind === 'catalogue' && part && hasHeaderChoice(part) && (
+          <div
+            className="row"
+            title="Soldered pin headers. Untick for a board sold bare or soldered flat; tick to add them to one sold without."
+          >
+            <label>Pin headers</label>
+            <input
+              type="checkbox"
+              aria-label="Pin headers fitted"
+              checked={source.headers ?? headersFitted(part)}
+              onChange={(e) =>
+                store.updateComponent(component.id, {
+                  source: { ...source, headers: e.target.checked },
+                })
+              }
+            />
+          </div>
+        )}
         {source.kind === 'catalogue' && part?.geometry.kind === 'extrusion' && (
           <Num
             label="Length"

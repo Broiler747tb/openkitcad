@@ -658,7 +658,8 @@
         "z": 1.6,
         "height": 8.5,
         "colour": "#1b1d20",
-        "label": "Power header"
+        "label": "Power header",
+        "header": true
       },
       {
         "x": 49.53,
@@ -668,7 +669,8 @@
         "z": 1.6,
         "height": 8.5,
         "colour": "#1b1d20",
-        "label": "Analog header"
+        "label": "Analog header",
+        "header": true
       },
       {
         "x": 17.526,
@@ -678,7 +680,8 @@
         "z": 1.6,
         "height": 8.5,
         "colour": "#1b1d20",
-        "label": "Digital header 8 to 13"
+        "label": "Digital header 8 to 13",
+        "header": true
       },
       {
         "x": 44.45,
@@ -688,7 +691,8 @@
         "z": 1.6,
         "height": 8.5,
         "colour": "#1b1d20",
-        "label": "Digital header 0 to 7"
+        "label": "Digital header 0 to 7",
+        "header": true
       },
       {
         "x": 15.26,
