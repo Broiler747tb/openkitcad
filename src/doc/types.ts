@@ -459,6 +459,20 @@ export interface ThickenFeature extends FeatureBase {
   result: BodyOperation
 }
 
+export interface FitCouponFeature extends FeatureBase {
+  kind: 'fitCoupon'
+  plane: PlaneRef
+  origin: Vec2
+  diameter: number
+  start: number
+  step: number
+  count: number
+  thickness: number
+  height: number
+  pinBodyId: string
+  holeBodyId: string
+}
+
 export type WallDepth = 'toNext' | 'finite'
 
 export interface RibFeature extends FeatureBase {
@@ -749,6 +763,7 @@ export type Feature =
   | PatchFeature
   | RibFeature
   | WebFeature
+  | FitCouponFeature
   | EmbossFeature
   | BodyPatternFeature
   | MirrorFeature
@@ -866,6 +881,7 @@ export const FEATURE_LABEL: Record<FeatureKind, string> = {
   emboss: 'Emboss',
   rib: 'Rib',
   web: 'Web',
+  fitCoupon: 'Fit Test Coupon',
   move: 'Move',
   joint: 'Joint',
   jointOrigin: 'Joint Origin',
@@ -929,6 +945,7 @@ export const FEATURE_HINT: Record<FeatureKind, string> = {
   hinge: 'A knuckle hinge printed already assembled, joining two parts.',
   emboss: 'Raises or sinks sketch text and shapes on a flat or round face.',
   rib: 'A thin wall along a sketch line, grown down onto the part to brace it.',
+  fitCoupon: 'Two cards to print that measure what gap your printer really leaves.',
   web: 'A set of thin walls along crossing sketch lines, grown down onto the part.',
   move: 'Moves and turns bodies by exact amounts.',
   joint: 'Holds two components together, with the motion left between them.',
@@ -994,6 +1011,7 @@ export const FEATURE_ICON: Record<FeatureKind, string> = {
   emboss: 'Ⓐ',
   rib: '◺',
   web: '⋕',
+  fitCoupon: '⌗',
   move: '✚',
   joint: '⚭',
   jointOrigin: '⊕',

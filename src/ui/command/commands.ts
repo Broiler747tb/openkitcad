@@ -31,6 +31,7 @@ import { operationValues, planeValues, profilePicksOf, resultIds } from './specs
 import { extrudeCommand, revolveCommand } from './specs/sketchBased'
 import { embossCommand } from './specs/emboss'
 import { ribCommand, webCommand } from './specs/rib'
+import { fitCouponCommand } from './specs/coupon'
 import { midplaneCommand, offsetPlaneCommand, planeAtAngleCommand } from './specs/construct'
 import {
   coilCommand,
@@ -90,6 +91,7 @@ export const COMMANDS: Readonly<Record<string, AnyCommandSpec>> = {
   emboss: spec(embossCommand),
   rib: spec(ribCommand),
   web: spec(webCommand),
+  fitCoupon: spec(fitCouponCommand),
   revolve: spec(revolveCommand),
   box: spec(boxCommand),
   cylinder: spec(cylinderCommand),
@@ -355,6 +357,22 @@ function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, Comma
   const fit = fitEditOptions(doc, feature)
   if (fit) return fit
   switch (feature.kind) {
+    case 'fitCoupon':
+      return [
+        COMMANDS.fitCoupon,
+        {
+          initial: {
+            plane: planeValues(doc, feature.plane),
+            diameter: feature.diameter,
+            start: feature.start,
+            step: feature.step,
+            count: feature.count,
+            thickness: feature.thickness,
+            height: feature.height,
+          },
+          ids: { pins: feature.pinBodyId, holes: feature.holeBodyId },
+        },
+      ]
     case 'rib':
     case 'web':
       return [

@@ -43,6 +43,7 @@ import type { KernelError } from './types'
 import { sketchToProfile } from './profile'
 import { runEmbossStep } from './embossStep'
 import { runRibStep } from './ribStep'
+import { runCouponStep } from './couponStep'
 import {
   featureDependencies,
   findBody,
@@ -1383,7 +1384,8 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
     runSolidStep(feature, solidStage) ||
     runFitStep(feature, solidStage) ||
     runEmbossStep(feature, solidStage) ||
-    runRibStep(feature, solidStage)
+    runRibStep(feature, solidStage) ||
+    runCouponStep(feature, solidStage)
   ) {
     return
   }

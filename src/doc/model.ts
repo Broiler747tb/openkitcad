@@ -83,6 +83,8 @@ export function featureCreatesBodies(feature: Feature): string[] {
       return [feature.bodyId]
     case 'splitBody':
       return [feature.newBodyId]
+    case 'fitCoupon':
+      return [feature.pinBodyId, feature.holeBodyId]
   }
   const operation = operationOf(feature)
   return operation?.kind === 'newBody' ? [operation.bodyId] : []

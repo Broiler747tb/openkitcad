@@ -64,7 +64,7 @@ classes that live in the design as parameters (§15).
 **EM: text and emboss.** Sketch text in the fonts on this computer, kept in the design as letter
 shapes, usable as a profile anywhere a profile is, and Emboss to raise or sink it on a flat face or
 round the side of a cylinder (§16). Then Rib and Web, the thin walls that brace a printed part
-(§17).
+(§17), and the fit test coupon that measures what a printer really leaves (§18).
 
 ## 3. Document model v2
 
@@ -744,7 +744,27 @@ use Web.
 distance, a wall centred on its line and on each side of it, a web of two crossing lines, and both
 refusals, each against a hand calculation.
 
-## 18. How the work is done
+## 18. Fit test coupon (EM)
+
+**Two cards.** One step in the FIT group (`src/kernel/couponStep.ts`) makes two small bodies to
+print: a card with a row of pins, all the nominal size, and a card with a row of holes, each one
+step looser than the last. Seven rungs from 0.10 to 0.40 mm of gap per side to start with, all of it
+in the panel. Push pin one into hole one and work along until a rung feels right; the number beside
+it is that gap in hundredths of a millimetre, which is what the printer fit classes in the
+Parameters dialog take (§15).
+
+**Numbers without a font.** The labels are seven-segment digits cut from rectangles, so a coupon
+never depends on a font being installed. The bars are deliberately kept apart from each other:
+touching rectangles are what replicad's 2D booleans cannot fuse, and one pocket of separate bars
+cuts in a single step. `couponLayout` works out the card sizes and where every pin and hole sits,
+and the tests use the same function, so the coupon can be laid out again without rewriting them.
+
+**Checks.** The panel and the step both refuse a ladder whose last rung is looser than the pin is
+wide. `?selftest&suite=walls` builds a coupon, measures both cards, and pushes probe cylinders a
+hair under and a hair over each rung's size into the holes to prove every hole is the pin plus twice
+its gap.
+
+## 19. How the work is done
 
 - Agents never start other agents or workflows.
 - New and rewritten code has no comments. Touched files are formatted with Prettier.
@@ -806,6 +826,10 @@ refusals, each against a hand calculation.
   headers: the pins go and the plated holes show. Tick Pin headers on the Pico: male pins appear under
   both long edges. Put a 3 mm plate just under the Nano, run the clearance check with and without its
   headers, and swap the Pico for a Pico 2 to see the pins stay. Undo back through every step.
+- **EM smoke test (coupon).** Run Fit Test Coupon from the FIT group and OK: two cards appear, one
+  with seven pins and one with seven holes numbered 10 to 40. Export them as STL, print them, and
+  push pin one into hole one and on along the row. Open fx Parameters and type the number that felt
+  right into the fit class it belongs to.
 - **EM smoke test (ribs).** On a 50 x 30 x 4 mm plate with a 4 mm upright along one edge, sketch on a
   plane through the middle of it and draw one line from the upright down to the plate. Run Rib, pick
   the line and the body, set 4 mm and OK: a gusset fills the corner. Double-click it, switch Depth to

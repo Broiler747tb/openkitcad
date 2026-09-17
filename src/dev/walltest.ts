@@ -2,6 +2,7 @@ import * as Comlink from 'comlink'
 import type { Vec2, Vec3 } from '../core/math'
 import type { BodyOperation, Feature, OkcDocument, PlaneRef } from '../doc/types'
 import { emptyDocument } from '../doc/types'
+import { couponLayout } from '../kernel/couponStep'
 import type { EvaluateResult, KernelApi } from '../kernel/types'
 import { emptySketch, type Sketch2D } from '../sketch/types'
 import type { TestResult } from './selftest'
@@ -219,6 +220,115 @@ export async function runWallTest(): Promise<TestResult[]> {
         'a rib refuses a set of separate lines',
         asRib.errors.some((error) => error.message.includes('one run of lines')),
         said(asRib),
+      )
+    })
+
+    await check('fit test coupon', async () => {
+      const coupon = (patch: Record<string, unknown> = {}): OkcDocument => {
+        const doc = emptyDocument('Coupon')
+        doc.components[0].bodies = [
+          { id: 'pins', name: 'Pins', visible: true, colour: '#cccccc' },
+          { id: 'holes', name: 'Holes', visible: true, colour: '#cccccc' },
+        ]
+        doc.timeline = [
+          {
+            id: 'cp',
+            name: 'Coupon',
+            componentId: 'root',
+            kind: 'fitCoupon',
+            plane: XY(0),
+            origin: [0, 0],
+            diameter: 5,
+            start: 0.1,
+            step: 0.05,
+            count: 7,
+            thickness: 3,
+            height: 6,
+            pinBodyId: 'pins',
+            holeBodyId: 'holes',
+            ...patch,
+          } as Feature,
+        ]
+        return doc
+      }
+      const built = await evaluate(coupon())
+      const pins = built.instances.find((instance) => instance.bodyId === 'pins')
+      const holes = built.instances.find((instance) => instance.bodyId === 'holes')
+      const pinMesh = pins ? built.meshes.find((mesh) => mesh.key === pins.meshKey) : undefined
+      const holeMesh = holes ? built.meshes.find((mesh) => mesh.key === holes.meshKey) : undefined
+      add(
+        'a coupon prints as a card of pins and a card of holes',
+        built.errors.length === 0 &&
+          !!pinMesh &&
+          !!holeMesh &&
+          Math.abs((pinMesh?.bounds[5] ?? 0) - 9) < 0.05 &&
+          Math.abs((holeMesh?.bounds[5] ?? 0) - 3) < 0.05 &&
+          (pinMesh?.volume ?? 0) > (holeMesh?.volume ?? 0),
+        `${said(built)}; pins to ${pinMesh?.bounds[5].toFixed(2)} mm, holes to ${holeMesh?.bounds[5].toFixed(2)} mm`,
+      )
+
+      const probe = async (rung: number, diameter: number) => {
+        const doc = coupon()
+        const layout = couponLayout({
+          origin: [0, 0],
+          diameter: 5,
+          start: 0.1,
+          step: 0.05,
+          count: 7,
+        })
+        const gap = layout.gaps[rung]
+        const x = layout.centreOf(rung)
+        const y = layout.holeY
+        doc.timeline.push(
+          {
+            id: 'pr',
+            name: 'Probe',
+            componentId: 'root',
+            kind: 'cylinder',
+            plane: XY(-1),
+            centre: [x, y],
+            radius: diameter / 2,
+            height: 5,
+            result: { kind: 'newBody', bodyId: 'probe' },
+          } as Feature,
+          {
+            id: 'cm',
+            name: 'Check',
+            componentId: 'root',
+            kind: 'combine',
+            bodyId: 'probe',
+            toolBodyIds: ['holes'],
+            operation: 'intersect',
+            keepTools: true,
+          } as Feature,
+        )
+        doc.components[0].bodies.push({
+          id: 'probe',
+          name: 'Probe',
+          visible: true,
+          colour: '#cccccc',
+        })
+        const result = await evaluate(doc)
+        const instance = result.instances.find((candidate) => candidate.bodyId === 'probe')
+        const mesh = instance
+          ? result.meshes.find((candidate) => candidate.key === instance.meshKey)
+          : undefined
+        return { gap, volume: mesh?.volume ?? 0, said: said(result) }
+      }
+      const loose = await probe(0, 5 + 2 * 0.1 - 0.06)
+      const tight = await probe(0, 5 + 2 * 0.1 + 0.06)
+      const last = await probe(6, 5 + 2 * 0.4 - 0.06)
+      add(
+        'each rung is a hole of the pin plus twice its gap',
+        loose.volume < 0.01 && tight.volume > 0.05 && last.volume < 0.01,
+        `first rung ${loose.volume.toFixed(3)} under, ${tight.volume.toFixed(3)} over; last rung ${last.volume.toFixed(3)}`,
+      )
+
+      const silly = await evaluate(coupon({ step: 2 }))
+      add(
+        'a step that runs past the pin is refused',
+        silly.errors.some((error) => error.message.includes('looser than the pin is wide')),
+        said(silly),
       )
     })
 
