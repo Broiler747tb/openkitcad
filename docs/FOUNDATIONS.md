@@ -61,6 +61,10 @@ where a maker publishes its sizes, with clones kept as labelled generic versions
 Pins, Lip and Groove, Dovetail, Snap Ring, Bayonet and Print-in-place Hinge, with printer-wide fit
 classes that live in the design as parameters (§15).
 
+**EM: text and emboss.** Sketch text in the fonts on this computer, kept in the design as letter
+shapes, usable as a profile anywhere a profile is, and Emboss to raise or sink it on a flat face or
+round the side of a cylinder (§16).
+
 ## 3. Document model v2
 
 Types live in `src/doc/types.ts`. Pure helpers every layer shares live in `src/doc/model.ts`
@@ -331,6 +335,13 @@ chains and rebuilds their corners (`src/sketch/offset.ts`). Mirror copies across
 symmetry constraints; Move/Copy, Sketch Scale and the patterns act on the selection. Project brings a
 body edge, or every edge of a face, in as fixed lines, circles, arcs or splines; it is a copy, not a
 link.
+
+**Text.** The Text tool places a text where it is clicked and opens a panel with the words, the
+font, the height of the capitals and an angle, previewing in the sketch as it is typed; OK is one undo
+step and Cancel puts the sketch back. Double-clicking a text, or Edit Text... in its right-click menu,
+reopens the same panel. The letters are a profile in their own right, keyed `text:entity`, so they
+extrude, cut, revolve and emboss like any closed area, and a picked area with a text inside it comes
+out with the letters cut away unless the text is picked too (§16).
 
 **Rebuilds.** Edits inside the active sketch update only the sketch. The model rebuilds once when the
 sketch is finished.
@@ -670,7 +681,46 @@ calculations, intersects the two halves to prove they never overlap, checks each
 piece, triggers every warning, and drives the panel: clicks against real meshes, class switching and
 an edit moving the link.
 
-## 16. How the work is done
+## 16. Text and emboss (EM)
+
+**Fonts.** `src/sketch/fonts.ts` lists the fonts installed on the computer through the browser's
+Local Font Access, reads the chosen face with opentype.js and hands back outlines normalised so the
+capitals are one unit tall and the baseline is y = 0. A `.ttc` collection is unpacked to the face that
+was asked for by rebuilding its table directory. Where a browser cannot list fonts, or the person does
+not share them, a font file can be loaded instead. The outlines go into the text entity, so a design
+opens with the same letters on a computer that does not have the font; the font's name is kept only to
+say what it was and to re-cut the letters when the words change.
+
+**Text profiles.** A text is one profile, not one per letter (`src/sketch/text.ts`). Contours are
+filled by the nonzero rule, so strokes that overlap inside a letter join and counters stay holes, and
+the same rule shades the profile in the viewport, decides what a click on it hits and drives the
+kernel. Some fonts draw a letter as one outline that crosses itself to make its counter, so an outline is
+cut into simple loops at its crossings before anything is built from it.
+`src/kernel/textProfile.ts` builds each contour from exact lines and Béziers. When nothing
+overlaps, the letters become faces directly. When they do overlap, or a text lies on a picked area,
+every contour is split against the others with OpenCascade's general fuse, each piece is kept or
+dropped by the winding number at a point inside it, and the surviving boundary is chained back into
+loops. Profile edges are matched to the text by exact point-to-Bézier distance, and each outline
+segment carries its own naming token.
+
+**Emboss.** One step (`src/kernel/embossStep.ts`) that reads a sketch profile and a face of a body
+and fuses or cuts the shape. On a flat face the profile is moved onto the face's plane and extruded,
+starting 0.2 mm inside the material so the join is clean; the sketch has to be parallel to the face.
+On the round side of a cylinder the drawing is turned into the face's own coordinates — along the
+surface by arc length, along the axis by distance — wrapped with `sketchOnFace`, offset 0.2 mm into
+the material and thickened radially, each letter on its own so the booleans stay simple. It reads
+which way the face looks out of the body, so a raised shape grows outwards on a rod and inwards on a
+hole, and a sunk one cuts the other way. Text longer than the way round the face, a depth deeper than
+the face is wide, a sketch across the axis, and any face that is neither flat nor round are all
+refused in plain words.
+
+**Ribbon and tests.** Text sits in the sketch CREATE list and Emboss in the solid CREATE list, next
+to Loft. `?selftest&suite=text` builds a font in the test, reads it back through a written font file
+and through a `.ttc` wrapper, and compares volumes with hand calculations: letters with their holes,
+overlapping strokes merged, a plate with the letters cut out of it, a letter hanging over an edge,
+text raised and sunk on a block, and text wrapped round a rod.
+
+## 17. How the work is done
 
 - Agents never start other agents or workflows.
 - New and rewritten code has no comments. Touched files are formatted with Prettier.
@@ -732,6 +782,12 @@ an edit moving the link.
   headers: the pins go and the plated holes show. Tick Pin headers on the Pico: male pins appear under
   both long edges. Put a 3 mm plate just under the Nano, run the clearance check with and without its
   headers, and swap the Pico for a Pico 2 to see the pins stay. Undo back through every step.
+- **EM smoke test.** Sketch on the top of a 60 x 40 x 10 mm block, click Text, click near a corner and
+  type a word; pick a font and a height of 8 mm and OK. Finish the sketch, run Emboss, click the text
+  and the top face, set 1 mm and OK: the letters stand on the block. Double-click the step, switch it
+  to Deboss and OK. Make a 24 mm rod 40 mm tall, sketch on XZ, put text on it and emboss it 1 mm: the
+  letters wrap round the side. Double-click the text in the sketch, change the words and see the
+  emboss follow. Undo back through every step.
 - **FT smoke test.** Make a 60 x 40 x 2 mm plate and a 60 x 40 x 25 mm box standing on it, hollow the
   box through its bottom face and hide it. Choose Snap Fit and click the plate near an edge: the arm
   stands against the box's wall with the hook pointing into it and Other Part filled in. OK, show the

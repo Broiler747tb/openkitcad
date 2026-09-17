@@ -1,6 +1,7 @@
 import type { Frame, Vec2, Vec3 } from '../../core/math'
 import type { Sketch2D, SketchEntity } from '../../sketch/types'
 import { distanceToEntity, entityEnds, entityPointIds, isCurveEntity } from '../../sketch/curves'
+import { textDistance } from '../../sketch/text'
 import { compareStrings } from './types'
 
 export const PROFILE_TOLERANCE = 1e-5
@@ -50,6 +51,10 @@ function contains(
   q: Vec2,
   tolerance: number,
 ): boolean {
+  if (entity.kind === 'text') {
+    const origin = points.get(entity.p)
+    return !!origin && textDistance(entity, origin, q, tolerance) <= tolerance
+  }
   if (!isCurveEntity(entity)) return false
   if (!entityPointIds(entity).every((id) => points.has(id))) return false
   if (entity.kind === 'line') {

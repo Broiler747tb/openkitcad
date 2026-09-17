@@ -29,6 +29,7 @@ import { classGap, FIT_COMMANDS, fitEditOptions, fitStartOptions } from './specs
 import { boxCommand, cylinderCommand, sphereCommand, torusCommand } from './specs/primitives'
 import { operationValues, planeValues, profilePicksOf, resultIds } from './specs/shared'
 import { extrudeCommand, revolveCommand } from './specs/sketchBased'
+import { embossCommand } from './specs/emboss'
 import { midplaneCommand, offsetPlaneCommand, planeAtAngleCommand } from './specs/construct'
 import {
   coilCommand,
@@ -85,6 +86,7 @@ const spec = (command: unknown) => command as AnyCommandSpec
 
 export const COMMANDS: Readonly<Record<string, AnyCommandSpec>> = {
   extrude: spec(extrudeCommand),
+  emboss: spec(embossCommand),
   revolve: spec(revolveCommand),
   box: spec(boxCommand),
   cylinder: spec(cylinderCommand),
@@ -245,6 +247,8 @@ function startOptions(id: string): CommandStart {
     case 'extrudeSurface':
     case 'revolveSurface':
       return { initial: { profile: sketchPicks() } }
+    case 'emboss':
+      return { initial: { profile: sketchPicks(), face: faces.slice(0, 1) } }
     case 'extrude':
     case 'revolve': {
       const sketch = selectedSketch(doc)
@@ -345,6 +349,18 @@ function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, Comma
   const fit = fitEditOptions(doc, feature)
   if (fit) return fit
   switch (feature.kind) {
+    case 'emboss':
+      return [
+        COMMANDS.emboss,
+        {
+          initial: {
+            profile: profilePicksOf(doc, feature.sketchId, feature.profiles),
+            face: [elementPick(doc, feature.face)].flatMap((pick) => pick ?? []),
+            effect: feature.effect,
+            depth: feature.depth,
+          },
+        },
+      ]
     case 'extrude':
     case 'revolve': {
       const shared = {

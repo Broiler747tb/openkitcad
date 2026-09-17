@@ -95,6 +95,21 @@ export interface SplineEntity {
   construction: boolean
 }
 
+export type GlyphSegment =
+  | [number, number]
+  | [number, number, number, number]
+  | [number, number, number, number, number, number]
+
+export interface GlyphContour {
+  start: [number, number]
+  segments: GlyphSegment[]
+}
+
+export interface TextOutline {
+  width: number
+  contours: GlyphContour[]
+}
+
 export interface TextEntity {
   id: EntityId
   kind: 'text'
@@ -103,6 +118,7 @@ export interface TextEntity {
   height: number
   angle: number
   font: string
+  outline?: TextOutline
   construction: boolean
 }
 

@@ -10,9 +10,20 @@ import {
   type PointLookup,
 } from '../sketch/curves'
 import { selectProfiles, type ProfileLoop, type RegionRing } from '../sketch/regions'
+import { isTextKey, profileTexts, textKey, winding } from '../sketch/text'
 import type { Sketch2D, SketchEntity } from '../sketch/types'
 import type { PieceSample } from './naming/profileMatch'
 import type { SketchChain } from '../sketch/chains'
+import {
+  arrangeAreas,
+  groupsInteract,
+  selfOverlapping,
+  textGroup,
+  textOutlineGroup,
+  type AreaGroup,
+  type AreaRing,
+  type AreaShape,
+} from './textProfile'
 
 export type ProfilePiece = PieceSample
 
@@ -182,13 +193,13 @@ function pieceCurve(
   }
 }
 
-function ringBlueprint(
+function ringArea(
   oc: OcAny,
   ring: RegionRing,
   byId: Map<string, SketchEntity>,
   pts: PointLookup,
-  pieces: ProfilePiece[],
-): Blueprint {
+): AreaRing {
+  const pieces: ProfilePiece[] = []
   const curves: Curve2D[] = []
   const ends = ring.pieces.map((piece) => {
     const curve = curveOf(byId.get(piece.entityId)!, pts)!
@@ -204,7 +215,7 @@ function ringBlueprint(
     curves.push(pieceCurve(oc, entity, pts, piece.from, piece.to, full, start, end))
     pieces.push({ entityId: piece.entityId, token: piece.token, start, end })
   })
-  return new Blueprint(curves)
+  return { curves, pieces, polygon: ring.polygon }
 }
 
 export function chainBlueprint(sketch: Sketch2D, chain: SketchChain): Blueprint {
@@ -221,39 +232,73 @@ export function chainBlueprint(sketch: Sketch2D, chain: SketchChain): Blueprint 
   return new Blueprint(curves)
 }
 
+function regionGroup(oc: OcAny, sketch: Sketch2D, loops: readonly ProfileLoop[]): AreaGroup {
+  const pts = pointLookup(sketch)
+  const byId = new Map(sketch.entities.map((entity) => [entity.id, entity]))
+  const areas = loops.map((loop) => ({
+    outer: ringArea(oc, loop.outer, byId, pts),
+    holes: loop.holes.map((hole) => ringArea(oc, hole, byId, pts)),
+  }))
+  return {
+    rings: areas.flatMap((area) => [area.outer, ...area.holes]),
+    filled: (point) =>
+      loops.some(
+        (loop) =>
+          winding(loop.outer.polygon, point) !== 0 &&
+          loop.holes.every((hole) => winding(hole.polygon, point) === 0),
+      ),
+    shapes: () =>
+      areas.map((area) => {
+        const outer = new Blueprint(area.outer.curves)
+        if (!area.holes.length) return outer
+        return new CompoundBlueprint([
+          outer,
+          ...area.holes.map((hole) => new Blueprint(hole.curves)),
+        ])
+      }),
+  }
+}
+
 export function loopsDrawing(
   sketch: Sketch2D,
   loops: readonly ProfileLoop[],
 ): { drawing: Drawing; pieces: ProfilePiece[] } {
-  const oc = getOC() as OcAny
-  const pts = pointLookup(sketch)
-  const byId = new Map(sketch.entities.map((entity) => [entity.id, entity]))
-  const pieces: ProfilePiece[] = []
-  const shapes = loops.map((loop) => {
-    const outer = ringBlueprint(oc, loop.outer, byId, pts, pieces)
-    if (!loop.holes.length) return outer
-    return new CompoundBlueprint([
-      outer,
-      ...loop.holes.map((hole) => ringBlueprint(oc, hole, byId, pts, pieces)),
-    ])
-  })
+  const group = regionGroup(getOC() as OcAny, sketch, loops)
+  const shapes = group.shapes()
   const drawing = new Drawing(shapes.length === 1 ? shapes[0] : new Blueprints(shapes))
-  return { drawing, pieces }
+  return { drawing, pieces: group.rings.flatMap((ring) => ring.pieces) }
+}
+
+function gone(count: number): ProfileResult {
+  return {
+    ok: false,
+    message:
+      count === 1
+        ? 'A profile this step used is gone from the sketch.'
+        : `${count} profiles this step used are gone from the sketch.`,
+    hint: 'A curve that bounded it was deleted, or a new curve now splits it. Edit this step and pick the profiles again.',
+  }
+}
+
+const CANCELLED: ProfileResult = {
+  ok: false,
+  message: 'The picked profiles cancel each other out.',
+  hint: 'Pick the areas again.',
 }
 
 export function sketchToProfile(sketch: Sketch2D, keys?: readonly string[]): ProfileResult {
-  const selection = selectProfiles(sketch, keys)
-  if (!selection.ok) {
-    if (selection.missing.length) {
-      return {
-        ok: false,
-        message:
-          selection.missing.length === 1
-            ? 'A profile this step used is gone from the sketch.'
-            : `${selection.missing.length} profiles this step used are gone from the sketch.`,
-        hint: 'A curve that bounded it was deleted, or a new curve now splits it. Edit this step and pick the profiles again.',
-      }
-    }
+  const pts = pointLookup(sketch)
+  const texts = profileTexts(sketch).filter((entity) => pts.has(entity.p))
+  const byText = new Map(texts.map((entity) => [textKey(entity.id), entity]))
+  const textKeys = keys ? [...new Set(keys.filter(isTextKey))] : [...byText.keys()]
+  const regionKeys = keys?.filter((key) => !isTextKey(key))
+  const lostTexts = textKeys.filter((key) => !byText.has(key)).length
+  const wantsRegions = !keys || !!regionKeys?.length || !textKeys.length
+  const selection = wantsRegions ? selectProfiles(sketch, regionKeys) : null
+  const regionsFailed = !!selection && !selection.ok && (!!keys || !textKeys.length)
+  const missing = lostTexts + (selection && !selection.ok ? selection.missing.length : 0)
+  if (missing && (lostTexts || regionsFailed)) return gone(missing)
+  if (selection && !selection.ok && regionsFailed) {
     return {
       ok: false,
       message: keys ? 'No profile is picked.' : 'That sketch does not enclose an area yet.',
@@ -264,13 +309,50 @@ export function sketchToProfile(sketch: Sketch2D, keys?: readonly string[]): Pro
           : 'Draw a closed shape - a rectangle or circle - before extruding.',
     }
   }
-  if (!selection.loops.length) {
-    return {
-      ok: false,
-      message: 'The picked profiles cancel each other out.',
-      hint: 'Pick the areas again.',
+  const loops = selection?.ok ? selection.loops : []
+  if (!loops.length && !textKeys.length) return CANCELLED
+  const oc = getOC() as OcAny
+  const region = loops.length ? regionGroup(oc, sketch, loops) : null
+  const chosen = textKeys.map((key) => {
+    const entity = byText.get(key)!
+    return textGroup(oc, entity, pts.get(entity.p)!)
+  })
+  const others = region
+    ? texts
+        .filter((entity) => !textKeys.includes(textKey(entity.id)))
+        .filter((entity) => groupsInteract(textOutlineGroup(entity, pts.get(entity.p)!), region))
+        .map((entity) => textGroup(oc, entity, pts.get(entity.p)!))
+    : []
+  const groups = [...(region ? [region] : []), ...chosen]
+  const tangled =
+    others.length > 0 ||
+    chosen.some(selfOverlapping) ||
+    groups.some((group, i) => groups.slice(i + 1).some((other) => groupsInteract(group, other)))
+  let shapes: AreaShape[]
+  let pieces: ProfilePiece[]
+  if (!tangled) {
+    shapes = groups.flatMap((group) => group.shapes())
+    pieces = groups.flatMap((group) => group.rings.flatMap((ring) => ring.pieces))
+  } else {
+    try {
+      const arranged = arrangeAreas(
+        oc,
+        [...groups, ...others],
+        (point) =>
+          (!!region?.filled(point) && !others.some((other) => other.filled(point))) ||
+          chosen.some((text) => text.filled(point)),
+      )
+      shapes = arranged.shapes
+      pieces = arranged.pieces
+    } catch {
+      return {
+        ok: false,
+        message: 'The text and the picked areas could not be combined.',
+        hint: 'Move the text so its letters do not cross other curves, or pick another font.',
+      }
     }
   }
-  const { drawing, pieces } = loopsDrawing(sketch, selection.loops)
-  return { ok: true, drawing, pieces, loops: selection.loops.length }
+  if (!shapes.length) return CANCELLED
+  const drawing = new Drawing(shapes.length === 1 ? shapes[0] : new Blueprints(shapes))
+  return { ok: true, drawing, pieces, loops: shapes.length }
 }

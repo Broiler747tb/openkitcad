@@ -4,6 +4,7 @@ import { frameFromPlaneRefLocal } from '../../../doc/planes'
 import { useStore } from '../../../doc/store'
 import type { BodyOperation, OkcDocument, PlaneRef, SketchFeature } from '../../../doc/types'
 import { cachedRegions } from '../../../sketch/regions'
+import { cachedTextProfiles } from '../../../sketch/text'
 import { bodyPick, pickSketchId, planePick, profilePick } from '../picks'
 import type { CommandContext, CommandValue, LooseCommandValues, SelectionPick } from '../types'
 
@@ -88,7 +89,19 @@ export function profileKeys(picks: readonly SelectionPick[]): string[] | undefin
 }
 
 export function hasProfiles(sketch: SketchFeature): boolean {
-  return cachedRegions(sketch.sketch).regions.some((region) => region.solid)
+  return (
+    cachedRegions(sketch.sketch).regions.some((region) => region.solid) ||
+    cachedTextProfiles(sketch.sketch).length > 0
+  )
+}
+
+export function solidProfileKeys(sketch: SketchFeature): string[] {
+  return [
+    ...cachedRegions(sketch.sketch)
+      .regions.filter((region) => region.solid)
+      .map((region) => region.key),
+    ...cachedTextProfiles(sketch.sketch).map((text) => text.key),
+  ]
 }
 
 export function profileProblem(
@@ -104,7 +117,10 @@ export function profileProblem(
   if (!keys) {
     return hasProfiles(sketch) ? null : { profile: 'That sketch has no closed shape yet.' }
   }
-  const known = new Set(cachedRegions(sketch.sketch).regions.map((region) => region.key))
+  const known = new Set([
+    ...cachedRegions(sketch.sketch).regions.map((region) => region.key),
+    ...cachedTextProfiles(sketch.sketch).map((text) => text.key),
+  ])
   if (keys.some((key) => !known.has(key))) {
     return { profile: 'A picked profile is gone from the sketch. Pick it again.' }
   }
@@ -124,9 +140,7 @@ export function mergeProfilePicks(
   const sketch = findFeature(doc, sketchId)
   let picks = own
   if (own.some((candidate) => candidate.kind === 'sketch') && sketch?.kind === 'sketch') {
-    picks = cachedRegions(sketch.sketch)
-      .regions.filter((region) => region.solid)
-      .flatMap((region) => profilePick(doc, sketchId, region.key) ?? [])
+    picks = solidProfileKeys(sketch).flatMap((key) => profilePick(doc, sketchId, key) ?? [])
   }
   return picks.some((candidate) => candidate.id === pick.id)
     ? picks.filter((candidate) => candidate.id !== pick.id)
@@ -188,14 +202,19 @@ export function sketchFrame(sketch: SketchFeature): Frame | null {
 }
 
 export function profileCentre(sketch: SketchFeature, keys?: readonly string[]): Vec2 {
-  const regions = cachedRegions(sketch.sketch).regions.filter((region) =>
-    keys ? keys.includes(region.key) : region.solid,
-  )
-  const total = regions.reduce((sum, region) => sum + Math.abs(region.area), 0)
-  if (!regions.length || total <= 0) return [0, 0]
+  const areas = [
+    ...cachedRegions(sketch.sketch)
+      .regions.filter((region) => (keys ? keys.includes(region.key) : region.solid))
+      .map((region) => ({ at: region.inside, area: Math.abs(region.area) })),
+    ...cachedTextProfiles(sketch.sketch)
+      .filter((text) => !keys || keys.includes(text.key))
+      .map((text) => ({ at: text.centre, area: Math.max(text.area, 1e-9) })),
+  ]
+  const total = areas.reduce((sum, entry) => sum + entry.area, 0)
+  if (!areas.length || total <= 0) return [0, 0]
   return [
-    regions.reduce((sum, region) => sum + region.inside[0] * Math.abs(region.area), 0) / total,
-    regions.reduce((sum, region) => sum + region.inside[1] * Math.abs(region.area), 0) / total,
+    areas.reduce((sum, entry) => sum + entry.at[0] * entry.area, 0) / total,
+    areas.reduce((sum, entry) => sum + entry.at[1] * entry.area, 0) / total,
   ]
 }
 

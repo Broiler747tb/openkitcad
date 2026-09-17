@@ -41,6 +41,7 @@ import type {
 } from '../doc/types'
 import type { KernelError } from './types'
 import { sketchToProfile } from './profile'
+import { runEmbossStep } from './embossStep'
 import {
   featureDependencies,
   findBody,
@@ -1158,6 +1159,9 @@ function hintForFailure(feature: Feature, message: string): string | undefined {
   ) {
     return 'Moving it a little away from edges and corners, or making it smaller, usually lets it build.'
   }
+  if (feature.kind === 'emboss') {
+    return 'A smaller depth, or text kept clear of the edges of the face, usually builds.'
+  }
   if (m.includes('null') || m.includes('undefined')) {
     return 'Something this step depends on is missing. Check the steps before it.'
   }
@@ -1371,7 +1375,11 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
     toPlane: (frame) => toReplicadPlane(frame),
     profileFace,
   }
-  if (runSolidStep(feature, solidStage) || runFitStep(feature, solidStage)) {
+  if (
+    runSolidStep(feature, solidStage) ||
+    runFitStep(feature, solidStage) ||
+    runEmbossStep(feature, solidStage)
+  ) {
     return
   }
 

@@ -1109,6 +1109,29 @@ const point: SketchToolSpec = {
   },
 }
 
+const text: SketchToolSpec = {
+  id: 'text',
+  label: 'Text',
+  menu: 'Text',
+  hint: 'Letters in a font from your computer, to extrude, cut or emboss.',
+  prompts: ['Click where the text starts'],
+  clicks: 1,
+  frame: (_state, cursor) => idle(cursor),
+  build(writer, anchors) {
+    const p = writer.point(anchors[0])
+    const created = writer.entity({
+      kind: 'text',
+      p,
+      text: 'Text',
+      height: 5,
+      angle: 0,
+      font: '',
+      construction: false,
+    })
+    return { created }
+  },
+}
+
 export const SKETCH_TOOLS: readonly SketchToolSpec[] = [
   line,
   rectangle,
@@ -1130,6 +1153,7 @@ export const SKETCH_TOOLS: readonly SketchToolSpec[] = [
   splineTool('fit'),
   splineTool('control'),
   point,
+  text,
 ]
 
 const BY_ID = new Map(SKETCH_TOOLS.map((tool) => [tool.id, tool]))

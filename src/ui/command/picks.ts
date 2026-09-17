@@ -1,6 +1,7 @@
 import { findBody, findFeature, findOccurrence, pathKey } from '../../doc/model'
 import type { Vec3 } from '../../core/math'
 import { planeLabel } from '../../doc/planes'
+import { isTextKey } from '../../sketch/text'
 import {
   FEATURE_LABEL,
   type ElementRef,
@@ -25,7 +26,7 @@ export function profilePick(doc: OkcDocument, sketchId: string, key: string): Se
   return {
     kind: 'profile',
     id: `${sketchId}|${key}`,
-    label: `Profile in ${sketch.name || 'Sketch'}`,
+    label: `${isTextKey(key) ? 'Text' : 'Profile'} in ${sketch.name || 'Sketch'}`,
     profile: { sketchId, key },
   }
 }

@@ -23,6 +23,7 @@ export type SketchToolId =
   | 'spline'
   | 'splineControl'
   | 'point'
+  | 'text'
 
 export type ToolAnchor = Pick<
   SnapResult,
@@ -72,6 +73,7 @@ export interface ToolBuild {
   chainFrom?: string
   chainStart?: string
   error?: string
+  created?: string
 }
 
 export interface SketchToolSpec {

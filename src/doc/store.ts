@@ -185,6 +185,7 @@ interface AppState {
   transientBase: OkcDocument | null
   beginTransient: () => void
   endTransient: () => void
+  cancelTransient: () => void
 
   startSketch: (plane: PlaneRef, bodyId?: string) => void
   openSketch: (featureId: string) => void
@@ -1133,6 +1134,11 @@ export const useStore = create<AppState>((set, get) => ({
     }
     set({ transientBase: null })
   },
+  cancelTransient() {
+    const base = get().transientBase
+    if (base) set({ doc: base })
+    set({ transientBase: null })
+  },
 
   startSketch(plane, bodyId) {
     const state = get()
@@ -1254,6 +1260,11 @@ export const useStore = create<AppState>((set, get) => ({
           )
         })
         get().solveActiveSketch()
+        break
+      case 'editText':
+        window.dispatchEvent(
+          new CustomEvent('okc:text', { detail: { entityId: result.entityId, created: false } }),
+        )
         break
       case 'toggleConstruction':
         get().editSketch((sketch) => {

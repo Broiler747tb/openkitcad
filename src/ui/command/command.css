@@ -485,3 +485,24 @@
   color: var(--okc-text-link);
   cursor: pointer;
 }
+
+.okc-text-file {
+  width: 100%;
+  border: 1px solid var(--okc-line);
+  background: var(--okc-surface-panel-raised);
+  color: var(--okc-text);
+}
+
+.okc-text-file:hover {
+  border-color: var(--okc-accent);
+}
+
+.okc-text-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--okc-text-link);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}

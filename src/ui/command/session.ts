@@ -199,7 +199,13 @@ export const useCommand = create<CommandStore>((set, get) => ({
         insertFeatures(doc, features)
         adjust()
         for (const feature of features) {
-          if (feature.kind !== 'extrude' && feature.kind !== 'revolve') continue
+          if (
+            feature.kind !== 'extrude' &&
+            feature.kind !== 'revolve' &&
+            feature.kind !== 'emboss'
+          ) {
+            continue
+          }
           const sketch = findFeature(doc, feature.sketchId)
           if (sketch?.kind === 'sketch') sketch.visible = false
         }

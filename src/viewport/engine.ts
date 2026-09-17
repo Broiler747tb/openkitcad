@@ -17,8 +17,9 @@ import type { Frame, Vec2, Vec3 } from '../core/math'
 import { frameToWorld, NAMED_FRAMES, v3 } from '../core/math'
 import type { Sketch2D } from '../sketch/types'
 import { usePreferences, type Preferences } from '../doc/preferences'
-import { tessellate } from '../sketch/curves'
+import { entityPolylines } from '../sketch/curves'
 import { regionAt, type RegionResult } from '../sketch/regions'
+import { textProfileAt, type TextProfile } from '../sketch/text'
 import { LIGHT_PALETTE, type ViewportPalette } from '../theme/palette'
 import {
   DEFAULT_MOUSE_SCHEME,
@@ -71,6 +72,7 @@ export interface SketchOverlay {
   construction: Vec2[][]
   lines: ReadonlyArray<{ id: string; a: Vec2; b: Vec2 }>
   regions: RegionResult
+  texts: readonly TextProfile[]
   profiles: boolean
 }
 
@@ -767,9 +769,10 @@ export class ViewportEngine {
           : loose.entities.includes(entity.id)
             ? undefined3
             : solid
-      const polyline = tessellate(entity, pts, SKETCH_TESSELLATION_MM)
-      for (let i = 0; i + 1 < polyline.length; i++) {
-        target.push(to3(polyline[i]), to3(polyline[i + 1]))
+      for (const polyline of entityPolylines(entity, pts, SKETCH_TESSELLATION_MM)) {
+        for (let i = 0; i + 1 < polyline.length; i++) {
+          target.push(to3(polyline[i]), to3(polyline[i + 1]))
+        }
       }
     }
 
@@ -879,28 +882,47 @@ export class ViewportEngine {
         this.sketchOverlayGroup.add(line)
       }
       if (!overlay.profiles) continue
-      for (const region of overlay.regions.regions) {
-        const contour = region.outer.polygon.map((p) => new THREE.Vector2(p[0], p[1]))
-        const holes = region.holes.map((hole) =>
-          [...hole.polygon].reverse().map((p) => new THREE.Vector2(p[0], p[1])),
-        )
-        let triangles: number[][]
-        try {
-          triangles = THREE.ShapeUtils.triangulateShape(contour, holes)
-        } catch {
-          continue
+      const fillGeometry = (fills: ReadonlyArray<{ contour: Vec2[]; holes: Vec2[][] }>) => {
+        const positions: number[] = []
+        const indices: number[] = []
+        for (const fill of fills) {
+          const contour = fill.contour.map((p) => new THREE.Vector2(p[0], p[1]))
+          const holes = fill.holes.map((hole) => hole.map((p) => new THREE.Vector2(p[0], p[1])))
+          let triangles: number[][]
+          try {
+            triangles = THREE.ShapeUtils.triangulateShape(contour, holes)
+          } catch {
+            continue
+          }
+          const base = positions.length / 3
+          for (const p of [...contour, ...holes.flat()]) {
+            const world = to3([p.x, p.y])
+            positions.push(world.x, world.y, world.z)
+          }
+          for (const triangle of triangles) indices.push(...triangle.map((i) => i + base))
         }
-        const flat = [...contour, ...holes.flat()]
-        const positions = new Float32Array(flat.length * 3)
-        flat.forEach((p, i) => {
-          const world = to3([p.x, p.y])
-          positions[i * 3] = world.x
-          positions[i * 3 + 1] = world.y
-          positions[i * 3 + 2] = world.z
-        })
+        if (!indices.length) return null
         const geometry = new THREE.BufferGeometry()
-        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-        geometry.setIndex(triangles.flat())
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+        geometry.setIndex(indices)
+        return geometry
+      }
+      const profileAreas = [
+        ...overlay.regions.regions.map((region) => ({
+          key: region.key,
+          text: false,
+          fills: [
+            {
+              contour: region.outer.polygon,
+              holes: region.holes.map((hole) => [...hole.polygon].reverse()),
+            },
+          ],
+        })),
+        ...overlay.texts.map((text) => ({ key: text.key, text: true, fills: text.fills })),
+      ]
+      for (const area of profileAreas) {
+        const geometry = fillGeometry(area.fills)
+        if (!geometry) continue
         const mesh = new THREE.Mesh(
           geometry,
           new THREE.MeshBasicMaterial({
@@ -910,12 +932,12 @@ export class ViewportEngine {
             side: THREE.DoubleSide,
             depthWrite: false,
             polygonOffset: true,
-            polygonOffsetFactor: -2,
-            polygonOffsetUnits: -2,
+            polygonOffsetFactor: area.text ? -3 : -2,
+            polygonOffsetUnits: area.text ? -3 : -2,
           }),
         )
-        mesh.renderOrder = 3
-        const id = `${overlay.id}|${region.key}`
+        mesh.renderOrder = area.text ? 4 : 3
+        const id = `${overlay.id}|${area.key}`
         mesh.userData.profileId = id
         this.profileMeshes.set(id, mesh)
         this.sketchOverlayGroup.add(mesh)
@@ -994,7 +1016,7 @@ export class ViewportEngine {
     const ray = this.raycaster.ray
     let best: ProfileHit | null = null
     for (const overlay of this.sketchOverlays) {
-      if (!overlay.profiles || !overlay.regions.regions.length) continue
+      if (!overlay.profiles || (!overlay.regions.regions.length && !overlay.texts.length)) continue
       const normal = new THREE.Vector3(...overlay.frame.normal)
       if (Math.abs(ray.direction.dot(normal)) < 0.02) continue
       const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
@@ -1008,11 +1030,16 @@ export class ViewportEngine {
         d.dot(new THREE.Vector3(...overlay.frame.xDir)),
         d.dot(new THREE.Vector3(...overlay.frame.yDir)),
       ]
-      const region = regionAt(overlay.regions, local)
-      if (!region) continue
+      const text = textProfileAt(
+        overlay.texts,
+        local,
+        4 * this.pixelSize([point.x, point.y, point.z]),
+      )
+      const key = text?.key ?? regionAt(overlay.regions, local)?.key
+      if (!key) continue
       const distance = point.distanceTo(ray.origin)
       if (!best || distance < best.distance) {
-        best = { sketchId: overlay.id, key: region.key, distance }
+        best = { sketchId: overlay.id, key, distance }
       }
     }
     if (!best) return null

@@ -22,11 +22,13 @@ import {
   OffsetIcon,
   TrimIcon,
 } from '../ui/icons/sketch'
-import { entityCentre, pointLookup, tessellate } from '../sketch/curves'
+import { entityCentre, entityPolylines, pointLookup, tessellate } from '../sketch/curves'
 import { cachedRegions } from '../sketch/regions'
+import { cachedTextProfiles } from '../sketch/text'
 import { findInput } from '../ui/command/state'
 import { formatAngle, formatLength } from '../ui/command/units'
 import { CommandHost } from '../ui/command/CommandHost'
+import { openTextEditor, TextPanelHost } from '../ui/TextPanel'
 import { MotionStudyHost } from '../ui/MotionStudy'
 import { useCommand } from '../ui/command/session'
 import {
@@ -736,6 +738,7 @@ export function Viewport() {
             construction: [],
             lines: [],
             regions: cachedRegions(feature.sketch),
+            texts: cachedTextProfiles(feature.sketch),
             profiles: true,
           },
         ]
@@ -749,7 +752,7 @@ export function Viewport() {
       const lines: Array<{ id: string; a: Vec2; b: Vec2 }> = []
       for (const entity of feature.sketch.entities) {
         if (entity.kind === 'point') continue
-        ;(entity.construction ? construction : curves).push(tessellate(entity, pts, 0.02))
+        ;(entity.construction ? construction : curves).push(...entityPolylines(entity, pts, 0.02))
         if (entity.kind === 'line') {
           const a = pts.get(entity.p1)
           const b = pts.get(entity.p2)
@@ -764,6 +767,7 @@ export function Viewport() {
           construction,
           lines,
           regions: cachedRegions(feature.sketch),
+          texts: cachedTextProfiles(feature.sketch),
           profiles: true,
         },
       ]
@@ -784,6 +788,7 @@ export function Viewport() {
         for (const region of cachedRegions(feature.sketch).regions) {
           if (region.solid) ids.add(`${feature.id}|${region.key}`)
         }
+        for (const text of cachedTextProfiles(feature.sketch)) ids.add(`${feature.id}|${text.key}`)
       }
     }
     return ids
@@ -1054,6 +1059,22 @@ export function Viewport() {
       return
     }
     let build: ToolBuild = {}
+    if (spec.id === 'text') {
+      store.endTransient()
+      store.beginTransient()
+      store.editSketch(
+        (draft) => {
+          build = buildTool(spec, draft, state, newId)
+        },
+        { transient: true },
+      )
+      store.solveActiveSketch()
+      toolRef.current = emptyToolState()
+      setHeadsUp({ fields: [], focus: null, text: '' })
+      store.setTool('select')
+      if (build.created) openTextEditor({ entityId: build.created, created: true })
+      return
+    }
     store.editSketch((draft) => {
       build = buildTool(spec, draft, state, newId)
     })
@@ -2012,6 +2033,7 @@ export function Viewport() {
   return (
     <div className="viewport">
       <CommandHost />
+      <TextPanelHost />
       <MotionStudyHost />
       <div
         ref={mountRef}
@@ -2099,6 +2121,16 @@ export function Viewport() {
           if (isAndroidApp && e.pointerType === 'touch') return
           cancelHold()
           onPointerUp(e)
+        }}
+        onDoubleClick={(e) => {
+          const store = useStore.getState()
+          const sketch = activeSketchFeature(store)?.sketch
+          const cursor = activeSketch && frame ? pointerToSketch(e) : null
+          if (!sketch || !cursor || store.tool !== 'select') return
+          const hit = hitTestSketch(sketch, cursor, toleranceAt(), false)
+          const entity =
+            hit?.kind === 'entity' ? sketch.entities.find((item) => item.id === hit.id) : undefined
+          if (entity?.kind === 'text') openTextEditor({ entityId: entity.id, created: false })
         }}
         onPointerCancel={() => {
           penContactRef.current = false

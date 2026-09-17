@@ -459,6 +459,17 @@ export interface ThickenFeature extends FeatureBase {
   result: BodyOperation
 }
 
+export type EmbossEffect = 'emboss' | 'deboss'
+
+export interface EmbossFeature extends FeatureBase {
+  kind: 'emboss'
+  sketchId: string
+  profiles?: string[]
+  face: ElementRef
+  depth: number
+  effect: EmbossEffect
+}
+
 export interface PatchFeature extends FeatureBase {
   kind: 'patch'
   sketchId: string
@@ -717,6 +728,7 @@ export type Feature =
   | PipeFeature
   | ThickenFeature
   | PatchFeature
+  | EmbossFeature
   | BodyPatternFeature
   | MirrorFeature
   | SplitBodyFeature
@@ -830,6 +842,7 @@ export const FEATURE_LABEL: Record<FeatureKind, string> = {
   snapRing: 'Snap Ring',
   bayonet: 'Bayonet',
   hinge: 'Print-in-place Hinge',
+  emboss: 'Emboss',
   move: 'Move',
   joint: 'Joint',
   jointOrigin: 'Joint Origin',
@@ -891,6 +904,7 @@ export const FEATURE_HINT: Record<FeatureKind, string> = {
   snapRing: 'A bead round a round plug or bore that clicks into a groove on the other part.',
   bayonet: 'Lugs that push in and turn to lock in L-shaped slots on the other part.',
   hinge: 'A knuckle hinge printed already assembled, joining two parts.',
+  emboss: 'Raises or sinks sketch text and shapes on a flat or round face.',
   move: 'Moves and turns bodies by exact amounts.',
   joint: 'Holds two components together, with the motion left between them.',
   jointOrigin: 'A saved snap point on a component that joints can use.',
@@ -952,6 +966,7 @@ export const FEATURE_ICON: Record<FeatureKind, string> = {
   snapRing: '◉',
   bayonet: '⟳',
   hinge: '⎍',
+  emboss: 'Ⓐ',
   move: '✚',
   joint: '⚭',
   jointOrigin: '⊕',

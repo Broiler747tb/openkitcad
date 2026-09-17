@@ -7,6 +7,7 @@ import {
   validKnots,
   type BSpline,
 } from './bspline'
+import { outlineBounds, textPolygons } from './text'
 import type {
   ArcEntity,
   EllipseEntity,
@@ -277,6 +278,7 @@ export function curveOf(e: SketchEntity, pts: PointLookup): Curve | null {
 }
 
 export function textWidth(e: TextEntity): number {
+  if (e.outline) return Math.max(e.outline.width, 0.1) * e.height
   return Math.max(1, e.text.length) * e.height * 0.6
 }
 
@@ -285,14 +287,26 @@ export function textCorners(e: TextEntity, pts: PointLookup): Vec2[] {
   const a = e.angle * DEG
   const u: Vec2 = [Math.cos(a), Math.sin(a)]
   const v: Vec2 = [-Math.sin(a), Math.cos(a)]
-  const w = textWidth(e)
-  const h = e.height
-  return [
-    p,
-    [p[0] + u[0] * w, p[1] + u[1] * w],
-    [p[0] + u[0] * w + v[0] * h, p[1] + u[1] * w + v[1] * h],
-    [p[0] + v[0] * h, p[1] + v[1] * h],
+  const bounds = e.outline ? outlineBounds(e.outline) : null
+  const x0 = bounds ? Math.min(0, bounds.min[0]) * e.height : 0
+  const x1 = bounds ? Math.max(textWidth(e), bounds.max[0] * e.height) : textWidth(e)
+  const y0 = bounds ? Math.min(0, bounds.min[1]) * e.height : 0
+  const y1 = bounds ? Math.max(1, bounds.max[1]) * e.height : e.height
+  const at = (x: number, y: number): Vec2 => [
+    p[0] + u[0] * x + v[0] * y,
+    p[1] + u[1] * x + v[1] * y,
   ]
+  return [at(x0, y0), at(x1, y0), at(x1, y1), at(x0, y1)]
+}
+
+export function entityPolylines(e: SketchEntity, pts: PointLookup, tolerance: number): Vec2[][] {
+  if (e.kind === 'text' && e.outline?.contours.length) {
+    const origin = pts.get(e.p)
+    if (origin) {
+      return textPolygons(e, origin, 12).map((polygon) => [...polygon, polygon[0]])
+    }
+  }
+  return [tessellate(e, pts, tolerance)]
 }
 
 function segmentProjection(p: Vec2, a: Vec2, b: Vec2): { t: number; d: number } {

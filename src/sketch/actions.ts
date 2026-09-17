@@ -29,6 +29,7 @@ export type ActionResult =
   | { kind: 'deleteEntity'; entityId: string }
   | { kind: 'deletePoint'; pointId: string }
   | { kind: 'toggleConstruction'; entityId: string }
+  | { kind: 'editText'; entityId: string }
   | { kind: 'deleteConstraint'; constraintId: string }
   | { kind: 'filletCorner'; pointId: string; radius: number }
   | { kind: 'chamferCorner'; pointId: string; distance: number }
@@ -137,7 +138,15 @@ const SKETCH_GROUPS: Array<[string, string[]]> = [
   ['Dimensions', ['length', 'diameter', 'radius', 'angle', 'distance', 'distanceX', 'distanceY']],
   [
     'Modify',
-    ['fillet-corner', 'chamfer-corner', 'fillet-between', 'trim', 'construction', 'delete'],
+    [
+      'edit-text',
+      'fillet-corner',
+      'chamfer-corner',
+      'fillet-between',
+      'trim',
+      'construction',
+      'delete',
+    ],
   ],
   [
     'Pattern',
@@ -214,6 +223,16 @@ export function sketchActions(
 
   const straight = lines(entities)
   const curved = rounds(entities)
+
+  if (entities.length === 1 && entities[0].kind === 'text') {
+    const entityId = entities[0].id
+    push({
+      id: 'edit-text',
+      label: 'Edit Text...',
+      hint: 'Change the words, font, height or angle.',
+      build: () => ({ kind: 'editText', entityId }),
+    })
+  }
 
   // ---- screws and inserts -------------------------------------------------
   // Where the holes go: the corners you picked, the middle of any circles you

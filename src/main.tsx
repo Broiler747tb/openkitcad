@@ -53,6 +53,7 @@ if (params.has('selftest') || params.has('kerneltest')) {
     ['kernel', async () => (await import('./dev/kerneltest')).runKernelTest()],
     ['solids', async () => (await import('./dev/solidtest')).runSolidTest()],
     ['fits', async () => (await import('./dev/fittest')).runFitTest()],
+    ['text', async () => (await import('./dev/texttest')).runTextTest()],
   )
   const only = params.get('suite')?.split(',').filter(Boolean)
   ;(async () => {
@@ -75,8 +76,8 @@ if (params.has('selftest') || params.has('kerneltest')) {
   import('./assembly/follow').then((m) => m.followGeometry())
   if (import.meta.env.DEV) {
     // Handy for poking at state from the console during development.
-    import('./doc/store').then((m) => {
-      ;(window as any).__okc = { store: m.useStore }
+    Promise.all([import('./doc/store'), import('./sketch/fonts')]).then(([m, fonts]) => {
+      ;(window as any).__okc = { store: m.useStore, fonts }
     })
   }
   root.render(
