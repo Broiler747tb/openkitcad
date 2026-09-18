@@ -1,13 +1,4 @@
-import {
-  cast,
-  downcast,
-  draw,
-  drawCircle,
-  genericSweep,
-  getOC,
-  makeCylinder,
-  makeHelix,
-} from 'replicad'
+import { downcast, draw, drawCircle, genericSweep, getOC, makeCylinder, makeHelix } from 'replicad'
 import { v3, type Frame, type Vec2, type Vec3 } from '../core/math'
 import type { Feature, ScrewLidFeature } from '../doc/types'
 import { place } from './fitSteps'
@@ -24,6 +15,7 @@ import {
   type OC,
   type OcShape,
 } from './naming'
+import { rawBoolean } from './rawBoolean'
 import type { SolidStage } from './solidSteps'
 
 type OcAny = any
@@ -50,27 +42,7 @@ function quietly(shape: { delete(): void } | null | undefined) {
 }
 
 function booleanSolid(kind: 'fuse' | 'cut', target: Solid, tool: Solid, touching = false): Solid {
-  const oc = getOC() as OcAny
-  const scratch = new Scratch()
-  try {
-    const builder = scratch.track(
-      kind === 'fuse' ? new oc.BRepAlgoAPI_Fuse_1() : new oc.BRepAlgoAPI_Cut_1(),
-    )
-    const targets = scratch.track(new oc.TopTools_ListOfShape_1())
-    scratch.track(targets.Append_1(target.wrapped))
-    const tools = scratch.track(new oc.TopTools_ListOfShape_1())
-    scratch.track(tools.Append_1(tool.wrapped))
-    builder.SetArguments(targets)
-    builder.SetTools(tools)
-    builder.SetRunParallel(false)
-    if (touching) builder.SetGlue(oc.BOPAlgo_GlueEnum.BOPAlgo_GlueFull)
-    const progress = scratch.track(new oc.Message_ProgressRange_1())
-    builder.Build(progress)
-    if (!builder.IsDone() || builder.HasErrors()) throw new Error('The lid could not be built.')
-    return cast(builder.Shape()) as unknown as Solid
-  } finally {
-    scratch.release()
-  }
+  return rawBoolean<Solid>(kind, target, [tool], 'The lid could not be built.', touching)
 }
 
 interface RoundOpening {

@@ -21,7 +21,7 @@ import type {
 import type { BodyMesh } from '../../../kernel/types'
 import { MILLIMETRES_PER_UNIT, type MeshUnit } from '../../../mesh/types'
 import { defineCommand, type LooseCommandValues, type SelectionPick } from '../types'
-import { bodyIdsOf, planeOf } from './shared'
+import { bodyIdsOf, nameBody, planeOf } from './shared'
 
 export interface PendingMesh {
   name: string
@@ -72,19 +72,6 @@ const MESH_BODY = {
   max: 1,
   prompt: 'Select a mesh body',
 } as const
-
-function nameBody(doc: OkcDocument, bodyId: string, base: string) {
-  const found = findBody(doc, bodyId)
-  if (!found) return
-  const taken = new Set(
-    doc.components.flatMap((component) =>
-      component.bodies.filter((body) => body.id !== bodyId).map((body) => body.name),
-    ),
-  )
-  let name = base
-  for (let n = 2; taken.has(name); n++) name = `${base} ${n}`
-  found.body.name = name
-}
 
 function componentOf(doc: OkcDocument, bodyId: string, fallback: string): string {
   return findBody(doc, bodyId)?.component.id ?? fallback

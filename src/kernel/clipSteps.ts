@@ -36,6 +36,8 @@ function quietly(shape: { delete(): void } | null | undefined) {
   }
 }
 
+export type ClipSize = Pick<BoardClipsFeature, 'width' | 'post' | 'grip' | 'ledge' | 'hook' | 'gap'>
+
 export interface BoardBox {
   width: number
   depth: number
@@ -63,7 +65,7 @@ export function boardBox(part: CataloguePart): BoardBox | null {
   }
 }
 
-function clipProfile(feature: BoardClipsFeature, board: BoardBox, floor: number): Solid {
+function clipProfile(feature: ClipSize, board: BoardBox, floor: number): Solid {
   const gap = feature.gap
   const post = feature.post
   const grip = feature.grip
@@ -90,8 +92,8 @@ function clipProfile(feature: BoardClipsFeature, board: BoardBox, floor: number)
   return pen.close().sketchOnPlane('XZ').extrude(feature.width) as unknown as Solid
 }
 
-function edgeClip(
-  feature: BoardClipsFeature,
+export function edgeClip(
+  feature: ClipSize,
   board: BoardBox,
   floor: number,
   along: number,

@@ -28,6 +28,9 @@ import type {
   CommandInitialValues,
   CommandInput,
   CommandValue,
+  ListInput,
+  ListRow,
+  LooseCommandValues,
   SelectionInput,
 } from './types'
 
@@ -130,6 +133,8 @@ interface RowProps {
   active: boolean
   dispatch: (action: CommandAction) => void
   rowId: string
+  values: LooseCommandValues
+  context: CommandContext
 }
 
 function SelectionControl({
@@ -222,7 +227,145 @@ function ChoiceControl({
   )
 }
 
-function InputRow({ input, field, error, active, dispatch, rowId }: RowProps) {
+function sameOptions(rows: readonly ListRow[]): boolean {
+  const first = rows[0]?.options ?? []
+  return rows.every(
+    (row) =>
+      row.options.length === first.length &&
+      row.options.every((option, index) => option.value === first[index].value),
+  )
+}
+
+function ListControl({
+  input,
+  field,
+  values,
+  context,
+  dispatch,
+  labelId,
+}: {
+  input: ListInput
+  field: FieldState | undefined
+  values: LooseCommandValues
+  context: CommandContext
+  dispatch: (action: CommandAction) => void
+  labelId: string
+}) {
+  let rows: readonly ListRow[] = []
+  try {
+    rows = input.rows(values, context)
+  } catch {
+    rows = []
+  }
+  if (!rows.length) {
+    return <p className="okc-cmd-list-empty">{input.empty ?? 'Nothing to choose yet.'}</p>
+  }
+  const chosen = field?.kind === 'list' ? field.value : {}
+  const valueOf = (row: ListRow) => chosen[row.id] ?? row.default ?? row.options[0]?.value ?? ''
+  const ids = rows.map((row) => row.id)
+  if (input.display === 'check') {
+    const on = (row: ListRow) => valueOf(row) === 'on'
+    const every = rows.every(on)
+    const some = rows.some(on)
+    return (
+      <div className="okc-cmd-list" role="group" aria-labelledby={labelId}>
+        {input.all && rows.length > 1 && (
+          <label className="okc-cmd-list-check" data-okc-list-all="true">
+            <input
+              type="checkbox"
+              className="okc-cmd-checkbox"
+              checked={every}
+              ref={(element) => {
+                if (element) element.indeterminate = some && !every
+              }}
+              onChange={(event) =>
+                dispatch({
+                  type: 'row',
+                  id: input.id,
+                  rows: ids,
+                  value: event.target.checked ? 'on' : 'off',
+                })
+              }
+            />
+            <span>{input.all}</span>
+          </label>
+        )}
+        {rows.map((row) => (
+          <label
+            key={row.id}
+            className="okc-cmd-list-check"
+            data-okc-list-row={row.id}
+            title={row.hint}
+          >
+            <input
+              type="checkbox"
+              className="okc-cmd-checkbox"
+              checked={on(row)}
+              onChange={(event) =>
+                dispatch({
+                  type: 'row',
+                  id: input.id,
+                  rows: [row.id],
+                  value: event.target.checked ? 'on' : 'off',
+                })
+              }
+            />
+            <span>{row.label}</span>
+          </label>
+        ))}
+      </div>
+    )
+  }
+  return (
+    <div className="okc-cmd-list" role="group" aria-labelledby={labelId}>
+      {input.all && rows.length > 1 && sameOptions(rows) && (
+        <div className="okc-cmd-list-row" data-okc-list-all="true">
+          <span className="okc-cmd-list-label">{input.all}</span>
+          <div className="okc-cmd-segments">
+            {rows[0].options.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={rows.every((row) => valueOf(row) === option.value)}
+                title={option.hint}
+                onClick={() =>
+                  dispatch({ type: 'row', id: input.id, rows: ids, value: option.value })
+                }
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {rows.map((row) => (
+        <div key={row.id} className="okc-cmd-list-row" data-okc-list-row={row.id}>
+          <span className="okc-cmd-list-label" title={row.hint ?? row.label}>
+            {row.label}
+          </span>
+          <div className="okc-cmd-segments" role="radiogroup" aria-label={row.label}>
+            {row.options.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                aria-checked={valueOf(row) === option.value}
+                title={option.hint}
+                onClick={() =>
+                  dispatch({ type: 'row', id: input.id, rows: [row.id], value: option.value })
+                }
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function InputRow({ input, field, error, active, dispatch, rowId, values, context }: RowProps) {
   const labelId = `${rowId}-label`
   const errorId = `${rowId}-error`
   let control
@@ -288,6 +431,18 @@ function InputRow({ input, field, error, active, dispatch, rowId }: RowProps) {
         <ChoiceControl
           input={input}
           value={field?.kind === 'choice' ? field.value : ''}
+          dispatch={dispatch}
+          labelId={labelId}
+        />
+      )
+      break
+    case 'list':
+      control = (
+        <ListControl
+          input={input}
+          field={field}
+          values={values}
+          context={context}
           dispatch={dispatch}
           labelId={labelId}
         />
@@ -564,6 +719,8 @@ export function CommandPanel(props: CommandPanelProps) {
                   active={state.active === input.id}
                   dispatch={dispatch}
                   rowId={`${baseId}-${index}`}
+                  values={evaluation.values}
+                  context={context}
                 />
               ),
             )}

@@ -35,6 +35,7 @@ import { fitCouponCommand } from './specs/coupon'
 import { cableEntryCommand } from './specs/cable'
 import { boardClipsCommand } from './specs/clips'
 import { screwLidCommand } from './specs/screw'
+import { enclosureCommand, enclosureValues } from './specs/enclosure'
 import { midplaneCommand, offsetPlaneCommand, planeAtAngleCommand } from './specs/construct'
 import {
   coilCommand,
@@ -98,6 +99,7 @@ export const COMMANDS: Readonly<Record<string, AnyCommandSpec>> = {
   cableEntry: spec(cableEntryCommand),
   boardClips: spec(boardClipsCommand),
   screwLid: spec(screwLidCommand),
+  enclosure: spec(enclosureCommand),
   revolve: spec(revolveCommand),
   box: spec(boxCommand),
   cylinder: spec(cylinderCommand),
@@ -268,6 +270,8 @@ function startOptions(id: string): CommandStart {
       return { initial: { board: selectedOccurrence(doc), body: bodies } }
     case 'screwLid':
       return { initial: { face: faces.slice(0, 1) } }
+    case 'enclosure':
+      return { initial: { parts: selectedOccurrence(doc) } }
     case 'rib':
     case 'web':
       return { initial: { body: bodies } }
@@ -409,6 +413,14 @@ function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, Comma
             nutRoom: feature.nutRoom,
           },
           ...(feature.barBodyId ? { ids: { bar: feature.barBodyId } } : {}),
+        },
+      ]
+    case 'enclosure':
+      return [
+        COMMANDS.enclosure,
+        {
+          initial: enclosureValues(doc, feature),
+          ids: { box: feature.bodyId, lid: feature.lidBodyId },
         },
       ]
     case 'screwLid':

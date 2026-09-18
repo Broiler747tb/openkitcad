@@ -87,6 +87,8 @@ export function featureCreatesBodies(feature: Feature): string[] {
       return [feature.pinBodyId, feature.holeBodyId]
     case 'screwLid':
       return [feature.capBodyId]
+    case 'enclosure':
+      return [feature.bodyId, feature.lidBodyId]
     case 'cableEntry':
       return feature.barBodyId ? [feature.barBodyId] : []
   }

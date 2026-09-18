@@ -704,6 +704,17 @@ function buildObjectActions(
         run: (height) => add('standoffs', height),
       })
     }
+    if (catalogue && part) {
+      out.push({
+        id: 'enclosure',
+        label: 'Enclosure',
+        hint: 'A box round this part, with a lid, mounts and openings',
+        run: () =>
+          startCommand('enclosure', {
+            parts: [occurrencePick(doc, id, selection.instanceId)].flatMap((pick) => pick ?? []),
+          }),
+      })
+    }
     if (targetBody && part?.geometry.kind === 'board') {
       out.push({
         id: 'clips',

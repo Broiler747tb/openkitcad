@@ -8,6 +8,19 @@ import { cachedTextProfiles } from '../../../sketch/text'
 import { bodyPick, pickSketchId, planePick, profilePick } from '../picks'
 import type { CommandContext, CommandValue, LooseCommandValues, SelectionPick } from '../types'
 
+export function nameBody(doc: OkcDocument, bodyId: string, base: string) {
+  const found = findBody(doc, bodyId)
+  if (!found) return
+  const taken = new Set(
+    doc.components.flatMap((component) =>
+      component.bodies.filter((body) => body.id !== bodyId).map((body) => body.name),
+    ),
+  )
+  let name = base
+  for (let n = 2; taken.has(name); n++) name = `${base} ${n}`
+  found.body.name = name
+}
+
 export const OPERATIONS = [
   { value: 'newBody', label: 'New Body', hint: 'The result becomes a body of its own.' },
   { value: 'join', label: 'Join', hint: 'Adds material to the body you pick.' },

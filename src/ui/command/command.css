@@ -5,6 +5,7 @@
   z-index: var(--okc-z-panel);
   width: var(--okc-panel-width);
   max-width: calc(100% - 2 * var(--okc-space-5));
+  max-height: calc(100% - 2 * var(--okc-space-5));
   display: flex;
   flex-direction: column;
   background: var(--okc-surface-panel);
@@ -15,6 +16,13 @@
   font: var(--okc-font-size-md) / var(--okc-line-height) var(--okc-font-ui);
   overflow: hidden;
   user-select: none;
+}
+
+.okc-cmd-title,
+.okc-cmd-hint,
+.okc-cmd-message,
+.okc-cmd-footer {
+  flex-shrink: 0;
 }
 
 .okc-cmd-title {
@@ -84,12 +92,15 @@
   display: flex;
   flex-direction: column;
   padding: var(--okc-space-3) var(--okc-space-5);
+  flex: 0 1 auto;
+  min-height: 0;
   max-height: 60vh;
   overflow-y: auto;
 }
 
 .okc-cmd-row {
   display: grid;
+  flex-shrink: 0;
   grid-template-columns: minmax(84px, 40%) 1fr;
   align-items: center;
   column-gap: var(--okc-space-4);
@@ -259,6 +270,75 @@
 .okc-cmd-clear:hover {
   color: var(--okc-error);
   border-color: var(--okc-error);
+}
+
+.okc-cmd-row[data-okc-input='list'] {
+  grid-template-columns: 1fr;
+  row-gap: var(--okc-space-2);
+  padding: var(--okc-space-2) 0;
+}
+
+.okc-cmd-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--okc-space-2);
+  min-width: 0;
+}
+
+.okc-cmd-list-row {
+  display: grid;
+  grid-template-columns: minmax(84px, 40%) 1fr;
+  align-items: center;
+  column-gap: var(--okc-space-4);
+}
+
+.okc-cmd-list-row[data-okc-list-all='true'] {
+  padding-bottom: var(--okc-space-2);
+  border-bottom: 1px solid var(--okc-line);
+}
+
+.okc-cmd-list-label {
+  color: var(--okc-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.okc-cmd-list-row[data-okc-list-all='true'] .okc-cmd-list-label {
+  color: var(--okc-text);
+}
+
+.okc-cmd-list-row[data-okc-list-all='true'] .okc-cmd-segments button[aria-pressed='true'] {
+  background: var(--okc-accent);
+  color: var(--okc-text-on-accent);
+}
+
+.okc-cmd-list-check {
+  display: flex;
+  align-items: center;
+  gap: var(--okc-space-3);
+  min-width: 0;
+  color: var(--okc-text-muted);
+  cursor: pointer;
+}
+
+.okc-cmd-list-check span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.okc-cmd-list-check[data-okc-list-all='true'] {
+  padding-bottom: var(--okc-space-2);
+  border-bottom: 1px solid var(--okc-line);
+  color: var(--okc-text);
+}
+
+.okc-cmd-list-empty {
+  margin: 0;
+  color: var(--okc-text-muted);
+  font-size: var(--okc-font-size-sm);
 }
 
 .okc-cmd-segments {

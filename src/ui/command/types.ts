@@ -49,7 +49,9 @@ export interface SelectionPick {
   }
 }
 
-export type CommandValue = SelectionPick[] | number | string | boolean
+export type ListValue = Readonly<Record<string, string>>
+
+export type CommandValue = SelectionPick[] | number | string | boolean | ListValue
 
 export type LooseCommandValues = Readonly<Record<string, CommandValue>>
 
@@ -126,8 +128,31 @@ export interface ToggleInput<Id extends string = string> extends InputBase<Id> {
   default?: boolean
 }
 
+export interface ListRow {
+  id: string
+  label: string
+  hint?: string
+  options: readonly ChoiceOption[]
+  default?: string
+}
+
+export interface ListInput<Id extends string = string> extends InputBase<Id> {
+  kind: 'list'
+  rows: (values: LooseCommandValues, context: CommandContext) => readonly ListRow[]
+  display?: 'buttons' | 'check'
+  all?: string
+  empty?: string
+}
+
 export type CommandInput =
-  SelectionInput | LengthInput | AngleInput | IntegerInput | NumberInput | ChoiceInput | ToggleInput
+  | SelectionInput
+  | LengthInput
+  | AngleInput
+  | IntegerInput
+  | NumberInput
+  | ChoiceInput
+  | ToggleInput
+  | ListInput
 
 export type NumericInput = LengthInput | AngleInput | IntegerInput | NumberInput
 
@@ -139,7 +164,9 @@ export type InputValueOf<I> = I extends { kind: 'selection' }
     ? V
     : I extends { kind: 'toggle' }
       ? boolean
-      : number
+      : I extends { kind: 'list' }
+        ? ListValue
+        : number
 
 export type CommandValues<I extends readonly CommandInput[]> = {
   [K in I[number] as K['id']]: InputValueOf<K>

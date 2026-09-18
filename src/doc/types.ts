@@ -478,6 +478,34 @@ export interface ScrewLidFeature extends FeatureBase {
   capBodyId: string
 }
 
+export type LidStyle = 'screws' | 'snap' | 'slide'
+
+export type MountKind = 'standoffs' | 'clips' | 'none'
+
+export interface EnclosureMount {
+  occurrencePath: string[]
+  kind: MountKind
+  connectorIds: string[]
+}
+
+export interface EnclosureFeature extends FeatureBase {
+  kind: 'enclosure'
+  contextPath: string[]
+  mounts: EnclosureMount[]
+  clearance: number
+  under: number
+  wall: number
+  floor: number
+  lid: LidStyle
+  lidThickness: number
+  gap: number
+  fitClass?: FitClass
+  screw: number
+  tolerance: number
+  bodyId: string
+  lidBodyId: string
+}
+
 export interface BoardClipsFeature extends FeatureBase {
   kind: 'boardClips'
   bodyId: string
@@ -817,6 +845,7 @@ export type Feature =
   | CableEntryFeature
   | BoardClipsFeature
   | ScrewLidFeature
+  | EnclosureFeature
   | EmbossFeature
   | BodyPatternFeature
   | MirrorFeature
@@ -938,6 +967,7 @@ export const FEATURE_LABEL: Record<FeatureKind, string> = {
   cableEntry: 'Cable Entry',
   boardClips: 'Board Clips',
   screwLid: 'Screw Lid',
+  enclosure: 'Enclosure',
   move: 'Move',
   joint: 'Joint',
   jointOrigin: 'Joint Origin',
@@ -1005,6 +1035,7 @@ export const FEATURE_HINT: Record<FeatureKind, string> = {
   cableEntry: 'A way for a cable to leave the box: a hole, a gland, a zip-tie anchor or a clamp.',
   boardClips: 'Clips along two edges of a placed board that hold it without screws.',
   screwLid: 'A thread round an opening and a cap that screws onto it.',
+  enclosure: 'A box round the parts you picked, with a lid and their mounts.',
   web: 'A set of thin walls along crossing sketch lines, grown down onto the part.',
   move: 'Moves and turns bodies by exact amounts.',
   joint: 'Holds two components together, with the motion left between them.',
@@ -1074,6 +1105,7 @@ export const FEATURE_ICON: Record<FeatureKind, string> = {
   cableEntry: '⌁',
   boardClips: '⊐',
   screwLid: '⊚',
+  enclosure: '▤',
   move: '✚',
   joint: '⚭',
   jointOrigin: '⊕',

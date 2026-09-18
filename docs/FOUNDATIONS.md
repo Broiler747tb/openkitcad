@@ -66,7 +66,8 @@ shapes, usable as a profile anywhere a profile is, and Emboss to raise or sink i
 round the side of a cylinder (§16). Then Rib and Web, the thin walls that brace a printed part
 (§17), the fit test coupon that measures what a printer really leaves (§18), the
 cable entries that get a lead out of a box (§19), the clips that hold a board without screws
-(§20), and the screw lid that closes a round opening (§21).
+(§20), the screw lid that closes a round opening (§21), and the enclosure that puts a box, a lid,
+mounts and openings round the parts you picked (§22).
 
 ## 3. Document model v2
 
@@ -833,7 +834,48 @@ looking for intersections that are not there.
 place and intersects them with the jar to prove nothing touches, builds the vee profile, and checks
 the warning when the thread outgrows its face.
 
-## 22. How the work is done
+## 22. Enclosure (EM)
+
+**Sized by the parts.** Enclosure takes the placed catalogue parts you pick and builds a box round
+all of them, so moving a part moves the box: the step lists its parts' occurrences as inputs, and
+the prefix cache rebuilds it when one moves. The inside is the parts' combined bounds grown by the
+room round them, with the room under them below. A connector you have not ticked for an opening
+counts towards the bounds, so the wall clears it; a ticked one does not, so its opening sits right
+at the connector's face. It is in the FIT list and on a placed part's right-click menu.
+
+**One step, two bodies.** `src/kernel/enclosureStep.ts` builds everything from boxes and cylinders
+in the context's axes, so it never needs a face reference: the walls and floor, then every
+addition in one fuse and every cut in one cut. It makes the box and the lid as two new bodies.
+
+- **Screws.** Four towers stand outside the corners, each touching the inside corner at a single
+  point so nothing intrudes on the parts, with a pilot hole 0.4 mm under the screw. The lid sits on
+  the rim, reaches over the towers, has clearance holes and countersinks, and a thin locating rim
+  that drops no further than the room above the parts.
+- **Snap.** The same proportions as the shell lid's snap fit (`lidProportions`): a lid flush inside
+  the rim, a skirt below it with a bead, a matching groove round the walls, and a notch at one end
+  for a fingernail.
+- **Slide.** Grooves in three walls and a slot through the fourth; the lid runs in them above the
+  room over the parts and stands 2 mm proud of the open end, with a ridge to push on. Walls under
+  1.2 mm are refused.
+
+The walls move out as far as the lid's hanging parts and any board clips need, so neither touches
+the other or a part.
+
+**Per board.** Each board picks standoffs under its mounting holes, the board clips of §20, or
+nothing; a board without holes defaults to clips, and a tilted one gets no mounts and a warning.
+Openings reuse the Port Cutouts cutters for the connectors ticked.
+
+**A list input.** The command panel gained a `list` input: rows worked out from the other values,
+as buttons per row or as tick boxes, with an All line that sets every row at once. Mounting and
+Openings are both lists. The panel itself is now capped to the canvas height and only its body
+scrolls, because a long list pushed the footer off screen.
+
+**Tests.** `?selftest&suite=enclosure` boxes a real Raspberry Pi 4 with each lid, intersects the lid
+with the box to prove they never overlap, checks that standoffs and clips add material and ticked
+connectors remove it, that moving the Pi moves the box by the same amount, that thin walls refuse
+a sliding lid, and that a deleted part is reported.
+
+## 23. How the work is done
 
 - Agents never start other agents or workflows.
 - New and rewritten code has no comments. Touched files are formatted with Prettier.
@@ -895,6 +937,11 @@ the warning when the thread outgrows its face.
   headers: the pins go and the plated holes show. Tick Pin headers on the Pico: male pins appear under
   both long edges. Put a 3 mm plate just under the Nano, run the clearance check with and without its
   headers, and swap the Pico for a Pico 2 to see the pins stay. Undo back through every step.
+- **EM smoke test (enclosure).** Insert a Raspberry Pi 4, right-click it and choose Enclosure: a box
+  with corner towers and a lid appears round it. Tick All connectors, untick Ethernet, and see seven
+  openings through the walls. Switch Lid to Snap and the Pi's mounting to Clips, then OK. Hide the
+  lid: the Pi sits on its clips inside. Move the Pi 10 mm along X: the box follows. Double-click the
+  step and see every choice as you left it. Undo back through every step.
 - **EM smoke test (screw lid).** Make a 30 mm tall cylinder of radius 15 and cut a 12 mm bore into
   it. Run Screw Lid from the FIT group and click the outside of the tube near the top: a ribbed cap
   appears over a threaded neck. Change Turns to 4 and Thread Shape to Vee, then OK. Hide the cap and

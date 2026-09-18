@@ -6,6 +6,7 @@ import type {
   CommandInitialValues,
   CommandInput,
   CommandValue,
+  ListValue,
   NumericInput,
   SelectionInput,
   SelectionPick,
@@ -28,6 +29,7 @@ export type FieldState =
   | NumericFieldState
   | { kind: 'choice'; value: string }
   | { kind: 'toggle'; value: boolean }
+  | { kind: 'list'; value: ListValue }
 
 export interface CommandState {
   fields: Record<string, FieldState>
@@ -38,6 +40,7 @@ export type CommandAction =
   | { type: 'text'; id: string; text: string }
   | { type: 'choice'; id: string; value: string }
   | { type: 'toggle'; id: string; value: boolean }
+  | { type: 'row'; id: string; rows: readonly string[]; value: string }
   | { type: 'pick'; pick: SelectionPick; id?: string }
   | { type: 'unpick'; id: string; pick: SelectionPick }
   | { type: 'setPicks'; id: string; picks: SelectionPick[] }
@@ -81,6 +84,10 @@ function uniquePicks(picks: readonly SelectionPick[]): SelectionPick[] {
   const out: SelectionPick[] = []
   for (const pick of picks) if (!out.some((existing) => samePick(existing, pick))) out.push(pick)
   return out
+}
+
+function isListValue(value: unknown): value is ListValue {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 function defaultChoice(input: ChoiceInput): string {
@@ -145,6 +152,9 @@ export function createCommandState(
           kind: 'toggle',
           value: typeof value === 'boolean' ? value : (input.default ?? false),
         }
+        break
+      case 'list':
+        fields[input.id] = { kind: 'list', value: isListValue(value) ? { ...value } : {} }
         break
     }
   }
@@ -241,6 +251,8 @@ function applyFills(
       next = withField(next, id, { kind: 'choice', value })
     } else if (input.kind === 'toggle' && typeof value === 'boolean') {
       next = withField(next, id, { kind: 'toggle', value })
+    } else if (input.kind === 'list' && isListValue(value)) {
+      next = withField(next, id, { kind: 'list', value: { ...value } })
     }
   }
   return next
@@ -278,6 +290,7 @@ export function reduceCommand(
     action.type !== 'text' &&
     action.type !== 'choice' &&
     action.type !== 'toggle' &&
+    action.type !== 'row' &&
     action.type !== 'step'
   ) {
     return next
@@ -297,7 +310,8 @@ function reduceFields(
     case 'text': {
       const field = state.fields[action.id]
       if (!field || field.kind === 'selection' || field.kind === 'choice') return state
-      if (field.kind === 'toggle' || field.text === action.text) return state
+      if (field.kind === 'toggle' || field.kind === 'list' || field.text === action.text)
+        return state
       return withField(state, action.id, { kind: field.kind, text: action.text })
     }
     case 'choice': {
@@ -320,6 +334,14 @@ function reduceFields(
         withField(state, action.id, { kind: 'toggle', value: action.value }),
         units,
       )
+    }
+    case 'row': {
+      const field = state.fields[action.id]
+      if (field?.kind !== 'list') return state
+      const value = { ...field.value }
+      for (const row of action.rows) value[row] = action.value
+      if (action.rows.every((row) => field.value[row] === action.value)) return state
+      return withField(state, action.id, { kind: 'list', value })
     }
     case 'activate': {
       if (action.id === null) return state.active === null ? state : { ...state, active: null }
@@ -435,6 +457,8 @@ function readField(
         error: null,
         missing: false,
       }
+    case 'list':
+      return { value: field?.kind === 'list' ? field.value : {}, error: null, missing: false }
   }
 }
 

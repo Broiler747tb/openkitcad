@@ -47,6 +47,7 @@ import { runCouponStep } from './couponStep'
 import { runCableStep } from './cableSteps'
 import { runClipStep } from './clipSteps'
 import { runScrewStep } from './screwStep'
+import { runEnclosureStep } from './enclosureStep'
 import {
   featureDependencies,
   findBody,
@@ -416,6 +417,12 @@ function occurrenceInputs(
   )
     return [feature.source]
   if (feature.kind === 'portCutout' || feature.kind === 'boardClips') return [feature]
+  if (feature.kind === 'enclosure') {
+    return feature.mounts.map((mount) => ({
+      occurrencePath: mount.occurrencePath,
+      contextPath: feature.contextPath,
+    }))
+  }
   return []
 }
 
@@ -499,7 +506,7 @@ function buildStandoffs(
   return { solid, bores }
 }
 
-function buildPortCutters(
+export function buildPortCutters(
   placed: PlacedPart,
   connectorIds: string[],
   tolerance: number,
@@ -824,7 +831,7 @@ function insetSolid(solid: any, d: number, frame: Frame): any {
   return solid.clone().cut(walls)
 }
 
-function lidProportions(wall: number, thickness: number) {
+export function lidProportions(wall: number, thickness: number) {
   const skirt = Math.max(Math.min(wall * 0.6, wall - 0.4), 0.8)
   const depth = Math.max(3, thickness * 2)
   const bead = 0.4
@@ -1397,7 +1404,8 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
     runCouponStep(feature, solidStage) ||
     runCableStep(feature, solidStage) ||
     runClipStep(feature, solidStage, doc) ||
-    runScrewStep(feature, solidStage)
+    runScrewStep(feature, solidStage) ||
+    runEnclosureStep(feature, solidStage, doc)
   ) {
     return
   }

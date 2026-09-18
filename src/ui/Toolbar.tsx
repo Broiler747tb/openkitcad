@@ -129,6 +129,7 @@ const labels: Record<string, string> = {
   cableEntry: 'Cable Entry',
   boardClips: 'Board Clips',
   screwLid: 'Screw Lid',
+  enclosure: 'Enclosure',
   extrude: 'Extrude',
   rib: 'Rib',
   web: 'Web',
@@ -1137,6 +1138,7 @@ export function Toolbar({
                 'cableEntry',
                 'boardClips',
                 'screwLid',
+                'enclosure',
               ].map((id) => ({ ...cmd(id), group: 'Fit' })),
               tool('Snap Fit', <SnapFitIcon className="okc-icon" />, () => invoke('snapFit')),
             )}

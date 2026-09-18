@@ -1,8 +1,7 @@
-import { findBody } from '../../../doc/model'
 import { FIT_CLASSES, isFitClass, linkFitClass } from '../../../doc/fits'
 import type { FitClass, ScrewLidFeature, ThreadProfile } from '../../../doc/types'
 import { classGap } from './fit'
-import { componentOfBody } from './shared'
+import { componentOfBody, nameBody } from './shared'
 import { defineCommand } from '../types'
 
 export const THREAD_PROFILES = [
@@ -138,17 +137,7 @@ export const screwLidCommand = defineCommand({
   adjust(doc, features, _context, values) {
     const feature = features.find((candidate) => candidate.kind === 'screwLid')
     if (!feature) return
-    const found = findBody(doc, feature.capBodyId)
-    if (found) {
-      const taken = new Set(
-        doc.components.flatMap((component) =>
-          component.bodies.filter((body) => body.id !== feature.capBodyId).map((body) => body.name),
-        ),
-      )
-      let name = 'Cap'
-      for (let n = 2; taken.has(name); n++) name = `Cap ${n}`
-      found.body.name = name
-    }
+    nameBody(doc, feature.capBodyId, 'Cap')
     linkFitClass(
       doc,
       feature.id,

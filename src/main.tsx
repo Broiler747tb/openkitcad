@@ -57,6 +57,7 @@ if (params.has('selftest') || params.has('kerneltest')) {
     ['walls', async () => (await import('./dev/walltest')).runWallTest()],
     ['cables', async () => (await import('./dev/cabletest')).runCableTest()],
     ['screw', async () => (await import('./dev/screwtest')).runScrewTest()],
+    ['enclosure', async () => (await import('./dev/enclosuretest')).runEnclosureTest()],
   )
   const only = params.get('suite')?.split(',').filter(Boolean)
   ;(async () => {
