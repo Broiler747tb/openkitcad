@@ -66,8 +66,9 @@ shapes, usable as a profile anywhere a profile is, and Emboss to raise or sink i
 round the side of a cylinder (§16). Then Rib and Web, the thin walls that brace a printed part
 (§17), the fit test coupon that measures what a printer really leaves (§18), the
 cable entries that get a lead out of a box (§19), the clips that hold a board without screws
-(§20), the screw lid that closes a round opening (§21), and the enclosure that puts a box, a lid,
-mounts and openings round the parts you picked (§22).
+(§20), the screw lid that closes a round opening (§21), the enclosure that puts a box, a lid,
+mounts and openings round the parts you picked (§22), and the KiCad import that turns a board you
+designed into one of your own parts (§23).
 
 ## 3. Document model v2
 
@@ -875,7 +876,41 @@ with the box to prove they never overlap, checks that standoffs and clips add ma
 connectors remove it, that moving the Pi moves the box by the same amount, that thin walls refuse
 a sliding lid, and that a deleted part is reported.
 
-## 23. How the work is done
+## 23. KiCad board import (EM)
+
+**A board becomes a part.** File > Import KiCad Board reads a `.kicad_pcb` (KiCad 5 `module` files
+and KiCad 6 to 8 `footprint` files alike) and saves the result with your own parts, as the same
+JSON a catalogue part is. From there it places, clips, gets standoffs and openings, and goes in an
+enclosure like any shipped board. The File menu gained an Import section for it, with the mesh
+import beside it.
+
+**What comes from the file, and what is guessed.** `src/catalogue/kicad.ts` parses the
+S-expressions itself. The outline is the Edge.Cuts drawing: lines, arcs (three-point and the old
+centre-and-angle form), rectangles, circles, polygons and curves are chained end to end into loops
+and the largest is the board; when it fills its bounding box it is saved as a rectangle with its
+arc radius as the corner radius, otherwise as a polygon. Everything is moved so the bottom-left
+corner is the origin with Y up, the way datasheets and the catalogue measure. Footprints are placed
+with KiCad's own rotation (a positive angle turns anticlockwise on screen). Mounting-hole footprints,
+or ones made only of unplated holes of 2 mm and up, become mounting holes with a screw size read
+from the name or the drill. Every other footprint becomes a block the size of its courtyard (its
+pads when it has none), on top or underneath by its layer. Heights are the one thing a board file
+does not have: they are guessed from the footprint name (a height or can size written into it
+first, then a table of packages and connectors, then 2 mm), which is why an imported part is
+labelled approximate.
+
+**You pick the connectors.** The import dialog lists every footprint, with likely connectors (J
+references and anything touching the edge) first, a tick box for each, and its height ready to
+change. A ticked footprint becomes a connector on the edge it is nearest, with its width along
+that edge and how far it hangs over it, which is all Port Cutouts and Enclosure need.
+
+**Tests.** `?selftest&suite=kicad` reads a KiCad 8 board with a rounded outline drawn from lines and
+arcs, four M3 holes, a USB-C hanging off an edge, a pin header turned 90 degrees, a chip, a
+capacitor underneath and a resistor with no courtyard, and a KiCad 5 board; checks the outline,
+holes, blocks, the rotated footprint's position and the ticked connector; checks the part passes the
+catalogue validator; refuses a schematic; and builds an enclosure round the imported board with an
+opening for its USB-C.
+
+## 24. How the work is done
 
 - Agents never start other agents or workflows.
 - New and rewritten code has no comments. Touched files are formatted with Prettier.
@@ -937,6 +972,11 @@ a sliding lid, and that a deleted part is reported.
   headers: the pins go and the plated holes show. Tick Pin headers on the Pico: male pins appear under
   both long edges. Put a 3 mm plate just under the Nano, run the clearance check with and without its
   headers, and swap the Pico for a Pico 2 to see the pins stay. Undo back through every step.
+- **EM smoke test (KiCad import).** Choose File > Import KiCad Board and open a `.kicad_pcb`. The
+  dialog shows the board's size, its holes and every footprint, connectors first. Tick the USB
+  socket, change a height, and choose Add it to my parts. Open the parts panel: the board is there
+  under the kind you picked. Place it, right-click it and choose Enclosure: the ticked socket is in
+  the Openings list. Remove the part from Your parts afterwards.
 - **EM smoke test (enclosure).** Insert a Raspberry Pi 4, right-click it and choose Enclosure: a box
   with corner towers and a lid appears round it. Tick All connectors, untick Ethernet, and see seven
   openings through the walls. Switch Lid to Snap and the Pi's mounting to Clips, then OK. Hide the

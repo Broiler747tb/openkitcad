@@ -10,6 +10,7 @@ import { sketchActions } from '../sketch/actions'
 import { createSketchAction, resolveCommand, SHORTCUTS, toggleVisibility } from './fusionCommands'
 import { powerActions } from './PowerTools'
 import { ParametersDialog } from './ParametersDialog'
+import { KicadImport, pickKicadBoard, type KicadFile } from './KicadImport'
 import { startCommand } from './command/commands'
 import { useCommand } from './command/session'
 import { SKETCH_TOOL_MENUS, SKETCH_TOOLS } from '../sketch/tools/specs'
@@ -208,6 +209,7 @@ export function Toolbar({
   const [palette, setPalette] = useState(false),
     [help, setHelp] = useState(false)
   const [parametersOpen, setParametersOpen] = useState(false)
+  const [kicad, setKicad] = useState<KicadFile | null>(null)
   const [anchor, setAnchor] = useState<React.CSSProperties | undefined>(undefined)
   const [fileOpen, setFileOpen] = useState(false)
   const [pending, setPending] = useState<string | null>(null),
@@ -686,6 +688,12 @@ export function Toolbar({
             <button onClick={() => saveDocument(state.doc)}>
               Save <kbd>Ctrl S</kbd>
             </button>
+            <hr />
+            <button onClick={() => void pickKicadBoard().then((file) => file && setKicad(file))}>
+              Import KiCad Board…
+            </button>
+            <button onClick={() => void insertMeshFile()}>Import Mesh (STL, OBJ, 3MF)…</button>
+            <hr />
             <button disabled={!state.instances.length} onClick={onExport}>
               Export…
             </button>
@@ -1237,6 +1245,7 @@ export function Toolbar({
         </div>
       )}
       {parametersOpen && <ParametersDialog onClose={() => setParametersOpen(false)} />}
+      {kicad && <KicadImport {...kicad} onClose={() => setKicad(null)} />}
       {palette && <CommandPalette actions={commands} onClose={() => setPalette(false)} />}
       {help && <ShortcutDialog onClose={() => setHelp(false)} />}
     </header>

@@ -1138,6 +1138,55 @@ input[type='checkbox'] {
   font-size: 16px;
 }
 
+.kicad-import {
+  width: 640px;
+}
+
+.kicad-parts {
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid var(--okc-line);
+  border-radius: var(--okc-radius-sm);
+}
+
+.kicad-parts table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.kicad-parts th {
+  position: sticky;
+  top: 0;
+  padding: 6px 8px;
+  background: var(--okc-surface-header);
+  color: var(--okc-text-muted);
+  font-weight: 600;
+  text-align: left;
+}
+
+.kicad-parts td {
+  padding: 3px 8px;
+  border-top: 1px solid var(--okc-line-soft);
+  white-space: nowrap;
+}
+
+.kicad-parts td small {
+  margin-left: 6px;
+  color: var(--okc-text-muted);
+}
+
+.kicad-parts .kicad-footprint {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--okc-text-muted);
+}
+
+.kicad-parts input[type='number'] {
+  width: 64px;
+}
+
 /* across, up, hole size, screw - four fields on one line. */
 .hole-row {
   gap: 5px;

@@ -542,6 +542,11 @@ button.workspace-tab {
 .file-menu kbd {
   float: right;
 }
+.file-menu hr {
+  margin: 4px 6px;
+  border: 0;
+  border-top: 1px solid var(--okc-line);
+}
 @media (max-width: 1365px) {
   .ribbon {
     padding-left: 3px;
