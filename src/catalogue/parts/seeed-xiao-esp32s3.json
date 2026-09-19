@@ -1,16 +1,17 @@
 {
-  "id": "seeed-xiao-esp32c3",
-  "name": "Seeed Studio XIAO ESP32C3",
+  "id": "seeed-xiao-esp32s3",
+  "name": "Seeed Studio XIAO ESP32S3",
   "category": "mcu",
-  "popularity": 66,
+  "popularity": 64,
   "family": "xiao",
-  "variant": "ESP32-C3, Wi-Fi and BLE",
+  "variant": "ESP32-S3, Wi-Fi and BLE",
   "manufacturer": "Seeed Studio",
-  "summary": "Thumb-sized ESP32-C3 board: 21 x 17.8 mm, 7 castellated pins per side, no mounting holes.",
-  "confidence": "datasheet",
-  "source": "Seeed Studio XIAO ESP32C3 footprint (Seeed OPL KiCad library, XIAO-ESP32-C3-DIP) and the top-layer DXF from the Seeed wiki: board 20.96 x 17.78 mm with 1.9 mm corners, two rows of 7 pins on a 2.54 mm grid 15.24 mm apart, castellated at the edge. The USB-C socket (9.0 mm wide) sticks out 1.51 mm past the short edge. The shield over the ESP32-C3 and flash and the two small buttons are placed from the DXF silkscreen. No mounting holes.",
+  "summary": "Thumb-sized ESP32-S3 board on the XIAO footprint, with a radio shield and battery pads.",
+  "confidence": "approximate",
+  "source": "Outline, corner radius, the two rows of 7 castellated pins and the USB-C socket are the shared Seeed XIAO DIP footprint, copied from the XIAO ESP32C3 in this catalogue, which came from the Seeed OPL KiCad library and the top-layer DXF. Seeed publish the XIAO series as one form factor and one pinout, but this board's own drawing has not been checked, so treat the outline as close rather than exact. It carries an ESP32-S3 under a shield, a u.FL socket for an external aerial and two battery pads underneath. Nothing on top of the board is placed from a drawing: the picture is decoration and the only thing above the board that geometry is generated from is a flat 2 mm keep-clear over the whole of it.",
   "look": {
     "colour": "#1b1d20",
+    "accent": "#c9ced3",
     "components": [
       {
         "kind": "port",
@@ -32,51 +33,7 @@
         "height": 1.8,
         "finish": "metal",
         "colour": "#c9ced3",
-        "label": "ESP32-C3 shield"
-      },
-      {
-        "kind": "box",
-        "x": 18.13,
-        "y": 11.83,
-        "w": 2.6,
-        "h": 3.0,
-        "height": 1.0,
-        "finish": "metal",
-        "colour": "#a3aab1",
-        "radius": 0.2,
-        "label": "Button"
-      },
-      {
-        "kind": "cylinder",
-        "x": 19.43,
-        "y": 13.33,
-        "d": 1.4,
-        "height": 1.7,
-        "finish": "plastic",
-        "colour": "#1d1f22",
-        "label": "Button cap"
-      },
-      {
-        "kind": "box",
-        "x": 18.13,
-        "y": 2.94,
-        "w": 2.6,
-        "h": 3.0,
-        "height": 1.0,
-        "finish": "metal",
-        "colour": "#a3aab1",
-        "radius": 0.2,
-        "label": "Button"
-      },
-      {
-        "kind": "cylinder",
-        "x": 19.43,
-        "y": 4.44,
-        "d": 1.4,
-        "height": 1.7,
-        "finish": "plastic",
-        "colour": "#1d1f22",
-        "label": "Button cap"
+        "label": "Radio shield"
       }
     ]
   },
@@ -99,16 +56,6 @@
         "height": 3.2,
         "colour": "#b9c0c7",
         "label": "USB-C"
-      },
-      {
-        "x": 6.98,
-        "y": 2.66,
-        "w": 10.29,
-        "h": 12.45,
-        "z": 1.0,
-        "height": 1.8,
-        "colour": "#b9c0c7",
-        "label": "Shield"
       }
     ]
   },
@@ -173,12 +120,31 @@
       "h": 17.78,
       "z": -1.5,
       "height": 1.5
+    },
+    {
+      "id": "k-over",
+      "label": "Components on top",
+      "x": 0,
+      "y": 0,
+      "w": 20.955,
+      "h": 17.78,
+      "z": 1.0,
+      "height": 2.0
     }
   ],
+  "electrical": {
+    "voltage": [
+      5,
+      3.3
+    ],
+    "currentTypical": 0.05,
+    "currentPeak": 0.35,
+    "note": "5 V in over USB-C. The radio peaks well above the average when it transmits."
+  },
   "links": [
     {
       "label": "Wiki",
-      "url": "https://wiki.seeedstudio.com/XIAO_ESP32C3_Getting_Started/"
+      "url": "https://wiki.seeedstudio.com/"
     },
     {
       "label": "KiCad footprint",
@@ -189,8 +155,9 @@
     "xiao",
     "seeed",
     "esp32",
-    "c3",
+    "s3",
     "wifi",
+    "ble",
     "mcu",
     "tiny"
   ]

@@ -1,0 +1,409 @@
+{
+  "id": "arduino-leonardo",
+  "name": "Arduino Leonardo",
+  "category": "mcu",
+  "popularity": 58,
+  "family": "arduino-uno",
+  "variant": "Leonardo, micro USB, USB built into the chip",
+  "manufacturer": "Arduino",
+  "summary": "The Uno outline and every shield header, with a micro USB socket and a 32U4 that can pretend to be a keyboard.",
+  "confidence": "approximate",
+  "source": "The outline, the four 3.2 mm holes and all five header positions are the Arduino Uno Rev3 reference design, copied from the Uno R3 in this catalogue: the Leonardo is shield compatible and shares that outline exactly, so those numbers are as good as the Uno's. The DC jack is in the Uno's place. What is not verified is the micro USB socket: it is placed on the centre line of the Uno's USB-B opening because that is where a shield-compatible board puts it, but it has not been read off a drawing, so measure before you cut the panel for it. The five headers in the picture are drawn from those same reference positions. The ATmega32U4 replaces the Uno's ATmega328P and its separate USB chip, so the Uno's second ICSP header is not here; where the 32U4 itself sits is not from a drawing.",
+  "look": {
+    "colour": "#0f6f94",
+    "components": [
+      {
+        "kind": "header",
+        "x": 27.94,
+        "y": 2.54,
+        "rows": 1,
+        "cols": 8,
+        "style": "female",
+        "height": 8.5,
+        "label": "Power header"
+      },
+      {
+        "kind": "header",
+        "x": 50.8,
+        "y": 2.54,
+        "rows": 1,
+        "cols": 6,
+        "style": "female",
+        "height": 8.5,
+        "label": "Analog header"
+      },
+      {
+        "kind": "header",
+        "x": 18.796,
+        "y": 50.8,
+        "rows": 1,
+        "cols": 10,
+        "style": "female",
+        "height": 8.5,
+        "label": "Digital header 8 to 13"
+      },
+      {
+        "kind": "header",
+        "x": 45.72,
+        "y": 50.8,
+        "rows": 1,
+        "cols": 8,
+        "style": "female",
+        "height": 8.5,
+        "label": "Digital header 0 to 7"
+      },
+      {
+        "kind": "header",
+        "x": 63.627,
+        "y": 25.4,
+        "rows": 3,
+        "cols": 2,
+        "height": 8.5,
+        "label": "ICSP header"
+      },
+      {
+        "kind": "port",
+        "port": "micro-usb",
+        "x": -1.5,
+        "y": 38.1,
+        "facing": "-x",
+        "w": 7.5,
+        "h": 2.6,
+        "depth": 6.35,
+        "label": "micro USB"
+      },
+      {
+        "kind": "port",
+        "port": "barrel",
+        "x": -1.8,
+        "y": 7.795,
+        "facing": "-x",
+        "w": 9.0,
+        "h": 11.0,
+        "depth": 14.0,
+        "label": "DC jack"
+      },
+      {
+        "kind": "chip",
+        "x": 26.0,
+        "y": 18.0,
+        "w": 14.0,
+        "h": 14.0,
+        "height": 1.2,
+        "legs": "quad",
+        "label": "ATmega32U4"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "poly",
+      "points": [
+        [
+          1,
+          0
+        ],
+        [
+          65.04,
+          0.0
+        ],
+        [
+          65.423,
+          0.076
+        ],
+        [
+          65.747,
+          0.293
+        ],
+        [
+          65.964,
+          0.617
+        ],
+        [
+          66.04,
+          1.0
+        ],
+        [
+          66.04,
+          2.54
+        ],
+        [
+          68.58,
+          5.08
+        ],
+        [
+          68.58,
+          37.846
+        ],
+        [
+          66.04,
+          40.386
+        ],
+        [
+          66.04,
+          51.816
+        ],
+        [
+          64.516,
+          53.34
+        ],
+        [
+          1,
+          53.34
+        ],
+        [
+          0.617,
+          53.264
+        ],
+        [
+          0.293,
+          53.047
+        ],
+        [
+          0.076,
+          52.723
+        ],
+        [
+          0.0,
+          52.34
+        ],
+        [
+          0.0,
+          1.0
+        ],
+        [
+          0.076,
+          0.617
+        ],
+        [
+          0.293,
+          0.293
+        ],
+        [
+          0.617,
+          0.076
+        ]
+      ]
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": -1.5,
+        "y": 34.3,
+        "w": 6.35,
+        "h": 7.5,
+        "z": 1.6,
+        "height": 2.8,
+        "colour": "#b9c0c7",
+        "label": "micro USB"
+      },
+      {
+        "x": -1.8,
+        "y": 2.295,
+        "w": 14.0,
+        "h": 11.0,
+        "z": 1.6,
+        "height": 11.0,
+        "colour": "#1b1d20",
+        "label": "DC jack"
+      }
+    ]
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 13.97,
+      "y": 2.54,
+      "diameter": 3.2,
+      "screw": "M3"
+    },
+    {
+      "id": "h2",
+      "x": 15.24,
+      "y": 50.8,
+      "diameter": 3.2,
+      "screw": "M3"
+    },
+    {
+      "id": "h3",
+      "x": 66.04,
+      "y": 7.62,
+      "diameter": 3.2,
+      "screw": "M3"
+    },
+    {
+      "id": "h4",
+      "x": 66.04,
+      "y": 35.56,
+      "diameter": 3.2,
+      "screw": "M3"
+    }
+  ],
+  "connectors": [
+    {
+      "id": "usb",
+      "label": "micro USB",
+      "side": "-x",
+      "x": 0,
+      "y": 38.1,
+      "z": 1.6,
+      "width": 8.5,
+      "height": 3.5,
+      "protrusion": 1.5
+    },
+    {
+      "id": "power",
+      "label": "DC jack",
+      "side": "-x",
+      "x": 0,
+      "y": 7.795,
+      "z": 1.6,
+      "width": 9.5,
+      "height": 11.5,
+      "protrusion": 1.8
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "digital-hi",
+      "label": "Digital 0 to 7",
+      "x": 45.72,
+      "y": 50.8,
+      "rows": 1,
+      "cols": 8,
+      "pitch": 2.54,
+      "pins": [
+        "7",
+        "6",
+        "5",
+        "4",
+        "3",
+        "2",
+        "1 TX",
+        "0 RX"
+      ]
+    },
+    {
+      "id": "digital-lo",
+      "label": "Digital 8 to 13, AREF, I2C",
+      "x": 18.796,
+      "y": 50.8,
+      "rows": 1,
+      "cols": 10,
+      "pitch": 2.54,
+      "pins": [
+        "SCL",
+        "SDA",
+        "AREF",
+        "GND",
+        "13",
+        "12",
+        "11",
+        "10",
+        "9",
+        "8"
+      ]
+    },
+    {
+      "id": "analog",
+      "label": "Analog in",
+      "x": 50.8,
+      "y": 2.54,
+      "rows": 1,
+      "cols": 6,
+      "pitch": 2.54,
+      "pins": [
+        "A0",
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5"
+      ]
+    },
+    {
+      "id": "power",
+      "label": "Power",
+      "x": 27.94,
+      "y": 2.54,
+      "rows": 1,
+      "cols": 8,
+      "pitch": 2.54,
+      "pins": [
+        "NC",
+        "IOREF",
+        "RESET",
+        "3V3",
+        "5V",
+        "GND",
+        "GND",
+        "VIN"
+      ]
+    },
+    {
+      "id": "icsp",
+      "label": "ICSP",
+      "x": 63.627,
+      "y": 25.4,
+      "rows": 3,
+      "cols": 2,
+      "pitch": 2.54,
+      "pins": [
+        "RESET",
+        "SCK",
+        "MISO",
+        "GND",
+        "MOSI",
+        "5V"
+      ]
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-under",
+      "label": "Solder side clearance",
+      "x": 0,
+      "y": 0,
+      "w": 68.58,
+      "h": 53.34,
+      "z": -3,
+      "height": 3
+    },
+    {
+      "id": "k-shield",
+      "label": "Shield stacking space",
+      "x": 0,
+      "y": 0,
+      "w": 68.58,
+      "h": 53.34,
+      "z": 1.6,
+      "height": 12
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      5,
+      7,
+      12
+    ],
+    "currentTypical": 0.05,
+    "currentPeak": 0.5,
+    "note": "USB 5 V, or 7-12 V into the barrel jack. The onboard regulator gets hot above 9 V."
+  },
+  "links": [
+    {
+      "label": "Arduino Leonardo",
+      "url": "https://docs.arduino.cc/hardware/leonardo"
+    }
+  ],
+  "tags": [
+    "arduino",
+    "leonardo",
+    "atmega32u4",
+    "hid",
+    "keyboard",
+    "microcontroller",
+    "shield"
+  ]
+}

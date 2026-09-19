@@ -1,0 +1,179 @@
+{
+  "id": "teensy-41",
+  "name": "Teensy 4.1",
+  "category": "mcu",
+  "popularity": 45,
+  "family": "teensy",
+  "variant": "4.1, 61 mm, with Ethernet pads and a microSD slot",
+  "manufacturer": "PJRC",
+  "summary": "The long Teensy: 61 x 17.8 mm, 24 pins a side, a microSD slot and no mounting holes.",
+  "confidence": "approximate",
+  "source": "PJRC publish the Teensy 4.1 as 2.4 x 0.7 inch (60.96 x 17.78 mm) with every pin on the 0.1 inch grid, which is where the outline and the two rows of 24 pins come from; they are laid out the same way as the Teensy 4.0 in this catalogue, 15.24 mm apart and starting 1.27 mm from the USB end. The micro USB socket is taken to sit where the 4.0's does. The microSD slot at the far end, the Ethernet and USB host pads and the position of the processor have not been checked against a drawing, so the slot's opening is a starting point rather than a number to cut a panel from. Nothing on top is placed from a drawing.",
+  "look": {
+    "colour": "#1b6b3a",
+    "components": [
+      {
+        "kind": "port",
+        "port": "micro-usb",
+        "x": -1.27,
+        "y": 8.89,
+        "facing": "-x",
+        "w": 7.5,
+        "h": 2.6,
+        "depth": 6.35,
+        "label": "micro USB"
+      },
+      {
+        "kind": "chip",
+        "x": 17.78,
+        "y": 3.81,
+        "w": 10.16,
+        "h": 10.16,
+        "height": 1.2,
+        "legs": "none",
+        "label": "i.MX RT1062"
+      },
+      {
+        "kind": "port",
+        "port": "microsd",
+        "x": 47.0,
+        "y": 4.14,
+        "facing": "+x",
+        "w": 14.0,
+        "h": 1.8,
+        "depth": 11.5,
+        "label": "microSD"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 60.96,
+      "h": 17.78
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": -1.27,
+        "y": 5.08,
+        "w": 6.35,
+        "h": 7.62,
+        "z": 1.6,
+        "height": 2.8,
+        "colour": "#b9c0c7",
+        "label": "micro USB"
+      },
+      {
+        "x": 47.0,
+        "y": 4.14,
+        "w": 11.5,
+        "h": 14.0,
+        "z": 1.6,
+        "height": 1.8,
+        "colour": "#b9c0c7",
+        "label": "microSD"
+      }
+    ]
+  },
+  "connectors": [
+    {
+      "id": "usb",
+      "label": "micro USB",
+      "side": "-x",
+      "x": 0,
+      "y": 8.89,
+      "z": 1.6,
+      "width": 8.5,
+      "height": 3.5,
+      "protrusion": 1.27
+    },
+    {
+      "id": "sd",
+      "label": "microSD",
+      "side": "+x",
+      "x": 60.96,
+      "y": 11.14,
+      "z": 1.6,
+      "width": 14.0,
+      "height": 2.2,
+      "protrusion": 0
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "row-lo",
+      "label": "GND, 0 to 22",
+      "x": 1.27,
+      "y": 1.27,
+      "rows": 1,
+      "cols": 24,
+      "pitch": 2.54
+    },
+    {
+      "id": "row-hi",
+      "label": "VIN, GND, 3V3, 41 to 23",
+      "x": 1.27,
+      "y": 16.51,
+      "rows": 1,
+      "cols": 24,
+      "pitch": 2.54
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-under",
+      "label": "Solder side clearance",
+      "x": 0,
+      "y": 0,
+      "w": 60.96,
+      "h": 17.78,
+      "z": -2.5,
+      "height": 2.5
+    },
+    {
+      "id": "k-over",
+      "label": "Components on top",
+      "x": 0,
+      "y": 0,
+      "w": 60.96,
+      "h": 17.78,
+      "z": 1.6,
+      "height": 2.5
+    },
+    {
+      "id": "k-card",
+      "label": "Room to get a card out",
+      "x": 60.96,
+      "y": 4.14,
+      "w": 18,
+      "h": 14.0,
+      "z": 1.6,
+      "height": 2.2
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      5,
+      3.3
+    ],
+    "currentTypical": 0.1,
+    "currentPeak": 0.25,
+    "note": "5 V in over USB. The pins are 3.3 V and are not 5 V tolerant."
+  },
+  "links": [
+    {
+      "label": "PJRC Teensy 4.1",
+      "url": "https://www.pjrc.com/store/teensy41.html"
+    }
+  ],
+  "tags": [
+    "teensy",
+    "pjrc",
+    "imxrt",
+    "arm",
+    "mcu",
+    "fast"
+  ]
+}

@@ -9,6 +9,11 @@
     "category": "sensor",
     "summary": "16-bit, 4-channel analogue inputs over I2C."
   },
+  "arduino-uno": {
+    "name": "Arduino Uno outline",
+    "category": "mcu",
+    "summary": "Boards that take the same shields: the Uno outline and its header positions."
+  },
   "audio-jack": {
     "name": "3.5 mm audio jack",
     "category": "connector",
@@ -134,6 +139,11 @@
     "category": "mcu",
     "summary": "Long STM32 boards with two 20-pin rows and an SWD header."
   },
+  "teensy": {
+    "name": "Teensy",
+    "category": "mcu",
+    "summary": "Fast ARM boards on a 0.1 inch grid, from PJRC."
+  },
   "tft-display": {
     "name": "TFT colour display",
     "category": "display",
@@ -153,6 +163,11 @@
     "name": "VL53L0X distance sensor",
     "category": "sensor",
     "summary": "Laser time-of-flight rangefinders up to about 1.2 m."
+  },
+  "xiao": {
+    "name": "Seeed XIAO",
+    "category": "mcu",
+    "summary": "Thumb-sized boards that all share one 21 x 17.8 mm outline and one pinout."
   },
   "xt-connector": {
     "name": "XT power connector",

@@ -3,6 +3,8 @@
   "name": "Arduino Uno R3",
   "category": "mcu",
   "popularity": 97,
+  "family": "arduino-uno",
+  "variant": "Uno R3, USB-B",
   "manufacturer": "Arduino",
   "summary": "The classic 68.6 x 53.3 mm Arduino outline, with its famously off-grid holes.",
   "confidence": "datasheet",

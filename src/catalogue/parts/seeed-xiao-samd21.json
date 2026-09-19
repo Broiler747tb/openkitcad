@@ -1,0 +1,150 @@
+{
+  "id": "seeed-xiao-samd21",
+  "name": "Seeed Studio XIAO SAMD21",
+  "category": "mcu",
+  "popularity": 55,
+  "family": "xiao",
+  "variant": "SAMD21, no radio",
+  "manufacturer": "Seeed Studio",
+  "summary": "The original Seeeduino XIAO: a SAMD21 on the XIAO footprint, 21 x 17.8 mm, no radio.",
+  "confidence": "approximate",
+  "source": "Outline, corner radius, the two rows of 7 castellated pins and the USB-C socket are the shared Seeed XIAO DIP footprint, copied from the XIAO ESP32C3 in this catalogue, which came from the Seeed OPL KiCad library and the top-layer DXF. Seeed publish the XIAO series as one form factor and one pinout, but this board's own drawing has not been checked, so treat the outline as close rather than exact. The SAMD21 is on top and there is no radio shield. Nothing on top of the board is placed from a drawing: the picture is decoration and the only thing above the board that geometry is generated from is a flat 2 mm keep-clear over the whole of it.",
+  "look": {
+    "colour": "#1b1d20",
+    "components": [
+      {
+        "kind": "port",
+        "port": "usb-c",
+        "x": -1.53,
+        "y": 8.885,
+        "facing": "-x",
+        "w": 9.0,
+        "h": 3.2,
+        "depth": 7.37,
+        "label": "USB-C"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 20.955,
+      "h": 17.78,
+      "cornerRadius": 1.905
+    },
+    "thickness": 1.0,
+    "bumps": [
+      {
+        "x": -1.53,
+        "y": 4.385,
+        "w": 7.37,
+        "h": 9.0,
+        "z": 1.0,
+        "height": 3.2,
+        "colour": "#b9c0c7",
+        "label": "USB-C"
+      }
+    ]
+  },
+  "connectors": [
+    {
+      "id": "usb",
+      "label": "USB-C",
+      "side": "-x",
+      "x": 0,
+      "y": 8.885,
+      "z": 1.0,
+      "width": 9.4,
+      "height": 3.6,
+      "protrusion": 1.53
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "d0-d6",
+      "label": "D0 to D6",
+      "x": 2.921,
+      "y": 1.27,
+      "rows": 1,
+      "cols": 7,
+      "pitch": 2.54,
+      "pins": [
+        "D0",
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+        "D6"
+      ]
+    },
+    {
+      "id": "5v-d7",
+      "label": "5V to D7",
+      "x": 2.921,
+      "y": 16.51,
+      "rows": 1,
+      "cols": 7,
+      "pitch": 2.54,
+      "pins": [
+        "5V",
+        "GND",
+        "3V3",
+        "D10",
+        "D9",
+        "D8",
+        "D7"
+      ]
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-under",
+      "label": "Solder side clearance",
+      "x": 0,
+      "y": 0,
+      "w": 20.955,
+      "h": 17.78,
+      "z": -1.5,
+      "height": 1.5
+    },
+    {
+      "id": "k-over",
+      "label": "Components on top",
+      "x": 0,
+      "y": 0,
+      "w": 20.955,
+      "h": 17.78,
+      "z": 1.0,
+      "height": 2.0
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      5,
+      3.3
+    ],
+    "currentTypical": 0.02,
+    "currentPeak": 0.06,
+    "note": "5 V in over USB-C, 3.3 V logic. The pins are not 5 V tolerant."
+  },
+  "links": [
+    {
+      "label": "Wiki",
+      "url": "https://wiki.seeedstudio.com/"
+    },
+    {
+      "label": "KiCad footprint",
+      "url": "https://github.com/Seeed-Studio/OPL_Kicad_Library"
+    }
+  ],
+  "tags": [
+    "xiao",
+    "seeeduino",
+    "samd21",
+    "cortex-m0",
+    "mcu",
+    "tiny"
+  ]
+}

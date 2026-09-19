@@ -220,8 +220,13 @@ Disconnected-solid detection, the last survivor of that list, landed on 19 Septe
 a feature whose result is a join now reports on the timeline when what it joined on does not
 touch, which is the floating-standoff case. What is left, and what comes after it:
 
-1. **More catalogue parts.** Still true, and still ahead of almost any feature. 125 parts
+1. **More catalogue parts.** Still true, and still ahead of almost any feature. 131 parts
    today, and the thin families are the ones a beginner reaches for second.
+
+   The cheapest honest way to add a board is to derive it from one already verified here:
+   a Leonardo is the Uno's outline and headers, a XIAO variant is the XIAO footprint. The
+   derived part says so in `source` and drops to `approximate`, because sharing a footprint
+   with a checked board is not the same as having checked this one.
 2. **Generative design.** Describe the bracket — what it bolts to, what it carries, where
    it must not go — and let the app propose the shape. The furthest thing here from
    "the catalogue does the remembering", and the most interesting.
