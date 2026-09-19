@@ -139,6 +139,11 @@
     "category": "mcu",
     "summary": "Long STM32 boards with two 20-pin rows and an SWD header."
   },
+  "supermini": {
+    "name": "SuperMini",
+    "category": "mcu",
+    "summary": "Tiny generic ESP32 boards with USB-C at one end and castellated pins down both sides."
+  },
   "teensy": {
     "name": "Teensy",
     "category": "mcu",

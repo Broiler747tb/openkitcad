@@ -1,0 +1,204 @@
+{
+  "id": "esp32-s3-supermini",
+  "name": "ESP32-S3 SuperMini (generic)",
+  "category": "mcu",
+  "popularity": 70,
+  "family": "supermini",
+  "variant": "ESP32-S3, 9 pins a side",
+  "summary": "Tiny generic ESP32-S3 board, 23.2 x 18 mm, USB-C at one end and 9 castellated pins a side.",
+  "confidence": "approximate",
+  "source": "There is no manufacturer and no official drawing for this board: it is a generic design sold under the same name by many sellers. The outline of 18.00 x 23.20 mm and the 20.35 mm from the first pin to the ninth come off the seller's dimensioned drawing, and the nine pins a side that implies check out exactly: eight gaps at 2.54 mm is 20.32 mm. Ten pins a side, which some listings claim, would need 22.86 mm on a 23.20 mm board and cannot be right. The pin rows are centred along the board from those two figures. What the drawing does not dimension is the gap between the two rows; it is taken to be 0.6 inch, which is what these boards use so they straddle a breadboard, and it is the one number to check with calipers before trusting a header to line up. The 1.0 mm board thickness is not dimensioned either. What is on top of the board is read off the photographs and scaled against that outline: the USB-C socket on one short edge, the boot and reset buttons either side of a small crystal, the S3 itself mounted at 45 degrees below them, and the aerial at the far end. Those are close rather than placed from a drawing, and they are decoration: no geometry is generated from them. The BAT, 48 and B+/B- pads near the USB end are extra pads rather than part of the two rows, so they are not modelled.",
+  "look": {
+    "colour": "#101214",
+    "components": [
+      {
+        "kind": "port",
+        "port": "usb-c",
+        "x": -1.6,
+        "y": 9.0,
+        "facing": "-x",
+        "w": 9.0,
+        "h": 3.2,
+        "depth": 7.3,
+        "label": "USB-C"
+      },
+      {
+        "kind": "button",
+        "x": 8.3,
+        "y": 5.0,
+        "size": 3.0,
+        "height": 1.5,
+        "label": "Boot"
+      },
+      {
+        "kind": "button",
+        "x": 8.3,
+        "y": 13.0,
+        "size": 3.0,
+        "height": 1.5,
+        "label": "Reset"
+      },
+      {
+        "kind": "crystal",
+        "x": 7.2,
+        "y": 8.3,
+        "w": 2.4,
+        "h": 1.4,
+        "height": 0.8,
+        "label": "Crystal"
+      },
+      {
+        "kind": "chip",
+        "x": 10.8,
+        "y": 5.5,
+        "w": 7.0,
+        "h": 7.0,
+        "height": 1.0,
+        "turn": 45,
+        "legs": "none",
+        "label": "ESP32-S3"
+      },
+      {
+        "kind": "antenna",
+        "x": 19.4,
+        "y": 6.0,
+        "w": 3.2,
+        "h": 6.0,
+        "label": "Aerial"
+      },
+      {
+        "kind": "led",
+        "x": 19.0,
+        "y": 3.0,
+        "colour": "#3aa0ff",
+        "size": 1.6,
+        "label": "LED"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 23.2,
+      "h": 18.0,
+      "cornerRadius": 1.0
+    },
+    "thickness": 1.0,
+    "bumps": [
+      {
+        "x": -1.6,
+        "y": 4.5,
+        "w": 7.3,
+        "h": 9.0,
+        "z": 1.0,
+        "height": 3.2,
+        "colour": "#b9c0c7",
+        "label": "USB-C"
+      }
+    ]
+  },
+  "connectors": [
+    {
+      "id": "usb",
+      "label": "USB-C",
+      "side": "-x",
+      "x": 0,
+      "y": 9.0,
+      "z": 1.0,
+      "width": 9.4,
+      "height": 3.6,
+      "protrusion": 1.6
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "power-row",
+      "label": "5V, GND, 3V3, GPIO13 to GPIO8",
+      "x": 1.44,
+      "y": 16.62,
+      "rows": 1,
+      "cols": 9,
+      "pitch": 2.54,
+      "pins": [
+        "5V",
+        "GND",
+        "3V3",
+        "GPIO13",
+        "GPIO12",
+        "GPIO11",
+        "GPIO10",
+        "GPIO9",
+        "GPIO8"
+      ]
+    },
+    {
+      "id": "io-row",
+      "label": "TX, RX, GPIO1 to GPIO7",
+      "x": 1.44,
+      "y": 1.38,
+      "rows": 1,
+      "cols": 9,
+      "pitch": 2.54,
+      "pins": [
+        "TX",
+        "RX",
+        "GPIO1",
+        "GPIO2",
+        "GPIO3",
+        "GPIO4",
+        "GPIO5",
+        "GPIO6",
+        "GPIO7"
+      ]
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-under",
+      "label": "Solder side clearance",
+      "x": 0,
+      "y": 0,
+      "w": 23.2,
+      "h": 18.0,
+      "z": -1.5,
+      "height": 1.5
+    },
+    {
+      "id": "k-over",
+      "label": "Components on top",
+      "x": 0,
+      "y": 0,
+      "w": 23.2,
+      "h": 18.0,
+      "z": 1.0,
+      "height": 2.0
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      5,
+      3.3
+    ],
+    "currentTypical": 0.06,
+    "currentPeak": 0.5,
+    "note": "5 V in over USB-C, 3.3 V logic. There are B+ and B- pads for a lithium cell."
+  },
+  "links": [
+    {
+      "label": "ESP32-S3 datasheet (Espressif)",
+      "url": "https://www.espressif.com/sites/default/files/documentation/esp32-s3_datasheet_en.pdf"
+    }
+  ],
+  "tags": [
+    "esp32",
+    "s3",
+    "supermini",
+    "super mini",
+    "wifi",
+    "ble",
+    "mcu",
+    "tiny",
+    "generic"
+  ]
+}

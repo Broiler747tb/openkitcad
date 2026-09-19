@@ -220,7 +220,7 @@ Disconnected-solid detection, the last survivor of that list, landed on 19 Septe
 a feature whose result is a join now reports on the timeline when what it joined on does not
 touch, which is the floating-standoff case. What is left, and what comes after it:
 
-1. **More catalogue parts.** Still true, and still ahead of almost any feature. 131 parts
+1. **More catalogue parts.** Still true, and still ahead of almost any feature. 133 parts
    today, and the thin families are the ones a beginner reaches for second.
 
    The cheapest honest way to add a board is to derive it from one already verified here:

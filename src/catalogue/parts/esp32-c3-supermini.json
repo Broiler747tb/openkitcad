@@ -1,0 +1,183 @@
+{
+  "id": "esp32-c3-supermini",
+  "name": "ESP32-C3 SuperMini (generic)",
+  "category": "mcu",
+  "popularity": 72,
+  "family": "supermini",
+  "variant": "ESP32-C3, 8 pins a side",
+  "summary": "Tiny generic ESP32-C3 board, about 22.5 x 18 mm, USB-C at one end and a ceramic aerial at the other.",
+  "confidence": "approximate",
+  "source": "There is no manufacturer and no official drawing for this board: it is a generic design sold by many sellers under the same name, and they do differ. The 22.52 x 18 mm outline and the two rows of 8 pins on a 2.54 mm grid 15.24 mm apart are the figures the community KiCad footprints and the widely reproduced pinout diagrams agree on, and the pinout itself (5V, GND, 3V3 and GPIO4 to 0 down one side, GPIO5 to 21 down the other) is well established. Where the pin rows start along the board is derived from the board length and the row span, not measured, and it is the number most likely to be out. The USB-C socket, the ceramic aerial, the button and the LED are placed by eye from photographs. Measure your own board before you cut a panel for it.",
+  "look": {
+    "colour": "#101214",
+    "components": [
+      {
+        "kind": "port",
+        "port": "usb-c",
+        "x": -1.4,
+        "y": 9.0,
+        "facing": "-x",
+        "w": 9.0,
+        "h": 3.2,
+        "depth": 7.3,
+        "label": "USB-C"
+      },
+      {
+        "kind": "module",
+        "x": 5.5,
+        "y": 3.2,
+        "w": 11.0,
+        "h": 11.6,
+        "height": 1.1,
+        "label": "ESP32-C3FH4"
+      },
+      {
+        "kind": "antenna",
+        "x": 18.0,
+        "y": 5.5,
+        "w": 4.0,
+        "h": 7.0,
+        "label": "Ceramic aerial"
+      },
+      {
+        "kind": "button",
+        "x": 2.4,
+        "y": 15.0,
+        "size": 3.0,
+        "height": 1.4,
+        "label": "Boot"
+      },
+      {
+        "kind": "led",
+        "x": 3.0,
+        "y": 3.0,
+        "colour": "#3aa0ff",
+        "size": 1.6,
+        "label": "LED"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 22.52,
+      "h": 18.0,
+      "cornerRadius": 1.0
+    },
+    "thickness": 1.0,
+    "bumps": [
+      {
+        "x": -1.4,
+        "y": 4.5,
+        "w": 7.3,
+        "h": 9.0,
+        "z": 1.0,
+        "height": 3.2,
+        "colour": "#b9c0c7",
+        "label": "USB-C"
+      }
+    ]
+  },
+  "connectors": [
+    {
+      "id": "usb",
+      "label": "USB-C",
+      "side": "-x",
+      "x": 0,
+      "y": 9.0,
+      "z": 1.0,
+      "width": 9.4,
+      "height": 3.6,
+      "protrusion": 1.4
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "left",
+      "label": "5V, GND, 3V3, GPIO4 to GPIO0",
+      "x": 1.27,
+      "y": 1.27,
+      "rows": 1,
+      "cols": 8,
+      "pitch": 2.54,
+      "pins": [
+        "5V",
+        "GND",
+        "3V3",
+        "GPIO4",
+        "GPIO3",
+        "GPIO2",
+        "GPIO1",
+        "GPIO0"
+      ]
+    },
+    {
+      "id": "right",
+      "label": "GPIO5 to GPIO21",
+      "x": 1.27,
+      "y": 16.51,
+      "rows": 1,
+      "cols": 8,
+      "pitch": 2.54,
+      "pins": [
+        "GPIO5",
+        "GPIO6",
+        "GPIO7",
+        "GPIO8",
+        "GPIO9",
+        "GPIO10",
+        "GPIO20",
+        "GPIO21"
+      ]
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-under",
+      "label": "Solder side clearance",
+      "x": 0,
+      "y": 0,
+      "w": 22.52,
+      "h": 18.0,
+      "z": -1.5,
+      "height": 1.5
+    },
+    {
+      "id": "k-over",
+      "label": "Components on top",
+      "x": 0,
+      "y": 0,
+      "w": 22.52,
+      "h": 18.0,
+      "z": 1.0,
+      "height": 2.0
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      5,
+      3.3
+    ],
+    "currentTypical": 0.05,
+    "currentPeak": 0.35,
+    "note": "5 V in over USB-C, 3.3 V logic. The radio peaks well above the average when it transmits."
+  },
+  "links": [
+    {
+      "label": "ESP32-C3 datasheet (Espressif)",
+      "url": "https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf"
+    }
+  ],
+  "tags": [
+    "esp32",
+    "c3",
+    "supermini",
+    "super mini",
+    "wifi",
+    "ble",
+    "mcu",
+    "tiny",
+    "generic"
+  ]
+}
