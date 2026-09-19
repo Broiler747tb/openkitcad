@@ -1,6 +1,15 @@
 import { LIGHT_PALETTE, readPalette } from '../theme/palette'
 import { applyThemePreference, resolveTheme } from '../theme/theme'
-import { MOUSE_SCHEMES, resolveDrag, resolveWheel, BUTTON_BIT } from '../ui/mouse/schemes'
+import {
+  MOUSE_SCHEMES,
+  MOUSE_SCHEME_ORDER,
+  resolveDrag,
+  resolveWheel,
+  resolveWheelGesture,
+  schemeSummary,
+  wheelIsNotched,
+  BUTTON_BIT,
+} from '../ui/mouse/schemes'
 import { placeAround, type MenuRect } from '../ui/ContextMenu'
 import type { TestResult } from './selftest'
 
@@ -32,6 +41,58 @@ export function runUiTest(): TestResult[] {
       resolveDrag(MOUSE_SCHEMES.tinkercad, BUTTON_BIT.right) === 'orbit' &&
       resolveDrag(MOUSE_SCHEMES.tinkercad, BUTTON_BIT.right, { shift: true }) === 'pan',
     resolveDrag(MOUSE_SCHEMES.onshape, BUTTON_BIT.right),
+  )
+
+  const pad = MOUSE_SCHEMES.touchpad
+  const gesture = (event: Parameters<typeof resolveWheelGesture>[1]) =>
+    resolveWheelGesture(pad, event)
+  check(
+    'a touchpad pans on two fingers and zooms on a pinch',
+    gesture({ deltaX: 0, deltaY: 6.4 }).action === 'pan' &&
+      gesture({ deltaX: -4, deltaY: 0 }).action === 'pan' &&
+      gesture({ deltaX: 0, deltaY: -9, ctrlKey: true }).action === 'zoom',
+    `${gesture({ deltaX: 0, deltaY: 6.4 }).action} / ${gesture({ deltaX: 0, deltaY: -9, ctrlKey: true }).action}`,
+  )
+  check(
+    'Alt and two fingers orbits, and carries the gesture through',
+    (() => {
+      const out = gesture({ deltaX: 5, deltaY: -3, altKey: true })
+      return out.action === 'orbit' && out.dx === 5 && out.dy === -3
+    })(),
+    JSON.stringify(gesture({ deltaX: 5, deltaY: -3, altKey: true })),
+  )
+  check(
+    'a real wheel still zooms in touchpad mode',
+    gesture({ deltaX: 0, deltaY: 100 }).action === 'zoom' &&
+      gesture({ deltaX: 0, deltaY: -3, deltaMode: 1 }).action === 'zoom' &&
+      wheelIsNotched({ deltaX: 0, deltaY: 120 }) &&
+      !wheelIsNotched({ deltaX: 0, deltaY: 6.4 }),
+    `${gesture({ deltaX: 0, deltaY: 100 }).action}, notched(6.4) ${wheelIsNotched({ deltaX: 0, deltaY: 6.4 })}`,
+  )
+  check(
+    'the other schemes still zoom on every wheel event',
+    (['fusion', 'solidworks', 'onshape', 'tinkercad'] as const).every(
+      (id) =>
+        resolveWheelGesture(MOUSE_SCHEMES[id], { deltaX: 0, deltaY: 6.4 }).action === 'zoom' &&
+        resolveWheelGesture(MOUSE_SCHEMES[id], { deltaX: 8, deltaY: 0, altKey: true }).action !==
+          'orbit',
+    ),
+    'small deltas and Alt leave the mouse schemes alone',
+  )
+  check(
+    'only the touchpad scheme needs no middle button',
+    (() => {
+      const needsMiddle = (id: (typeof MOUSE_SCHEME_ORDER)[number]) => {
+        const summary = schemeSummary(MOUSE_SCHEMES[id])
+        return (['orbit', 'pan'] as const).some(
+          (action) =>
+            summary[action].length > 0 &&
+            summary[action].every((route) => route.includes('Middle')),
+        )
+      }
+      return !needsMiddle('touchpad') && needsMiddle('fusion') && needsMiddle('solidworks')
+    })(),
+    'Fusion and SolidWorks reach pan or orbit only through the middle button; Touchpad does not',
   )
 
   const root = document.createElement('div')

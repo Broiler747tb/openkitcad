@@ -26,6 +26,7 @@ import {
   MOUSE_SCHEMES,
   modifiersOf,
   resolveDrag,
+  resolveWheelGesture,
   type MouseScheme,
 } from '../ui/mouse/schemes'
 
@@ -294,6 +295,23 @@ export class ViewportEngine {
         this.rightDragged = true
       }
     })
+
+    // A touchpad has no middle button, and its two-finger scroll arrives here
+    // as a wheel event that OrbitControls would dolly with. Take the gestures
+    // that are not zoom before it sees them.
+    this.renderer.domElement.addEventListener(
+      'wheel',
+      (event) => {
+        if (!this.mouseScheme.gestures || !this.navigationEnabled) return
+        const gesture = resolveWheelGesture(this.mouseScheme, event)
+        if (gesture.action !== 'pan' && gesture.action !== 'orbit') return
+        event.preventDefault()
+        event.stopPropagation()
+        if (gesture.action === 'pan') this.panByPixels(gesture.dx, gesture.dy)
+        else this.orbitByPixels(gesture.dx, gesture.dy)
+      },
+      { capture: true, passive: false },
+    )
 
     this.scene.add(
       this.solidGroup,
@@ -2223,6 +2241,47 @@ export class ViewportEngine {
   setFingerNavigation(orbit: boolean) {
     this.controls.touches.ONE = orbit ? THREE.TOUCH.ROTATE : THREE.TOUCH.PAN
     this.controls.enableRotate = orbit
+  }
+
+  /**
+   * Slide the camera and what it looks at across the screen plane, in pixels.
+   *
+   * The scale is the height the camera covers at the distance of the target,
+   * so a gesture moves the model by the number of pixels it travelled however
+   * far away the model is.
+   */
+  private panByPixels(dx: number, dy: number) {
+    const height = this.renderer.domElement.clientHeight || 1
+    const reach = this.camera.position.distanceTo(this.controls.target)
+    const scale = (2 * reach * Math.tan((this.camera.fov / 2) * THREE.MathUtils.DEG2RAD)) / height
+    const right = new THREE.Vector3().setFromMatrixColumn(this.camera.matrix, 0)
+    const up = new THREE.Vector3().setFromMatrixColumn(this.camera.matrix, 1)
+    const move = right.multiplyScalar(dx * scale).add(up.multiplyScalar(-dy * scale))
+    this.camera.position.add(move)
+    this.controls.target.add(move)
+  }
+
+  /**
+   * Swing the camera around what it is looking at, in pixels of gesture.
+   *
+   * The camera is Z-up, so the offset is rotated into the Y-up frame spherical
+   * coordinates assume and back again, which is what OrbitControls does with
+   * its own drag.
+   */
+  private orbitByPixels(dx: number, dy: number) {
+    const height = this.renderer.domElement.clientHeight || 1
+    const toYUp = new THREE.Quaternion().setFromUnitVectors(
+      this.camera.up,
+      new THREE.Vector3(0, 1, 0),
+    )
+    const offset = this.camera.position.clone().sub(this.controls.target).applyQuaternion(toYUp)
+    const spherical = new THREE.Spherical().setFromVector3(offset)
+    spherical.theta -= (2 * Math.PI * dx) / height
+    spherical.phi -= (2 * Math.PI * dy) / height
+    spherical.phi = THREE.MathUtils.clamp(spherical.phi, 1e-6, Math.PI - 1e-6)
+    this.camera.position
+      .copy(this.controls.target)
+      .add(offset.setFromSpherical(spherical).applyQuaternion(toYUp.invert()))
   }
 
   // -------------------------------------------------------------------------

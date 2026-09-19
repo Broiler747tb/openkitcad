@@ -18,6 +18,8 @@ import { CONSTRAINT_TOOLS } from '../sketch/constraintTools'
 import { startConstraintTool } from './sketchConstraints'
 import { moveCopyAction, rectangularPatternAction, scaleAction } from './sketchModify'
 import { THEME_LABEL, THEME_PREFERENCES, useTheme } from '../theme/theme'
+import { useMouseScheme } from './mouse/preference'
+import { mouseScheme, schemeSummary } from './mouse/schemes'
 import type { ReactNode } from 'react'
 import { BrandMark } from './BrandMark'
 import { openMotionStudy } from './MotionStudy'
@@ -1284,6 +1286,13 @@ function ShortcutDialog({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     ref.current?.showModal()
   }, [])
+  const scheme = mouseScheme(useMouseScheme((s) => s.scheme))
+  const summary = schemeSummary(scheme)
+  const navigation = (['orbit', 'pan', 'zoom'] as const).flatMap((action) =>
+    summary[action].map(
+      (route) => [route, `${action[0].toUpperCase()}${action.slice(1)}`] as [string, string],
+    ),
+  )
   return (
     <dialog
       ref={ref}
@@ -1304,6 +1313,14 @@ function ShortcutDialog({ onClose }: { onClose: () => void }) {
           <div key={key}>
             <dt>
               <kbd>{key}</kbd>
+            </dt>
+            <dd>{label}</dd>
+          </div>
+        ))}
+        {navigation.map(([route, label]) => (
+          <div key={`${label}-${route}`}>
+            <dt>
+              <kbd>{route}</kbd>
             </dt>
             <dd>{label}</dd>
           </div>

@@ -28,8 +28,6 @@ export const SHORTCUTS = [
   ['Ctrl+Alt+B', 'Show / hide Browser'],
   ['Esc', 'Select tool: stop the current tool or command'],
   ['Home', 'Fit view (OpenKitCAD extension)'],
-  ['Middle drag', 'Pan'],
-  ['Shift+Middle drag', 'Orbit'],
 ] as const
 
 export function createSketchAction(): ObjectAction {

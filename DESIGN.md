@@ -175,6 +175,23 @@ give parallel, square, same length and angle; two corners give distances; a line
 circle give tangent. The list is built by a pure function in `src/sketch/actions.ts`, so
 what the menu offers is unit testable without a browser.
 
+**A touchpad has no middle button.** Every scheme the app shipped with reaches pan or orbit
+through one, so on a laptop two of the three navigation gestures were simply unavailable. The
+Touchpad scheme routes them through the wheel events a touchpad actually sends: two fingers
+pan, pinch arrives as Ctrl and the wheel and zooms, and Alt with two fingers orbits. Alt rather
+than Shift because browsers move Shift and the wheel onto the horizontal axis, which would
+make a vertical gesture orbit sideways.
+
+Three.js OrbitControls dollies on every wheel event and cannot be told otherwise, so the
+engine takes the pan and orbit gestures in the capture phase and moves the camera itself.
+Zoom is left alone and still goes through OrbitControls.
+
+The one heuristic is telling a wheel from a touchpad, because someone who docks a laptop wants
+their scroll wheel back. A wheel reports whole notches — a round pixel step of 100 or more, or
+a count of lines — with nothing sideways; a touchpad reports a stream of small deltas on both
+axes. It only ever decides between zooming and panning, so getting it wrong costs a gesture
+and never a command.
+
 One subtlety worth keeping: right-click only changes the selection when nothing is
 selected. Letting it add whatever was under the cursor seemed friendlier until
 right-clicking near the sketch origin silently added a third item and emptied the menu.

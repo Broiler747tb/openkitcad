@@ -3,7 +3,7 @@ export type ActiveNavAction = Exclude<NavAction, 'none'>
 export type MouseButton = 'left' | 'middle' | 'right'
 export type ModifierKey = 'shift' | 'ctrl' | 'alt'
 export type PointerKind = 'mouse' | 'pen' | 'touch'
-export type MouseSchemeId = 'fusion' | 'solidworks' | 'onshape' | 'tinkercad'
+export type MouseSchemeId = 'fusion' | 'solidworks' | 'onshape' | 'tinkercad' | 'touchpad'
 export type ZoomDirection = 'in' | 'out'
 
 export interface ModifierState {
@@ -25,6 +25,7 @@ export interface MouseScheme {
   hint: string
   drag: readonly DragBinding[]
   wheelForward: ZoomDirection
+  gestures?: boolean
 }
 
 export interface TouchMapping {
@@ -102,6 +103,17 @@ export const MOUSE_SCHEMES: Record<MouseSchemeId, MouseScheme> = {
     ],
     wheelForward: 'in',
   },
+  touchpad: {
+    id: 'touchpad',
+    label: 'Touchpad',
+    hint: 'Two fingers pan, pinch zooms, Alt and two fingers orbits. No middle button needed.',
+    drag: [
+      { buttons: ['right'], modifiers: [], action: 'orbit' },
+      { buttons: ['right'], modifiers: ['shift'], action: 'pan' },
+    ],
+    wheelForward: 'in',
+    gestures: true,
+  },
 }
 
 export const MOUSE_SCHEME_ORDER: readonly MouseSchemeId[] = [
@@ -109,6 +121,7 @@ export const MOUSE_SCHEME_ORDER: readonly MouseSchemeId[] = [
   'solidworks',
   'onshape',
   'tinkercad',
+  'touchpad',
 ]
 
 export const DEFAULT_MOUSE_SCHEME: MouseSchemeId = 'fusion'
@@ -182,6 +195,53 @@ export function resolveWheel(scheme: MouseScheme, deltaY: number, reverse = fals
   return { action: 'zoom', direction: zoomsIn !== reverse ? 'in' : 'out' }
 }
 
+export interface WheelEventLike {
+  deltaX: number
+  deltaY: number
+  deltaMode?: number
+  ctrlKey?: boolean
+  shiftKey?: boolean
+  altKey?: boolean
+  metaKey?: boolean
+}
+
+export type WheelGesture =
+  | { action: 'zoom'; direction: ZoomDirection }
+  | { action: 'pan'; dx: number; dy: number }
+  | { action: 'orbit'; dx: number; dy: number }
+  | { action: 'none' }
+
+/**
+ * Whether a wheel event came from a mouse rather than a touchpad.
+ *
+ * A wheel reports one notch at a time: a whole number of lines or pages, or a
+ * round pixel step of 100 or more, with nothing sideways. A touchpad reports a
+ * stream of small pixel deltas on both axes. Getting this wrong costs a user
+ * with both devices plugged in their scroll wheel, so it only decides between
+ * zooming and panning and never disables anything.
+ */
+export function wheelIsNotched(event: WheelEventLike): boolean {
+  if ((event.deltaMode ?? 0) !== 0) return true
+  return event.deltaX === 0 && Math.abs(event.deltaY) >= 100 && Number.isInteger(event.deltaY)
+}
+
+export function resolveWheelGesture(
+  scheme: MouseScheme,
+  event: WheelEventLike,
+  reverse = false,
+): WheelGesture {
+  const zoom = (): WheelGesture => {
+    const { direction } = resolveWheel(scheme, event.deltaY, reverse)
+    return direction ? { action: 'zoom', direction } : { action: 'none' }
+  }
+  if (!scheme.gestures) return zoom()
+  if (event.ctrlKey || event.metaKey) return zoom()
+  if (wheelIsNotched(event)) return zoom()
+  if (!event.deltaX && !event.deltaY) return { action: 'none' }
+  const move = { dx: event.deltaX, dy: event.deltaY }
+  return event.altKey ? { action: 'orbit', ...move } : { action: 'pan', ...move }
+}
+
 export function resolveTouch(
   touches: number,
   penDown = false,
@@ -249,7 +309,9 @@ export function describeDrag(binding: DragBinding): string {
 }
 
 export function schemeSummary(scheme: MouseScheme): Record<ActiveNavAction, string[]> {
-  const summary: Record<ActiveNavAction, string[]> = { orbit: [], pan: [], zoom: ['Wheel'] }
+  const summary: Record<ActiveNavAction, string[]> = scheme.gestures
+    ? { orbit: ['Alt + two fingers'], pan: ['Two fingers'], zoom: ['Pinch', 'Wheel'] }
+    : { orbit: [], pan: [], zoom: ['Wheel'] }
   for (const binding of scheme.drag) summary[binding.action].push(describeDrag(binding))
   return summary
 }

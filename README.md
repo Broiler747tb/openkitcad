@@ -46,6 +46,8 @@ Export is STL, 3MF and OBJ for printing and rendering, STEP if you want to keep 
 
 There's a clash checker that uses real boolean intersections rather than bounding boxes, a section view for looking inside an enclosure, and some print checks for overhangs, bed size and thin walls. If a step joins something on and it lands where there was nothing to join it to, the timeline says so rather than leaving you a floating pillar to find in the slicer. Light and dark themes, a view cube, a marking menu under the right mouse button, and the mouse scheme from Fusion, SolidWorks, Onshape or Tinkercad if your hands already know one of those.
 
+On a laptop there is a Touchpad scheme, because every other one wants a middle button and a touchpad hasn't got one. Two fingers pan, pinch zooms, and Alt with two fingers orbits. A wheel still zooms if you plug a mouse in, so docking doesn't take the scroll wheel away from you.
+
 ## Support
 
 OpenKitCAD is free and there is nothing to upgrade to. No trial, no seats, and
@@ -84,13 +86,13 @@ npm run build
 npm run typecheck
 ```
 
-Add `?selftest` to the URL on any build and it runs all 1042 solver, kernel and model checks in front of you. That works on the [live site](https://broiler747tb.github.io/openkitcad/?selftest) too. It's shipped on purpose: if something's broken on your machine, that page says so before you file an issue. `?kerneltest` runs the geometry half on its own, and `?selftest&suite=sketch,kernel` runs named suites.
+Add `?selftest` to the URL on any build and it runs all 1047 solver, kernel and model checks in front of you. That works on the [live site](https://broiler747tb.github.io/openkitcad/?selftest) too. It's shipped on purpose: if something's broken on your machine, that page says so before you file an issue. `?kerneltest` runs the geometry half on its own, and `?selftest&suite=sketch,kernel` runs named suites.
 
 ```
 npm test
 ```
 
-runs the same 1042 checks headlessly, against a production build, in Chromium. It uses Playwright's own browser if you have run `npx playwright install chromium`, and falls back to an installed Edge or Chrome if you haven't.
+runs the same 1047 checks headlessly, against a production build, in Chromium. It uses Playwright's own browser if you have run `npx playwright install chromium`, and falls back to an installed Edge or Chrome if you haven't.
 
 Pushing to `main` builds and publishes to GitHub Pages. The workflow runs `typecheck` and then `npm test`, so a build that doesn't compile, or that fails a single check, never goes live.
 
