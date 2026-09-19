@@ -6,17 +6,19 @@ const suites = process.argv.slice(2).filter((arg) => !arg.startsWith('-'))
 const query = suites.length ? `?selftest&suite=${suites.join(',')}` : '?selftest'
 
 async function launch() {
-  const channels = [undefined, ...(process.env.OKC_TEST_BROWSER ?? 'msedge,chrome').split(',')]
+  const browsers = [undefined, ...(process.env.OKC_TEST_BROWSER ?? 'msedge,chrome').split(',')]
   let last = null
-  for (const channel of channels) {
+  for (const browser of browsers) {
     try {
-      return await chromium.launch(channel ? { channel } : {})
+      return await chromium.launch(
+        !browser ? {} : /[\\/]/.test(browser) ? { executablePath: browser } : { channel: browser },
+      )
     } catch (error) {
       last = error
     }
   }
   throw new Error(
-    `No Chromium to test in. Run "npx playwright install chromium", or install Edge or Chrome.\n${last?.message ?? ''}`,
+    `No Chromium to test in. Run "npx playwright install chromium", install Edge or Chrome, or set OKC_TEST_BROWSER to the path of a chrome.exe.\n${last?.message ?? ''}`,
   )
 }
 
