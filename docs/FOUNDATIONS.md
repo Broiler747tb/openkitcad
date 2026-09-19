@@ -22,6 +22,10 @@ implementation is built against.
 
 ## 2. Milestones
 
+**All twelve are done.** The last of them landed on 18 September 2026 and the work shipped to
+`main` as 1.0.0 the day after, with 1035 checks green. What comes after this is in `DESIGN.md`
+§8; nothing in the list below is outstanding.
+
 **F1: document model and evaluator.** Document v2 (§3), the evaluator with instancing and the
 prefix cache (§4), the main thread on v2 (§5), units. References stay geometric fingerprints
 (`FaceRef`, `EdgeRef`) for one more milestone, and commands keep today's dialogs. Exit: typecheck
@@ -914,8 +918,9 @@ opening for its USB-C.
 
 - Agents never start other agents or workflows.
 - New and rewritten code has no comments. Touched files are formatted with Prettier.
-- Commits go on `fusion`, in the repo's message style, and are pushed to `fusion` only. `main`
-  deploys GitHub Pages and is never pushed.
+- Commits go on `fusion`, in the repo's message style, and are pushed to `fusion`. `main`
+  deploys GitHub Pages; it is only ever moved on by merging `fusion` into it, deliberately,
+  when the whole suite is green — never committed to directly.
 - `src/doc/types.ts`, `src/doc/model.ts`, `src/kernel/types.ts` and `src/main.tsx` are the
   contract. They change only additively, only when work cannot proceed otherwise, and every
   change is listed in the agent's report.

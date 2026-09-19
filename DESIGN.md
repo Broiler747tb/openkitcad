@@ -193,12 +193,25 @@ licensed from the app is deliberate.
 
 ## 8. Where to take it next
 
-In rough order of value per unit of work:
+**Superseded on 19 September 2026.** The list this section held was written before the
+Fusion parity work and three of its five items are now built: sketching on a picked face
+(F2), per-edge fillet selection (F3 and J), and assembly mates, which arrived as the full
+Fusion joint set rather than mates (A). `docs/FOUNDATIONS.md` §2 is the record of that
+work, and every milestone in it is done.
 
-1. **Sketching on a picked face.** The kernel and document model already support it; only
-   the interface is missing. This is the single biggest capability gap.
-2. **More catalogue parts** — breadth here beats almost any feature.
-3. **Per-edge fillet selection**, with the document model already in place.
-4. **Disconnected-solid detection**, which would catch floating standoffs.
-5. **Assembly mates**, if machines with moving parts ever become a target. This roughly
-   doubles the interface surface, so it should wait for real demand.
+What is left from the old list, and what comes after it:
+
+1. **More catalogue parts.** Still true, and still ahead of almost any feature. 125 parts
+   today, and the thin families are the ones a beginner reaches for second.
+2. **Disconnected-solid detection.** Nothing checks that a body came out in one piece, so
+   standoffs generated past the edge of a plate are floating pillars with no warning. The
+   only item on the original list that nobody has picked up.
+3. **Generative design.** Describe the bracket — what it bolts to, what it carries, where
+   it must not go — and let the app propose the shape. The furthest thing here from
+   "the catalogue does the remembering", and the most interesting.
+4. **Symmetry.** A first-class mirror plane that holds, rather than a mirror feature that
+   copies once and forgets. Half the things on a bench are symmetric and are currently
+   drawn twice.
+5. **A plugin menu.** Somewhere for other people's tools to live without a fork. The
+   catalogue is already CC0 and separately licensed for roughly this reason; the app has
+   no equivalent seam yet, and where that seam goes is the whole design question.
