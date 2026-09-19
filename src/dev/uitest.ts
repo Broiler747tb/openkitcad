@@ -62,6 +62,49 @@ export function runUiTest(): TestResult[] {
     resolveTheme('system', true) === 'dark' && resolveTheme('system', false) === 'light',
     `${resolveTheme('system', true)} ${resolveTheme('system', false)}`,
   )
+
+  const swatch = document.createElement('div')
+  swatch.style.cssText = 'position:fixed;left:-9999px;background:var(--okc-surface-panel)'
+  swatch.innerHTML = '<div class="msg warn"></div><div class="msg error"></div>'
+  document.body.appendChild(swatch)
+  try {
+    const channels = (colour: string) => (colour.match(/[\d.]+/g) ?? ['0']).map(Number)
+    const flatten = (front: number[], back: number[]) => {
+      const alpha = front[3] ?? 1
+      return [0, 1, 2].map((i) => front[i] * alpha + back[i] * (1 - alpha))
+    }
+    const luminance = (colour: number[]) => {
+      const linear = colour.map((v) => {
+        const s = v / 255
+        return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+      })
+      return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+    }
+    const contrast = (a: number[], b: number[]) => {
+      const [x, y] = [luminance(a), luminance(b)]
+      return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)
+    }
+    for (const theme of ['light', 'dark'] as const) {
+      applyThemePreference(theme, swatch)
+      const panel = channels(getComputedStyle(swatch).backgroundColor)
+      for (const kind of ['warn', 'error'] as const) {
+        const box = swatch.querySelector(`.msg.${kind}`) as HTMLElement
+        const style = getComputedStyle(box)
+        const ratio = contrast(
+          flatten(channels(style.backgroundColor), panel),
+          channels(style.color),
+        )
+        check(
+          `a ${kind === 'warn' ? 'warning' : 'an error'} can be read against its own background in ${theme}`,
+          ratio >= 3,
+          `contrast ${ratio.toFixed(2)}:1 (needs 3)`,
+        )
+      }
+    }
+  } finally {
+    swatch.remove()
+  }
+
   const screen = { width: 1280, height: 800 }
   const clear = (ring: MenuRect, width: number, height: number) => {
     const placed = placeAround(ring.left, ring.bottom, width, height, ring, screen)
@@ -82,6 +125,16 @@ export function runUiTest(): TestResult[] {
   for (const [where, ring, width, height] of cases) {
     const { placed, ok } = clear(ring, width, height)
     check(`the right-click list never covers the marking ring ${where}`, ok, JSON.stringify(placed))
+  }
+
+  if (window.innerWidth < 1 || window.innerHeight < 1) {
+    results.push({
+      name: 'UI: an open ribbon menu draws over the view cube and a command panel',
+      pass: true,
+      skipped: true,
+      detail: 'needs a window with a size; this one is 0 x 0, so nothing can be hit tested',
+    })
+    return results
   }
 
   const stage = document.createElement('div')

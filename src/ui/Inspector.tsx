@@ -682,6 +682,12 @@ function BodyInspector({ id, instanceId }: { id: string; instanceId?: string }) 
             {mesh.watertight ? 'Watertight.' : 'It has open edges; Repair closes small holes.'}
           </p>
         )}
+        {mesh?.kind === 'solid' && !!mesh.pieces && mesh.pieces > 1 && (
+          <p className="hint" style={{ marginTop: 0 }}>
+            {mesh.pieces} separate pieces that do not touch. Anything floating falls over when you
+            print it.
+          </p>
+        )}
       </div>
 
       <div className="section" hidden={mesh?.kind === 'mesh'}>

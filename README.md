@@ -44,7 +44,7 @@ If you designed the board yourself, File > Import KiCad Board reads a `.kicad_pc
 
 Export is STL, 3MF and OBJ for printing and rendering, STEP if you want to keep working in FreeCAD or Fusion, DXF and SVG for a laser cutter, and a drill template you can print at full size and tape to a project box. That last one is for anyone working with a hand drill and no machines, which is most people starting out.
 
-There's a clash checker that uses real boolean intersections rather than bounding boxes, a section view for looking inside an enclosure, and some print checks for overhangs, bed size and thin walls. Light and dark themes, a view cube, a marking menu under the right mouse button, and the mouse scheme from Fusion, SolidWorks, Onshape or Tinkercad if your hands already know one of those.
+There's a clash checker that uses real boolean intersections rather than bounding boxes, a section view for looking inside an enclosure, and some print checks for overhangs, bed size and thin walls. If a step joins something on and it lands where there was nothing to join it to, the timeline says so rather than leaving you a floating pillar to find in the slicer. Light and dark themes, a view cube, a marking menu under the right mouse button, and the mouse scheme from Fusion, SolidWorks, Onshape or Tinkercad if your hands already know one of those.
 
 ## Support
 
@@ -84,9 +84,15 @@ npm run build
 npm run typecheck
 ```
 
-Add `?selftest` to the URL on any build and it runs all 1035 solver, kernel and model checks in front of you. That works on the [live site](https://broiler747tb.github.io/openkitcad/?selftest) too. It's shipped on purpose: if something's broken on your machine, that page says so before you file an issue. `?kerneltest` runs the geometry half on its own, and `?selftest&suite=sketch,kernel` runs named suites.
+Add `?selftest` to the URL on any build and it runs all 1042 solver, kernel and model checks in front of you. That works on the [live site](https://broiler747tb.github.io/openkitcad/?selftest) too. It's shipped on purpose: if something's broken on your machine, that page says so before you file an issue. `?kerneltest` runs the geometry half on its own, and `?selftest&suite=sketch,kernel` runs named suites.
 
-Pushing to `main` builds and publishes to GitHub Pages. The workflow runs `typecheck` first, so a build that doesn't compile never goes live.
+```
+npm test
+```
+
+runs the same 1042 checks headlessly, against a production build, in Chromium. It uses Playwright's own browser if you have run `npx playwright install chromium`, and falls back to an installed Edge or Chrome if you haven't.
+
+Pushing to `main` builds and publishes to GitHub Pages. The workflow runs `typecheck` and then `npm test`, so a build that doesn't compile, or that fails a single check, never goes live.
 
 ## Adding a part
 
@@ -133,8 +139,6 @@ The constraint solver is written from scratch, in `src/sketch/solver.ts`. Levenb
 Designs are version 2. Files written by 0.6 and earlier are refused on open rather than half-converted.
 
 ## What it doesn't do yet
-
-If you generate standoffs somewhere the plate doesn't reach, you get floating pillars and no warning. Nothing checks that a body came out in one piece.
 
 The wall thickness warning is an estimate from volume against surface area, not a real medial-axis measurement. The app says so where it reports it.
 

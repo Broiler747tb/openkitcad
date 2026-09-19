@@ -36,6 +36,7 @@ export interface TestResult {
   name: string
   pass: boolean
   detail: string
+  skipped?: boolean
 }
 
 const results: TestResult[] = []

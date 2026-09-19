@@ -54,8 +54,8 @@
   min-width: 0;
   overflow-x: auto;
   padding: 2px 6px;
-  background: #f7f9fc;
-  border-bottom: 1px solid #bac7d2;
+  background: var(--okc-surface-toolbar);
+  border-bottom: 1px solid var(--okc-line);
   z-index: 31;
   scrollbar-width: thin;
 }
@@ -67,8 +67,8 @@
   padding: 4px 9px;
 }
 .android-app .pen-bar button[aria-pressed='true'] {
-  background: #d8edff;
-  color: #12629d;
+  background: var(--okc-accent-soft);
+  color: var(--okc-accent-text);
 }
 .android-app .navigation-bar {
   grid-area: navigation;
@@ -138,7 +138,7 @@
   transition: none;
   z-index: 30;
   overflow-y: auto;
-  box-shadow: 0 2px 16px #0003;
+  box-shadow: var(--okc-shadow-md);
 }
 .android-app .app.sheet-left .panel-left {
   display: flex;
@@ -163,7 +163,7 @@
   position: relative;
   inset: auto;
   z-index: 29;
-  background: #14233150;
+  background: var(--okc-surface-scrim);
 }
 .android-app .tree-item {
   min-height: 42px;

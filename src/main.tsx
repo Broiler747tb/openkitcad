@@ -73,9 +73,15 @@ if (params.has('selftest') || params.has('kerneltest')) {
     }
     ;(window as any).__okc_tests = results
     const failed = results.filter((r) => !r.pass)
+    const skipped = results.filter((r) => r.skipped)
     mount.textContent =
-      `${failed.length ? 'FAIL' : 'PASS'}  ${results.length - failed.length}/${results.length}\n\n` +
-      results.map((r) => `${r.pass ? ' ok ' : 'FAIL'}  ${r.name}\n        ${r.detail}`).join('\n')
+      `${failed.length ? 'FAIL' : 'PASS'}  ${results.length - failed.length - skipped.length}/${results.length - skipped.length}` +
+      `${skipped.length ? `  (${skipped.length} skipped)` : ''}\n\n` +
+      results
+        .map(
+          (r) => `${r.skipped ? 'skip' : r.pass ? ' ok ' : 'FAIL'}  ${r.name}\n        ${r.detail}`,
+        )
+        .join('\n')
   })()
 } else {
   import('./assembly/follow').then((m) => m.followGeometry())

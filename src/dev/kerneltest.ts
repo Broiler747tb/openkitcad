@@ -309,6 +309,28 @@ export async function runKernelTest(): Promise<TestResult[]> {
       `removed ${removed.toFixed(2)} mm3, expected ${expectedRemoved.toFixed(2)} mm3 for four 2.8 mm holes`,
     )
 
+    const standoffsAway = await evaluate(piPlateDoc(translationMatrix([400, 400, PLATE_T]), true))
+    const adrift = meshFor(standoffsAway, 'root|plate')
+    add(
+      'a plate whose standoffs miss it counts five loose pieces',
+      adrift?.pieces === 5,
+      `${adrift?.pieces ?? 'no'} piece(s), expected the plate and four standoffs apart`,
+    )
+    const loose = standoffsAway.errors.find(
+      (e) => e.severity === 'warning' && e.featureId === 'f-standoffs',
+    )
+    add(
+      'and says so on the step that made them',
+      !!loose && loose.message.includes('5 separate pieces'),
+      loose ? loose.message : errorText(standoffsAway) || 'nothing was reported',
+    )
+    add(
+      'while standoffs that land on the plate are left alone',
+      meshFor(onPlate, 'root|plate')?.pieces === 1 &&
+        !onPlate.errors.some((e) => e.severity === 'warning'),
+      `${meshFor(onPlate, 'root|plate')?.pieces ?? 'no'} piece(s), ${onPlate.errors.length} error(s)`,
+    )
+
     {
       const V = 40 * 40 * 20
       const OVERLAP = 20 * 40 * 20

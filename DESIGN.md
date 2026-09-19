@@ -199,19 +199,18 @@ Fusion parity work and three of its five items are now built: sketching on a pic
 Fusion joint set rather than mates (A). `docs/FOUNDATIONS.md` §2 is the record of that
 work, and every milestone in it is done.
 
-What is left from the old list, and what comes after it:
+Disconnected-solid detection, the last survivor of that list, landed on 19 September 2026:
+a feature whose result is a join now reports on the timeline when what it joined on does not
+touch, which is the floating-standoff case. What is left, and what comes after it:
 
 1. **More catalogue parts.** Still true, and still ahead of almost any feature. 125 parts
    today, and the thin families are the ones a beginner reaches for second.
-2. **Disconnected-solid detection.** Nothing checks that a body came out in one piece, so
-   standoffs generated past the edge of a plate are floating pillars with no warning. The
-   only item on the original list that nobody has picked up.
-3. **Generative design.** Describe the bracket — what it bolts to, what it carries, where
+2. **Generative design.** Describe the bracket — what it bolts to, what it carries, where
    it must not go — and let the app propose the shape. The furthest thing here from
    "the catalogue does the remembering", and the most interesting.
-4. **Symmetry.** A first-class mirror plane that holds, rather than a mirror feature that
+3. **Symmetry.** A first-class mirror plane that holds, rather than a mirror feature that
    copies once and forgets. Half the things on a bench are symmetric and are currently
    drawn twice.
-5. **A plugin menu.** Somewhere for other people's tools to live without a fork. The
+4. **A plugin menu.** Somewhere for other people's tools to live without a fork. The
    catalogue is already CC0 and separately licensed for roughly this reason; the app has
    no equivalent seam yet, and where that seam goes is the whole design question.

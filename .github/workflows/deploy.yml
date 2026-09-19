@@ -31,7 +31,13 @@ jobs:
       # Fail the deploy rather than publish something that does not compile.
       - run: npm run typecheck
 
-      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+
+      # Builds, then runs the whole ?selftest suite in Chromium against that
+      # build. The geometry half needs a real browser for the worker and the
+      # OpenCascade WASM, so there is no cheaper way to cover it.
+      - run: npm test
+        timeout-minutes: 15
 
       - uses: actions/configure-pages@v5
 

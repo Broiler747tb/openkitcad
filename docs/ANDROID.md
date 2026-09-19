@@ -68,7 +68,7 @@ treated as out of date until it is repeated.
 - TypeScript and Vite production build passed.
 - APK assembled and its APK Signature Scheme v2 signature verified.
 - Installed on a headless Android API 36 emulator.
-- Device-side `OfflineSmokeTest`: **309/309** bundled JS/kernel assertions passed, workspace WebGL canvas and pen toolbar became ready, INTERNET permission absent. The suite is now 1035 checks, so this number will change when the test is next run.
+- Device-side `OfflineSmokeTest`: **309/309** bundled JS/kernel assertions passed, workspace WebGL canvas and pen toolbar became ready, INTERNET permission absent. The suite is now 1042 checks, so this number will change when the test is next run.
 - The initial cold-emulator test exceeded its 3-second JS callback timeout. Increasing the test-only timeout to 45 seconds allowed the synchronous solver suite to complete; it did not require a change to the app kernel. The suite has grown a great deal since, so expect to raise that timeout again.
 - **Not verified on a physical Samsung:** S Pen event delivery, barrel-button behavior, palm rejection, rendering speed, memory limits, and end-to-end system file-picker interaction.
 
@@ -76,7 +76,5 @@ To rerun device-side tests: build `assembleDebugAndroidTest`, install both debug
 
 ## Known gaps
 
-- The pen bar and the drawer backdrop use fixed light colours rather than theme tokens, so
-  they stay light when the rest of the app is in Dark.
 - The Android layout is only exercised by a browser at a narrow width. Nothing in
   `?selftest` covers it.

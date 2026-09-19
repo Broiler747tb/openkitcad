@@ -925,7 +925,9 @@ opening for its USB-C.
   contract. They change only additively, only when work cannot proceed otherwise, and every
   change is listed in the agent's report.
 - `?kerneltest` runs the model and kernel tests without the app; `?selftest` runs everything.
-  Results are on `window.__okc_tests`.
+  Results are on `window.__okc_tests`. `npm test` builds and runs the same suite headlessly in
+  Chromium through `scripts/selftest.mjs`, and the Pages workflow runs it before it deploys.
+  A check that cannot run where it finds itself returns `skipped` rather than a false failure.
 - **F1 smoke test.** Create a sketch on XY, draw a rectangle, extrude it 3 mm and fillet every edge
   1 mm. Insert a Raspberry Pi 4 and add its mounting holes to the plate, move the Pi and watch the
   holes follow. Create a component, make a linked copy and move the copy. Undo and redo each step.

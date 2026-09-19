@@ -11,7 +11,7 @@ import {
   measureVolume,
   setOC,
 } from 'replicad'
-import type { Component, Matrix4, OkcDocument } from '../doc/types'
+import type { BodyOperation, Component, Matrix4, OkcDocument } from '../doc/types'
 import {
   activeFeatures,
   expandInstances,
@@ -366,21 +366,31 @@ function tessellate(
   } catch {
     volume = 0
   }
+  const solids = solidCount(shape)
+  return {
+    mesh,
+    edges,
+    volume: solids ? volume : 0,
+    bounds: boundsOf(shape),
+    kind: solids ? 'solid' : 'surface',
+    ...(solids ? { pieces: solids } : {}),
+  }
+}
+
+function solidCount(shape: any): number {
   const oc = getOC() as any
   const explorer = new oc.TopExp_Explorer_2(
     shape.wrapped,
     oc.TopAbs_ShapeEnum.TopAbs_SOLID,
     oc.TopAbs_ShapeEnum.TopAbs_SHAPE,
   )
-  const solid = explorer.More()
-  explorer.delete()
-  return {
-    mesh,
-    edges,
-    volume: solid ? volume : 0,
-    bounds: boundsOf(shape),
-    kind: solid ? 'solid' : 'surface',
+  let count = 0
+  while (explorer.More()) {
+    count++
+    explorer.Next()
   }
+  explorer.delete()
+  return count
 }
 
 function boundsOf(shape: any): Bounds {
@@ -817,6 +827,34 @@ function run(
       name: entry.name,
       colour: entry.colour,
     })
+  }
+
+  if (!preview) {
+    const joins = new Set(
+      features
+        .filter((feature) => (feature as { result?: BodyOperation }).result?.kind === 'join')
+        .map((feature) => feature.id),
+    )
+    const counted = new Set<string>()
+    for (const entry of built.values()) {
+      if (entry.mesh || entry.instance.negative || !joins.has(entry.featureId)) continue
+      if (counted.has(entry.instance.meshKey)) continue
+      counted.add(entry.instance.meshKey)
+      let pieces = 0
+      try {
+        pieces = solidCount(entry.local)
+      } catch {
+        continue
+      }
+      if (pieces < 2) continue
+      errors.push({
+        featureId: entry.featureId,
+        bodyId: entry.instance.bodyId,
+        severity: 'warning',
+        message: `"${entry.name}" is ${pieces} separate pieces that do not touch.`,
+        hint: 'Usually something was made where there was nothing to join it to, such as a standoff past the edge of the plate under it. Anything floating falls over when you print it.',
+      })
+    }
   }
 
   const instances: Instance[] = []

@@ -734,13 +734,13 @@ input[type='checkbox'] {
 }
 
 .msg.error {
-  background: var(--okc-error);
+  background: var(--okc-error-soft);
   border-color: var(--err);
   color: var(--okc-error);
 }
 
 .msg.warn {
-  background: var(--okc-warning);
+  background: var(--okc-warning-soft);
   border-color: var(--warn);
   color: var(--okc-warning);
 }
