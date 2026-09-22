@@ -67,6 +67,48 @@ export function closestPointOnTriangle(
   return [ax + abx * v + acx * w, ay + aby * v + acy * w, az + abz * v + acz * w]
 }
 
+export interface RayHit {
+  point: Vec3
+  triangle: number
+  distance: number
+}
+
+export function rayTriangle(
+  origin: Vec3,
+  direction: Vec3,
+  positions: ArrayLike<number>,
+  ia: number,
+  ib: number,
+  ic: number,
+): number {
+  const ax = positions[ia * 3]
+  const ay = positions[ia * 3 + 1]
+  const az = positions[ia * 3 + 2]
+  const e1x = positions[ib * 3] - ax
+  const e1y = positions[ib * 3 + 1] - ay
+  const e1z = positions[ib * 3 + 2] - az
+  const e2x = positions[ic * 3] - ax
+  const e2y = positions[ic * 3 + 1] - ay
+  const e2z = positions[ic * 3 + 2] - az
+  const px = direction[1] * e2z - direction[2] * e2y
+  const py = direction[2] * e2x - direction[0] * e2z
+  const pz = direction[0] * e2y - direction[1] * e2x
+  const det = e1x * px + e1y * py + e1z * pz
+  if (Math.abs(det) < 1e-14) return -1
+  const inverse = 1 / det
+  const tx = origin[0] - ax
+  const ty = origin[1] - ay
+  const tz = origin[2] - az
+  const u = (tx * px + ty * py + tz * pz) * inverse
+  if (u < -1e-9 || u > 1 + 1e-9) return -1
+  const qx = ty * e1z - tz * e1y
+  const qy = tz * e1x - tx * e1z
+  const qz = tx * e1y - ty * e1x
+  const v = (direction[0] * qx + direction[1] * qy + direction[2] * qz) * inverse
+  if (v < -1e-9 || u + v > 1 + 1e-9) return -1
+  return (e2x * qx + e2y * qy + e2z * qz) * inverse
+}
+
 export class TriangleLocator {
   private readonly positions: Float64Array
   private readonly triangles: Uint32Array
@@ -128,6 +170,70 @@ export class TriangleLocator {
   private cellIndex(value: number, axis: number): number {
     const index = Math.floor((value - this.origin[axis]) / this.cell)
     return Math.min(this.dims[axis] - 1, Math.max(0, index))
+  }
+
+  raycast(
+    origin: Vec3,
+    direction: Vec3,
+    maxDistance = Infinity,
+    skip = -1,
+    minDistance = 0,
+  ): RayHit | null {
+    if (!direction[0] && !direction[1] && !direction[2]) return null
+    this.query++
+    if (this.query >= 0xffffffff) {
+      this.stamp.fill(0)
+      this.query = 1
+    }
+    const cell = [0, 1, 2].map((axis) => this.cellIndex(origin[axis], axis))
+    const step = [0, 1, 2].map((axis) => Math.sign(direction[axis]))
+    const next = [0, 1, 2].map((axis) => {
+      if (!direction[axis]) return Infinity
+      const edge = this.origin[axis] + (cell[axis] + (direction[axis] > 0 ? 1 : 0)) * this.cell
+      return (edge - origin[axis]) / direction[axis]
+    })
+    const span = [0, 1, 2].map((axis) =>
+      direction[axis] ? this.cell / Math.abs(direction[axis]) : Infinity,
+    )
+    let best: RayHit | null = null
+    for (;;) {
+      const list = this.cells.get(cell[0] + this.dims[0] * (cell[1] + this.dims[1] * cell[2]))
+      if (list) {
+        for (const tri of list) {
+          if (tri === skip || this.stamp[tri] === this.query) continue
+          this.stamp[tri] = this.query
+          const distance = rayTriangle(
+            origin,
+            direction,
+            this.positions,
+            this.triangles[tri * 3],
+            this.triangles[tri * 3 + 1],
+            this.triangles[tri * 3 + 2],
+          )
+          if (
+            distance > minDistance &&
+            distance <= maxDistance &&
+            (!best || distance < best.distance)
+          ) {
+            best = {
+              distance,
+              triangle: tri,
+              point: [
+                origin[0] + direction[0] * distance,
+                origin[1] + direction[1] * distance,
+                origin[2] + direction[2] * distance,
+              ],
+            }
+          }
+        }
+      }
+      const axis = next[0] < next[1] ? (next[0] < next[2] ? 0 : 2) : next[1] < next[2] ? 1 : 2
+      if (best && best.distance <= next[axis]) return best
+      if (next[axis] > maxDistance) return best
+      cell[axis] += step[axis]
+      if (cell[axis] < 0 || cell[axis] >= this.dims[axis]) return best
+      next[axis] += span[axis]
+    }
   }
 
   closestPoint(point: Vec3): ClosestPoint {

@@ -51,6 +51,7 @@ import {
 } from './naming'
 import { flattenSvgPaths } from '../export/svgpath'
 import { analyzeMesh } from '../mesh/analysis'
+import { thinnestWall } from '../mesh/thickness'
 import { decodeMesh } from '../mesh/blob'
 import { meshDisplay } from '../mesh/display'
 import { transformMesh, type TriMesh } from '../mesh/types'
@@ -1179,12 +1180,20 @@ const api: KernelApi = {
       if (!entry || entry.mesh) continue
       const shape = worldOf(entry)
       const name = entry.label
-      const warn = (severity: PrintWarning['severity'], message: string, hint?: string) =>
-        out.push(
-          hint
-            ? { instanceId: id, name, severity, message, hint }
-            : { instanceId: id, name, severity, message },
-        )
+      const warn = (
+        severity: PrintWarning['severity'],
+        message: string,
+        hint?: string,
+        span?: PrintWarning['span'],
+      ) =>
+        out.push({
+          instanceId: id,
+          name,
+          severity,
+          message,
+          ...(hint ? { hint } : {}),
+          ...(span ? { span } : {}),
+        })
       const [min, max] = shape.boundingBox.bounds
       const size = [max[0] - min[0], max[1] - min[1], max[2] - min[2]]
 
@@ -1250,16 +1259,18 @@ const api: KernelApi = {
         )
       }
 
-      const volume = measureVolume(shape)
-      if (totalArea > 0 && volume > 0) {
-        const estimated = (2 * volume) / totalArea
-        if (estimated < options.nozzle * 2) {
-          warn(
-            'warning',
-            `Average wall works out around ${estimated.toFixed(1)} mm, which is thin for a ${options.nozzle} mm nozzle.`,
-            'This is an estimate from volume against surface area, so check the thinnest wall yourself. Aim for at least two nozzle widths.',
-          )
-        }
+      const fine = shape.mesh({ tolerance: 0.02, angularTolerance: 12 })
+      const wall = thinnestWall({
+        positions: Float64Array.from(fine.vertices),
+        triangles: Uint32Array.from(fine.triangles),
+      })
+      if (wall && wall.thickness < options.nozzle * 2) {
+        warn(
+          'warning',
+          `The thinnest wall is ${wall.thickness.toFixed(2)} mm, under two widths of a ${options.nozzle} mm nozzle.`,
+          `A slicer wants about ${(options.nozzle * 2).toFixed(1)} mm to lay two lines side by side. Show puts a measurement across it.`,
+          { from: wall.from, to: wall.to },
+        )
       }
     }
     return out

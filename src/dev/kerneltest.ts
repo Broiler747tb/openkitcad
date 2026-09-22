@@ -332,6 +332,46 @@ export async function runKernelTest(): Promise<TestResult[]> {
     )
 
     {
+      const printer = { nozzle: 0.4, bed: [220, 220, 250] as [number, number, number] }
+      const finned = makeDocument(
+        'Thin fin',
+        [body('b', 'Base with a fin')],
+        [
+          boxFeature('f-base', 'b', [0, 0], [40, 30, 6]),
+          boxFeature('f-fin', 'b', [10, 5], [0.6, 20, 12], {
+            plane: { kind: 'named', name: 'XY', offset: 6 },
+            result: { kind: 'join', bodyId: 'b' },
+          }),
+        ],
+      )
+      await evaluate(finned)
+      const thin = (await kernel.printPrep(['root|b'], printer)).find((w) =>
+        w.message.includes('thinnest wall'),
+      )
+      const across = thin?.span
+        ? Math.hypot(...thin.span.to.map((v, i) => v - thin.span!.from[i]))
+        : 0
+      add(
+        'the print check finds a 0.6 mm fin on a 6 mm base and spans it',
+        !!thin && thin.message.includes('0.60 mm') && Math.abs(across - 0.6) < 0.01,
+        thin ? `${thin.message} (span ${across.toFixed(3)} mm)` : 'no thin-wall warning',
+      )
+      await evaluate(
+        makeDocument(
+          'Block',
+          [body('b', 'Block')],
+          [boxFeature('f-block', 'b', [0, 0], [20, 20, 20])],
+        ),
+      )
+      const block = await kernel.printPrep(['root|b'], printer)
+      add(
+        'and says nothing about walls on a solid block',
+        !block.some((w) => /wall/.test(w.message)),
+        block.map((w) => w.message).join('; ') || 'no warnings',
+      )
+    }
+
+    {
       const V = 40 * 40 * 20
       const OVERLAP = 20 * 40 * 20
       const combineDoc = (op: 'join' | 'cut' | 'intersect'): OkcDocument =>

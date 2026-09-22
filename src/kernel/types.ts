@@ -102,6 +102,7 @@ export interface PrintWarning {
   severity: 'error' | 'warning' | 'info'
   message: string
   hint?: string
+  span?: { from: [number, number, number]; to: [number, number, number] }
 }
 
 export interface PrintOptions {

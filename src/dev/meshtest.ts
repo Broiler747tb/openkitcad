@@ -2,6 +2,7 @@ import { analyzeMesh } from '../mesh/analysis'
 import { decodeMesh, encodeMesh, meshDataId } from '../mesh/blob'
 import { meshDisplay } from '../mesh/display'
 import { TriangleLocator } from '../mesh/closest'
+import { thinnestWall } from '../mesh/thickness'
 import { planeCut } from '../mesh/cut'
 import { importMeshFile } from '../mesh/import'
 import { parseObj, writeObj } from '../mesh/obj'
@@ -323,6 +324,45 @@ export function runMeshTest(): TestResult[] {
     )
     const open = meshDisplay(planeCut(sphere, { origin: [0, 0, 0], normal: [0, 0, 1] }).above)
     check(open.edgeGroups.length === 1, `the open rim is one chain (${open.edgeGroups.length})`)
+  })
+
+  test('a ray finds the first face it crosses and misses what it should', () => {
+    const locator = new TriangleLocator(boxMesh([10, 10, 10], [0, 0, 0], 3))
+    const below = locator.raycast([5, 5, -5], [0, 0, 1])
+    const inside = locator.raycast([5, 5, 5], [0, 0, 1])
+    const slanted = locator.raycast([5, 5, 5], [Math.SQRT1_2, 0, Math.SQRT1_2])
+    const beside = locator.raycast([50, 50, 5], [0, 0, 1])
+    const short = locator.raycast([5, 5, -5], [0, 0, 1], 4)
+    check(
+      !!below && Math.abs(below.distance - 5) < 1e-9 && Math.abs(below.point[2]) < 1e-9,
+      `from below: ${below?.distance}`,
+    )
+    check(!!inside && Math.abs(inside.distance - 5) < 1e-9, `from inside: ${inside?.distance}`)
+    check(
+      !!slanted && Math.abs(slanted.distance - 5 * Math.SQRT2) < 1e-9,
+      `at 45 degrees: ${slanted?.distance}`,
+    )
+    check(
+      beside === null && short === null,
+      'a ray past the box, and one too short to reach it, hit nothing',
+    )
+  })
+
+  test('the thinnest wall is found where it is, not averaged', () => {
+    const plate = thinnestWall(boxMesh([20, 20, 1.5], [0, 0, 0], 4))
+    const cube = thinnestWall(boxMesh([10, 10, 10]))
+    const hollow = thinnestWall(
+      mergeMeshes([boxMesh([20, 20, 20]), reverseNormals(boxMesh([16, 16, 17], [2, 2, 2]))]),
+    )
+    check(!!plate && Math.abs(plate.thickness - 1.5) < 1e-9, `plate ${plate?.thickness}`)
+    check(!!cube && Math.abs(cube.thickness - 10) < 1e-9, `cube ${cube?.thickness}`)
+    check(
+      !!hollow &&
+        Math.abs(hollow.thickness - 1) < 1e-9 &&
+        Math.abs(hollow.from[2] - 20) < 1e-9 &&
+        Math.abs(hollow.to[2] - 19) < 1e-9,
+      `a box with 2 mm sides and a 1 mm lid reads ${hollow?.thickness}, from z ${hollow?.from[2]} to ${hollow?.to[2]}`,
+    )
   })
 
   return results

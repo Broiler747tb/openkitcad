@@ -44,7 +44,7 @@ If you designed the board yourself, File > Import KiCad Board reads a `.kicad_pc
 
 Export is STL, 3MF and OBJ for printing and rendering, STEP if you want to keep working in FreeCAD or Fusion, DXF and SVG for a laser cutter, and a drill template you can print at full size and tape to a project box. That last one is for anyone working with a hand drill and no machines, which is most people starting out.
 
-There's a clash checker that uses real boolean intersections rather than bounding boxes, a section view for looking inside an enclosure, and some print checks for overhangs, bed size and thin walls. If a step joins something on and it lands where there was nothing to join it to, the timeline says so rather than leaving you a floating pillar to find in the slicer. Light and dark themes, a view cube, a marking menu under the right mouse button, and the mouse scheme from Fusion, SolidWorks, Onshape or Tinkercad if your hands already know one of those.
+There's a clash checker that uses real boolean intersections rather than bounding boxes, a section view for looking inside an enclosure, and some print checks for overhangs, bed size and thin walls. The wall check casts a ray inward from every face and reports the thinnest wall it actually finds, not an average, and Show draws a measurement across it on the model, the same way Measure now draws its own. If a step joins something on and it lands where there was nothing to join it to, the timeline says so rather than leaving you a floating pillar to find in the slicer. Light and dark themes, a view cube, a marking menu under the right mouse button, and the mouse scheme from Fusion, SolidWorks, Onshape or Tinkercad if your hands already know one of those.
 
 On a laptop there is a Touchpad scheme, because every other one wants a middle button and a touchpad hasn't got one. Two fingers pan, pinch zooms, and Alt with two fingers orbits, and a speed slider beside the choice sets how far a gesture carries the model, because touchpads disagree wildly about how much one swipe is. A wheel still zooms if you plug a mouse in, so docking doesn't take the scroll wheel away from you.
 
@@ -141,8 +141,6 @@ The constraint solver is written from scratch, in `src/sketch/solver.ts`. Levenb
 Designs are version 2. Files written by 0.6 and earlier are refused on open rather than half-converted.
 
 ## What it doesn't do yet
-
-The wall thickness warning is an estimate from volume against surface area, not a real medial-axis measurement. The app says so where it reports it.
 
 Delete Face, Replace Face, non-uniform scale and IGES are out, because the bundled OpenCascade build doesn't carry them. Split is built out of booleans instead.
 

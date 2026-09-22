@@ -433,7 +433,9 @@ input[type='checkbox'] {
 
 .vp-label-measure {
   border-color: var(--okc-accent);
-  color: var(--okc-prehighlight);
+  background: var(--okc-accent);
+  color: var(--okc-text-on-accent);
+  font-weight: 600;
 }
 
 .vp-snap-hint {
@@ -761,6 +763,10 @@ input[type='checkbox'] {
   font-style: normal;
   color: var(--text-faint);
   margin-top: 3px;
+}
+
+.msg .msg-action {
+  margin-top: 6px;
 }
 
 /* -------------------------------------------------------------- tutorial */

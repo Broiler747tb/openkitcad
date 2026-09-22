@@ -1267,6 +1267,54 @@ export class ViewportEngine {
   setLabels(labels: Array<{ id: string; text: string; at: Vec3; kind: ScreenLabel['kind'] }>) {
     this.worldLabels = labels
   }
+
+  setMeasure(a: Vec3 | null, b: Vec3 | null, text = '') {
+    for (const child of [...this.measureGroup.children]) {
+      this.measureGroup.remove(child)
+      const object = child as THREE.Line | THREE.Points
+      object.geometry.dispose()
+      ;(object.material as THREE.Material).dispose()
+    }
+    this.measureLabels = []
+    if (!this.measureGroup.parent) this.overlayGroup.add(this.measureGroup)
+    const points = [a, b].filter((point): point is Vec3 => !!point)
+    if (!points.length) return
+    const colour = this.palette.selection
+    const dots = new THREE.Points(
+      new THREE.BufferGeometry().setFromPoints(points.map((point) => new THREE.Vector3(...point))),
+      new THREE.PointsMaterial({
+        color: colour,
+        size: 7,
+        sizeAttenuation: false,
+        depthTest: false,
+        depthWrite: false,
+      }),
+    )
+    dots.renderOrder = 10
+    this.measureGroup.add(dots)
+    if (!a || !b) return
+    const line = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...a), new THREE.Vector3(...b)]),
+      new THREE.LineBasicMaterial({ color: colour, depthTest: false, depthWrite: false }),
+    )
+    line.renderOrder = 10
+    this.measureGroup.add(line)
+    this.measureLabels = [
+      {
+        id: 'measure',
+        text,
+        at: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2],
+        kind: 'measure',
+      },
+    ]
+  }
+  private measureGroup = new THREE.Group()
+  private measureLabels: Array<{
+    id: string
+    text: string
+    at: Vec3
+    kind: ScreenLabel['kind']
+  }> = []
   private worldLabels: Array<{
     id: string
     text: string
@@ -2330,7 +2378,7 @@ export class ViewportEngine {
     if (this.onLabels) {
       const rect = this.renderer.domElement.getBoundingClientRect()
       const next: ScreenLabel[] = []
-      for (const label of [...this.worldLabels, ...this.dimensionLabels]) {
+      for (const label of [...this.worldLabels, ...this.dimensionLabels, ...this.measureLabels]) {
         const v = new THREE.Vector3(...label.at).project(this.camera)
         if (v.z > 1) continue
         next.push({

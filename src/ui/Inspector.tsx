@@ -1340,6 +1340,19 @@ function ToolsSection() {
           <div className={`msg ${w.severity === 'error' ? 'error' : 'warn'}`} key={i}>
             <strong>{w.message}</strong>
             {w.hint && <em>{w.hint}</em>}
+            {w.span && (
+              <button
+                className="tb msg-action"
+                onClick={() => {
+                  const span = w.span!
+                  store.clearMeasure()
+                  store.addMeasurePoint(span.from)
+                  store.addMeasurePoint(span.to)
+                }}
+              >
+                Show
+              </button>
+            )}
           </div>
         ))}
       </div>

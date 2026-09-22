@@ -898,6 +898,7 @@ export function Viewport() {
       cancelHold()
       engineRef.current?.setControlsEnabled(true)
       useStore.getState().setTool('select')
+      useStore.getState().clearMeasure()
       setMenu(null)
       setObjectMenu(null)
       forceRender((n) => n + 1)
@@ -913,6 +914,14 @@ export function Viewport() {
   useEffect(() => {
     engineRef.current?.setTouchpadSpeed(preferences.touchpadSpeed)
   }, [preferences.touchpadSpeed])
+
+  const measure = useStore((s) => s.measure)
+  const units = useStore((s) => s.doc.units)
+  useEffect(() => {
+    const { a, b } = measure
+    const text = a && b ? lengthLabel(Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]), units) : ''
+    engineRef.current?.setMeasure(a, b, text)
+  }, [measure, units])
 
   useEffect(() => {
     engineRef.current?.setPalette(readPalette())
@@ -2249,7 +2258,9 @@ export function Viewport() {
             title={
               label.kind === 'constraint'
                 ? `${constraintTitle(label.id)} - click to select, Delete to remove`
-                : 'Click to change this size'
+                : label.kind === 'measure'
+                  ? 'Measured distance'
+                  : 'Click to change this size'
             }
             onPointerDown={(e) => {
               if (!activeSketch) return
