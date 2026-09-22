@@ -189,6 +189,7 @@ export class ViewportEngine {
 
   private disposed = false
   private mouseScheme: MouseScheme = MOUSE_SCHEMES[DEFAULT_MOUSE_SCHEME]
+  private touchpadSpeed = 1
   private navigationEnabled = true
   private rightDrag: { x: number; y: number; moved: boolean } | null = null
   private rightDragged = false
@@ -303,7 +304,7 @@ export class ViewportEngine {
       'wheel',
       (event) => {
         if (!this.mouseScheme.gestures || !this.navigationEnabled) return
-        const gesture = resolveWheelGesture(this.mouseScheme, event)
+        const gesture = resolveWheelGesture(this.mouseScheme, event, false, this.touchpadSpeed)
         if (gesture.action !== 'pan' && gesture.action !== 'orbit') return
         event.preventDefault()
         event.stopPropagation()
@@ -2224,6 +2225,10 @@ export class ViewportEngine {
   setControlsEnabled(enabled: boolean) {
     this.navigationEnabled = enabled
     this.controls.enableRotate = enabled
+  }
+
+  setTouchpadSpeed(speed: number) {
+    this.touchpadSpeed = speed
   }
 
   setMouseScheme(scheme: MouseScheme) {

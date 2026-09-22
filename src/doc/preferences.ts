@@ -25,6 +25,7 @@ export const DEFAULT_PREFERENCES = {
   fitSnug: 0.2,
   fitSliding: 0.3,
   fitLoose: 0.45,
+  touchpadSpeed: 1,
 }
 export type Preferences = typeof DEFAULT_PREFERENCES
 const bounds: Partial<Record<keyof Preferences, [number, number]>> = {
@@ -39,6 +40,7 @@ const bounds: Partial<Record<keyof Preferences, [number, number]>> = {
   fitSnug: [0, 2],
   fitSliding: [0, 2],
   fitLoose: [0, 2],
+  touchpadSpeed: [0.25, 4],
 }
 export function normalizePreferences(input: Partial<Preferences>): Preferences {
   const out = { ...DEFAULT_PREFERENCES }

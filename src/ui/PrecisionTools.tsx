@@ -78,6 +78,23 @@ export function GridSettings() {
             Orbit: {summary.orbit.join(' or ')}. Pan: {summary.pan.join(' or ')}. Zoom:{' '}
             {summary.zoom.join(' or ')}.
           </small>
+          {scheme === 'touchpad' && (
+            <label className="precision-check">
+              Touchpad speed {p.touchpadSpeed.toFixed(2)}×
+              <input
+                aria-label="Touchpad speed"
+                type="range"
+                min="-2"
+                max="2"
+                step="0.05"
+                value={Math.log2(p.touchpadSpeed)}
+                onChange={(e) =>
+                  set({ touchpadSpeed: Math.round(2 ** Number(e.target.value) * 100) / 100 })
+                }
+                onDoubleClick={() => set({ touchpadSpeed: 1 })}
+              />
+            </label>
+          )}
           <div className="precision-presets">
             {[0.1, 0.5, 1, 5, 10].map((step) => (
               <button key={step} onClick={() => set({ gridStep: step })}>

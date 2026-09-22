@@ -46,7 +46,7 @@ Export is STL, 3MF and OBJ for printing and rendering, STEP if you want to keep 
 
 There's a clash checker that uses real boolean intersections rather than bounding boxes, a section view for looking inside an enclosure, and some print checks for overhangs, bed size and thin walls. If a step joins something on and it lands where there was nothing to join it to, the timeline says so rather than leaving you a floating pillar to find in the slicer. Light and dark themes, a view cube, a marking menu under the right mouse button, and the mouse scheme from Fusion, SolidWorks, Onshape or Tinkercad if your hands already know one of those.
 
-On a laptop there is a Touchpad scheme, because every other one wants a middle button and a touchpad hasn't got one. Two fingers pan, pinch zooms, and Alt with two fingers orbits. A wheel still zooms if you plug a mouse in, so docking doesn't take the scroll wheel away from you.
+On a laptop there is a Touchpad scheme, because every other one wants a middle button and a touchpad hasn't got one. Two fingers pan, pinch zooms, and Alt with two fingers orbits, and a speed slider beside the choice sets how far a gesture carries the model, because touchpads disagree wildly about how much one swipe is. A wheel still zooms if you plug a mouse in, so docking doesn't take the scroll wheel away from you.
 
 ## Support
 

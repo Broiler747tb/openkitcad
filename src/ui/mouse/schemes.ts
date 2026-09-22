@@ -229,6 +229,7 @@ export function resolveWheelGesture(
   scheme: MouseScheme,
   event: WheelEventLike,
   reverse = false,
+  speed = 1,
 ): WheelGesture {
   const zoom = (): WheelGesture => {
     const { direction } = resolveWheel(scheme, event.deltaY, reverse)
@@ -238,7 +239,7 @@ export function resolveWheelGesture(
   if (event.ctrlKey || event.metaKey) return zoom()
   if (wheelIsNotched(event)) return zoom()
   if (!event.deltaX && !event.deltaY) return { action: 'none' }
-  const move = { dx: event.deltaX, dy: event.deltaY }
+  const move = { dx: event.deltaX * speed, dy: event.deltaY * speed }
   return event.altKey ? { action: 'orbit', ...move } : { action: 'pan', ...move }
 }
 

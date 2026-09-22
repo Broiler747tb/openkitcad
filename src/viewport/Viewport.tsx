@@ -911,6 +911,10 @@ export function Viewport() {
   }, [schemeId])
 
   useEffect(() => {
+    engineRef.current?.setTouchpadSpeed(preferences.touchpadSpeed)
+  }, [preferences.touchpadSpeed])
+
+  useEffect(() => {
     engineRef.current?.setPalette(readPalette())
     setPaletteVersion((version) => version + 1)
   }, [theme])

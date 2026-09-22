@@ -11,6 +11,7 @@ import {
   BUTTON_BIT,
 } from '../ui/mouse/schemes'
 import { placeAround, type MenuRect } from '../ui/ContextMenu'
+import { DEFAULT_PREFERENCES, normalizePreferences } from '../doc/preferences'
 import type { TestResult } from './selftest'
 
 export function runUiTest(): TestResult[] {
@@ -93,6 +94,36 @@ export function runUiTest(): TestResult[] {
       return !needsMiddle('touchpad') && needsMiddle('fusion') && needsMiddle('solidworks')
     })(),
     'Fusion and SolidWorks reach pan or orbit only through the middle button; Touchpad does not',
+  )
+  check(
+    'touchpad speed scales panning and orbiting but not zooming',
+    (() => {
+      const pan = resolveWheelGesture(pad, { deltaX: 3, deltaY: -4 }, false, 2)
+      const orbit = resolveWheelGesture(pad, { deltaX: 3, deltaY: -4, altKey: true }, false, 0.5)
+      const zoom = resolveWheelGesture(pad, { deltaX: 0, deltaY: -9, ctrlKey: true }, false, 4)
+      const slow = resolveWheelGesture(pad, { deltaX: 0, deltaY: -9, ctrlKey: true }, false, 0.25)
+      return (
+        pan.action === 'pan' &&
+        pan.dx === 6 &&
+        pan.dy === -8 &&
+        orbit.action === 'orbit' &&
+        orbit.dx === 1.5 &&
+        orbit.dy === -2 &&
+        zoom.action === 'zoom' &&
+        slow.action === 'zoom' &&
+        zoom.direction === slow.direction
+      )
+    })(),
+    JSON.stringify(resolveWheelGesture(pad, { deltaX: 3, deltaY: -4 }, false, 2)),
+  )
+  check(
+    'a stored touchpad speed starts at 1 and is held between a quarter and four times',
+    DEFAULT_PREFERENCES.touchpadSpeed === 1 &&
+      normalizePreferences({ touchpadSpeed: 99 }).touchpadSpeed === 4 &&
+      normalizePreferences({ touchpadSpeed: 0 }).touchpadSpeed === 0.25 &&
+      normalizePreferences({ touchpadSpeed: Number.NaN }).touchpadSpeed === 1 &&
+      normalizePreferences({}).touchpadSpeed === 1,
+    `99 -> ${normalizePreferences({ touchpadSpeed: 99 }).touchpadSpeed}, 0 -> ${normalizePreferences({ touchpadSpeed: 0 }).touchpadSpeed}`,
   )
 
   const root = document.createElement('div')
