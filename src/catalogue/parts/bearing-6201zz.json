@@ -1,0 +1,25 @@
+{
+  "id": "bearing-6201zz",
+  "name": "6201ZZ ball bearing",
+  "category": "motion",
+  "popularity": 42,
+  "family": "ball-bearing",
+  "variant": "6201ZZ, 12 x 32 x 10 mm",
+  "summary": "12 mm bore, 32 mm outside, 10 mm wide. 12 mm bore, heavier than the 6001.",
+  "confidence": "datasheet",
+  "source": "6201 is a standard ISO 15 bearing size: 12 mm bore, 32 mm outside diameter, 10 mm width. ZZ means metal shields on both sides.",
+  "geometry": {
+    "kind": "bearing",
+    "innerDiameter": 12,
+    "outerDiameter": 32,
+    "width": 10
+  },
+  "tags": [
+    "6201",
+    "6201zz",
+    "bearing",
+    "ball",
+    "12mm",
+    "motion"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "bearing-625zz",
+  "name": "625ZZ ball bearing",
+  "category": "motion",
+  "popularity": 56,
+  "family": "ball-bearing",
+  "variant": "625ZZ, 5 x 16 x 5 mm",
+  "summary": "5 mm bore, 16 mm outside, 5 mm wide. Carries a 5 mm shaft, the same as a NEMA 17.",
+  "confidence": "datasheet",
+  "source": "625 is a standard ISO 15 bearing size: 5 mm bore, 16 mm outside diameter, 5 mm width. ZZ means metal shields on both sides.",
+  "geometry": {
+    "kind": "bearing",
+    "innerDiameter": 5,
+    "outerDiameter": 16,
+    "width": 5
+  },
+  "tags": [
+    "625",
+    "625zz",
+    "bearing",
+    "ball",
+    "5mm",
+    "motion"
+  ]
+}

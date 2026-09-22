@@ -1,0 +1,36 @@
+{
+  "id": "screw-m4-socket-16",
+  "name": "M4 x 16 socket head cap screw",
+  "category": "fastener",
+  "popularity": 70,
+  "family": "socket-cap-screw",
+  "variant": "M4 x 16 mm",
+  "summary": "Hex-socket cap screw. Head 7 mm across, 4 mm tall, 16 mm under the head.",
+  "confidence": "datasheet",
+  "source": "ISO 4762 nominal values for M4: head diameter 7 mm, head height 4 mm. Length is the shank under the head, which is how ISO 4762 sizes a cap screw.",
+  "geometry": {
+    "kind": "screw",
+    "thread": "M4",
+    "diameter": 4.0,
+    "length": 16,
+    "head": "socket",
+    "headDiameter": 7.0,
+    "headHeight": 4.0
+  },
+  "links": [
+    {
+      "label": "ISO metric screws",
+      "url": "https://en.wikipedia.org/wiki/ISO_metric_screw_thread"
+    }
+  ],
+  "tags": [
+    "m4",
+    "screw",
+    "bolt",
+    "cap",
+    "socket",
+    "iso4762",
+    "din912",
+    "fastener"
+  ]
+}

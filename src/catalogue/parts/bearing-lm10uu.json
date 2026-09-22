@@ -1,0 +1,41 @@
+{
+  "id": "bearing-lm10uu",
+  "name": "LM10UU linear bearing",
+  "category": "motion",
+  "popularity": 50,
+  "family": "linear-bearing",
+  "variant": "LM10UU, 10 mm rod, 29 mm long",
+  "summary": "Slides on a 10 mm smooth rod. 19 mm outside, 29 mm long.",
+  "confidence": "datasheet",
+  "source": "LM10UU standard dimensions: 10 mm bore for a 10 mm linear rod, 19 mm outside diameter, 29 mm length. Housings usually clamp on the outside diameter.",
+  "geometry": {
+    "kind": "bearing",
+    "innerDiameter": 10,
+    "outerDiameter": 19,
+    "width": 29
+  },
+  "keepouts": [
+    {
+      "id": "k-rod",
+      "label": "Rod passes through",
+      "x": 4.5,
+      "y": 4.5,
+      "w": 10,
+      "h": 10,
+      "z": -50,
+      "height": 129
+    }
+  ],
+  "look": {
+    "style": "linear"
+  },
+  "tags": [
+    "lm10uu",
+    "linear",
+    "bearing",
+    "10mm",
+    "rod",
+    "motion",
+    "slide"
+  ]
+}

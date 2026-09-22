@@ -3,6 +3,8 @@
   "name": "608ZZ ball bearing",
   "category": "motion",
   "popularity": 90,
+  "family": "ball-bearing",
+  "variant": "608ZZ, 8 x 22 x 7 mm",
   "summary": "8 mm bore, 22 mm outside, 7 mm wide. The skateboard bearing.",
   "confidence": "datasheet",
   "source": "608 is a standard ISO 15 bearing size: 8 mm bore, 22 mm outside diameter, 7 mm width. ZZ means metal shields on both sides.",
@@ -12,5 +14,12 @@
     "outerDiameter": 22,
     "width": 7
   },
-  "tags": ["608", "608zz", "bearing", "skate", "8mm", "motion"]
+  "tags": [
+    "608",
+    "608zz",
+    "bearing",
+    "skate",
+    "8mm",
+    "motion"
+  ]
 }

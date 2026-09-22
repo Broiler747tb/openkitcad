@@ -1,0 +1,41 @@
+{
+  "id": "bearing-lm6uu",
+  "name": "LM6UU linear bearing",
+  "category": "motion",
+  "popularity": 52,
+  "family": "linear-bearing",
+  "variant": "LM6UU, 6 mm rod, 19 mm long",
+  "summary": "Slides on a 6 mm smooth rod. 12 mm outside, 19 mm long.",
+  "confidence": "datasheet",
+  "source": "LM6UU standard dimensions: 6 mm bore for a 6 mm linear rod, 12 mm outside diameter, 19 mm length. Housings usually clamp on the outside diameter.",
+  "geometry": {
+    "kind": "bearing",
+    "innerDiameter": 6,
+    "outerDiameter": 12,
+    "width": 19
+  },
+  "keepouts": [
+    {
+      "id": "k-rod",
+      "label": "Rod passes through",
+      "x": 3.0,
+      "y": 3.0,
+      "w": 6,
+      "h": 6,
+      "z": -50,
+      "height": 119
+    }
+  ],
+  "look": {
+    "style": "linear"
+  },
+  "tags": [
+    "lm6uu",
+    "linear",
+    "bearing",
+    "6mm",
+    "rod",
+    "motion",
+    "slide"
+  ]
+}

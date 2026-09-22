@@ -1,0 +1,36 @@
+{
+  "id": "screw-m3-socket-8",
+  "name": "M3 x 8 socket head cap screw",
+  "category": "fastener",
+  "popularity": 88,
+  "family": "socket-cap-screw",
+  "variant": "M3 x 8 mm",
+  "summary": "Hex-socket cap screw. Head 5.5 mm across, 3 mm tall, 8 mm under the head.",
+  "confidence": "datasheet",
+  "source": "ISO 4762 nominal values for M3: head diameter 5.5 mm, head height 3 mm. Length is the shank under the head, which is how ISO 4762 sizes a cap screw.",
+  "geometry": {
+    "kind": "screw",
+    "thread": "M3",
+    "diameter": 3.0,
+    "length": 8,
+    "head": "socket",
+    "headDiameter": 5.5,
+    "headHeight": 3.0
+  },
+  "links": [
+    {
+      "label": "ISO metric screws",
+      "url": "https://en.wikipedia.org/wiki/ISO_metric_screw_thread"
+    }
+  ],
+  "tags": [
+    "m3",
+    "screw",
+    "bolt",
+    "cap",
+    "socket",
+    "iso4762",
+    "din912",
+    "fastener"
+  ]
+}

@@ -3,6 +3,8 @@
   "name": "M2.5 hex standoff, 10 mm",
   "category": "fastener",
   "popularity": 81,
+  "family": "hex-standoff",
+  "variant": "M2.5 x 10 mm, female both ends",
   "summary": "Brass female-female pillar. The usual way to lift a Pi off a plate.",
   "confidence": "datasheet",
   "source": "Standard M2.5 brass hex standoff: 5 mm across flats, threaded both ends. Length is the body only, excluding any male stud.",
@@ -13,5 +15,13 @@
     "acrossFlats": 5,
     "style": "female-female"
   },
-  "tags": ["standoff", "spacer", "pillar", "m2.5", "brass", "fastener", "pi"]
+  "tags": [
+    "standoff",
+    "spacer",
+    "pillar",
+    "m2.5",
+    "brass",
+    "fastener",
+    "pi"
+  ]
 }

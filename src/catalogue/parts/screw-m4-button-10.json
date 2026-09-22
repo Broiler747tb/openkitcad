@@ -1,0 +1,34 @@
+{
+  "id": "screw-m4-button-10",
+  "name": "M4 x 10 button head screw",
+  "category": "fastener",
+  "popularity": 58,
+  "family": "button-head-screw",
+  "variant": "M4 x 10 mm",
+  "summary": "Low domed head, 7.6 mm across and only 2.2 mm tall, for where a cap screw would stand proud.",
+  "confidence": "datasheet",
+  "source": "ISO 7380-1 nominal values for M4: head diameter 7.6 mm, head height 2.2 mm. Length is under the head.",
+  "geometry": {
+    "kind": "screw",
+    "thread": "M4",
+    "diameter": 4.0,
+    "length": 10,
+    "head": "button",
+    "headDiameter": 7.6,
+    "headHeight": 2.2
+  },
+  "links": [
+    {
+      "label": "ISO metric screws",
+      "url": "https://en.wikipedia.org/wiki/ISO_metric_screw_thread"
+    }
+  ],
+  "tags": [
+    "m4",
+    "screw",
+    "button",
+    "dome",
+    "iso7380",
+    "fastener"
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "id": "nema-8-stepper",
+  "name": "NEMA 8 stepper motor",
+  "category": "motor",
+  "popularity": 40,
+  "family": "nema-stepper",
+  "variant": "NEMA 8, 20 mm square",
+  "summary": "The smallest common stepper. Four M2 holes on a 16 mm square, 15 mm centring boss.",
+  "confidence": "datasheet",
+  "source": "NEMA ICS 16 fixes the size 8 faceplate: 16 mm between mounting holes, a 15 mm diameter centring boss 1.5 mm tall and a 4 mm shaft. The 20 mm body is the usual size for the frame. The four holes are tapped into the end cap. Body length, shaft length and winding vary by model: this entry uses a 30 mm body and a 10 mm shaft, so check the one you buy.",
+  "geometry": {
+    "kind": "motor",
+    "frame": 20.0,
+    "bodyLength": 30,
+    "shaftDiameter": 4,
+    "shaftLength": 10,
+    "bossDiameter": 15.0,
+    "bossHeight": 1.5,
+    "boltSpacing": 16.0
+  },
+  "mountingHoles": [
+    {
+      "id": "m1",
+      "x": 2.0,
+      "y": 2.0,
+      "diameter": 2.2,
+      "screw": "M2"
+    },
+    {
+      "id": "m2",
+      "x": 18.0,
+      "y": 2.0,
+      "diameter": 2.2,
+      "screw": "M2"
+    },
+    {
+      "id": "m3",
+      "x": 2.0,
+      "y": 18.0,
+      "diameter": 2.2,
+      "screw": "M2"
+    },
+    {
+      "id": "m4",
+      "x": 18.0,
+      "y": 18.0,
+      "diameter": 2.2,
+      "screw": "M2"
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-shaft",
+      "label": "Shaft and boss clearance",
+      "x": 1.5,
+      "y": 1.5,
+      "w": 17.0,
+      "h": 17.0,
+      "z": 30,
+      "height": 11.5
+    },
+    {
+      "id": "k-wires",
+      "label": "Wire exit",
+      "x": 0,
+      "y": 3.0,
+      "w": 8,
+      "h": 14,
+      "z": 0,
+      "height": 12
+    }
+  ],
+  "tags": [
+    "nema",
+    "nema8",
+    "stepper",
+    "motor",
+    "cnc",
+    "printer"
+  ]
+}

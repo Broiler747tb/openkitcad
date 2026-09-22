@@ -1,0 +1,25 @@
+{
+  "id": "bearing-688zz",
+  "name": "688ZZ ball bearing",
+  "category": "motion",
+  "popularity": 50,
+  "family": "ball-bearing",
+  "variant": "688ZZ, 8 x 16 x 5 mm",
+  "summary": "8 mm bore, 16 mm outside, 5 mm wide. Thin 8 mm bearing where a 608 is too fat.",
+  "confidence": "datasheet",
+  "source": "688 is a standard ISO 15 bearing size: 8 mm bore, 16 mm outside diameter, 5 mm width. ZZ means metal shields on both sides.",
+  "geometry": {
+    "kind": "bearing",
+    "innerDiameter": 8,
+    "outerDiameter": 16,
+    "width": 5
+  },
+  "tags": [
+    "688",
+    "688zz",
+    "bearing",
+    "ball",
+    "8mm",
+    "motion"
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "id": "nema-11-stepper",
+  "name": "NEMA 11 stepper motor",
+  "category": "motor",
+  "popularity": 46,
+  "family": "nema-stepper",
+  "variant": "NEMA 11, 28 mm square",
+  "summary": "Small stepper for light axes and extruders. Four M2.5 holes on a 23 mm square, 22 mm centring boss.",
+  "confidence": "datasheet",
+  "source": "NEMA ICS 16 fixes the size 11 faceplate: 23 mm between mounting holes, a 22 mm diameter centring boss 2 mm tall and a 5 mm shaft. The 28 mm body is the usual size for the frame. The four holes are tapped into the end cap. Body length, shaft length and winding vary by model: this entry uses a 32 mm body and a 20 mm shaft, so check the one you buy.",
+  "geometry": {
+    "kind": "motor",
+    "frame": 28.0,
+    "bodyLength": 32,
+    "shaftDiameter": 5,
+    "shaftLength": 20,
+    "bossDiameter": 22.0,
+    "bossHeight": 2.0,
+    "boltSpacing": 23.0
+  },
+  "mountingHoles": [
+    {
+      "id": "m1",
+      "x": 2.5,
+      "y": 2.5,
+      "diameter": 2.7,
+      "screw": "M2.5"
+    },
+    {
+      "id": "m2",
+      "x": 25.5,
+      "y": 2.5,
+      "diameter": 2.7,
+      "screw": "M2.5"
+    },
+    {
+      "id": "m3",
+      "x": 2.5,
+      "y": 25.5,
+      "diameter": 2.7,
+      "screw": "M2.5"
+    },
+    {
+      "id": "m4",
+      "x": 25.5,
+      "y": 25.5,
+      "diameter": 2.7,
+      "screw": "M2.5"
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-shaft",
+      "label": "Shaft and boss clearance",
+      "x": 2.0,
+      "y": 2.0,
+      "w": 24.0,
+      "h": 24.0,
+      "z": 32,
+      "height": 22.0
+    },
+    {
+      "id": "k-wires",
+      "label": "Wire exit",
+      "x": 0,
+      "y": 7.0,
+      "w": 8,
+      "h": 14,
+      "z": 0,
+      "height": 12
+    }
+  ],
+  "tags": [
+    "nema",
+    "nema11",
+    "stepper",
+    "motor",
+    "cnc",
+    "printer"
+  ]
+}

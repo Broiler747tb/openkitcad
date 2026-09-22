@@ -1,0 +1,25 @@
+{
+  "id": "bearing-6200zz",
+  "name": "6200ZZ ball bearing",
+  "category": "motion",
+  "popularity": 46,
+  "family": "ball-bearing",
+  "variant": "6200ZZ, 10 x 30 x 9 mm",
+  "summary": "10 mm bore, 30 mm outside, 9 mm wide. 10 mm bore, heavier than the 6000.",
+  "confidence": "datasheet",
+  "source": "6200 is a standard ISO 15 bearing size: 10 mm bore, 30 mm outside diameter, 9 mm width. ZZ means metal shields on both sides.",
+  "geometry": {
+    "kind": "bearing",
+    "innerDiameter": 10,
+    "outerDiameter": 30,
+    "width": 9
+  },
+  "tags": [
+    "6200",
+    "6200zz",
+    "bearing",
+    "ball",
+    "10mm",
+    "motion"
+  ]
+}

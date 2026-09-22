@@ -1,0 +1,25 @@
+{
+  "id": "bearing-6001zz",
+  "name": "6001ZZ ball bearing",
+  "category": "motion",
+  "popularity": 44,
+  "family": "ball-bearing",
+  "variant": "6001ZZ, 12 x 28 x 8 mm",
+  "summary": "12 mm bore, 28 mm outside, 8 mm wide. 12 mm bore, light series.",
+  "confidence": "datasheet",
+  "source": "6001 is a standard ISO 15 bearing size: 12 mm bore, 28 mm outside diameter, 8 mm width. ZZ means metal shields on both sides.",
+  "geometry": {
+    "kind": "bearing",
+    "innerDiameter": 12,
+    "outerDiameter": 28,
+    "width": 8
+  },
+  "tags": [
+    "6001",
+    "6001zz",
+    "bearing",
+    "ball",
+    "12mm",
+    "motion"
+  ]
+}

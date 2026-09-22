@@ -1,0 +1,25 @@
+{
+  "id": "bearing-623zz",
+  "name": "623ZZ ball bearing",
+  "category": "motion",
+  "popularity": 58,
+  "family": "ball-bearing",
+  "variant": "623ZZ, 3 x 10 x 4 mm",
+  "summary": "3 mm bore, 10 mm outside, 4 mm wide. A small bearing for M3 idlers and filament guides.",
+  "confidence": "datasheet",
+  "source": "623 is a standard ISO 15 bearing size: 3 mm bore, 10 mm outside diameter, 4 mm width. ZZ means metal shields on both sides.",
+  "geometry": {
+    "kind": "bearing",
+    "innerDiameter": 3,
+    "outerDiameter": 10,
+    "width": 4
+  },
+  "tags": [
+    "623",
+    "623zz",
+    "bearing",
+    "ball",
+    "3mm",
+    "motion"
+  ]
+}

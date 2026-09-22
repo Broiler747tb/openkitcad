@@ -19,6 +19,11 @@
     "category": "connector",
     "summary": "Headphone sockets for a panel or a board edge."
   },
+  "ball-bearing": {
+    "name": "Ball bearing",
+    "category": "motion",
+    "summary": "Standard ISO 15 deep-groove bearings, 3 to 12 mm bore."
+  },
   "barrel-jack": {
     "name": "DC barrel jack",
     "category": "connector",
@@ -39,10 +44,20 @@
     "category": "power",
     "summary": "Steps a higher voltage down, e.g. 12 V to 5 V."
   },
+  "button-head-screw": {
+    "name": "Button head screw",
+    "category": "fastener",
+    "summary": "ISO 7380 low domed heads, for where a cap screw would stand proud."
+  },
   "character-lcd": {
     "name": "Character LCD",
     "category": "display",
     "summary": "HD44780 text displays with a backlight."
+  },
+  "countersunk-screw": {
+    "name": "Countersunk screw",
+    "category": "fastener",
+    "summary": "ISO 10642 flat heads that sit flush in a 90 degree countersink."
   },
   "d1-mini": {
     "name": "D1 mini",
@@ -64,6 +79,11 @@
     "category": "fastener",
     "summary": "Brass threaded insert melted into a printed part."
   },
+  "hex-standoff": {
+    "name": "Hex standoff",
+    "category": "fastener",
+    "summary": "Threaded pillars for lifting a board off a plate."
+  },
   "hx711-board": {
     "name": "HX711 load cell amplifier",
     "category": "sensor",
@@ -73,6 +93,11 @@
     "name": "IEC C14 mains inlet",
     "category": "connector",
     "summary": "The socket a kettle lead plugs into, plain or with a fuse."
+  },
+  "linear-bearing": {
+    "name": "Linear bearing",
+    "category": "motion",
+    "summary": "LM..UU bearings that slide along a smooth rod."
   },
   "lipo-charger": {
     "name": "Lithium charger",
@@ -88,6 +113,11 @@
     "name": "MPU-6050 motion sensor",
     "category": "sensor",
     "summary": "Accelerometer and gyro boards on I2C."
+  },
+  "nema-stepper": {
+    "name": "NEMA stepper motor",
+    "category": "motor",
+    "summary": "Steppers on the NEMA faceplates, from size 8 to size 23."
   },
   "nodemcu": {
     "name": "NodeMCU",
@@ -128,6 +158,11 @@
     "name": "Rotary encoder",
     "category": "control",
     "summary": "Endless knobs with detents and a push switch."
+  },
+  "socket-cap-screw": {
+    "name": "Socket cap screw",
+    "category": "fastener",
+    "summary": "ISO 4762 hex-socket screws, M2 to M5, in the lengths people actually buy."
   },
   "stepper-driver": {
     "name": "Stepper driver carrier",

@@ -1,0 +1,34 @@
+{
+  "id": "screw-m3-button-12",
+  "name": "M3 x 12 button head screw",
+  "category": "fastener",
+  "popularity": 66,
+  "family": "button-head-screw",
+  "variant": "M3 x 12 mm",
+  "summary": "Low domed head, 5.7 mm across and only 1.65 mm tall, for where a cap screw would stand proud.",
+  "confidence": "datasheet",
+  "source": "ISO 7380-1 nominal values for M3: head diameter 5.7 mm, head height 1.65 mm. Length is under the head.",
+  "geometry": {
+    "kind": "screw",
+    "thread": "M3",
+    "diameter": 3.0,
+    "length": 12,
+    "head": "button",
+    "headDiameter": 5.7,
+    "headHeight": 1.65
+  },
+  "links": [
+    {
+      "label": "ISO metric screws",
+      "url": "https://en.wikipedia.org/wiki/ISO_metric_screw_thread"
+    }
+  ],
+  "tags": [
+    "m3",
+    "screw",
+    "button",
+    "dome",
+    "iso7380",
+    "fastener"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "id": "screw-m4-countersunk-12",
+  "name": "M4 x 12 countersunk screw",
+  "category": "fastener",
+  "popularity": 54,
+  "family": "countersunk-screw",
+  "variant": "M4 x 12 mm",
+  "summary": "Sits flush in a 90 degree countersink, head 8.96 mm across. 12 mm long overall.",
+  "confidence": "datasheet",
+  "source": "ISO 10642 values for M4: theoretical head diameter 8.96 mm, head height 2.48 mm, 90 degree head. Unlike a cap screw, a countersunk screw is measured including its head, so 12 mm is the whole screw.",
+  "geometry": {
+    "kind": "screw",
+    "thread": "M4",
+    "diameter": 4.0,
+    "length": 12,
+    "head": "countersunk",
+    "headDiameter": 8.96,
+    "headHeight": 2.48
+  },
+  "links": [
+    {
+      "label": "ISO metric screws",
+      "url": "https://en.wikipedia.org/wiki/ISO_metric_screw_thread"
+    }
+  ],
+  "tags": [
+    "m4",
+    "screw",
+    "countersunk",
+    "flush",
+    "flat",
+    "iso10642",
+    "din7991",
+    "fastener"
+  ]
+}

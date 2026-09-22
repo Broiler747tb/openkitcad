@@ -312,8 +312,9 @@ export function buildPartLocal(part: CataloguePart, overrides?: Record<string, n
 
     case 'insert': {
       const r = g.outerDiameter / 2
+      const bore = Math.max(0.6, (Number(g.thread.replace(/[^0-9.]/g, '')) || 3) / 2)
       return makeCylinder(r, g.length, [r, r, 0], [0, 0, 1]).cut(
-        makeCylinder(1.5, g.length + 2, [r, r, -1], [0, 0, 1]),
+        makeCylinder(bore, g.length + 2, [r, r, -1], [0, 0, 1]),
       )
     }
 

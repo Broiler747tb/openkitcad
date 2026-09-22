@@ -1,0 +1,41 @@
+{
+  "id": "bearing-lm8luu",
+  "name": "LM8LUU linear bearing",
+  "category": "motion",
+  "popularity": 54,
+  "family": "linear-bearing",
+  "variant": "LM8LUU, 8 mm rod, 45 mm long",
+  "summary": "The long LM8UU: one bearing where you would stack two. 15 mm outside, 45 mm long.",
+  "confidence": "datasheet",
+  "source": "LM8LUU standard dimensions: 8 mm bore for a 8 mm linear rod, 15 mm outside diameter, 45 mm length. Housings usually clamp on the outside diameter.",
+  "geometry": {
+    "kind": "bearing",
+    "innerDiameter": 8,
+    "outerDiameter": 15,
+    "width": 45
+  },
+  "keepouts": [
+    {
+      "id": "k-rod",
+      "label": "Rod passes through",
+      "x": 3.5,
+      "y": 3.5,
+      "w": 8,
+      "h": 8,
+      "z": -50,
+      "height": 145
+    }
+  ],
+  "look": {
+    "style": "linear"
+  },
+  "tags": [
+    "lm8luu",
+    "linear",
+    "bearing",
+    "8mm",
+    "rod",
+    "motion",
+    "slide"
+  ]
+}

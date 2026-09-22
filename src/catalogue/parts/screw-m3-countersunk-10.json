@@ -1,0 +1,36 @@
+{
+  "id": "screw-m3-countersunk-10",
+  "name": "M3 x 10 countersunk screw",
+  "category": "fastener",
+  "popularity": 64,
+  "family": "countersunk-screw",
+  "variant": "M3 x 10 mm",
+  "summary": "Sits flush in a 90 degree countersink, head 6.72 mm across. 10 mm long overall.",
+  "confidence": "datasheet",
+  "source": "ISO 10642 values for M3: theoretical head diameter 6.72 mm, head height 1.86 mm, 90 degree head. Unlike a cap screw, a countersunk screw is measured including its head, so 10 mm is the whole screw.",
+  "geometry": {
+    "kind": "screw",
+    "thread": "M3",
+    "diameter": 3.0,
+    "length": 10,
+    "head": "countersunk",
+    "headDiameter": 6.72,
+    "headHeight": 1.86
+  },
+  "links": [
+    {
+      "label": "ISO metric screws",
+      "url": "https://en.wikipedia.org/wiki/ISO_metric_screw_thread"
+    }
+  ],
+  "tags": [
+    "m3",
+    "screw",
+    "countersunk",
+    "flush",
+    "flat",
+    "iso10642",
+    "din7991",
+    "fastener"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "bearing-624zz",
+  "name": "624ZZ ball bearing",
+  "category": "motion",
+  "popularity": 60,
+  "family": "ball-bearing",
+  "variant": "624ZZ, 4 x 13 x 5 mm",
+  "summary": "4 mm bore, 13 mm outside, 5 mm wide. The common idler bearing on belt printers.",
+  "confidence": "datasheet",
+  "source": "624 is a standard ISO 15 bearing size: 4 mm bore, 13 mm outside diameter, 5 mm width. ZZ means metal shields on both sides.",
+  "geometry": {
+    "kind": "bearing",
+    "innerDiameter": 4,
+    "outerDiameter": 13,
+    "width": 5
+  },
+  "tags": [
+    "624",
+    "624zz",
+    "bearing",
+    "ball",
+    "4mm",
+    "motion"
+  ]
+}

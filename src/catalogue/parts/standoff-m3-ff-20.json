@@ -1,0 +1,27 @@
+{
+  "id": "standoff-m3-ff-20",
+  "name": "M3 hex standoff, 20 mm",
+  "category": "fastener",
+  "popularity": 62,
+  "family": "hex-standoff",
+  "variant": "M3 x 20 mm, female both ends",
+  "summary": "Brass female-female pillar for lifting a board off a plate with M3 screws.",
+  "confidence": "approximate",
+  "source": "Hex standoffs are not a standard. 5.5 mm across flats is what Wurth and Harwin make for M3, but the cheap kits are often 5 mm, so check yours before designing a tight pocket round one. The 20 mm is the body only, threaded both ends.",
+  "geometry": {
+    "kind": "standoff",
+    "thread": "M3",
+    "length": 20,
+    "acrossFlats": 5.5,
+    "style": "female-female"
+  },
+  "tags": [
+    "standoff",
+    "spacer",
+    "pillar",
+    "m3",
+    "brass",
+    "hex",
+    "fastener"
+  ]
+}

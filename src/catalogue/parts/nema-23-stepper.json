@@ -1,0 +1,81 @@
+{
+  "id": "nema-23-stepper",
+  "name": "NEMA 23 stepper motor",
+  "category": "motor",
+  "popularity": 64,
+  "family": "nema-stepper",
+  "variant": "NEMA 23, 56.4 mm square",
+  "summary": "The big stepper for CNC routers and mills. Four M5 holes on a 47.14 mm square, 38.1 mm centring boss.",
+  "confidence": "datasheet",
+  "source": "NEMA ICS 16 fixes the size 23 faceplate: 47.14 mm between mounting holes, a 38.1 mm diameter centring boss 1.6 mm tall and a 6.35 mm shaft. The 56.4 mm body is the usual size for the frame. The four holes go through a flange rather than being tapped, so the screws pass right through. Body length, shaft length and winding vary by model: this entry uses a 56 mm body and a 21 mm shaft, so check the one you buy.",
+  "geometry": {
+    "kind": "motor",
+    "frame": 56.4,
+    "bodyLength": 56,
+    "shaftDiameter": 6.35,
+    "shaftLength": 21,
+    "bossDiameter": 38.1,
+    "bossHeight": 1.6,
+    "boltSpacing": 47.14
+  },
+  "mountingHoles": [
+    {
+      "id": "m1",
+      "x": 4.63,
+      "y": 4.63,
+      "diameter": 5.1,
+      "screw": "M5"
+    },
+    {
+      "id": "m2",
+      "x": 51.77,
+      "y": 4.63,
+      "diameter": 5.1,
+      "screw": "M5"
+    },
+    {
+      "id": "m3",
+      "x": 4.63,
+      "y": 51.77,
+      "diameter": 5.1,
+      "screw": "M5"
+    },
+    {
+      "id": "m4",
+      "x": 51.77,
+      "y": 51.77,
+      "diameter": 5.1,
+      "screw": "M5"
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-shaft",
+      "label": "Shaft and boss clearance",
+      "x": 8.15,
+      "y": 8.15,
+      "w": 40.1,
+      "h": 40.1,
+      "z": 56,
+      "height": 22.6
+    },
+    {
+      "id": "k-wires",
+      "label": "Wire exit",
+      "x": 0,
+      "y": 21.2,
+      "w": 8,
+      "h": 14,
+      "z": 0,
+      "height": 12
+    }
+  ],
+  "tags": [
+    "nema",
+    "nema23",
+    "stepper",
+    "motor",
+    "cnc",
+    "printer"
+  ]
+}

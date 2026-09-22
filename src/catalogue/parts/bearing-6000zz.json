@@ -1,0 +1,25 @@
+{
+  "id": "bearing-6000zz",
+  "name": "6000ZZ ball bearing",
+  "category": "motion",
+  "popularity": 48,
+  "family": "ball-bearing",
+  "variant": "6000ZZ, 10 x 26 x 8 mm",
+  "summary": "10 mm bore, 26 mm outside, 8 mm wide. 10 mm bore, the next step up from a 608.",
+  "confidence": "datasheet",
+  "source": "6000 is a standard ISO 15 bearing size: 10 mm bore, 26 mm outside diameter, 8 mm width. ZZ means metal shields on both sides.",
+  "geometry": {
+    "kind": "bearing",
+    "innerDiameter": 10,
+    "outerDiameter": 26,
+    "width": 8
+  },
+  "tags": [
+    "6000",
+    "6000zz",
+    "bearing",
+    "ball",
+    "10mm",
+    "motion"
+  ]
+}
