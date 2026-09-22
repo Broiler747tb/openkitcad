@@ -31,6 +31,8 @@ jobs:
       # Fail the deploy rather than publish something that does not compile.
       - run: npm run typecheck
 
+      - run: npm run format:check
+
       - run: npx playwright install --with-deps chromium
 
       # Builds, then runs the whole ?selftest suite in Chromium against that

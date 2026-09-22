@@ -917,7 +917,9 @@ opening for its USB-C.
 ## 24. How the work is done
 
 - Agents never start other agents or workflows.
-- New and rewritten code has no comments. Touched files are formatted with Prettier.
+- New and rewritten code has no comments. Touched files are formatted with Prettier, and the
+  Pages workflow refuses to deploy a tree that `npm run format:check` rejects. `.gitattributes`
+  keeps every checkout LF, so the check agrees on Windows and Linux.
 - Commits go on `fusion`, in the repo's message style, and are pushed to `fusion`. `main`
   deploys GitHub Pages; it is only ever moved on by merging `fusion` into it, deliberately,
   when the whole suite is green — never committed to directly.

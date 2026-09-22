@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "npm run build && node scripts/selftest.mjs",
-    "format": "prettier --write src electron vite.config.ts",
+    "format": "prettier --write src electron scripts vite.config.ts",
+    "format:check": "prettier --check src electron scripts vite.config.ts",
     "dist:portable": "npm run build && electron-builder --win portable --x64",
     "android:apk": "npm run build && cd android && gradlew.bat assembleDebug"
   },
