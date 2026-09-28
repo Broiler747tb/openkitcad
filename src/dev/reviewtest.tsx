@@ -20,6 +20,8 @@ import { sketchRegions } from '../sketch/regions'
 import { emptySketch, type Sketch2D } from '../sketch/types'
 import { createMesh } from '../mesh/types'
 import { writeStlBinary } from '../mesh/stl'
+import { parse3mf } from '../mesh/threemf'
+import { strToU8, zipSync } from 'fflate'
 import { loadUserParts, refreshUserParts, upsertUserPart, userParts } from '../catalogue'
 import type { CataloguePart } from '../catalogue/types'
 import { kernel, requestBuild, stopKernel, useKernelActivity } from '../kernel/api'
@@ -797,6 +799,29 @@ export async function runReviewTest(): Promise<TestResult[]> {
         engine.dispose()
         host.remove()
       }
+    })
+
+    await check('3MF fan-out', () => {
+      const objects = Array.from({ length: 25 }, (_, i) =>
+        i < 24
+          ? `<object id="${i + 1}" type="model"><components><component objectid="${i + 2}"/><component objectid="${i + 2}"/></components></object>`
+          : `<object id="${i + 1}" type="model"><mesh><vertices><vertex x="0" y="0" z="0"/><vertex x="1" y="0" z="0"/><vertex x="0" y="1" z="0"/></vertices><triangles><triangle v1="0" v2="1" v3="2"/></triangles></mesh></object>`,
+      ).join('')
+      const model = `<?xml version="1.0"?><model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"><resources>${objects}</resources><build><item objectid="1"/></build></model>`
+      const bytes = zipSync({ '3D/3dmodel.model': strToU8(model) })
+      const started = performance.now()
+      let message = 'no error'
+      try {
+        parse3mf(bytes)
+      } catch (error) {
+        message = (error as Error).message
+      }
+      const seconds = (performance.now() - started) / 1000
+      add(
+        'a 3MF that nests components exponentially is refused quickly',
+        message.includes('places more than') && seconds < 5,
+        `${message} after ${seconds.toFixed(2)} s`,
+      )
     })
 
     await check('dropped files', async () => {

@@ -38,6 +38,9 @@ const UNIT_NAMES: Record<string, MeshUnit> = {
 
 const IDENTITY: Matrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
 
+const MAX_PLACED_OBJECTS = 100_000
+const MAX_TRIANGLES = 20_000_000
+
 const CORE_NAMESPACE = 'http://schemas.microsoft.com/3dmanufacturing/core/2015/02'
 const MODEL_RELATIONSHIP = 'http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel'
 
@@ -213,17 +216,30 @@ export function parse3mf(data: BinaryInput): NamedMesh[] {
   const root = load(rootPath)
   const factor = MILLIMETRES_PER_UNIT[root.unit]
   const results: NamedMesh[] = []
+  let placed = 0
+  let triangleTotal = 0
   root.items.forEach((item) => {
     const positions: number[] = []
     const triangles: number[] = []
     let firstName = ''
     const append = (path: string, objectId: string, matrix: Matrix, depth: number) => {
       if (depth > 64) throw new MeshError('The 3MF file has components that contain themselves.')
+      if (++placed > MAX_PLACED_OBJECTS) {
+        throw new MeshError(
+          `The 3MF file places more than ${MAX_PLACED_OBJECTS.toLocaleString()} objects, which is more than OpenKitCAD can hold.`,
+        )
+      }
       const object = load(path).objects.get(objectId)
       if (!object)
         throw new MeshError(`The 3MF file refers to object ${objectId}, which it does not define.`)
       if (!firstName && object.name) firstName = object.name
       if (object.hasMesh) {
+        triangleTotal += object.triangles.length / 3
+        if (triangleTotal > MAX_TRIANGLES) {
+          throw new MeshError(
+            `The 3MF file builds more than ${MAX_TRIANGLES.toLocaleString()} triangles, which is more than OpenKitCAD can hold.`,
+          )
+        }
         const base = positions.length / 3
         const count = object.positions.length / 3
         const m = matrix
