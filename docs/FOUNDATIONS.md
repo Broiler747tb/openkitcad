@@ -999,7 +999,8 @@ Mesh, a design opens, a KiCad board opens the import) instead of the browser nav
 the desktop build opens links in the system browser and never navigates away from the app. The
 viewport draws only when something changes, instead of every frame. Dragging in a sketch, moving a
 body with the gizmo and moving a component copy only the part of the design that changed. The
-Browser's move-up buttons check only the neighbour they would swap with. `tsconfig.json` now
+Browser's move-up buttons check only the neighbour they would swap with. A 3MF whose components
+fan out without end is refused at 100,000 placed objects or 20 million triangles. `tsconfig.json` now
 rejects unused locals, the Test workflow runs the suite on every push to `fusion`, and the test
 runner fails on uncaught page errors.
 
