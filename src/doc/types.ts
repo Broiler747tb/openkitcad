@@ -478,6 +478,22 @@ export interface ScrewLidFeature extends FeatureBase {
   capBodyId: string
 }
 
+export interface ThreadFeature extends FeatureBase {
+  kind: 'thread'
+  faces: ElementRef[]
+  anchors: Vec3[]
+  auto: boolean
+  nominal: number
+  pitch: number
+  modelled: boolean
+  lefthand: boolean
+  full: boolean
+  length: number
+  offset: number
+  clearance: number
+  fitClass?: FitClass
+}
+
 export type LidStyle = 'screws' | 'snap' | 'slide'
 
 export type MountKind = 'standoffs' | 'clips' | 'none'
@@ -846,6 +862,7 @@ export type Feature =
   | BoardClipsFeature
   | ScrewLidFeature
   | EnclosureFeature
+  | ThreadFeature
   | EmbossFeature
   | BodyPatternFeature
   | MirrorFeature
@@ -968,6 +985,7 @@ export const FEATURE_LABEL: Record<FeatureKind, string> = {
   boardClips: 'Board Clips',
   screwLid: 'Screw Lid',
   enclosure: 'Enclosure',
+  thread: 'Thread',
   move: 'Move',
   joint: 'Joint',
   jointOrigin: 'Joint Origin',
@@ -1036,6 +1054,7 @@ export const FEATURE_HINT: Record<FeatureKind, string> = {
   boardClips: 'Clips along two edges of a placed board that hold it without screws.',
   screwLid: 'A thread round an opening and a cap that screws onto it.',
   enclosure: 'A box round the parts you picked, with a lid and their mounts.',
+  thread: 'An ISO metric thread cut along a round face.',
   web: 'A set of thin walls along crossing sketch lines, grown down onto the part.',
   move: 'Moves and turns bodies by exact amounts.',
   joint: 'Holds two components together, with the motion left between them.',
@@ -1106,6 +1125,7 @@ export const FEATURE_ICON: Record<FeatureKind, string> = {
   boardClips: '⊐',
   screwLid: '⊚',
   enclosure: '▤',
+  thread: '≋',
   move: '✚',
   joint: '⚭',
   jointOrigin: '⊕',

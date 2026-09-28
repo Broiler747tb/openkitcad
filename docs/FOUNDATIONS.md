@@ -72,7 +72,8 @@ round the side of a cylinder (§16). Then Rib and Web, the thin walls that brace
 cable entries that get a lead out of a box (§19), the clips that hold a board without screws
 (§20), the screw lid that closes a round opening (§21), the enclosure that puts a box, a lid,
 mounts and openings round the parts you picked (§22), and the KiCad import that turns a board you
-designed into one of your own parts (§23).
+designed into one of your own parts (§23). After those eight, Thread (§24) closed the biggest gap
+left on the parity list.
 
 ## 3. Document model v2
 
@@ -914,7 +915,43 @@ holes, blocks, the rotated footprint's position and the ticked connector; checks
 catalogue validator; refuses a schematic; and builds an enclosure round the imported board with an
 opening for its USB-C.
 
-## 24. How the work is done
+## 24. Thread (EM)
+
+**Fusion's Thread, in ISO metric.** Thread takes one or more round faces, the side of a peg or the
+inside of a hole, and works out from the face which it is. A peg gets a bolt thread cut to size; a
+hole gets a tapped thread with the clearance added, since a printed bolt needs room to turn and
+bolts are cut to size. Size is Auto, the standard size whose major diameter fits the peg or whose
+minor diameter fits the hole, or any designation from M1.6 to M64 in coarse and fine pitches
+(`src/doc/threads.ts`). A size that plainly does not fit the face is an error that names the size
+that would, rather than a thread that cannot engage. Direction, Modelled, Full Length, Length and
+Offset follow Fusion. A thread that is not modelled leaves the part alone and only records the
+size. Each face keeps the point it was clicked at, and its thread starts at the end nearest that
+point. It is in the CREATE list.
+
+**How it is built.** `src/kernel/threadStep.ts` sweeps one profile, the ISO 68-1 basic profile
+with 30 degree flanks, along a helix. A bolt is turned down to its minor diameter over the thread
+and the thread fused back on; a hole has the thread, grown by the clearance, cut out of its wall.
+The clearance is a true offset of the flanks, so the gap between a bolt and its nut is the same all
+the way up. Both stop a little short of each end of the face, which leaves a plain lead at the tip,
+a relief at the root, and a lead-in at the mouth of a hole. The clearance is capped so the thread's
+crest survives; above the cap the step says how much room the pitch has.
+
+**The helix is our own.** Every failure on the way came back to replicad's `makeHelix`. It draws
+the helix as a line on a cylinder and lets OpenCascade approximate one 3D curve for the whole
+length, and past about five turns that curve drifts. Sweeps along it come out subtly wrong, and
+booleans with them silently change nothing, hang, or leave a body that cannot be displayed; a
+left-hand helix failed even when short. The step fits one B-spline edge through 24 points a turn
+(`makeBSplineApproximation`), which is accurate at any length and in either direction. Two other
+rules held throughout: a helical solid must not cross a flat end face of the body, so threads stop
+short of the ends; and building the helix from one edge per turn fixes the drift but breaks cuts,
+because the joins between turns confuse OpenCascade's classifier.
+
+**Tests.** `?selftest&suite=thread` checks the profile against the standard (a 30 degree flank, a
+uniform gap between a bolt and the nut cut for it), the size table, a bolt and a tapped hole, both
+directions, both ends of the face, a 19-turn bolt and a 16-turn hole cut the same way all along,
+Auto sizing, the errors for a mismatched size and the right tap drill, and the refusals.
+
+## 25. How the work is done
 
 - Agents never start other agents or workflows.
 - New and rewritten code has no comments. Touched files are formatted with Prettier, and the
@@ -981,6 +1018,11 @@ opening for its USB-C.
   headers: the pins go and the plated holes show. Tick Pin headers on the Pico: male pins appear under
   both long edges. Put a 3 mm plate just under the Nano, run the clearance check with and without its
   headers, and swap the Pico for a Pico 2 to see the pins stay. Undo back through every step.
+- **EM smoke test (thread).** Make a cylinder of radius 4 and height 12, and a 16 mm block with a
+  6.65 mm hole through it. Open CREATE > Thread, click the cylinder near its top and the inside of
+  the hole, and OK: the peg becomes an M8 bolt with a lead at the tip and the hole is tapped M8.
+  Double-click the step, choose Left Hand and a Full Length of off with Length 6, then OK. Choose
+  M10 as the size and read the error that names M8. Undo back through every step.
 - **EM smoke test (KiCad import).** Choose File > Import KiCad Board and open a `.kicad_pcb`. The
   dialog shows the board's size, its holes and every footprint, connectors first. Tick the USB
   socket, change a height, and choose Add it to my parts. Open the parts panel: the board is there

@@ -36,6 +36,8 @@ import { cableEntryCommand } from './specs/cable'
 import { boardClipsCommand } from './specs/clips'
 import { screwLidCommand } from './specs/screw'
 import { enclosureCommand, enclosureValues } from './specs/enclosure'
+import { threadCommand } from './specs/thread'
+import { designation } from '../../doc/threads'
 import { midplaneCommand, offsetPlaneCommand, planeAtAngleCommand } from './specs/construct'
 import {
   coilCommand,
@@ -100,6 +102,7 @@ export const COMMANDS: Readonly<Record<string, AnyCommandSpec>> = {
   boardClips: spec(boardClipsCommand),
   screwLid: spec(screwLidCommand),
   enclosure: spec(enclosureCommand),
+  thread: spec(threadCommand),
   revolve: spec(revolveCommand),
   box: spec(boxCommand),
   cylinder: spec(cylinderCommand),
@@ -270,6 +273,8 @@ function startOptions(id: string): CommandStart {
       return { initial: { board: selectedOccurrence(doc), body: bodies } }
     case 'screwLid':
       return { initial: { face: faces.slice(0, 1) } }
+    case 'thread':
+      return { initial: { faces } }
     case 'enclosure':
       return { initial: { parts: selectedOccurrence(doc) } }
     case 'rib':
@@ -413,6 +418,22 @@ function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, Comma
             nutRoom: feature.nutRoom,
           },
           ...(feature.barBodyId ? { ids: { bar: feature.barBodyId } } : {}),
+        },
+      ]
+    case 'thread':
+      return [
+        COMMANDS.thread,
+        {
+          initial: {
+            faces: feature.faces.flatMap((face) => elementPick(doc, face) ?? []),
+            size: feature.auto ? 'auto' : designation(feature.nominal, feature.pitch),
+            hand: feature.lefthand ? 'left' : 'right',
+            modelled: feature.modelled,
+            full: feature.full,
+            length: feature.length,
+            offset: feature.offset,
+            clearance: feature.clearance,
+          },
         },
       ]
     case 'enclosure':

@@ -48,6 +48,7 @@ import { runCableStep } from './cableSteps'
 import { runClipStep } from './clipSteps'
 import { runScrewStep } from './screwStep'
 import { runEnclosureStep } from './enclosureStep'
+import { runThreadStep } from './threadStep'
 import {
   featureDependencies,
   findBody,
@@ -1406,7 +1407,8 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
     runCableStep(feature, solidStage) ||
     runClipStep(feature, solidStage, doc) ||
     runScrewStep(feature, solidStage) ||
-    runEnclosureStep(feature, solidStage, doc)
+    runEnclosureStep(feature, solidStage, doc) ||
+    runThreadStep(feature, solidStage)
   ) {
     return
   }

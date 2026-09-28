@@ -114,6 +114,8 @@ export function featureModifiesBodies(feature: Feature): string[] {
       return [feature.bodyId]
     case 'screwLid':
       return [feature.face.bodyId]
+    case 'thread':
+      return [...new Set(feature.faces.map((face) => face.bodyId))]
     case 'rib':
     case 'web':
       return [feature.bodyId]

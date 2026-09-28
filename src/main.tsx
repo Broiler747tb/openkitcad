@@ -59,6 +59,7 @@ if (params.has('selftest') || params.has('kerneltest')) {
     ['screw', async () => (await import('./dev/screwtest')).runScrewTest()],
     ['enclosure', async () => (await import('./dev/enclosuretest')).runEnclosureTest()],
     ['kicad', async () => (await import('./dev/kicadtest')).runKicadTest()],
+    ['thread', async () => (await import('./dev/threadtest')).runThreadTest()],
   )
   const only = params.get('suite')?.split(',').filter(Boolean)
   ;(async () => {
