@@ -44,7 +44,7 @@ import {
   type RoledShape,
 } from './seeds'
 import { ShapeIndex } from './shapeIndex'
-import type { Topology } from './types'
+import type { History, Topology } from './types'
 
 export interface NamedShape {
   shape: OcShape
@@ -110,6 +110,7 @@ export interface DraftOptions extends BodyOptions {
   pullDirection: Vec3
   angle: number
   neutralPlane: { origin: Vec3; normal: Vec3 }
+  keepNames?: boolean
 }
 
 export interface MoveFacesOptions extends BodyOptions {
@@ -458,6 +459,48 @@ export function shell(oc: OC, options: ShellOptions): NamedShape {
   }
 }
 
+function edgeFaces(
+  faceEdges: readonly (readonly number[])[],
+  faceName: (face: number) => string | undefined,
+): Map<number, string> {
+  const names = new Map<number, string[]>()
+  faceEdges.forEach((edges, face) => {
+    const name = faceName(face)
+    if (!name) return
+    for (const edge of edges) names.set(edge, [...(names.get(edge) ?? []), name])
+  })
+  return new Map([...names].map(([edge, list]) => [edge, [...list].sort().join('&')]))
+}
+
+function carriedNames(
+  map: ElementMap<OcShape>,
+  history: History<OcShape>,
+): (result: Topology<OcShape>) => Seed<OcShape>[] {
+  return (result) => {
+    const seeds: Seed<OcShape>[] = []
+    const faces = new ShapeIndex<OcShape, number>(occShapeOps)
+    result.faces.forEach((face, index) => faces.set(face, index))
+    const faceNames = new Map<number, string>()
+    for (const element of map.elements('face')) {
+      const images = [...history.modified(element.shape), ...history.generated(element.shape)]
+      const at = faces.get(images.length === 1 ? images[0] : element.shape)
+      if (at === undefined) continue
+      faceNames.set(at, element.name)
+      if (images.length === 1) seeds.push({ shape: images[0], name: element.name, kind: 'face' })
+    }
+    const edgeNames = new Map<string, string | null>()
+    const before = edgeFaces(map.topology.faceEdges, (face) => map.elements('face')[face]?.name)
+    for (const [edge, key] of before) {
+      edgeNames.set(key, edgeNames.has(key) ? null : map.elements('edge')[edge].name)
+    }
+    for (const [edge, key] of edgeFaces(result.faceEdges, (face) => faceNames.get(face))) {
+      const name = edgeNames.get(key)
+      if (name) seeds.push({ shape: result.edges[edge], name, kind: 'edge' })
+    }
+    return seeds
+  }
+}
+
 export function draft(oc: OC, options: DraftOptions): NamedShape {
   const faces = resolveElements(options.body.map, options.bodyId, 'face', options.faces)
   const scratch = new Scratch()
@@ -478,9 +521,11 @@ export function draft(oc: OC, options: DraftOptions): NamedShape {
       }
     }
     build(oc, builder, 'Draft')
+    const history = draftHistory(oc, builder, scratch)
     return finish(oc, options.featureId, builder.Shape(), {
       inputs: [options.body.map],
-      history: draftHistory(oc, builder, scratch),
+      history,
+      seeds: options.keepNames ? carriedNames(options.body.map, history) : undefined,
     })
   } finally {
     scratch.release()

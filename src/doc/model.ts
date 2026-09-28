@@ -4,6 +4,7 @@ import type {
   BodyOperation,
   Component,
   ElementRef,
+  ExtentTarget,
   Feature,
   Matrix4,
   Occurrence,
@@ -157,9 +158,32 @@ export function featureModifiesBodies(feature: Feature): string[] {
   }
 }
 
+export function extrudeTargets(feature: Feature): ExtentTarget[] {
+  if (feature.kind !== 'extrude') return []
+  return [
+    ...(feature.extent === 'to' && feature.to ? [feature.to] : []),
+    ...(feature.twoSided && feature.secondExtent === 'to' && feature.secondTo
+      ? [feature.secondTo]
+      : []),
+    ...(feature.start === 'object' && feature.startPlane
+      ? [{ kind: 'plane' as const, plane: feature.startPlane }]
+      : []),
+  ]
+}
+
+function targetBody(target: ExtentTarget): string | null {
+  if (target.kind === 'body') return target.bodyId
+  if (target.kind === 'face') return target.face.bodyId
+  return target.plane.kind === 'face' ? target.plane.face.bodyId : null
+}
+
 export function featureReadsBodies(feature: Feature): string[] {
   const bodies: string[] = []
   if ('plane' in feature && feature.plane.kind === 'face') bodies.push(feature.plane.face.bodyId)
+  for (const target of extrudeTargets(feature)) {
+    const bodyId = targetBody(target)
+    if (bodyId) bodies.push(bodyId)
+  }
   if (feature.kind === 'constructionPlane') {
     for (const ref of [feature.base, feature.second]) {
       if (ref?.kind === 'face') bodies.push(ref.face.bodyId)
@@ -208,6 +232,11 @@ export function featureDependencies(doc: OkcDocument, feature: Feature): string[
         : []
   for (const ref of planeRefs) {
     if (ref?.kind === 'construction') dependencies.add(ref.featureId)
+  }
+  for (const target of extrudeTargets(feature)) {
+    if (target.kind === 'plane' && target.plane.kind === 'construction') {
+      dependencies.add(target.plane.featureId)
+    }
   }
   if (feature.kind === 'patch' || feature.kind === 'emboss') dependencies.add(feature.sketchId)
   if (feature.kind === 'rib' || feature.kind === 'web') dependencies.add(feature.sketchId)

@@ -27,7 +27,13 @@ import {
 import { holeCommand, pointOnFace, ventCommand } from './specs/placed'
 import { classGap, FIT_COMMANDS, fitEditOptions, fitStartOptions } from './specs/fit'
 import { boxCommand, cylinderCommand, sphereCommand, torusCommand } from './specs/primitives'
-import { operationValues, planeValues, profilePicksOf, resultIds } from './specs/shared'
+import {
+  operationValues,
+  planeValues,
+  profilePicksOf,
+  resultIds,
+  targetValues,
+} from './specs/shared'
 import { extrudeCommand, revolveCommand } from './specs/sketchBased'
 import { embossCommand } from './specs/emboss'
 import { ribCommand, webCommand } from './specs/rib'
@@ -521,9 +527,20 @@ function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, Comma
           ? {
               ...shared,
               surface: feature.surface === true,
-              direction: feature.symmetric ? 'symmetric' : 'one',
+              direction: feature.symmetric ? 'symmetric' : feature.twoSided ? 'two' : 'one',
+              measure: feature.halfLength ? 'half' : 'whole',
               distance: feature.distance,
               flip: feature.reverse,
+              extent: feature.extent ?? 'distance',
+              object: targetValues(doc, feature.to),
+              taper: feature.draftAngle ?? 0,
+              extentTwo: feature.secondExtent ?? 'distance',
+              distanceTwo: feature.secondDistance ?? 5,
+              objectTwo: targetValues(doc, feature.secondTo),
+              taperTwo: feature.secondDraftAngle ?? 0,
+              start: feature.start ?? 'profile',
+              startOffset: feature.startOffset ?? 0,
+              startObject: feature.startPlane ? planeValues(doc, feature.startPlane) : [],
             }
           : {
               ...shared,
@@ -533,6 +550,9 @@ function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, Comma
                 : [],
               axis: feature.axis,
               angle: feature.angle,
+              direction: feature.symmetric ? 'symmetric' : feature.twoSided ? 'two' : 'one',
+              angleTwo: feature.secondAngle ?? 90,
+              flip: feature.reverse === true,
             }
       return [variantOf(feature.kind, feature.surface), { initial, ids: resultIds(feature.result) }]
     }

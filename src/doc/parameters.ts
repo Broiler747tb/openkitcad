@@ -8,10 +8,14 @@ const fields = [
   'radius',
   'diameter',
   'distance',
+  'secondDistance',
+  'startOffset',
   'thickness',
   'angle',
+  'secondAngle',
   'cornerRadius',
   'draftAngle',
+  'secondDraftAngle',
   'outerDiameter',
   'boreDiameter',
   'boreDepth',
@@ -91,18 +95,22 @@ export function resolveParameters(doc: OkcDocument, dropMissing = false): void {
     const zeroAllowed = [
       'cornerRadius',
       'draftAngle',
+      'secondDraftAngle',
+      'secondAngle',
       'boreDiameter',
       'boreDepth',
       'gap',
       'inset',
       'clearance',
     ].includes(link.field)
+    const free = link.field === 'startOffset'
     const signed =
-      (feature.kind === 'extrude' && link.field === 'distance') ||
+      (feature.kind === 'extrude' &&
+        (link.field === 'distance' || link.field === 'secondDistance')) ||
       ((feature.kind === 'box' || feature.kind === 'cylinder') && link.field === 'height')
     if (
       Math.abs(value) > 1e6 ||
-      (!isAngle && (signed ? value === 0 : zeroAllowed ? value < 0 : value <= 0))
+      (!isAngle && !free && (signed ? value === 0 : zeroAllowed ? value < 0 : value <= 0))
     )
       throw new Error(`Invalid dimension for ${feature.name}.${link.field}: ${value}`)
     writes.push({ feature, field: link.field, value })

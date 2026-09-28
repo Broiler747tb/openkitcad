@@ -85,6 +85,15 @@ export interface SketchFeature extends FeatureBase {
   visible: boolean
 }
 
+export type ExtentKind = 'distance' | 'to' | 'all'
+
+export type ExtentTarget =
+  | { kind: 'plane'; plane: PlaneRef }
+  | { kind: 'face'; face: ElementRef }
+  | { kind: 'body'; bodyId: string }
+
+export type ExtrudeStart = 'profile' | 'offset' | 'object'
+
 export interface ExtrudeFeature extends FeatureBase {
   surface?: boolean
   kind: 'extrude'
@@ -94,6 +103,17 @@ export interface ExtrudeFeature extends FeatureBase {
   symmetric: boolean
   reverse: boolean
   draftAngle?: number
+  twoSided?: boolean
+  halfLength?: boolean
+  extent?: ExtentKind
+  to?: ExtentTarget
+  secondExtent?: ExtentKind
+  secondDistance?: number
+  secondTo?: ExtentTarget
+  secondDraftAngle?: number
+  start?: ExtrudeStart
+  startOffset?: number
+  startPlane?: PlaneRef
   result: BodyOperation
 }
 
@@ -105,6 +125,10 @@ export interface RevolveFeature extends FeatureBase {
   angle: number
   axis: 'x' | 'y'
   axisLine?: string
+  reverse?: boolean
+  symmetric?: boolean
+  twoSided?: boolean
+  secondAngle?: number
   result: BodyOperation
 }
 

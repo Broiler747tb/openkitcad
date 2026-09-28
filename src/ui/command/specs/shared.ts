@@ -2,10 +2,16 @@ import { makeFrame, NAMED_FRAMES, v3, type Frame, type Vec2 } from '../../../cor
 import { findBody, findFeature } from '../../../doc/model'
 import { frameFromPlaneRefLocal } from '../../../doc/planes'
 import { useStore } from '../../../doc/store'
-import type { BodyOperation, OkcDocument, PlaneRef, SketchFeature } from '../../../doc/types'
+import type {
+  BodyOperation,
+  ExtentTarget,
+  OkcDocument,
+  PlaneRef,
+  SketchFeature,
+} from '../../../doc/types'
 import { cachedRegions } from '../../../sketch/regions'
 import { cachedTextProfiles } from '../../../sketch/text'
-import { bodyPick, pickSketchId, planePick, profilePick } from '../picks'
+import { bodyPick, elementPick, pickSketchId, planePick, profilePick } from '../picks'
 import type { CommandContext, CommandValue, LooseCommandValues, SelectionPick } from '../types'
 
 export function nameBody(doc: OkcDocument, bodyId: string, base: string) {
@@ -182,6 +188,25 @@ export function planeOf(picks: readonly SelectionPick[]): PlaneRef {
 
 export function planeValues(doc: OkcDocument, plane: PlaneRef): SelectionPick[] {
   const pick = planePick(doc, plane)
+  return pick ? [pick] : []
+}
+
+export function targetOf(picks: readonly SelectionPick[]): ExtentTarget | undefined {
+  const pick = picks[0]
+  if (pick?.face) return { kind: 'face', face: pick.face }
+  if (pick?.plane) return { kind: 'plane', plane: pick.plane }
+  if (pick?.kind === 'body' && pick.bodyId) return { kind: 'body', bodyId: pick.bodyId }
+  return undefined
+}
+
+export function targetValues(doc: OkcDocument, target?: ExtentTarget): SelectionPick[] {
+  if (!target) return []
+  const pick =
+    target.kind === 'plane'
+      ? planePick(doc, target.plane)
+      : target.kind === 'face'
+        ? elementPick(doc, target.face)
+        : bodyPick(doc, target.bodyId)
   return pick ? [pick] : []
 }
 

@@ -29,6 +29,8 @@ import type {
   ElementRef,
   Feature,
   HoleFeature,
+  ExtrudeFeature,
+  RevolveFeature,
   LidFeature,
   LidSide,
   Matrix4,
@@ -49,6 +51,7 @@ import { runClipStep } from './clipSteps'
 import { runScrewStep } from './screwStep'
 import { runEnclosureStep } from './enclosureStep'
 import { runThreadStep } from './threadStep'
+import { extrudeSolid } from './extentStep'
 import {
   featureDependencies,
   findBody,
@@ -70,7 +73,6 @@ import {
   common,
   cut,
   cylinder as namedCylinder,
-  extrude as namedExtrude,
   fillet as namedFillet,
   fuse,
   isPlanarFace,
@@ -82,6 +84,7 @@ import {
   sphere as namedSphere,
   torus as namedTorus,
   transformNamed,
+  transformNamedWith,
   type ElementMap,
   type NamedShape,
   type OC,
@@ -210,6 +213,34 @@ export function frameFromPlaneRef(
     )
   }
   return faceFrame(state, ref.face, ref.offset)
+}
+
+export function surfaceSpan(feature: ExtrudeFeature): { start: number; length: number } {
+  const distance = feature.reverse ? -feature.distance : feature.distance
+  if (feature.symmetric) {
+    const whole = feature.halfLength ? 2 * Math.abs(distance) : Math.abs(distance)
+    return { start: -whole / 2, length: whole }
+  }
+  if (!feature.twoSided) return { start: 0, length: distance }
+  const way = feature.reverse ? -1 : 1
+  const ends = [distance, -way * (feature.secondDistance ?? feature.distance)]
+  const low = Math.min(0, ...ends)
+  return { start: low, length: Math.max(0, ...ends) - low }
+}
+
+export function revolveSweep(feature: RevolveFeature): { from: number; sweep: number } {
+  const angle = feature.angle > 0 && feature.angle < 360 ? feature.angle : 360
+  const way = feature.reverse ? -1 : 1
+  const ends = feature.symmetric
+    ? [angle / 2, -angle / 2]
+    : feature.twoSided
+      ? [way * angle, -way * Math.max(0, feature.secondAngle ?? 0)]
+      : [way * angle]
+  const low = Math.min(0, ...ends)
+  const high = Math.max(0, ...ends)
+  if (high - low >= 360) return { from: 0, sweep: 360 }
+  if (!feature.symmetric && !feature.twoSided) return { from: 0, sweep: way * angle }
+  return { from: low, sweep: high - low }
 }
 
 export function revolveAxis(
@@ -1596,24 +1627,25 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
               ) as any
             ).wire
             if (feature.kind === 'extrude') {
-              const distance = feature.reverse ? -feature.distance : feature.distance
-              const start = feature.symmetric ? -Math.abs(distance) / 2 : 0
-              const length = feature.symmetric ? Math.abs(distance) : distance
+              const { start, length } = surfaceSpan(feature)
               const shifted = start ? wire.translate(v3.scale(plane.normal, start)) : wire
               const vector = new ocAny.gp_Vec_4(...v3.scale(plane.normal, length))
               const prism = new ocAny.BRepPrimAPI_MakePrism_1(shifted.wrapped, vector, false, true)
               owned.push(vector, prism)
               assembler.Add(compound, prism.Shape())
             } else {
+              const { from, sweep } = revolveSweep(feature)
+              const turned = from
+                ? wire.rotate(from, surfaceAxis!.origin, surfaceAxis!.direction)
+                : wire
               const axis = new ocAny.gp_Ax1_2(
                 new ocAny.gp_Pnt_3(...surfaceAxis!.origin),
                 new ocAny.gp_Dir_4(...surfaceAxis!.direction),
               )
-              const angle = feature.angle > 0 && feature.angle < 360 ? feature.angle : 360
               const revolution = new ocAny.BRepPrimAPI_MakeRevol_1(
-                wire.wrapped,
+                turned.wrapped,
                 axis,
-                (angle * Math.PI) / 180,
+                (sweep * Math.PI) / 180,
                 false,
               )
               owned.push(axis, revolution)
@@ -1639,23 +1671,18 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
         stage.planes.get(sketchFeature.id) ??
         frameFromPlaneRef(sketchFeature.plane, stage.bodies, stage.planes)
       if (feature.kind === 'extrude') {
-        const distance = feature.reverse ? -feature.distance : feature.distance
-        const offset = feature.symmetric ? -Math.abs(distance) / 2 : 0
-        const length = feature.symmetric ? Math.abs(distance) : distance
-        const plane: Frame = {
-          ...frame,
-          origin: v3.add(frame.origin, v3.scale(frame.normal, offset)),
-        }
-        const face = profileFace(profile.drawing, plane)
         apply(
           feature.result,
-          namedExtrude(oc, {
-            featureId: feature.id,
-            profile: face.wrapped,
+          extrudeSolid({
+            oc,
+            feature,
             sketch: sketchFeature.sketch,
             pieces: profile.pieces,
-            frame: plane,
-            vector: v3.scale(frame.normal, length),
+            frame,
+            face: (at) => profileFace(profile.drawing, at),
+            bodies: stage.bodies,
+            plane: (ref) => frameFromPlaneRef(ref, stage.bodies, stage.planes),
+            bodyName,
           }),
         )
       } else {
@@ -1669,19 +1696,38 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
           return
         }
         const face = profileFace(profile.drawing, frame)
-        apply(
-          feature.result,
-          namedRevolve(oc, {
-            featureId: feature.id,
-            profile: face.wrapped,
-            sketch: sketchFeature.sketch,
-            pieces: profile.pieces,
-            frame,
-            axisOrigin: axis.origin,
-            axisDirection: axis.direction,
-            angle: feature.angle > 0 && feature.angle < 360 ? feature.angle : 360,
-          }),
-        )
+        const { from, sweep } = revolveSweep(feature)
+        const revolved = namedRevolve(oc, {
+          featureId: feature.id,
+          profile: face.wrapped,
+          sketch: sketchFeature.sketch,
+          pieces: profile.pieces,
+          frame,
+          axisOrigin: axis.origin,
+          axisDirection: axis.direction,
+          angle: sweep,
+        })
+        if (!from) {
+          apply(feature.result, revolved)
+          return
+        }
+        let turned: NamedShape
+        try {
+          turned = transformNamedWith(oc, feature.id, revolved, (trsf, scratch) =>
+            trsf.SetRotation_1(
+              scratch.track(
+                new (oc as any).gp_Ax1_2(
+                  scratch.track(new (oc as any).gp_Pnt_3(...axis.origin)),
+                  scratch.track(new (oc as any).gp_Dir_4(...axis.direction)),
+                ),
+              ),
+              (from * Math.PI) / 180,
+            ),
+          )
+        } finally {
+          releaseNamed([revolved])
+        }
+        apply(feature.result, turned)
       }
       return
     }

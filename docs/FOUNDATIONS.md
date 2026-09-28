@@ -74,6 +74,7 @@ cable entries that get a lead out of a box (§19), the clips that hold a board w
 mounts and openings round the parts you picked (§22), and the KiCad import that turns a board you
 designed into one of your own parts (§23). After those eight, Thread (§24) closed the biggest gap
 left on the parity list, and a review of the whole code base (§25) fixed what it found.
+Extrude and Revolve then got the rest of Fusion's dialog (§26).
 
 ## 3. Document model v2
 
@@ -1004,7 +1005,38 @@ fan out without end is refused at 100,000 placed objects or 20 million triangles
 rejects unused locals, the Test workflow runs the suite on every push to `fusion`, and the test
 runner fails on uncaught page errors.
 
-## 26. How the work is done
+## 26. Extrude and Revolve extents
+
+**Fusion's Extrude dialog.** Start is Profile Plane, Offset, or Object (a flat face or plane
+parallel to the sketch). Direction is One Side, Two Sides or Symmetric, and Symmetric measures the
+Whole Length or the Half Length. Each side has an Extent Type: Distance, To Object (a face, a
+plane or a body, whether flat, tilted or curved) or All (through everything in the way), and its
+own Taper Angle, positive opening out and negative closing in, as in Fusion. A plain extrude
+writes none of the new fields, so it builds and names exactly as before. Revolve gained One Side,
+Two Sides and Symmetric and a Flip. Surface extrudes and revolves take the same directions. Every
+distance, taper and angle can be linked to a parameter, the start offset included.
+
+**How it is built.** `src/kernel/extentStep.ts`. When every side is a plain distance, the extrude
+is still one prism, with the old names. Otherwise each side is its own prism, fused at the end
+(side 2's elements are named `id~2`). All reaches past the far side of every body in the design.
+To Object stops at a plane by cutting away a half-space beyond it, so a tilted plane gives a
+tilted end. For a curved face or a body, the prism is split where it meets the target (a general
+fuse), and everything but the pieces still touching the start is cut away in one named cut, so
+the kept piece keeps its clean names and the new end face is named `id:to:…`. If a piece still
+reaches the far end, part of the profile missed the target, and the step says it reaches past
+the edge; a target behind a one-sided profile flips the direction, and a face that runs along the
+extrusion is refused. Taper is a draft of the side faces about the start plane. The draft carries
+every face name across and every edge name by the pair of faces it lies between, so a fillet on
+a tapered extrude still finds its edge. Revolve builds the whole sweep and turns it back by the
+second angle, which keeps its names.
+
+**Tests.** `?selftest&suite=extent` checks each direction, start and extent against hand-worked
+volumes: a through-all cut, a cylinder stopped by a plane, a tilted plane, a curved face and a
+body, square and round frustums for both taper signs, two differently tapered sides, the revolve
+directions, the refusals, the names a taper keeps, the dependencies, the parameter links and the
+panel's output.
+
+## 27. How the work is done
 
 - Agents never start other agents or workflows.
 - New and rewritten code has no comments. Touched files are formatted with Prettier, and the
@@ -1072,6 +1104,11 @@ runner fails on uncaught page errors.
   headers: the pins go and the plated holes show. Tick Pin headers on the Pico: male pins appear under
   both long edges. Put a 3 mm plate just under the Nano, run the clearance check with and without its
   headers, and swap the Pico for a Pico 2 to see the pins stay. Undo back through every step.
+- **Extent smoke test.** Put a sketch circle 5 mm above a 20 mm block and extrude it: choose Flip,
+  Extent Type All and Cut, and a hole goes right through. Edit it, choose To Object, New Body and
+  click the top of the block: a short cylinder fills the gap. Choose Two Sides with a Taper Angle
+  of 10 and a Side 2 Taper of -10 and watch both sides preview. Revolve a profile Symmetric and see
+  it sit evenly either side of the sketch. Undo back through every step.
 - **Review smoke test.** In a sketch, draw two joined lines, click their shared corner and press
   Delete: both lines go and the app carries on. Undo, open Box and press Ctrl+Z: nothing happens
   until the panel closes. Drop an STL on the window: Insert Mesh opens. Leave the app alone and see

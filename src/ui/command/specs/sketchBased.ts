@@ -1,17 +1,24 @@
 import { frameToWorld, v3 } from '../../../core/math'
 import type { ExtrudeFeature, RevolveFeature } from '../../../doc/types'
-import { defineCommand, type LooseCommandValues, type SelectionPick } from '../types'
+import {
+  defineCommand,
+  type CommandHandle,
+  type LooseCommandValues,
+  type SelectionPick,
+} from '../types'
 import {
   autoCut,
   mergeProfilePicks,
   OPERATIONS,
   operationProblem,
+  planeOf,
   profileCentre,
   profileKeys,
   profileProblem,
   resultOf,
   sketchFrame,
   sketchOf,
+  targetOf,
 } from './shared'
 
 export const SURFACE_INPUT = {
@@ -54,6 +61,21 @@ const PROFILE_INPUT = {
   merge: mergeProfilePicks,
 } as const
 
+const EXTENTS = [
+  { value: 'distance', label: 'Distance', hint: 'A set distance.' },
+  { value: 'to', label: 'To Object', hint: 'Up to a face, a plane or a body.' },
+  { value: 'all', label: 'All', hint: 'Through everything in the way.' },
+] as const
+
+const DIRECTIONS = [
+  { value: 'one', label: 'One Side', hint: 'Grows away from the sketch plane.' },
+  { value: 'two', label: 'Two Sides', hint: 'Grows both ways, each side set on its own.' },
+  { value: 'symmetric', label: 'Symmetric', hint: 'Grows the same distance both ways.' },
+] as const
+
+const solidOnly = (values: LooseCommandValues) => values.surface !== true
+const twoSides = (values: LooseCommandValues) => values.direction === 'two'
+
 export const extrudeCommand = defineCommand({
   id: 'extrude',
   label: 'Extrude',
@@ -62,14 +84,60 @@ export const extrudeCommand = defineCommand({
   inputs: [
     PROFILE_INPUT,
     {
-      id: 'direction',
+      id: 'start',
       kind: 'choice',
-      label: 'Direction',
+      label: 'Start',
       options: [
-        { value: 'one', label: 'One Side', hint: 'Grows away from the sketch plane.' },
-        { value: 'symmetric', label: 'Symmetric', hint: 'Grows the same distance both ways.' },
+        { value: 'profile', label: 'Profile Plane', hint: 'Starts on the sketch.' },
+        { value: 'offset', label: 'Offset', hint: 'Starts a set distance off the sketch.' },
+        {
+          value: 'object',
+          label: 'Object',
+          hint: 'Starts on a face or plane parallel to the sketch.',
+        },
       ],
-      default: 'one',
+      default: 'profile',
+      visible: solidOnly,
+    },
+    {
+      id: 'startOffset',
+      kind: 'length',
+      label: 'Offset',
+      hint: 'How far off the sketch plane it starts.',
+      default: 0,
+      field: 'startOffset',
+      visible: (values) => values.surface !== true && values.start === 'offset',
+    },
+    {
+      id: 'startObject',
+      kind: 'selection',
+      label: 'Start Object',
+      hint: 'A flat face or a plane parallel to the sketch.',
+      filter: ['face', 'plane'],
+      min: 1,
+      max: 1,
+      prompt: 'Select a face or plane',
+      visible: (values) => values.surface !== true && values.start === 'object',
+    },
+    { id: 'direction', kind: 'choice', label: 'Direction', options: DIRECTIONS, default: 'one' },
+    {
+      id: 'measure',
+      kind: 'choice',
+      label: 'Measurement',
+      options: [
+        { value: 'whole', label: 'Whole Length', hint: 'The distance is the whole length.' },
+        { value: 'half', label: 'Half Length', hint: 'The distance goes each way.' },
+      ],
+      default: 'whole',
+      visible: (values) => values.direction === 'symmetric',
+    },
+    {
+      id: 'extent',
+      kind: 'choice',
+      label: 'Extent Type',
+      options: EXTENTS,
+      default: 'distance',
+      visible: solidOnly,
     },
     {
       id: 'distance',
@@ -78,6 +146,18 @@ export const extrudeCommand = defineCommand({
       hint: 'How far the profile is pushed. A negative distance goes the other way, and into a body it cuts.',
       default: 10,
       field: 'distance',
+      visible: (values) => values.surface === true || values.extent === 'distance',
+    },
+    {
+      id: 'object',
+      kind: 'selection',
+      label: 'Object',
+      hint: 'The face, plane or body the extrusion stops at.',
+      filter: ['face', 'plane', 'body'],
+      min: 1,
+      max: 1,
+      prompt: 'Select a face, plane or body',
+      visible: (values) => values.surface !== true && values.extent === 'to',
     },
     {
       id: 'flip',
@@ -86,18 +166,75 @@ export const extrudeCommand = defineCommand({
       hint: 'Extrude to the other side of the sketch plane.',
       visible: (values) => values.direction !== 'symmetric',
     },
+    {
+      id: 'taper',
+      kind: 'angle',
+      label: 'Taper Angle',
+      hint: 'Tilts the sides. A positive angle opens out, a negative one closes in.',
+      default: 0,
+      min: -89,
+      max: 89,
+      field: 'draftAngle',
+      visible: solidOnly,
+    },
+    {
+      id: 'extentTwo',
+      kind: 'choice',
+      label: 'Side 2 Extent',
+      options: EXTENTS,
+      default: 'distance',
+      visible: (values) => values.surface !== true && twoSides(values),
+    },
+    {
+      id: 'distanceTwo',
+      kind: 'length',
+      label: 'Side 2 Distance',
+      default: 5,
+      field: 'secondDistance',
+      visible: (values) =>
+        twoSides(values) && (values.surface === true || values.extentTwo === 'distance'),
+    },
+    {
+      id: 'objectTwo',
+      kind: 'selection',
+      label: 'Side 2 Object',
+      hint: 'The face, plane or body the second side stops at.',
+      filter: ['face', 'plane', 'body'],
+      min: 1,
+      max: 1,
+      prompt: 'Select a face, plane or body',
+      visible: (values) => values.surface !== true && twoSides(values) && values.extentTwo === 'to',
+    },
+    {
+      id: 'taperTwo',
+      kind: 'angle',
+      label: 'Side 2 Taper',
+      default: 0,
+      min: -89,
+      max: 89,
+      field: 'secondDraftAngle',
+      visible: (values) => values.surface !== true && twoSides(values),
+    },
     SURFACE_INPUT,
     ...OPERATION_INPUTS,
   ],
   validate(values, context) {
-    if (!values.distance) return { distance: 'The distance cannot be zero.' }
+    const measured = values.surface || values.extent === 'distance'
+    if (measured && !values.distance) return { distance: 'The distance cannot be zero.' }
+    if (twoSides(values) && (values.surface || values.extentTwo === 'distance')) {
+      if (!values.distanceTwo) return { distanceTwo: 'The distance cannot be zero.' }
+    }
     if (values.surface)
       return sketchOf(context.doc, values.profile) ? null : { profile: 'Pick a sketch.' }
+    if (values.direction === 'symmetric' && values.extent === 'to') {
+      return { extent: 'A symmetric extrude goes a distance, or through all.' }
+    }
     return profileProblem(context.doc, values.profile) ?? operationProblem(values)
   },
   derive(values, changed, context) {
     if (changed !== 'distance' && changed !== 'flip') return null
-    if (values.surface || values.direction === 'symmetric' || !values.distance) return null
+    if (values.surface || values.direction !== 'one' || values.extent !== 'distance') return null
+    if (!values.distance) return null
     const sketch = sketchOf(context.doc, values.profile)
     if (sketch?.plane.kind !== 'face') return null
     return autoCut(
@@ -109,6 +246,13 @@ export const extrudeCommand = defineCommand({
   },
   build(values, context) {
     const sketch = sketchOf(context.doc, values.profile)!
+    const direction = {
+      symmetric: values.direction === 'symmetric',
+      reverse: values.direction !== 'symmetric' && values.flip,
+      ...(values.direction === 'symmetric' && values.measure === 'half'
+        ? { halfLength: true }
+        : {}),
+    }
     if (values.surface) {
       const surface: ExtrudeFeature = {
         id: context.editing?.id ?? context.id('extrude'),
@@ -117,13 +261,16 @@ export const extrudeCommand = defineCommand({
         componentId: sketch.componentId,
         sketchId: sketch.id,
         distance: values.distance,
-        symmetric: values.direction === 'symmetric',
-        reverse: values.direction !== 'symmetric' && values.flip,
+        ...direction,
+        ...(twoSides(values) ? { twoSided: true, secondDistance: values.distanceTwo } : {}),
         surface: true,
         result: { kind: 'newBody', bodyId: context.id('body') },
       }
       return [surface]
     }
+    const to = values.extent === 'to' ? targetOf(values.object) : undefined
+    const secondTo =
+      twoSides(values) && values.extentTwo === 'to' ? targetOf(values.objectTwo) : undefined
     const feature: ExtrudeFeature = {
       id: context.editing?.id ?? context.id('extrude'),
       kind: 'extrude',
@@ -132,8 +279,23 @@ export const extrudeCommand = defineCommand({
       sketchId: sketch.id,
       ...(profileKeys(values.profile) ? { profiles: profileKeys(values.profile) } : {}),
       distance: values.distance,
-      symmetric: values.direction === 'symmetric',
-      reverse: values.direction !== 'symmetric' && values.flip,
+      ...direction,
+      ...(values.extent !== 'distance' ? { extent: values.extent } : {}),
+      ...(to ? { to } : {}),
+      ...(values.taper ? { draftAngle: values.taper } : {}),
+      ...(twoSides(values)
+        ? {
+            twoSided: true,
+            secondDistance: values.distanceTwo,
+            ...(values.extentTwo !== 'distance' ? { secondExtent: values.extentTwo } : {}),
+            ...(secondTo ? { secondTo } : {}),
+            ...(values.taperTwo ? { secondDraftAngle: values.taperTwo } : {}),
+          }
+        : {}),
+      ...(values.start === 'offset' ? { start: 'offset', startOffset: values.startOffset } : {}),
+      ...(values.start === 'object'
+        ? { start: 'object', startPlane: planeOf(values.startObject) }
+        : {}),
       result: resultOf(values.operation, values.bodies, context),
     }
     return [feature]
@@ -143,19 +305,31 @@ export const extrudeCommand = defineCommand({
     const frame = sketch && sketchFrame(sketch)
     if (!sketch || !frame) return []
     const symmetric = values.direction === 'symmetric'
-    const direction = !symmetric && values.flip ? v3.scale(frame.normal, -1) : frame.normal
-    return [
-      {
+    const along = !symmetric && values.flip ? v3.scale(frame.normal, -1) : frame.normal
+    const shift = values.surface !== true && values.start === 'offset' ? values.startOffset : 0
+    const point = v3.add(
+      frameToWorld(frame, profileCentre(sketch, profileKeys(values.profile))),
+      v3.scale(frame.normal, shift),
+    )
+    const handles: CommandHandle[] = []
+    if (values.surface || values.extent === 'distance') {
+      handles.push({
         kind: 'arrow',
         input: 'distance',
         componentId: sketch.componentId,
-        anchor: {
-          point: frameToWorld(frame, profileCentre(sketch, profileKeys(values.profile))),
-          direction,
-        },
-        scale: symmetric ? 0.5 : 1,
-      },
-    ]
+        anchor: { point, direction: along },
+        scale: symmetric && values.measure !== 'half' ? 0.5 : 1,
+      })
+    }
+    if (twoSides(values) && (values.surface || values.extentTwo === 'distance')) {
+      handles.push({
+        kind: 'arrow',
+        input: 'distanceTwo',
+        componentId: sketch.componentId,
+        anchor: { point, direction: v3.scale(along, -1) },
+      })
+    }
+    return handles
   },
 })
 
@@ -187,6 +361,7 @@ export const revolveCommand = defineCommand({
       default: 'x',
       visible: (values: LooseCommandValues) => !(values.axisLine as SelectionPick[]).length,
     },
+    { id: 'direction', kind: 'choice', label: 'Direction', options: DIRECTIONS, default: 'one' },
     {
       id: 'angle',
       kind: 'angle',
@@ -197,6 +372,23 @@ export const revolveCommand = defineCommand({
       max: 360,
       exclusiveMin: true,
       field: 'angle',
+    },
+    {
+      id: 'angleTwo',
+      kind: 'angle',
+      label: 'Side 2 Angle',
+      default: 90,
+      min: 0,
+      max: 360,
+      field: 'secondAngle',
+      visible: twoSides,
+    },
+    {
+      id: 'flip',
+      kind: 'toggle',
+      label: 'Flip',
+      hint: 'Spin the other way round.',
+      visible: (values) => values.direction === 'one',
     },
     SURFACE_INPUT,
     ...OPERATION_INPUTS,
@@ -217,6 +409,11 @@ export const revolveCommand = defineCommand({
   build(values, context) {
     const sketch = sketchOf(context.doc, values.profile)!
     const axisLine = values.axisLine[0]?.curve?.entityId
+    const sweep = {
+      ...(values.direction === 'symmetric' ? { symmetric: true } : {}),
+      ...(values.direction === 'two' ? { twoSided: true, secondAngle: values.angleTwo } : {}),
+      ...(values.direction === 'one' && values.flip ? { reverse: true } : {}),
+    }
     if (values.surface) {
       const surface: RevolveFeature = {
         id: context.editing?.id ?? context.id('revolve'),
@@ -227,6 +424,7 @@ export const revolveCommand = defineCommand({
         angle: values.angle,
         axis: values.axis,
         ...(axisLine ? { axisLine } : {}),
+        ...sweep,
         surface: true,
         result: { kind: 'newBody', bodyId: context.id('body') },
       }
@@ -242,6 +440,7 @@ export const revolveCommand = defineCommand({
       angle: values.angle,
       axis: values.axis,
       ...(axisLine ? { axisLine } : {}),
+      ...sweep,
       result: resultOf(values.operation, values.bodies, context),
     }
     return [feature]
