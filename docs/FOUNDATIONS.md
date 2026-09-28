@@ -1030,11 +1030,36 @@ every face name across and every edge name by the pair of faces it lies between,
 a tapered extrude still finds its edge. Revolve builds the whole sweep and turns it back by the
 second angle, which keeps its names.
 
+**Thin Extrude.** A Thin Extrude toggle at the top of the dialog stands in for Fusion's Type. It
+turns the profile into a wall: Wall Location is Side 1 (outward from a closed profile), Center or
+Side 2 (inward), and Wall Thickness can follow a parameter. In thin mode the Profile box also
+takes open sketch curves, Tangent Chain (on by default) picks the curves that run smoothly on
+from the one clicked, and Taper Angle is hidden, as in Fusion. A profile with a hole gets a wall
+on each loop. Every extent, start and direction works on a wall as it does on a profile.
+
+**How the wall is built.** `src/sketch/thin.ts`, in the sketch, before the kernel sees it. The
+chosen loops and curves are copied into a new sketch; a loop edge that is only part of a curve (a
+profile cut out by crossing curves) is split out first and named by its region token. They are
+offset with the sketch Offset code, open ends are capped, and the extrude gets the regions that
+lie inside exactly one wall outline of some chain (an even-odd test on each chain's own outline,
+so the gap in a washer stays empty and walls that overlap merge). A region bounded only by the
+original curves is never a wall. Each new curve is named after its source: `e0~wall0` beside
+`e0`, `q1~wall0` for the corner beside `q1`, `a~cap` for the end at `a`, and `~wall1` for the
+second wall of Center. So a wall's faces are `id:side:e0~wall0` and its corner edges
+`id:side:q1~wall0`, and a fillet on a wall survives an unrelated edit to the sketch.
+
+**Selections that depend on other values.** A selection's `filter` may be a function of the
+panel's values; picks it stops accepting are dropped at once, and `merge` receives the values.
+That is how the Profile box takes curves only while Thin Extrude is on, and how Tangent Chain
+reaches the merge.
+
 **Tests.** `?selftest&suite=extent` checks each direction, start and extent against hand-worked
 volumes: a through-all cut, a cylinder stopped by a plane, a tilted plane, a curved face and a
 body, square and round frustums for both taper signs, two differently tapered sides, the revolve
 directions, the refusals, the names a taper keeps, the dependencies, the parameter links and the
-panel's output.
+panel's output. For Thin Extrude it checks the three wall locations on a square and a washer, a
+wall around a profile cut from crossing curves, open curves with capped ends, a fillet on a wall
+after a sketch edit, the panel taking curves only when thin, and Tangent Chain.
 
 ## 27. How the work is done
 
@@ -1109,6 +1134,12 @@ panel's output.
   click the top of the block: a short cylinder fills the gap. Choose Two Sides with a Taper Angle
   of 10 and a Side 2 Taper of -10 and watch both sides preview. Revolve a profile Symmetric and see
   it sit evenly either side of the sketch. Undo back through every step.
+- **Thin smoke test.** On XY draw a line, a second line at a right angle to it, then a tangent arc
+  and a line. Open Extrude and tick Thin Extrude: click the arc and see the run of tangent curves
+  picked, but not the line at the corner. Choose Center and 2 mm and OK. Double-click the step:
+  Thin Extrude, Center and the curves come back. Extrude a rectangle thin with Side 2 and see the
+  wall grow inward. Untick Thin Extrude and see the curves leave the Profile box. Undo back through
+  every step.
 - **Review smoke test.** In a sketch, draw two joined lines, click their shared corner and press
   Delete: both lines go and the app carries on. Undo, open Box and press Ctrl+Z: nothing happens
   until the panel closes. Drop an STL on the window: Insert Mesh opens. Leave the app alone and see

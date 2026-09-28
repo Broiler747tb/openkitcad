@@ -104,7 +104,7 @@ function pieceArea(curve: Curve, from: number, to: number): number {
   return total / 2
 }
 
-function contains(polygon: readonly Vec2[], point: Vec2): boolean {
+export function contains(polygon: readonly Vec2[], point: Vec2): boolean {
   let inside = false
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
     const [xi, yi] = polygon[i]

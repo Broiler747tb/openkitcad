@@ -1,9 +1,16 @@
-import { frameToWorld, v3 } from '../../../core/math'
-import type { ExtrudeFeature, RevolveFeature } from '../../../doc/types'
+import { frameToWorld, v3, type Vec2 } from '../../../core/math'
+import { findFeature } from '../../../doc/model'
+import { useStore } from '../../../doc/store'
+import type { ExtrudeFeature, OkcDocument, RevolveFeature, SketchFeature } from '../../../doc/types'
+import { tangentChain } from '../../../sketch/chains'
+import { curveOf, pointLookup } from '../../../sketch/curves'
+import type { WallSide } from '../../../sketch/thin'
+import { curvePick, pickSketchId } from '../picks'
 import {
   defineCommand,
   type CommandHandle,
   type LooseCommandValues,
+  type PickKind,
   type SelectionPick,
 } from '../types'
 import {
@@ -73,8 +80,123 @@ const DIRECTIONS = [
   { value: 'symmetric', label: 'Symmetric', hint: 'Grows the same distance both ways.' },
 ] as const
 
+const WALL_LOCATIONS = [
+  {
+    value: 'one',
+    label: 'Side 1',
+    hint: 'The wall grows outward from a closed profile, or to one side of a curve.',
+  },
+  { value: 'center', label: 'Center', hint: 'The profile runs down the middle of the wall.' },
+  {
+    value: 'two',
+    label: 'Side 2',
+    hint: 'The wall grows inward from a closed profile, or to the other side of a curve.',
+  },
+] as const
+
+const PROFILE_KINDS: readonly PickKind[] = ['profile', 'sketch']
+const WALL_KINDS: readonly PickKind[] = ['profile', 'sketch', 'sketchCurve']
+
 const solidOnly = (values: LooseCommandValues) => values.surface !== true
 const twoSides = (values: LooseCommandValues) => values.direction === 'two'
+const thin = (values: LooseCommandValues) => values.surface !== true && values.thin === true
+const tapered = (values: LooseCommandValues) => values.surface !== true && values.thin !== true
+
+function curveIds(picks: readonly SelectionPick[]): string[] {
+  return picks.flatMap((pick) => (pick.curve ? [pick.curve.entityId] : []))
+}
+
+function regionPicks(picks: readonly SelectionPick[]): SelectionPick[] {
+  return picks.filter((pick) => !pick.curve)
+}
+
+function mergeWallPicks(
+  current: readonly SelectionPick[],
+  pick: SelectionPick,
+  values: LooseCommandValues,
+): SelectionPick[] | null {
+  if (!pick.curve) {
+    const merged = mergeProfilePicks(current, pick)
+    if (!merged || pick.kind === 'sketch') return merged
+    const kept = current.filter(
+      (candidate) =>
+        candidate.curve?.sketchId === pickSketchId(pick) &&
+        !merged.some((other) => other.id === candidate.id),
+    )
+    return [...merged, ...kept]
+  }
+  const { sketchId, entityId } = pick.curve
+  const doc = useStore.getState().doc
+  const sketch = findFeature(doc, sketchId)
+  const run =
+    values.tangentChain !== false && sketch?.kind === 'sketch'
+      ? tangentChain(sketch.sketch, entityId)
+      : [entityId]
+  const own = current.filter((candidate) => pickSketchId(candidate) === sketchId)
+  const ids = new Set(run.map((id) => `${sketchId}|${id}`))
+  if (own.some((candidate) => candidate.id === pick.id)) {
+    return own.filter((candidate) => !ids.has(candidate.id))
+  }
+  return [
+    ...own,
+    pick,
+    ...run
+      .filter((id) => id !== entityId)
+      .flatMap((id) => curvePick(doc, sketchId, id) ?? [])
+      .filter((added) => !own.some((candidate) => candidate.id === added.id)),
+  ]
+}
+
+function wallProblem(
+  doc: OkcDocument,
+  picks: readonly SelectionPick[],
+): Record<string, string> | null {
+  const regions = regionPicks(picks)
+  const problem = regions.length ? profileProblem(doc, regions) : null
+  if (problem) return problem
+  const sketch = sketchOf(doc, picks)
+  if (!sketch) return { profile: 'Pick a profile or a sketch curve.' }
+  if (new Set(picks.map(pickSketchId)).size > 1) {
+    return { profile: 'Pick profiles and curves from one sketch.' }
+  }
+  const gone = curveIds(picks).some(
+    (id) => !sketch.sketch.entities.some((entity) => entity.id === id),
+  )
+  return gone ? { profile: 'A picked curve is gone from the sketch. Pick it again.' } : null
+}
+
+function wallFields(values: {
+  profile: readonly SelectionPick[]
+  wallThickness: number
+  wallSide: WallSide
+}): Partial<ExtrudeFeature> {
+  const regions = regionPicks(values.profile)
+  const curves = curveIds(values.profile)
+  const keys = regions.length ? profileKeys(regions) : []
+  return {
+    ...(keys ? { profiles: keys } : {}),
+    ...(curves.length ? { curves } : {}),
+    thinThickness: values.wallThickness,
+    ...(values.wallSide !== 'one' ? { thinSide: values.wallSide } : {}),
+  }
+}
+
+function pickedCentre(sketch: SketchFeature, picks: readonly SelectionPick[]): Vec2 {
+  const regions = regionPicks(picks)
+  const curves = curveIds(picks)
+  if (regions.length || !curves.length) return profileCentre(sketch, profileKeys(regions))
+  const pts = pointLookup(sketch.sketch)
+  const middles = curves.flatMap((id) => {
+    const entity = sketch.sketch.entities.find((candidate) => candidate.id === id)
+    const curve = entity && curveOf(entity, pts)
+    return curve ? [curve.at(0.5)] : []
+  })
+  if (!middles.length) return [0, 0]
+  return [
+    middles.reduce((sum, at) => sum + at[0], 0) / middles.length,
+    middles.reduce((sum, at) => sum + at[1], 0) / middles.length,
+  ]
+}
 
 export const extrudeCommand = defineCommand({
   id: 'extrude',
@@ -82,7 +204,19 @@ export const extrudeCommand = defineCommand({
   hint: 'Give a closed sketch depth, to make a solid or cut one.',
   icon: '⇧',
   inputs: [
-    PROFILE_INPUT,
+    {
+      id: 'thin',
+      kind: 'toggle',
+      label: 'Thin Extrude',
+      hint: 'Make a wall of set thickness along the profile, or along open sketch curves.',
+      visible: solidOnly,
+    },
+    {
+      ...PROFILE_INPUT,
+      hint: 'Click the closed areas of a sketch to use. A thin extrude also takes open sketch curves.',
+      filter: (values: LooseCommandValues) => (thin(values) ? WALL_KINDS : PROFILE_KINDS),
+      merge: mergeWallPicks,
+    },
     {
       id: 'start',
       kind: 'choice',
@@ -175,7 +309,7 @@ export const extrudeCommand = defineCommand({
       min: -89,
       max: 89,
       field: 'draftAngle',
-      visible: solidOnly,
+      visible: tapered,
     },
     {
       id: 'extentTwo',
@@ -213,7 +347,34 @@ export const extrudeCommand = defineCommand({
       min: -89,
       max: 89,
       field: 'secondDraftAngle',
-      visible: (values) => values.surface !== true && twoSides(values),
+      visible: (values) => tapered(values) && twoSides(values),
+    },
+    {
+      id: 'tangentChain',
+      kind: 'toggle',
+      label: 'Tangent Chain',
+      hint: 'Picking a curve also picks the curves that run smoothly on from it.',
+      default: true,
+      visible: thin,
+    },
+    {
+      id: 'wallSide',
+      kind: 'choice',
+      label: 'Wall Location',
+      options: WALL_LOCATIONS,
+      default: 'one',
+      display: 'buttons',
+      visible: thin,
+    },
+    {
+      id: 'wallThickness',
+      kind: 'length',
+      label: 'Wall Thickness',
+      default: 2,
+      min: 0,
+      exclusiveMin: true,
+      field: 'thinThickness',
+      visible: thin,
     },
     SURFACE_INPUT,
     ...OPERATION_INPUTS,
@@ -229,7 +390,10 @@ export const extrudeCommand = defineCommand({
     if (values.direction === 'symmetric' && values.extent === 'to') {
       return { extent: 'A symmetric extrude goes a distance, or through all.' }
     }
-    return profileProblem(context.doc, values.profile) ?? operationProblem(values)
+    const picked = values.thin
+      ? wallProblem(context.doc, values.profile)
+      : profileProblem(context.doc, values.profile)
+    return picked ?? operationProblem(values)
   },
   derive(values, changed, context) {
     if (changed !== 'distance' && changed !== 'flip') return null
@@ -277,19 +441,23 @@ export const extrudeCommand = defineCommand({
       name: context.editing?.name ?? 'Extrude',
       componentId: sketch.componentId,
       sketchId: sketch.id,
-      ...(profileKeys(values.profile) ? { profiles: profileKeys(values.profile) } : {}),
+      ...(values.thin
+        ? wallFields(values)
+        : profileKeys(values.profile)
+          ? { profiles: profileKeys(values.profile) }
+          : {}),
       distance: values.distance,
       ...direction,
       ...(values.extent !== 'distance' ? { extent: values.extent } : {}),
       ...(to ? { to } : {}),
-      ...(values.taper ? { draftAngle: values.taper } : {}),
+      ...(values.taper && !values.thin ? { draftAngle: values.taper } : {}),
       ...(twoSides(values)
         ? {
             twoSided: true,
             secondDistance: values.distanceTwo,
             ...(values.extentTwo !== 'distance' ? { secondExtent: values.extentTwo } : {}),
             ...(secondTo ? { secondTo } : {}),
-            ...(values.taperTwo ? { secondDraftAngle: values.taperTwo } : {}),
+            ...(values.taperTwo && !values.thin ? { secondDraftAngle: values.taperTwo } : {}),
           }
         : {}),
       ...(values.start === 'offset' ? { start: 'offset', startOffset: values.startOffset } : {}),
@@ -308,7 +476,7 @@ export const extrudeCommand = defineCommand({
     const along = !symmetric && values.flip ? v3.scale(frame.normal, -1) : frame.normal
     const shift = values.surface !== true && values.start === 'offset' ? values.startOffset : 0
     const point = v3.add(
-      frameToWorld(frame, profileCentre(sketch, profileKeys(values.profile))),
+      frameToWorld(frame, pickedCentre(sketch, values.profile)),
       v3.scale(frame.normal, shift),
     )
     const handles: CommandHandle[] = []

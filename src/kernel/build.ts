@@ -52,6 +52,7 @@ import { runScrewStep } from './screwStep'
 import { runEnclosureStep } from './enclosureStep'
 import { runThreadStep } from './threadStep'
 import { extrudeSolid } from './extentStep'
+import { thinSketch } from '../sketch/thin'
 import {
   featureDependencies,
   findBody,
@@ -1662,7 +1663,21 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
         }
         return
       }
-      const profile = sketchToProfile(sketchFeature.sketch, feature.profiles)
+      const thin =
+        feature.kind === 'extrude' && feature.thinThickness
+          ? thinSketch(sketchFeature.sketch, {
+              thickness: feature.thinThickness,
+              side: feature.thinSide ?? 'one',
+              profiles: feature.profiles,
+              curves: feature.curves,
+            })
+          : null
+      if (thin && !thin.ok) {
+        stage.report('error', thin.message, 'Edit this step and change the wall.')
+        return
+      }
+      const outline = thin ? thin.sketch : sketchFeature.sketch
+      const profile = sketchToProfile(outline, thin ? thin.keys : feature.profiles)
       if (!profile.ok) {
         stage.report('error', profile.message, profile.hint)
         return
@@ -1676,7 +1691,7 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
           extrudeSolid({
             oc,
             feature,
-            sketch: sketchFeature.sketch,
+            sketch: outline,
             pieces: profile.pieces,
             frame,
             face: (at) => profileFace(profile.drawing, at),

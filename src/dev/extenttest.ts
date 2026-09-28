@@ -2,8 +2,10 @@ import * as Comlink from 'comlink'
 import { featureDependencies, featureReadsBodies } from '../doc/model'
 import { resolveParameters } from '../doc/parameters'
 import { emptyDocument, type Feature, type OkcDocument } from '../doc/types'
+import { tangentChain } from '../sketch/chains'
+import { sketchRegions } from '../sketch/regions'
 import { emptySketch, type Sketch2D } from '../sketch/types'
-import { createCommandState, evaluateCommand } from '../ui/command/state'
+import { createCommandState, evaluateCommand, reduceCommand } from '../ui/command/state'
 import { extrudeCommand, revolveCommand } from '../ui/command/specs/sketchBased'
 import type { CommandContext, SelectionPick } from '../ui/command/types'
 import type { EvaluateResult, KernelApi } from '../kernel/types'
@@ -56,6 +58,60 @@ function ring(): Sketch2D {
     }),
   )
   return sketch
+}
+
+function washer(): Sketch2D {
+  const sketch = emptySketch()
+  sketch.entities.push(
+    { id: 'c10', kind: 'circle', c: 'origin', r: 10, construction: false },
+    { id: 'c5', kind: 'circle', c: 'origin', r: 5, construction: false },
+  )
+  return sketch
+}
+
+function dShape(): Sketch2D {
+  const sketch = emptySketch()
+  sketch.points.push({ id: 'a', x: 3, y: -12 }, { id: 'b', x: 3, y: 12 })
+  sketch.entities.push(
+    { id: 'c', kind: 'circle', c: 'origin', r: 10, construction: false },
+    { id: 'l', kind: 'line', p1: 'a', p2: 'b', construction: false },
+  )
+  return sketch
+}
+
+function corner(): Sketch2D {
+  const sketch = emptySketch()
+  sketch.points.push({ id: 'a', x: 0, y: 0 }, { id: 'b', x: 10, y: 0 }, { id: 'c', x: 10, y: 10 })
+  sketch.entities.push(
+    { id: 'l1', kind: 'line', p1: 'a', p2: 'b', construction: false },
+    { id: 'l2', kind: 'line', p1: 'b', p2: 'c', construction: false },
+  )
+  return sketch
+}
+
+function slot(): Sketch2D {
+  const sketch = emptySketch()
+  sketch.points.push(
+    { id: 'a', x: -5, y: -2 },
+    { id: 'b', x: 5, y: -2 },
+    { id: 'c', x: 5, y: 2 },
+    { id: 'd', x: -5, y: 2 },
+    { id: 'r', x: 5, y: 0 },
+    { id: 'l', x: -5, y: 0 },
+    { id: 'up', x: -5, y: 8 },
+  )
+  sketch.entities.push(
+    { id: 'bottom', kind: 'line', p1: 'a', p2: 'b', construction: false },
+    { id: 'right', kind: 'arc', c: 'r', p1: 'b', p2: 'c', ccw: true, construction: false },
+    { id: 'top', kind: 'line', p1: 'c', p2: 'd', construction: false },
+    { id: 'left', kind: 'arc', c: 'l', p1: 'd', p2: 'a', ccw: true, construction: false },
+    { id: 'stub', kind: 'line', p1: 'd', p2: 'up', construction: false },
+  )
+  return sketch
+}
+
+function segment(r: number, d: number): number {
+  return r * r * Math.acos(d / r) - d * Math.sqrt(r * r - d * d)
 }
 
 function sketchOn(id: string, sketch: Sketch2D, offset = 0): Feature {
@@ -507,6 +563,91 @@ export async function runExtentTest(): Promise<TestResult[]> {
       )
       add('a surface extrude also goes two ways', zRange(sheet) === '-3.000..5.000', zRange(sheet))
     })
+
+    await check('thin walls', async () => {
+      const wall = (sketch: Sketch2D, patch: Record<string, unknown> = {}) =>
+        build([sketchOn('sk', sketch), extrusion({ thinThickness: 1, ...patch })], ['body'])
+      const outward = await wall(square(5))
+      const inward = await wall(square(5), { thinSide: 'two' })
+      const centred = await wall(square(5), { thinSide: 'center' })
+      const ringed = await wall(washer())
+      add(
+        'Thin Extrude walls a profile outward, inward or on its line, and walls a hole too',
+        near(outward.volume, 220) &&
+          near(outward.bounds[3], 6) &&
+          near(inward.volume, 180) &&
+          near(inward.bounds[3], 5) &&
+          near(centred.volume, 200) &&
+          near(centred.bounds[3], 5.5) &&
+          near(ringed.volume, 160 * Math.PI, 0.05) &&
+          outward.faces.includes('ex:side:e0') &&
+          outward.faces.includes('ex:side:e0~wall0') &&
+          centred.faces.includes('ex:side:e0~wall1') &&
+          !centred.faces.includes('ex:side:e0'),
+        `${outward.volume.toFixed(2)} ${inward.volume.toFixed(2)} ${centred.volume.toFixed(2)} ${ringed.volume.toFixed(2)} ${outward.faces.join()}`,
+      )
+    })
+
+    await check('thin crossings and curves', async () => {
+      const regions = sketchRegions(dShape()).regions
+      const big = regions.reduce((a, b) => (a.area > b.area ? a : b))
+      const crossed = await build(
+        [sketchOn('sk', dShape()), extrusion({ thinThickness: 1, profiles: [big.key] })],
+        ['body'],
+      )
+      const expected = 5 * (121 * Math.PI - segment(11, 4) - (100 * Math.PI - segment(10, 3)))
+      const open = await build(
+        [
+          sketchOn('sk', corner()),
+          extrusion({ thinThickness: 1, curves: ['l1', 'l2'], profiles: [] }),
+        ],
+        ['body'],
+      )
+      const both = await build(
+        [
+          sketchOn('sk', corner()),
+          extrusion({ thinThickness: 1, thinSide: 'center', curves: ['l1', 'l2'], profiles: [] }),
+        ],
+        ['body'],
+      )
+      add(
+        'a thin wall follows a profile cut from crossing curves, and open curves with capped ends',
+        near(crossed.volume, expected, 0.05) &&
+          crossed.faces.includes('ex:side:c[l|l@2]~wall0') &&
+          near(open.volume, 95) &&
+          open.faces.includes('ex:side:a~cap') &&
+          near(both.volume, 100) &&
+          near(both.bounds[1], -0.5),
+        `${crossed.volume.toFixed(3)} of ${expected.toFixed(3)} ${crossed.faces.join()} | ${open.volume.toFixed(2)} ${both.volume.toFixed(2)} ${open.faces.join()}`,
+      )
+    })
+
+    await check('thin names', async () => {
+      const busy = square(5)
+      busy.points.push({ id: 'z1', x: 20, y: 20 }, { id: 'z2', x: 30, y: 20 })
+      busy.entities.unshift({ id: 'zz', kind: 'line', p1: 'z1', p2: 'z2', construction: false })
+      const rounded = await build(
+        [
+          sketchOn('sk', busy),
+          extrusion({ thinThickness: 1 }),
+          {
+            id: 'fil',
+            kind: 'fillet',
+            name: 'Fillet',
+            componentId: 'root',
+            bodyId: 'body',
+            radius: 0.5,
+            edges: [{ bodyId: 'body', kind: 'edge', name: 'ex:side:q1~wall0' }],
+          },
+        ],
+        ['body'],
+      )
+      add(
+        'a wall is named after the curves it follows, so an edit to the sketch keeps a fillet on it',
+        rounded.errors.length === 0 && near(rounded.volume, 220 - 1.25 * (1 - Math.PI / 4), 1e-3),
+        `${rounded.volume.toFixed(4)} ${rounded.errors.join()}`,
+      )
+    })
   } finally {
     worker.terminate()
   }
@@ -540,7 +681,13 @@ export async function runExtentTest(): Promise<TestResult[]> {
     const doc = design(
       [
         sketchOn('sk', square(5)),
-        extrusion({ twoSided: true, secondDistance: 3, startOffset: 0, start: 'offset' }),
+        extrusion({
+          twoSided: true,
+          secondDistance: 3,
+          startOffset: 0,
+          start: 'offset',
+          thinThickness: 1,
+        }),
       ],
       ['body'],
     )
@@ -548,13 +695,18 @@ export async function runExtentTest(): Promise<TestResult[]> {
     doc.bindings = [
       { featureId: 'ex', field: 'secondDistance', expression: 'side' },
       { featureId: 'ex', field: 'startOffset', expression: '-side' },
+      { featureId: 'ex', field: 'thinThickness', expression: 'side / 2' },
     ]
     resolveParameters(doc)
-    const extrude = doc.timeline[1] as { secondDistance: number; startOffset: number }
+    const extrude = doc.timeline[1] as {
+      secondDistance: number
+      startOffset: number
+      thinThickness: number
+    }
     add(
-      'the second distance and the start offset can follow parameters',
-      extrude.secondDistance === 7 && extrude.startOffset === -7,
-      `${extrude.secondDistance} ${extrude.startOffset}`,
+      'the second distance, the start offset and the wall thickness can follow parameters',
+      extrude.secondDistance === 7 && extrude.startOffset === -7 && extrude.thinThickness === 3.5,
+      `${extrude.secondDistance} ${extrude.startOffset} ${extrude.thinThickness}`,
     )
   })
 
@@ -615,6 +767,83 @@ export async function runExtentTest(): Promise<TestResult[]> {
         revolve?.twoSided === true &&
         revolve?.secondAngle === 30,
       JSON.stringify({ built, plainKeys: plain && Object.keys(plain), revolve }),
+    )
+  })
+
+  await check('thin panel', () => {
+    const doc = design([sketchOn('sk', corner())], [])
+    const ctx = context(doc)
+    const curve = (id: string): SelectionPick => ({
+      kind: 'sketchCurve',
+      id: `sk|${id}`,
+      label: 'Line',
+      curve: { sketchId: 'sk', entityId: id },
+    })
+    const picksIn = (state: ReturnType<typeof createCommandState>) => {
+      const field = state.fields.profile
+      return field?.kind === 'selection' ? field.picks.map((pick) => pick.id) : []
+    }
+    const closed = createCommandState(extrudeCommand, ctx, { taper: 4 })
+    const refused = reduceCommand(
+      extrudeCommand,
+      closed,
+      { type: 'pick', pick: curve('l1'), id: 'profile' },
+      ctx,
+    )
+    const opened = reduceCommand(
+      extrudeCommand,
+      closed,
+      { type: 'toggle', id: 'thin', value: true },
+      ctx,
+    )
+    const picked = reduceCommand(
+      extrudeCommand,
+      opened,
+      { type: 'pick', pick: curve('l1'), id: 'profile' },
+      ctx,
+    )
+    const built = evaluateCommand(extrudeCommand, picked, ctx, { build: true }).features?.[0] as
+      Record<string, unknown> | undefined
+    const dropped = reduceCommand(
+      extrudeCommand,
+      picked,
+      { type: 'toggle', id: 'thin', value: false },
+      ctx,
+    )
+    const reopened = createCommandState(extrudeCommand, ctx, {
+      thin: true,
+      profile: [curve('l1'), curve('l2')],
+    })
+    const stale = createCommandState(extrudeCommand, ctx, { profile: [curve('l1')] })
+    add(
+      'the panel takes open curves only for a thin extrude, and writes the wall without a taper',
+      picksIn(refused).length === 0 &&
+        picksIn(picked).join() === 'sk|l1' &&
+        built?.thinThickness === 2 &&
+        (built?.curves as string[])?.join() === 'l1' &&
+        (built?.profiles as string[])?.length === 0 &&
+        !('draftAngle' in (built ?? {})) &&
+        !('thinSide' in (built ?? {})) &&
+        picksIn(dropped).length === 0 &&
+        picksIn(reopened).join() === 'sk|l1,sk|l2' &&
+        picksIn(stale).length === 0,
+      JSON.stringify({
+        refused: picksIn(refused),
+        picked: picksIn(picked),
+        built,
+        dropped: picksIn(dropped),
+        reopened: picksIn(reopened),
+      }),
+    )
+  })
+
+  await check('tangent chain', () => {
+    const run = tangentChain(slot(), 'bottom').sort().join()
+    const alone = tangentChain(corner(), 'l1').join()
+    add(
+      'Tangent Chain picks the curves that run smoothly on, and stops at a corner',
+      run === 'bottom,left,right,top' && alone === 'l1',
+      `${run} | ${alone}`,
     )
   })
 

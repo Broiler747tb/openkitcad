@@ -64,13 +64,17 @@ interface InputBase<Id extends string> {
 
 export interface SelectionInput<Id extends string = string> extends InputBase<Id> {
   kind: 'selection'
-  filter: readonly PickKind[]
+  filter: readonly PickKind[] | ((values: LooseCommandValues) => readonly PickKind[])
   min: number
   max?: number
   clearable?: boolean
   prompt?: string
   fills?: (pick: SelectionPick) => Readonly<Record<string, CommandValue>>
-  merge?: (current: readonly SelectionPick[], pick: SelectionPick) => SelectionPick[] | null
+  merge?: (
+    current: readonly SelectionPick[],
+    pick: SelectionPick,
+    values: LooseCommandValues,
+  ) => SelectionPick[] | null
 }
 
 export interface LengthInput<Id extends string = string> extends InputBase<Id> {

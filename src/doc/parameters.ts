@@ -16,6 +16,7 @@ const fields = [
   'cornerRadius',
   'draftAngle',
   'secondDraftAngle',
+  'thinThickness',
   'outerDiameter',
   'boreDiameter',
   'boreDepth',

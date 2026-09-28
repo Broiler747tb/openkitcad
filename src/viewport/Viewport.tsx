@@ -25,7 +25,7 @@ import {
 import { entityCentre, entityPolylines, pointLookup, tessellate } from '../sketch/curves'
 import { cachedRegions } from '../sketch/regions'
 import { cachedTextProfiles } from '../sketch/text'
-import { findInput } from '../ui/command/state'
+import { commandValues, findInput, pickKinds } from '../ui/command/state'
 import { formatAngle, formatLength } from '../ui/command/units'
 import { CommandHost } from '../ui/command/CommandHost'
 import { openTextEditor, TextPanelHost } from '../ui/TextPanel'
@@ -817,7 +817,9 @@ export function Viewport() {
     const session = useCommand.getState().session
     if (!session) return new Set()
     const input = session.state.active ? findInput(session.spec, session.state.active) : undefined
-    return input?.kind === 'selection' ? new Set(input.filter) : acceptedKinds()
+    return input?.kind === 'selection'
+      ? new Set(pickKinds(input, commandValues(session.spec, session.state, session.context)))
+      : acceptedKinds()
   }
 
   function dragHandle(handle: ActiveHandle, e: React.PointerEvent) {
@@ -1347,7 +1349,7 @@ export function Viewport() {
     if (curve) {
       const pick = curvePick(store.doc, curve.sketchId, curve.entityId)
       setCursorHint(pick ? { x: e.clientX, y: e.clientY, text: pick.label } : null)
-    } else if (cursorHint && acceptedKinds().has('sketchCurve')) {
+    } else if (cursorHint) {
       setCursorHint(null)
     }
     const profile =

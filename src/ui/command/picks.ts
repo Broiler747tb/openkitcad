@@ -10,7 +10,7 @@ import {
   type OkcDocument,
   type PlaneRef,
 } from '../../doc/types'
-import { visibleSelections } from './state'
+import { acceptsPick, commandValues, pickKinds, visibleSelections } from './state'
 import { useCommand } from './session'
 import type { SelectionPick } from './types'
 
@@ -151,7 +151,8 @@ export function offerPick(pick: SelectionPick | null): boolean {
   const session = useCommand.getState().session
   if (!pick || !session) return false
   const selections = visibleSelections(session.spec, session.state, session.context)
-  const accepts = (input: (typeof selections)[number]) => input.filter.includes(pick.kind)
+  const values = commandValues(session.spec, session.state, session.context)
+  const accepts = (input: (typeof selections)[number]) => acceptsPick(input, pick, values)
   const target =
     selections.find((input) => input.id === session.state.active && accepts(input)) ??
     selections.find((input) => accepts(input))
@@ -163,9 +164,10 @@ export function offerPick(pick: SelectionPick | null): boolean {
 export function acceptedKinds(): ReadonlySet<SelectionPick['kind']> {
   const session = useCommand.getState().session
   if (!session) return new Set()
+  const values = commandValues(session.spec, session.state, session.context)
   return new Set(
-    visibleSelections(session.spec, session.state, session.context).flatMap(
-      (input) => input.filter,
+    visibleSelections(session.spec, session.state, session.context).flatMap((input) =>
+      pickKinds(input, values),
     ),
   )
 }

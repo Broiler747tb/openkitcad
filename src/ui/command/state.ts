@@ -7,7 +7,9 @@ import type {
   CommandInput,
   CommandValue,
   ListValue,
+  LooseCommandValues,
   NumericInput,
+  PickKind,
   SelectionInput,
   SelectionPick,
 } from './types'
@@ -72,8 +74,41 @@ export function findInput(spec: AnyCommandSpec, id: string): CommandInput | unde
   return spec.inputs.find((input) => input.id === id)
 }
 
-export function acceptsPick(input: SelectionInput, pick: SelectionPick): boolean {
-  return input.filter.includes(pick.kind)
+export function pickKinds(input: SelectionInput, values: LooseCommandValues): readonly PickKind[] {
+  return typeof input.filter === 'function' ? input.filter(values) : input.filter
+}
+
+export function acceptsPick(
+  input: SelectionInput,
+  pick: SelectionPick,
+  values: LooseCommandValues,
+): boolean {
+  return pickKinds(input, values).includes(pick.kind)
+}
+
+export function commandValues(
+  spec: AnyCommandSpec,
+  state: CommandState,
+  units: UnitContext = DEFAULT_UNITS,
+): Record<string, CommandValue> {
+  return readCommand(spec, state, units).values
+}
+
+function prunePicks(spec: AnyCommandSpec, state: CommandState, units: UnitContext): CommandState {
+  const dynamic = spec.inputs.filter(
+    (input): input is SelectionInput =>
+      input.kind === 'selection' && typeof input.filter === 'function',
+  )
+  if (!dynamic.length) return state
+  const values = commandValues(spec, state, units)
+  let next = state
+  for (const input of dynamic) {
+    const picks = picksOf(next, input.id)
+    const kept = picks.filter((pick) => acceptsPick(input, pick, values))
+    if (kept.length < picks.length)
+      next = withField(next, input.id, { kind: 'selection', picks: kept })
+  }
+  return next
 }
 
 export function samePick(a: SelectionPick, b: SelectionPick): boolean {
@@ -119,13 +154,12 @@ export function createCommandState(
   for (const input of spec.inputs) {
     const value = initial[input.id]
     switch (input.kind) {
-      case 'selection': {
-        const picks = Array.isArray(value)
-          ? uniquePicks(value.filter((pick) => acceptsPick(input, pick)))
-          : []
-        fields[input.id] = { kind: 'selection', picks: picks.slice(0, input.max ?? picks.length) }
+      case 'selection':
+        fields[input.id] = {
+          kind: 'selection',
+          picks: Array.isArray(value) ? uniquePicks(value) : [],
+        }
         break
-      }
       case 'length':
       case 'angle':
       case 'integer':
@@ -157,6 +191,14 @@ export function createCommandState(
         fields[input.id] = { kind: 'list', value: isListValue(value) ? { ...value } : {} }
         break
     }
+  }
+  const values = commandValues(spec, { fields, active: null }, units)
+  for (const input of spec.inputs) {
+    if (input.kind !== 'selection') continue
+    const picks = picksOf({ fields, active: null }, input.id).filter((pick) =>
+      acceptsPick(input, pick, values),
+    )
+    fields[input.id] = { kind: 'selection', picks: picks.slice(0, input.max ?? picks.length) }
   }
   const state: CommandState = { fields, active: null }
   const { hidden } = readCommand(spec, state, units)
@@ -196,11 +238,13 @@ function addPick(
 ): CommandState {
   if (!id) return state
   const input = findInput(spec, id)
-  if (input?.kind !== 'selection' || !acceptsPick(input, pick)) return state
+  if (input?.kind !== 'selection') return state
+  const values = commandValues(spec, state, units)
+  if (!acceptsPick(input, pick, values)) return state
   const current = picksOf(state, id)
-  const merged = input.merge?.(current, pick)
+  const merged = input.merge?.(current, pick, values)
   if (merged) {
-    const picks = uniquePicks(merged.filter((candidate) => acceptsPick(input, candidate)))
+    const picks = uniquePicks(merged.filter((candidate) => acceptsPick(input, candidate, values)))
     const next: CommandState = {
       ...withField(state, id, { kind: 'selection', picks: picks.slice(0, input.max) }),
       active: id,
@@ -230,11 +274,12 @@ function applyFills(
   units: UnitContext,
 ): CommandState {
   let next = state
+  const values = { ...commandValues(spec, state, units), ...fills }
   for (const [id, value] of Object.entries(fills)) {
     const input = findInput(spec, id)
     if (!input) continue
     if (input.kind === 'selection' && Array.isArray(value)) {
-      const picks = uniquePicks(value.filter((pick) => acceptsPick(input, pick)))
+      const picks = uniquePicks(value.filter((pick) => acceptsPick(input, pick, values)))
       next = withField(next, id, {
         kind: 'selection',
         picks: picks.slice(0, input.max ?? picks.length),
@@ -284,7 +329,8 @@ export function reduceCommand(
   action: CommandAction,
   units: UnitContext = DEFAULT_UNITS,
 ): CommandState {
-  const next = reduceFields(spec, state, action, units)
+  const changed = reduceFields(spec, state, action, units)
+  const next = changed === state ? state : prunePicks(spec, changed, units)
   if (next === state || !spec.derive || !('doc' in units)) return next
   if (
     action.type !== 'text' &&
@@ -297,7 +343,9 @@ export function reduceCommand(
   }
   const { values } = readCommand(spec, next, units)
   const derived = spec.derive(values, action.id, units as CommandContext)
-  return derived ? settleActive(spec, applyFills(spec, next, derived, units), units) : next
+  return derived
+    ? settleActive(spec, prunePicks(spec, applyFills(spec, next, derived, units), units), units)
+    : next
 }
 
 function reduceFields(
@@ -361,7 +409,8 @@ function reduceFields(
     case 'setPicks': {
       const input = findInput(spec, action.id)
       if (input?.kind !== 'selection') return state
-      const picks = uniquePicks(action.picks.filter((pick) => acceptsPick(input, pick)))
+      const values = commandValues(spec, state, units)
+      const picks = uniquePicks(action.picks.filter((pick) => acceptsPick(input, pick, values)))
       return withField(state, action.id, {
         kind: 'selection',
         picks: picks.slice(0, input.max ?? picks.length),

@@ -526,6 +526,15 @@ function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, Comma
         feature.kind === 'extrude'
           ? {
               ...shared,
+              profile: [
+                ...shared.profile,
+                ...(feature.curves ?? []).flatMap(
+                  (id) => curvePick(doc, feature.sketchId, id) ?? [],
+                ),
+              ],
+              thin: !!feature.thinThickness,
+              wallThickness: feature.thinThickness ?? 2,
+              wallSide: feature.thinSide ?? 'one',
               surface: feature.surface === true,
               direction: feature.symmetric ? 'symmetric' : feature.twoSided ? 'two' : 'one',
               measure: feature.halfLength ? 'half' : 'whole',

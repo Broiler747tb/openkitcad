@@ -80,6 +80,37 @@ export function sketchChains(sketch: Sketch2D, tolerance = 1e-6): SketchChain[] 
   return chains
 }
 
+export function tangentChain(sketch: Sketch2D, entityId: string, tolerance = 1e-6): string[] {
+  const curves = chainCurves(sketch).filter(({ curve }) => !curve.closed)
+  const seed = curves.find(({ entity }) => entity.id === entityId)
+  if (!seed) return [entityId]
+  const ends = (curve: Curve) =>
+    [0, 1].map((s) => {
+      const d = curve.d1(s)
+      const size = Math.hypot(d[0], d[1]) || 1
+      return { at: curve.at(s), along: [d[0] / size, d[1] / size] as Vec2 }
+    })
+  const found = new Set([entityId])
+  const queue = [seed]
+  while (queue.length) {
+    const current = queue.pop()!
+    for (const end of ends(current.curve)) {
+      for (const other of curves) {
+        if (found.has(other.entity.id)) continue
+        const meets = ends(other.curve).some(
+          (candidate) =>
+            Math.hypot(candidate.at[0] - end.at[0], candidate.at[1] - end.at[1]) <= tolerance &&
+            Math.abs(candidate.along[0] * end.along[1] - candidate.along[1] * end.along[0]) < 0.02,
+        )
+        if (!meets) continue
+        found.add(other.entity.id)
+        queue.push(other)
+      }
+    }
+  }
+  return [...found]
+}
+
 export function chainTangent(sketch: Sketch2D, chain: SketchChain): { at: Vec2; direction: Vec2 } {
   const pts = pointLookup(sketch)
   const piece = chain.pieces[0]

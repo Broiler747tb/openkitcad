@@ -114,6 +114,9 @@ export interface ExtrudeFeature extends FeatureBase {
   start?: ExtrudeStart
   startOffset?: number
   startPlane?: PlaneRef
+  thinThickness?: number
+  thinSide?: 'one' | 'center' | 'two'
+  curves?: string[]
   result: BodyOperation
 }
 

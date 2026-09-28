@@ -10,7 +10,7 @@ import {
 import type { ModifyResult } from './modify'
 import type { Constraint, NewConstraint, Sketch2D, SketchEntity } from './types'
 
-type Ids = (prefix: string) => string
+type Ids = (prefix: string, origin?: string) => string
 
 interface Step {
   entity: SketchEntity
@@ -223,11 +223,15 @@ export function offsetChains(
     const joints: Vec2[] = []
     for (let i = 0; i + 1 < offsets.length; i++) joints.push(meet(offsets[i], offsets[i + 1]))
     if (closed && offsets.length > 1) joints.push(meet(offsets[offsets.length - 1], offsets[0]))
+    const travel = chain.map((step) => {
+      const ends = entityEnds(step.entity)
+      return ends && (step.forward ? ends : [ends[1], ends[0]])
+    })
     const pointIds = new Map<string, string>()
-    const pointFor = (key: string, p: Vec2) => {
+    const pointFor = (key: string, p: Vec2, origin?: string) => {
       const existing = pointIds.get(key)
       if (existing) return existing
-      const id = ids('p')
+      const id = ids('p', origin)
       sketch.points.push({ id, x: p[0], y: p[1] })
       pointIds.set(key, id)
       return id
@@ -253,8 +257,8 @@ export function offsetChains(
       if (source.kind === 'ellipse' && piece.samples) {
         const samples = piece.samples
         const half = Math.floor(samples.length / 2)
-        const start = pointFor('ellipse-start', samples[0])
-        const middle = pointFor('ellipse-middle', samples[half])
+        const start = pointFor('ellipse-start', samples[0], `${source.id}.start`)
+        const middle = pointFor('ellipse-middle', samples[half], `${source.id}.middle`)
         const inner = (from: number, to: number) =>
           samples.slice(from, to).map((p) => {
             const pid = ids('p')
@@ -263,14 +267,14 @@ export function offsetChains(
           })
         sketch.entities.push(
           {
-            id: ids('e'),
+            id: ids('e', `${source.id}.0`),
             kind: 'spline',
             mode: 'fit',
             points: [start, ...inner(1, half), middle],
             construction: source.construction,
           },
           {
-            id: ids('e'),
+            id: ids('e', `${source.id}.1`),
             kind: 'spline',
             mode: 'fit',
             points: [middle, ...inner(half + 1, samples.length - 1), start],
@@ -281,7 +285,7 @@ export function offsetChains(
         return
       }
       if (piece.kind === 'circle') {
-        const id = ids('e')
+        const id = ids('e', source.id)
         sketch.entities.push({
           id,
           kind: 'circle',
@@ -293,9 +297,11 @@ export function offsetChains(
         made++
         return
       }
-      const p1 = pointFor(startKey, startPoint)
-      const p2 = pointFor(endKey, endPoint)
-      const id = ids('e')
+      const startOrigin =
+        startKey === 's' ? travel[0]?.[0] : travel[(i + offsets.length - 1) % offsets.length]?.[1]
+      const p1 = pointFor(startKey, startPoint, startOrigin)
+      const p2 = pointFor(endKey, endPoint, travel[i]?.[1])
+      const id = ids('e', source.id)
       if (piece.kind === 'line') {
         sketch.entities.push({ id, kind: 'line', p1, p2, construction: source.construction })
         add({ kind: 'parallel', a: source.id, b: id })

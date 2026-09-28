@@ -284,6 +284,41 @@ export function breakEntity(sketch: Sketch2D, entityId: string, at: Vec2, ids: I
   return { ok: true }
 }
 
+export function splitEntityAt(
+  sketch: Sketch2D,
+  entityId: string,
+  cuts: ReadonlyArray<{ s: number; pointId: string }>,
+  ids: Ids,
+): Array<{ id: string; from: number; to: number }> {
+  const entity = sketch.entities.find((e) => e.id === entityId)
+  const pts = pointLookup(sketch)
+  if (!entity || !isCurveEntity(entity) || !curveOf(entity, pts) || !cuts.length) return []
+  const sorted: Cut[] = [...cuts]
+    .sort((a, b) => a.s - b.s)
+    .map((cut) => ({ s: cut.s, entityId: null, pointId: cut.pointId }))
+  const pieces: Piece[] = CLOSED.has(entity.kind)
+    ? sorted.map((cut, i) => {
+        const next = sorted[(i + 1) % sorted.length]
+        return {
+          from: cut.s,
+          to: i + 1 < sorted.length ? next.s : next.s + 1,
+          start: cut,
+          end: next,
+        }
+      })
+    : [null, ...sorted].map((cut, i) => ({
+        from: cut?.s ?? 0,
+        to: sorted[i]?.s ?? 1,
+        start: cut,
+        end: sorted[i] ?? null,
+      }))
+  return buildPieces(sketch, entity, pieces, ids, pts).map((id, i) => ({
+    id,
+    from: pieces[i].from,
+    to: pieces[i].to,
+  }))
+}
+
 export function extendEntity(sketch: Sketch2D, entityId: string, at: Vec2, ids: Ids): ModifyResult {
   const entity = sketch.entities.find((e) => e.id === entityId)
   if (!entity || (entity.kind !== 'line' && entity.kind !== 'arc')) {
