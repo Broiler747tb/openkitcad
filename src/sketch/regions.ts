@@ -78,16 +78,6 @@ interface HalfEdge {
 
 const MAX_ENTITIES = 4000
 
-function signedArea(polygon: readonly Vec2[]): number {
-  let area = 0
-  for (let i = 0; i < polygon.length; i++) {
-    const p = polygon[i]
-    const q = polygon[(i + 1) % polygon.length]
-    area += p[0] * q[1] - q[0] * p[1]
-  }
-  return area / 2
-}
-
 const GAUSS_NODES = [
   -0.906179845938664, -0.5384693101056831, 0, 0.5384693101056831, 0.906179845938664,
 ]

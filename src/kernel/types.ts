@@ -122,4 +122,5 @@ export interface KernelApi {
   printPrep(instanceIds: string[], options: PrintOptions): Promise<PrintWarning[]>
   distanceBetween(a: string, b: string): Promise<number | null>
   selfTest(): Promise<{ triangles: number; volume: number; faces: number }>
+  debugSpin(ms: number): Promise<void>
 }

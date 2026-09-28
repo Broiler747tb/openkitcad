@@ -252,6 +252,12 @@ export function canMoveFeature(doc: OkcDocument, id: string, toIndex: number): b
   )
 }
 
+export function canMoveEarlier(doc: OkcDocument, index: number): boolean {
+  if (index <= 0 || index >= doc.timeline.length) return false
+  const previous = doc.timeline[index - 1].id
+  return !featureDependencies(doc, doc.timeline[index]).includes(previous)
+}
+
 export function identityMatrix(): Matrix4 {
   return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
 }

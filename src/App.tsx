@@ -7,17 +7,11 @@ import { Inspector } from './ui/Inspector'
 import { Tutorial } from './ui/Tutorial'
 import { ExportDialog } from './ui/ExportDialog'
 import { useStore } from './doc/store'
-import { kernel } from './kernel/api'
-import {
-  discardOldAutosave,
-  loadAutosave,
-  readShareLink,
-  scheduleAutosave,
-  saveAutosaveNow,
-} from './doc/persist'
+import { AUTOSAVE_FULL, scheduleAutosave, saveAutosaveNow } from './doc/persist'
+import { bootOnce } from './doc/boot'
+import { installFileDrop } from './ui/fileDrop'
 import { planeLabel } from './doc/planes'
 import { UNIT_NAME } from './core/units'
-import type { OkcDocument } from './doc/types'
 import { activeSketchFeature } from './doc/store'
 import { ActionDialogHost } from './ui/ActionDialog'
 import { Timeline, NavigationBar } from './ui/Timeline'
@@ -35,53 +29,30 @@ export function App() {
   const [sheet, setSheet] = useState<'left' | 'right' | null>(null)
   const [showTutorial, setShowTutorial] = useState(false)
   const kernelReady = useStore((s) => s.kernelReady)
+  const kernelError = useStore((s) => s.kernelError)
+  const autosaving = useStore((s) => s.autosaving)
   const doc = useStore((s) => s.doc)
   const activeSketch = useStore((s) => s.activeSketch)
   const selection = useStore((s) => s.selection)
   const commanding = useCommand((s) => !!s.session)
 
-  // Boot the kernel, then restore whatever the user was last working on.
   useEffect(() => {
-    let cancelled = false
-    discardOldAutosave()
-    kernel()
-      .ready()
-      .then(() => {
-        if (cancelled) return
-        useStore.getState().setKernelReady(true)
-
-        let shared: OkcDocument | null = null
-        try {
-          shared = readShareLink()
-        } catch (e) {
-          history.replaceState(null, '', location.pathname)
-          useStore.getState().setStatus((e as Error).message)
-        }
-        if (shared) {
-          useStore.getState().setDoc(shared)
-          history.replaceState(null, '', location.pathname)
-          return
-        }
-        const saved = loadAutosave()
-        if (saved && (saved.doc.timeline.length || saved.doc.occurrences.length)) {
-          useStore.getState().setDoc(saved.doc)
-          return
-        }
-      })
-    return () => {
-      cancelled = true
-    }
+    void bootOnce()
   }, [])
 
+  useEffect(() => installFileDrop(), [])
+
   useEffect(() => {
-    // Slow mobile WASM startup must not overwrite the previous autosave with an empty document.
-    if (kernelReady) scheduleAutosave(doc)
-  }, [doc, kernelReady])
+    if (!autosaving) return
+    scheduleAutosave(doc, (saved) => {
+      if (!saved) useStore.getState().setStatus(AUTOSAVE_FULL)
+    })
+  }, [doc, autosaving])
 
   useEffect(() => {
     const save = () => {
       const s = useStore.getState()
-      if (s.kernelReady) saveAutosaveNow(s.doc)
+      if (s.autosaving) saveAutosaveNow(s.doc)
     }
     const hidden = () => {
       if (document.visibilityState === 'hidden') save()
@@ -177,13 +148,21 @@ export function App() {
             <div style={{ fontSize: 18, marginBottom: 6 }}>
               Open<span style={{ color: 'var(--accent)' }}>Kit</span>CAD
             </div>
-            <div style={{ color: 'var(--text-dim)', fontSize: 12.5 }}>
-              Starting the geometry engine…
-              <br />
-              <span style={{ color: 'var(--text-faint)' }}>
-                About 11 MB, and only the first time.
-              </span>
-            </div>
+            {kernelError ? (
+              <div style={{ color: 'var(--text-dim)', fontSize: 12.5 }}>
+                The geometry engine could not start: {kernelError}
+                <br />
+                <span style={{ color: 'var(--text-faint)' }}>Reload the page to try again.</span>
+              </div>
+            ) : (
+              <div style={{ color: 'var(--text-dim)', fontSize: 12.5 }}>
+                Starting the geometry engine…
+                <br />
+                <span style={{ color: 'var(--text-faint)' }}>
+                  About 11 MB, and only the first time.
+                </span>
+              </div>
+            )}
           </div>
         </div>
       )}

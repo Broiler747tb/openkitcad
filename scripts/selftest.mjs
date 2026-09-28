@@ -28,9 +28,10 @@ const browser = await launch()
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } })
 
 const crashes = []
+const logged = []
 page.on('pageerror', (error) => crashes.push(String(error)))
 page.on('console', (message) => {
-  if (message.type() === 'error') crashes.push(message.text())
+  if (message.type() === 'error') logged.push(message.text())
 })
 
 let results = []
@@ -51,7 +52,7 @@ try {
 
 if (failure) {
   console.error(`The suite did not finish: ${failure.message}`)
-  for (const crash of crashes.slice(0, 20)) console.error(`  ${crash}`)
+  for (const crash of [...crashes, ...logged].slice(0, 20)) console.error(`  ${crash}`)
   process.exit(1)
 }
 
@@ -59,8 +60,12 @@ const failed = results.filter((result) => !result.pass)
 const skipped = results.filter((result) => result.skipped)
 for (const result of failed) console.error(`FAIL  ${result.name}\n      ${result.detail}`)
 for (const result of skipped) console.log(`skip  ${result.name}\n      ${result.detail}`)
+for (const line of logged.slice(0, 20)) console.log(`console error  ${line}`)
+for (const crash of crashes) console.error(`UNCAUGHT  ${crash}`)
+const broken = failed.length > 0 || crashes.length > 0
 console.log(
-  `${failed.length ? 'FAIL' : 'PASS'}  ${results.length - failed.length - skipped.length}/${results.length - skipped.length}` +
-    `${skipped.length ? `  (${skipped.length} skipped)` : ''}`,
+  `${broken ? 'FAIL' : 'PASS'}  ${results.length - failed.length - skipped.length}/${results.length - skipped.length}` +
+    `${skipped.length ? `  (${skipped.length} skipped)` : ''}` +
+    `${crashes.length ? `  (${crashes.length} uncaught page errors)` : ''}`,
 )
-process.exit(failed.length ? 1 : 0)
+process.exit(broken ? 1 : 0)

@@ -73,7 +73,7 @@ cable entries that get a lead out of a box (§19), the clips that hold a board w
 (§20), the screw lid that closes a round opening (§21), the enclosure that puts a box, a lid,
 mounts and openings round the parts you picked (§22), and the KiCad import that turns a board you
 designed into one of your own parts (§23). After those eight, Thread (§24) closed the biggest gap
-left on the parity list.
+left on the parity list, and a review of the whole code base (§25) fixed what it found.
 
 ## 3. Document model v2
 
@@ -951,7 +951,59 @@ uniform gap between a bolt and the nut cut for it), the size table, a bolt and a
 directions, both ends of the face, a 19-turn bolt and a 16-turn hole cut the same way all along,
 Auto sizing, the errors for a mismatched size and the right tap drill, and the refusals.
 
-## 25. How the work is done
+## 25. Review fixes
+
+A review of the whole code base in September 2026 turned up six bugs that were each confirmed in
+the running app, plus gaps in robustness and speed. All are fixed, and `?selftest&suite=review`
+covers each one.
+
+**Nothing blanks the app.** The whole app sits inside `CrashGuard` (`src/ui/CrashGuard.tsx`): if
+anything throws while drawing, a small card says what broke and offers Undo last change and Reload
+instead of a white page. The crash that showed the gap was sketch Delete: deleting a corner left the
+lines through it pointing at a point that was gone. Every sketch delete now goes through
+`deleteSketchItems` (`src/sketch/power.ts`), which follows Fusion: a deleted point takes the curves
+that use it, a deleted curve takes endpoints nothing else uses and the dimensions on them, and the
+sketch origin stays. The viewport's Delete key removes the whole selection as one undo step.
+
+**Work survives.** Start-up (`src/doc/boot.ts`) restores the design before autosave is switched on,
+so a link or saved design that fails to open can no longer be replaced by an empty one half a
+second later. A link that fails says why and the saved design opens instead; a saved design that
+fails is kept aside under its own storage key and a new one starts; a valid link asks before it
+replaces unsaved work. Imported meshes are kept in IndexedDB (`src/doc/meshVault.ts`) and the
+autosave only refers to them, so a big scan no longer fills localStorage and stops autosave; a mesh
+the database has not confirmed yet is still written inline. If a save does fail, the status bar
+says so, and so does every place that saves your parts.
+
+**Parts from files and links are checked.** A part that arrives with a design goes through the
+same `partProblems` check as a part file; a broken one is left out with the reason, and one that
+clashes with a different part of yours comes in as a copy under a new id, with the design pointed
+at the copy (a second open reuses that copy). Stored parts that fail the check are hidden from the
+app but kept in storage. In the kernel, a broken or missing part fails only its own occurrence, so
+the rest of the design still builds.
+
+**The same design builds the same way.** `shape.boundingBox` in replicad boxes the triangulation
+when a shape has been displayed and the B-spline poles when it has not, so Move's pivot, Scale's
+origin and the vent grid depended on what had been shown before: a rotated loft landed 0.23 mm off
+in X and Y after a reload. They now use `exactBounds` (`src/kernel/bounds.ts`,
+`BRepBndLib.AddOptimal` without the triangulation). Existing designs that rotate or scale a curved
+body may move by that much once, towards the true centre.
+
+**A stuck engine can be stopped.** The worker reports which step it is on. After 10 s the progress
+bar names the step and shows Stop, which ends the worker, starts a fresh one and suppresses that
+step so the rest of the design shows; undo brings it back. A preview that sticks is stopped the
+same way and the command says so. If the engine cannot start at all, the start screen says why.
+
+**Smaller things.** Undo and redo wait while a command panel is open, since the command was set up
+on the design as it was. Files dropped on the window open the way File does (a mesh starts Insert
+Mesh, a design opens, a KiCad board opens the import) instead of the browser navigating away, and
+the desktop build opens links in the system browser and never navigates away from the app. The
+viewport draws only when something changes, instead of every frame. Dragging in a sketch, moving a
+body with the gizmo and moving a component copy only the part of the design that changed. The
+Browser's move-up buttons check only the neighbour they would swap with. `tsconfig.json` now
+rejects unused locals, the Test workflow runs the suite on every push to `fusion`, and the test
+runner fails on uncaught page errors.
+
+## 26. How the work is done
 
 - Agents never start other agents or workflows.
 - New and rewritten code has no comments. Touched files are formatted with Prettier, and the
@@ -965,7 +1017,8 @@ Auto sizing, the errors for a mismatched size and the right tap drill, and the r
   change is listed in the agent's report.
 - `?kerneltest` runs the model and kernel tests without the app; `?selftest` runs everything.
   Results are on `window.__okc_tests`. `npm test` builds and runs the same suite headlessly in
-  Chromium through `scripts/selftest.mjs`, and the Pages workflow runs it before it deploys.
+  Chromium through `scripts/selftest.mjs`; the Test workflow runs it on every push to `fusion`,
+  the Pages workflow runs it before it deploys, and an uncaught page error fails it.
   A check that cannot run where it finds itself returns `skipped` rather than a false failure.
 - **F1 smoke test.** Create a sketch on XY, draw a rectangle, extrude it 3 mm and fillet every edge
   1 mm. Insert a Raspberry Pi 4 and add its mounting holes to the plate, move the Pi and watch the
@@ -1018,6 +1071,10 @@ Auto sizing, the errors for a mismatched size and the right tap drill, and the r
   headers: the pins go and the plated holes show. Tick Pin headers on the Pico: male pins appear under
   both long edges. Put a 3 mm plate just under the Nano, run the clearance check with and without its
   headers, and swap the Pico for a Pico 2 to see the pins stay. Undo back through every step.
+- **Review smoke test.** In a sketch, draw two joined lines, click their shared corner and press
+  Delete: both lines go and the app carries on. Undo, open Box and press Ctrl+Z: nothing happens
+  until the panel closes. Drop an STL on the window: Insert Mesh opens. Leave the app alone and see
+  the GPU go quiet. Reload: the design comes back, meshes included.
 - **EM smoke test (thread).** Make a cylinder of radius 4 and height 12, and a 16 mm block with a
   6.65 mm hole through it. Open CREATE > Thread, click the cylinder near its top and the inside of
   the hole, and OK: the peg becomes an M8 bolt with a lead at the tip and the hole is tapped M8.

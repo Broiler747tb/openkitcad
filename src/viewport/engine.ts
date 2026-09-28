@@ -188,6 +188,7 @@ export class ViewportEngine {
   }
 
   private disposed = false
+  private needsRender = true
   private mouseScheme: MouseScheme = MOUSE_SCHEMES[DEFAULT_MOUSE_SCHEME]
   private touchpadSpeed = 1
   private navigationEnabled = true
@@ -330,7 +331,27 @@ export class ViewportEngine {
     this.buildLighting()
     this.buildGrid()
     this.resize()
+    this.controls.addEventListener('change', this.invalidate)
+    this.renderOnChange()
     this.animate()
+  }
+
+  invalidate = () => {
+    this.needsRender = true
+  }
+
+  private renderOnChange() {
+    const prototype = ViewportEngine.prototype as unknown as Record<string, unknown>
+    for (const name of Object.getOwnPropertyNames(prototype)) {
+      if (name === 'constructor' || name === 'stepViewTween') continue
+      const method = Object.getOwnPropertyDescriptor(prototype, name)?.value
+      if (typeof method !== 'function') continue
+      ;(this as unknown as Record<string, unknown>)[name] = (...args: unknown[]) => {
+        const result = method.apply(this, args)
+        this.needsRender = true
+        return result
+      }
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -1574,6 +1595,7 @@ export class ViewportEngine {
       preferences.angleSnap ? THREE.MathUtils.degToRad(preferences.angleSnap) : null,
     )
 
+    tc.addEventListener('change', this.invalidate)
     tc.addEventListener('dragging-changed', (event) => {
       const dragging = (event as unknown as { value: boolean }).value
       this.controls.enabled = !dragging
@@ -2357,7 +2379,9 @@ export class ViewportEngine {
   private animate = () => {
     if (this.disposed) return
     requestAnimationFrame(this.animate)
-    if (!this.stepViewTween()) this.controls.update()
+    const tweening = this.stepViewTween()
+    if (!tweening && this.controls.update()) this.needsRender = true
+    if (!tweening && !this.needsRender) return
     if (this.viewListeners.size) {
       const view = this.viewRotation()
       const key = view.map((v) => v.toFixed(4)).join(',')
@@ -2403,6 +2427,7 @@ export class ViewportEngine {
         this.onLabels(next)
       }
     }
+    this.needsRender = false
   }
 
   dispose() {

@@ -58,7 +58,8 @@ import {
   useStore,
 } from '../doc/store'
 import { frameFromPlaneRefLocal, transformFrame } from '../doc/planes'
-import { findSnap, hitTestSketch, toggleSelection } from '../sketch/inference'
+import { findSnap, hitTestSketch, toggleSelection, type SketchTarget } from '../sketch/inference'
+import { deleteSketchItems } from '../sketch/power'
 import {
   anchorFromSnap,
   buildTool,
@@ -93,7 +94,6 @@ import {
 } from '../sketch/dimensions'
 import type { LabelAt } from '../sketch/types'
 import type { ConstraintToolId } from '../sketch/constraintTools'
-import { sketchActions } from '../sketch/actions'
 import { isAndroidApp, usePenMode } from '../platform/android'
 import { SketchMenu } from '../ui/SketchMenu'
 import { chooseAction } from '../ui/ActionDialog'
@@ -103,7 +103,7 @@ import { saveDocument } from '../doc/persist'
 import { usePreferences, snapOptions } from '../doc/preferences'
 import { fmt, frameToWorld, v2, type Frame, type Vec2, type Vec3 } from '../core/math'
 import { CONSTRAINT_LABELS } from '../sketch/types'
-import type { Constraint, NewConstraint, Sketch2D } from '../sketch/types'
+import type { Constraint, Sketch2D } from '../sketch/types'
 import type { Body, Component, Feature, LengthUnit, Matrix4, Occurrence } from '../doc/types'
 import type { Instance } from '../kernel/types'
 import {
@@ -139,8 +139,6 @@ import { readPalette } from '../theme/palette'
 import { useMouseScheme } from '../ui/mouse/preference'
 import { mouseScheme } from '../ui/mouse/schemes'
 
-/** Snap radius in screen pixels. */
-const SNAP_PX = 11
 /** How far the pointer may travel and still count as a click rather than a drag. */
 const CLICK_SLOP_PX = 4
 
@@ -221,31 +219,17 @@ function copySelection(cut: boolean): boolean {
   return false
 }
 
-/**
- * Delete whatever is picked inside a sketch.
- *
- * Entities first, then loose points, because deleting an entity takes its
- * constraints with it and a point that was only holding that entity up would
- * otherwise be deleted out from under it.
- */
 function deleteSketchSelection(): void {
   const store = useStore.getState()
   const picked = store.sketchSelection
-  for (const target of picked) {
-    if (target.kind === 'entity') {
-      store.applySketchAction({ kind: 'deleteEntity', entityId: target.id })
-    }
-  }
-  for (const target of picked) {
-    if (target.kind === 'point') {
-      store.applySketchAction({ kind: 'deletePoint', pointId: target.id })
-    }
-  }
-  for (const target of picked) {
-    if (target.kind === 'constraint') {
-      store.applySketchAction({ kind: 'deleteConstraint', constraintId: target.id })
-    }
-  }
+  const ids = (kind: SketchTarget['kind']) =>
+    picked.filter((target) => target.kind === kind).map((target) => target.id)
+  const constraints = new Set(ids('constraint'))
+  store.editSketch((sketch) => {
+    sketch.constraints = sketch.constraints.filter((c) => !constraints.has(c.id))
+    deleteSketchItems(sketch, { entities: ids('entity'), points: ids('point') })
+  })
+  store.solveActiveSketch()
   store.setSketchSelection([])
 }
 
@@ -974,18 +958,6 @@ export function Viewport() {
     const engine = engineRef.current
     if (!engine || !frame) return null
     return engine.pickOnPlane(e.clientX, e.clientY, frame)
-  }
-
-  /** Reuse a snapped point, or add a new one. */
-  function ensurePoint(sketch: Sketch2D, pos: Vec2, snapId: string | null): string {
-    if (snapId && sketch.points.some((p) => p.id === snapId)) return snapId
-    const id = newId('p')
-    sketch.points.push({ id, x: pos[0], y: pos[1] })
-    return id
-  }
-
-  function pushConstraint(sketch: Sketch2D, c: NewConstraint) {
-    sketch.constraints.push({ ...c, id: newId('c') } as Constraint)
   }
 
   useEffect(() => {
@@ -2510,13 +2482,13 @@ function solidMarkingItems(): Array<MarkingItem | null> {
     {
       id: 'undo',
       label: 'Undo',
-      disabled: !store.past.length,
+      disabled: !store.past.length || store.commandOpen,
       run: () => useStore.getState().undo(),
     },
     {
       id: 'redo',
       label: 'Redo',
-      disabled: !store.future.length,
+      disabled: !store.future.length || store.commandOpen,
       run: () => useStore.getState().redo(),
     },
     { id: 'move', label: 'Move/Copy', icon: MoveIcon, run: () => runCommand('move', 'Move/Copy') },
@@ -2554,13 +2526,13 @@ function sketchMarkingItems(): Array<MarkingItem | null> {
     {
       id: 'undo',
       label: 'Undo',
-      disabled: !store.past.length,
+      disabled: !store.past.length || store.commandOpen,
       run: () => useStore.getState().undo(),
     },
     {
       id: 'redo',
       label: 'Redo',
-      disabled: !store.future.length,
+      disabled: !store.future.length || store.commandOpen,
       run: () => useStore.getState().redo(),
     },
     tool('trim', 'Trim', TrimIcon),

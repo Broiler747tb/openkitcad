@@ -7,8 +7,6 @@ import { rawBoolean } from './rawBoolean'
 import { roundFace, type RoundFace } from './roundFace'
 import type { SolidStage } from './solidSteps'
 
-type OcAny = any
-
 type Solid = {
   fuse(other: Solid): Solid
   cut(other: Solid): Solid

@@ -220,12 +220,37 @@ export function isFixed(s: Sketch2D, entityId: string): boolean {
 }
 
 export function deleteGeometry(s: Sketch2D, selected: string[]) {
-  const removed = new Set(selected)
-  s.entities = s.entities.filter((e) => !removed.has(e.id))
-  s.constraints = s.constraints.filter((c) => !constraintRefs(c).some((ref) => removed.has(ref)))
-  // Retain points referenced by constraints, including the fixed origin.
+  deleteSketchItems(s, { entities: selected })
+}
+
+export function deleteSketchItems(
+  s: Sketch2D,
+  items: { entities?: readonly string[]; points?: readonly string[] },
+) {
+  const entities = new Set(items.entities)
+  const points = new Set((items.points ?? []).filter((id) => id !== 'origin'))
+  s.entities = s.entities.filter(
+    (e) => !entities.has(e.id) && !pointIds(e).some((id) => points.has(id)),
+  )
+  s.points = s.points.filter((p) => !points.has(p.id))
+  removeOrphans(s)
+}
+
+export function removeOrphans(s: Sketch2D) {
+  const used = new Set(['origin', ...s.entities.flatMap(pointIds)])
+  const entityIds = new Set(s.entities.map((e) => e.id))
+  const pointIdSet = new Set(s.points.map((p) => p.id))
+  s.constraints = s.constraints.filter((c) =>
+    constraintRefs(c).every((ref) =>
+      pointIdSet.has(ref) ? used.has(ref) || c.kind === 'fix' : entityIds.has(ref),
+    ),
+  )
+  s.constraints = s.constraints.filter(
+    (c) => !(c.kind === 'fix' && c.p !== 'origin' && !used.has(c.p)),
+  )
   cleanUnusedPoints(s)
 }
+
 export function cleanUnusedPoints(s: Sketch2D) {
   const used = new Set([
     'origin',

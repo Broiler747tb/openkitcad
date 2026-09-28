@@ -289,7 +289,6 @@ function buildObjectActions(
     const found = findBody(doc, bodyId)
     if (!found) return raw
     const { body, component } = found
-    const componentId = component.id
     const extrude = mainExtrude(doc, bodyId)
     const sketchId = extrude?.sketchId
     const onThis = !!picked && picked.bodyId === bodyId && !!picked.name

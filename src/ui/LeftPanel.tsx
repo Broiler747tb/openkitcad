@@ -20,7 +20,7 @@ import {
   type Occurrence,
 } from '../doc/types'
 import {
-  canMoveFeature,
+  canMoveEarlier,
   childOccurrences,
   featureCreatesBodies,
   featureIndex,
@@ -527,7 +527,7 @@ function FeatureRow({
       <button
         className="act"
         title="Move earlier in the timeline"
-        disabled={index <= 0 || !canMoveFeature(doc, feature.id, index - 1)}
+        disabled={!canMoveEarlier(doc, index)}
         onClick={(e) => {
           e.stopPropagation()
           store.moveFeature(feature.id, index - 1)

@@ -31,6 +31,7 @@ import {
   type ProfileInput,
 } from './naming'
 import { chainBlueprint, sketchToProfile } from './profile'
+import { boundsCentre, exactBounds, unionBounds } from './bounds'
 
 export interface SolidBody {
   shape: any
@@ -182,17 +183,9 @@ function halfSpace(oc: any, frame: Frame, reach: number): any {
 }
 
 function boundsOf(bodies: readonly SolidBody[]): { centre: Vec3; reach: number } {
-  const lo: Vec3 = [Infinity, Infinity, Infinity]
-  const hi: Vec3 = [-Infinity, -Infinity, -Infinity]
-  for (const body of bodies) {
-    const [min, max] = body.shape.boundingBox.bounds
-    for (let i = 0; i < 3; i++) {
-      lo[i] = Math.min(lo[i], min[i])
-      hi[i] = Math.max(hi[i], max[i])
-    }
-  }
-  const centre: Vec3 = [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2]
-  return { centre, reach: Math.max(10, v3.len(v3.sub(hi, lo)) * 2) }
+  const all = unionBounds(bodies.map((body) => exactBounds(body.shape)))
+  const size = v3.sub([all[3], all[4], all[5]], [all[0], all[1], all[2]])
+  return { centre: boundsCentre(all), reach: Math.max(10, v3.len(size) * 2) }
 }
 
 export function runSolidStep(feature: Feature, stage: SolidStage): boolean {

@@ -97,6 +97,7 @@ import {
 } from './meshSteps'
 import { meshBounds, transformMesh, triangleCount, type TriMesh } from '../mesh/types'
 import { runSolidStep, type SolidStage } from './solidSteps'
+import { boundsCentre, exactBounds, unionBounds, type Bounds } from './bounds'
 import { checkHinge, checkHook, hingeSolids, hookSolids, place, runFitStep } from './fitSteps'
 import { sketchChains } from '../sketch/chains'
 import { chainBlueprint } from './profile'
@@ -569,7 +570,9 @@ export function buildPortCutters(
   return cutter ? transformShape(cutter, placed.matrix) : null
 }
 function buildVentCutter(feature: VentFeature, frame: Frame, target: any): any | null {
-  const [min, max] = target.boundingBox.bounds
+  const [x0, y0, z0, x1, y1, z1] = exactBounds(target)
+  const min = [x0, y0, z0]
+  const max = [x1, y1, z1]
   let uMin = Infinity
   let uMax = -Infinity
   let vMin = Infinity
@@ -1692,23 +1695,15 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
       const [rx, ry, rz] = feature.rotation
       const [dx, dy, dz] = feature.offset
       if (!rx && !ry && !rz && !dx && !dy && !dz) return
-      const lo: Vec3 = [Infinity, Infinity, Infinity]
-      const hi: Vec3 = [-Infinity, -Infinity, -Infinity]
-      for (const [, state] of states) {
-        const [bmin, bmax] = state!.shape.boundingBox.bounds
-        for (let i = 0; i < 3; i++) {
-          lo[i] = Math.min(lo[i], bmin[i])
-          hi[i] = Math.max(hi[i], bmax[i])
-        }
-      }
-      for (const id of meshes) {
-        const { min, max } = meshBounds(stage.meshBodies.get(id)!.mesh)
-        for (let i = 0; i < 3; i++) {
-          lo[i] = Math.min(lo[i], min[i])
-          hi[i] = Math.max(hi[i], max[i])
-        }
-      }
-      const centre: Vec3 = [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2]
+      const centre: Vec3 = boundsCentre(
+        unionBounds([
+          ...states.map(([, state]) => exactBounds(state!.shape)),
+          ...meshes.map((id): Bounds => {
+            const { min, max } = meshBounds(stage.meshBodies.get(id)!.mesh)
+            return [min[0], min[1], min[2], max[0], max[1], max[2]]
+          }),
+        ]),
+      )
       let matrix = translationMatrix(v3.scale(centre, -1))
       matrix = multiplyMatrices(rotationMatrix('x', rx), matrix)
       matrix = multiplyMatrices(rotationMatrix('y', ry), matrix)

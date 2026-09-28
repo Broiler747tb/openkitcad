@@ -9,12 +9,30 @@
 import { deflateSync, inflateSync, strFromU8, strToU8 } from 'fflate'
 import { emptyDocument, type OkcDocument } from './types'
 import type { CataloguePart } from '../catalogue/types'
-import { getPart, refreshUserParts, upsertUserPart } from '../catalogue'
+import {
+  CATALOGUE,
+  getPart,
+  partProblems,
+  refreshUserParts,
+  STORAGE_FULL,
+  uniquePartId,
+  upsertUserPart,
+  userParts,
+} from '../catalogue'
 import { loadUserParts } from '../catalogue/userParts'
 import { androidDownload } from '../platform/android'
-import { absorbMeshData, referencedMeshData } from './meshData'
+import {
+  absorbMeshData,
+  meshDataIds,
+  missingMeshData,
+  referencedMeshData,
+  unkeptMeshData,
+} from './meshData'
+import { forgetMeshesExcept, recallMeshes } from './meshVault'
+import { canonicalJson } from '../core/canonical'
 
 const AUTOSAVE_KEY = 'openkitcad.autosave.v2'
+const SET_ASIDE_KEY = 'openkitcad.autosave.v2.unopened'
 const OLD_AUTOSAVE_KEY = 'openkitcad.autosave.v1'
 const FILE_EXTENSION = '.okc'
 
@@ -67,22 +85,32 @@ export function discardOldAutosave(): void {
 
 let autosaveTimer: number | undefined
 
-export function scheduleAutosave(doc: OkcDocument): void {
+export function scheduleAutosave(doc: OkcDocument, report?: (saved: boolean) => void): void {
   clearTimeout(autosaveTimer)
-  autosaveTimer = window.setTimeout(() => saveAutosaveNow(doc), 600)
+  autosaveTimer = window.setTimeout(() => {
+    const saved = saveAutosaveNow(doc)
+    report?.(saved)
+  }, 600)
 }
 
-export function saveAutosaveNow(doc: OkcDocument): void {
-  clearTimeout(autosaveTimer)
+function writeAutosave(doc: OkcDocument): boolean {
   try {
-    localStorage.setItem(
-      AUTOSAVE_KEY,
-      JSON.stringify({ savedAt: new Date().toISOString(), doc: withMeshData(doc) }),
-    )
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({ savedAt: new Date().toISOString(), doc }))
+    return true
   } catch {
-    return
+    return false
   }
 }
+
+export function saveAutosaveNow(doc: OkcDocument): boolean {
+  clearTimeout(autosaveTimer)
+  const unkept = unkeptMeshData(doc)
+  const { meshData: _meshData, ...bare } = doc
+  if (Object.keys(unkept).length && writeAutosave({ ...bare, meshData: unkept })) return true
+  return writeAutosave(bare)
+}
+
+export const AUTOSAVE_FULL = `Autosave failed: ${STORAGE_FULL}. Save the design to a file to keep it.`
 
 export function loadAutosave(): { doc: OkcDocument; savedAt: string } | null {
   try {
@@ -93,6 +121,39 @@ export function loadAutosave(): { doc: OkcDocument; savedAt: string } | null {
     return { doc: normalise(parsed.doc), savedAt: parsed.savedAt }
   } catch {
     return null
+  }
+}
+
+export async function restoreAutosave(): Promise<{ doc: OkcDocument; savedAt: string } | null> {
+  const saved = loadAutosave()
+  if (!saved) return null
+  absorbMeshData(await recallMeshes(missingMeshData(saved.doc)))
+  return saved
+}
+
+function setAsideMeshIds(): string[] {
+  try {
+    const raw = localStorage.getItem(SET_ASIDE_KEY)
+    const timeline = raw ? JSON.parse(raw)?.doc?.timeline : null
+    if (!Array.isArray(timeline)) return []
+    return timeline.flatMap((feature) =>
+      feature?.kind === 'meshInsert' && typeof feature.dataId === 'string' ? [feature.dataId] : [],
+    )
+  } catch {
+    return []
+  }
+}
+
+export function tidyMeshStore(doc: OkcDocument): Promise<number> {
+  return forgetMeshesExcept(new Set([...meshDataIds(doc), ...setAsideMeshIds()]))
+}
+
+export function setAsideAutosave(): void {
+  try {
+    const raw = localStorage.getItem(AUTOSAVE_KEY)
+    if (raw) localStorage.setItem(SET_ASIDE_KEY, raw)
+  } catch {
+    return
   }
 }
 
@@ -121,32 +182,86 @@ export function serialise(doc: OkcDocument): string {
   return JSON.stringify(out, null, 2)
 }
 
-let lastAdoption: { added: string[]; skipped: string[] } = { added: [], skipped: [] }
+export interface Adoption {
+  added: string[]
+  copied: string[]
+  invalid: Array<{ name: string; problem: string }>
+  unsaved: string[]
+}
 
-/** What the last opened file or link brought with it, for the app to report. */
-export function lastAdoptedParts(): { added: string[]; skipped: string[] } {
+const noAdoption = (): Adoption => ({ added: [], copied: [], invalid: [], unsaved: [] })
+
+let lastAdoption: Adoption = noAdoption()
+
+export function lastAdoptedParts(): Adoption {
   return lastAdoption
 }
 
-export function adoptCustomParts(doc: OkcDocument): { added: string[]; skipped: string[] } {
-  const added: string[] = []
-  const skipped: string[] = []
-  // Read fresh either side of every write. The catalogue caches user parts -
-  // they are looked up inside the rebuild loop - and deciding whether a part is
-  // already known from a cache filled before the last write is how you get a
-  // part reported as already present and then not be there.
+function sameContent(a: CataloguePart, b: CataloguePart): boolean {
+  return canonicalJson({ ...a, id: '' }) === canonicalJson({ ...b, id: '' })
+}
+
+function partName(part: unknown): string {
+  const name = part && typeof part === 'object' ? (part as { name?: unknown }).name : undefined
+  return typeof name === 'string' && name.trim() ? name : 'A part'
+}
+
+export function adoptCustomParts(doc: OkcDocument): Adoption {
+  const adoption = noAdoption()
+  const renamed = new Map<string, string>()
   refreshUserParts()
   for (const part of doc.customParts ?? []) {
-    if (getPart(part.id)) {
-      skipped.push(part.name)
+    const problems = partProblems(part)
+    if (problems.length) {
+      adoption.invalid.push({ name: partName(part), problem: problems[0] })
       continue
     }
-    upsertUserPart(part)
+    const existing = getPart(part.id)
+    if (existing && sameContent(existing, part)) continue
+    const twin = existing ? userParts().find((mine) => sameContent(mine, part)) : undefined
+    if (twin) {
+      renamed.set(part.id, twin.id)
+      continue
+    }
+    const taken = new Set([...CATALOGUE, ...userParts()].map((known) => known.id))
+    const id = existing ? uniquePartId(part.id, taken) : part.id
+    upsertUserPart(id === part.id ? part : { ...part, id })
     refreshUserParts()
-    added.push(part.name)
+    if (!userParts().some((mine) => mine.id === id)) {
+      adoption.unsaved.push(part.name)
+      continue
+    }
+    if (id === part.id) {
+      adoption.added.push(part.name)
+      continue
+    }
+    renamed.set(part.id, id)
+    adoption.copied.push(part.name)
   }
-  lastAdoption = { added, skipped }
-  return lastAdoption
+  for (const component of doc.components) {
+    const source = component.source
+    if (source.kind !== 'catalogue' || !renamed.has(source.partId)) continue
+    component.source = { ...source, partId: renamed.get(source.partId)! }
+  }
+  if (doc.customParts && renamed.size) {
+    doc.customParts = doc.customParts.map((part) =>
+      renamed.has(part.id) ? { ...part, id: renamed.get(part.id)! } : part,
+    )
+  }
+  lastAdoption = adoption
+  return adoption
+}
+
+export function adoptionNote(adoption: Adoption = lastAdoption): string | null {
+  const notes = [
+    ...adoption.copied.map(
+      (name) =>
+        `This design's "${name}" differs from the one in your parts, so it was added as a copy.`,
+    ),
+    ...adoption.invalid.map(({ name, problem }) => `"${name}" was left out: ${problem}`),
+    ...adoption.unsaved.map((name) => `"${name}" could not be saved: ${STORAGE_FULL}.`),
+  ]
+  return notes.length ? notes.join(' ') : null
 }
 
 export function parseDesign(text: string): OkcDocument {
@@ -300,7 +415,7 @@ export function readShareLink(hash: string = location.hash): OkcDocument | null 
   } catch {
     throw new Error(OLD_DESIGN_MESSAGE)
   }
-  return deserialise(text)
+  return parseDesign(text)
 }
 
 /** Roughly how long a share link would be, so the UI can warn before copying. */

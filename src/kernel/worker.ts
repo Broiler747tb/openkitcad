@@ -50,6 +50,8 @@ import {
   type OcShape,
 } from './naming'
 import { flattenSvgPaths } from '../export/svgpath'
+import { canonicalJson } from '../core/canonical'
+import { exactBounds } from './bounds'
 import { analyzeMesh } from '../mesh/analysis'
 import { thinnestWall } from '../mesh/thickness'
 import { decodeMesh } from '../mesh/blob'
@@ -75,11 +77,21 @@ let ocReady: Promise<void> | null = null
 
 function ensureOC(): Promise<void> {
   if (!ocReady) {
-    ocReady = initOpenCascade({ locateFile: () => wasmUrl }).then((OC) => {
-      setOC(OC as never)
-    })
+    ocReady = initOpenCascade({ locateFile: () => wasmUrl }).then(
+      (OC) => {
+        setOC(OC as never)
+      },
+      (error) => {
+        ocReady = null
+        throw error
+      },
+    )
   }
   return ocReady
+}
+
+function progress(featureId: string): void {
+  self.postMessage({ okcProgress: featureId })
 }
 
 const MESH_TOLERANCE = 0.02
@@ -107,17 +119,6 @@ function hashText(text: string): string {
 
 function hash(...parts: string[]): string {
   return hashText(parts.join('␞'))
-}
-
-function canonicalJson(value: unknown): string {
-  if (value === null || value === undefined) return 'null'
-  if (typeof value !== 'object') return JSON.stringify(value) ?? 'null'
-  if (Array.isArray(value)) return `[${value.map((item) => canonicalJson(item)).join(',')}]`
-  const record = value as Record<string, unknown>
-  const keys = Object.keys(record)
-    .filter((key) => record[key] !== undefined)
-    .sort()
-  return `{${keys.map((key) => `${JSON.stringify(key)}:${canonicalJson(record[key])}`).join(',')}}`
 }
 
 class Lru<V> {
@@ -518,11 +519,33 @@ function catalogueSolid(
   if (component.source.kind !== 'catalogue') return null
   const { partId, overrides } = component.source
   const shipped = getPart(partId)
-  if (!shipped) return null
-  const part = effectivePart(shipped, component.source)
+  if (!shipped) {
+    errors.push({
+      featureId: component.id,
+      bodyId: component.id,
+      severity: 'error',
+      message: `"${component.name}" is not in the catalogue or in your parts.`,
+      hint: 'Open the design file it came from, or place the part again.',
+    })
+    return null
+  }
+  let part: CataloguePart
+  try {
+    part = effectivePart(shipped, component.source)
+  } catch (e) {
+    errors.push({
+      featureId: component.id,
+      bodyId: component.id,
+      severity: 'error',
+      message: `Could not build "${component.name}": ${(e as Error)?.message ?? 'unknown failure'}`,
+      hint: 'This is a problem with the part, not with your design.',
+    })
+    return null
+  }
   const key = hash('part', partId, canonicalJson(overrides ?? null), canonicalJson(part))
   let entry = partSolids.get(key)
   if (!entry) {
+    progress(component.id)
     try {
       entry = { shape: buildPartLocal(part, overrides) ?? null }
     } catch (e) {
@@ -620,6 +643,7 @@ function run(
             owned,
           })
       : undefined
+    progress(feature.id)
     snapshot = evaluateFeature(
       {
         doc,
@@ -742,6 +766,7 @@ function run(
       )
       let entry = cuts.get(cutKey)
       if (!entry) {
+        progress(target.featureId)
         entry = cutNegatives(target, hits)
         cuts.set(cutKey, entry)
       }
@@ -806,6 +831,7 @@ function run(
     if (known.has(key) || sent.has(key) || broken.has(key)) continue
     let tessellation = tessellations.get(key)
     if (!tessellation) {
+      progress(entry.featureId)
       try {
         tessellation = entry.mesh
           ? tessellateMesh(entry.mesh)
@@ -1128,7 +1154,12 @@ const api: KernelApi = {
       const component = findComponent(doc, node.componentId)
       if (component?.source.kind !== 'catalogue') continue
       const shipped = getPart(component.source.partId)
-      const part = shipped && effectivePart(shipped, component.source)
+      let part: CataloguePart | undefined
+      try {
+        part = shipped && effectivePart(shipped, component.source)
+      } catch {
+        continue
+      }
       const owner = node.path.length
         ? (findOccurrence(doc, node.path[node.path.length - 1])?.name ?? component.name)
         : component.name
@@ -1180,6 +1211,7 @@ const api: KernelApi = {
       if (!entry || entry.mesh) continue
       const shape = worldOf(entry)
       const name = entry.label
+      const [x0, y0, z0, x1, y1, z1] = exactBounds(shape)
       const warn = (
         severity: PrintWarning['severity'],
         message: string,
@@ -1194,8 +1226,7 @@ const api: KernelApi = {
           ...(hint ? { hint } : {}),
           ...(span ? { span } : {}),
         })
-      const [min, max] = shape.boundingBox.bounds
-      const size = [max[0] - min[0], max[1] - min[1], max[2] - min[2]]
+      const size = [x1 - x0, y1 - y0, z1 - z0]
 
       const fitsFlat = size[0] <= options.bed[0] && size[1] <= options.bed[1]
       const fitsTurned = size[1] <= options.bed[0] && size[0] <= options.bed[1]
@@ -1239,7 +1270,7 @@ const api: KernelApi = {
         totalArea += area
         if (-nz / len > 0.7071) {
           const lowest = Math.min(v[a + 2], v[b + 2], v[c + 2])
-          if (lowest - min[2] < 0.05) flatBottomArea += area
+          if (lowest - z0 < 0.05) flatBottomArea += area
           else downwardArea += area
         }
       }
@@ -1286,6 +1317,11 @@ const api: KernelApi = {
     } catch {
       return null
     }
+  },
+
+  async debugSpin(ms: number): Promise<void> {
+    const until = performance.now() + ms
+    while (performance.now() < until) continue
   },
 
   async selfTest(): Promise<{ triangles: number; volume: number; faces: number }> {

@@ -4,6 +4,7 @@ import {
   CATEGORY_LABEL,
   refreshUserParts,
   slugify,
+  STORAGE_FULL,
   uniquePartId,
   upsertUserPart,
   type PartCategory,
@@ -27,24 +28,28 @@ export interface KicadFile {
   file: string
 }
 
+export async function readKicadFile(file: File): Promise<KicadFile | null> {
+  const store = useStore.getState()
+  store.setBusy(`Reading ${file.name}`)
+  try {
+    return { board: readKicadBoard(await file.text(), file.name), file: file.name }
+  } catch (error) {
+    store.setStatus((error as Error).message)
+    return null
+  } finally {
+    useStore.getState().setBusy(null)
+  }
+}
+
 export function pickKicadBoard(): Promise<KicadFile | null> {
   return new Promise((resolve) => {
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = '.kicad_pcb'
-    input.onchange = async () => {
+    input.onchange = () => {
       const file = input.files?.[0]
       if (!file) return resolve(null)
-      const store = useStore.getState()
-      store.setBusy(`Reading ${file.name}`)
-      try {
-        resolve({ board: readKicadBoard(await file.text(), file.name), file: file.name })
-      } catch (error) {
-        store.setStatus((error as Error).message)
-        resolve(null)
-      } finally {
-        useStore.getState().setBusy(null)
-      }
+      void readKicadFile(file).then(resolve)
     }
     input.oncancel = () => resolve(null)
     input.click()
@@ -84,7 +89,10 @@ export function KicadImport({ board, file, onClose }: KicadFile & { onClose: () 
       new Set(allParts().map((part) => part.id)),
     )
     const part = kicadPart(board, { name, category, connectors, heights }, id)
-    upsertUserPart(part)
+    if (!upsertUserPart(part)) {
+      useStore.getState().setStatus(`"${part.name}" could not be saved: ${STORAGE_FULL}.`)
+      return
+    }
     refreshUserParts()
     useShelf.getState().changed()
     useStore

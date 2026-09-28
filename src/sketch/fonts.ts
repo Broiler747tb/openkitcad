@@ -1,5 +1,5 @@
 import { parse, type Font } from 'opentype.js'
-import { signedArea, flattenContour } from './text'
+import { flattenContour } from './text'
 import type { GlyphContour, GlyphSegment, TextOutline } from './types'
 
 export interface FontChoice {

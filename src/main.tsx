@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
+import { CrashGuard } from './ui/CrashGuard'
 import './theme/tokens.css'
 import './styles.css'
 import './workspace.css'
@@ -60,6 +61,7 @@ if (params.has('selftest') || params.has('kerneltest')) {
     ['enclosure', async () => (await import('./dev/enclosuretest')).runEnclosureTest()],
     ['kicad', async () => (await import('./dev/kicadtest')).runKicadTest()],
     ['thread', async () => (await import('./dev/threadtest')).runThreadTest()],
+    ['review', async () => (await import('./dev/reviewtest')).runReviewTest()],
   )
   const only = params.get('suite')?.split(',').filter(Boolean)
   ;(async () => {
@@ -94,7 +96,9 @@ if (params.has('selftest') || params.has('kerneltest')) {
   }
   root.render(
     <StrictMode>
-      <App />
+      <CrashGuard>
+        <App />
+      </CrashGuard>
     </StrictMode>,
   )
 }

@@ -1,4 +1,5 @@
 import type { CataloguePart, MountingHole } from './types'
+import { partProblems } from './validate'
 
 /**
  * Parts the user has measured themselves.
@@ -16,40 +17,45 @@ import type { CataloguePart, MountingHole } from './types'
  */
 const KEY = 'openkitcad.userparts.v1'
 
-export function loadUserParts(): CataloguePart[] {
+export const STORAGE_FULL = "this browser's storage is full"
+
+function readStored(): unknown[] {
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? (parsed as CataloguePart[]) : []
+    return Array.isArray(parsed) ? parsed : []
   } catch {
-    // A corrupt entry should cost the user their custom parts, not the whole
-    // app: an exception here would happen before anything is on screen.
     return []
   }
 }
 
-export function saveUserParts(parts: CataloguePart[]): void {
+function storedId(value: unknown): unknown {
+  return value && typeof value === 'object' ? (value as { id?: unknown }).id : undefined
+}
+
+export function loadUserParts(): CataloguePart[] {
+  return readStored().filter((part): part is CataloguePart => partProblems(part).length === 0)
+}
+
+export function saveUserParts(parts: readonly unknown[]): boolean {
   try {
     localStorage.setItem(KEY, JSON.stringify(parts))
+    return true
   } catch {
-    // Quota or private mode. Nothing useful to do, and the part still works for
-    // this session.
+    return false
   }
 }
 
 /** Add or replace one, keyed on its id. */
-export function upsertUserPart(part: CataloguePart): CataloguePart[] {
-  const parts = loadUserParts().filter((p) => p.id !== part.id)
+export function upsertUserPart(part: CataloguePart): boolean {
+  const parts = readStored().filter((stored) => storedId(stored) !== part.id)
   parts.push(part)
-  saveUserParts(parts)
-  return parts
+  return saveUserParts(parts)
 }
 
-export function removeUserPart(id: string): CataloguePart[] {
-  const parts = loadUserParts().filter((p) => p.id !== id)
-  saveUserParts(parts)
-  return parts
+export function removeUserPart(id: string): boolean {
+  return saveUserParts(readStored().filter((stored) => storedId(stored) !== id))
 }
 
 /** Ids are used as filenames in the repo, so keep them to what a file can be. */

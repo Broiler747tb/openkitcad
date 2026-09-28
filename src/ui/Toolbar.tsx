@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { activeSketchFeature, useStore, type ToolId } from '../doc/store'
 import { emptyDocument } from '../doc/types'
-import { openDocument, saveDocument } from '../doc/persist'
+import { adoptionNote, openDocument, saveDocument } from '../doc/persist'
 import { objectActions, type ObjectAction } from './ObjectMenu'
 import { selectedObjectActions } from './workflow'
 import { chooseAction } from './ActionDialog'
@@ -11,6 +11,7 @@ import { createSketchAction, resolveCommand, SHORTCUTS, toggleVisibility } from 
 import { powerActions } from './PowerTools'
 import { ParametersDialog } from './ParametersDialog'
 import { KicadImport, pickKicadBoard, type KicadFile } from './KicadImport'
+import { KICAD_EVENT } from './fileDrop'
 import { startCommand } from './command/commands'
 import { useCommand } from './command/session'
 import { SKETCH_TOOL_MENUS, SKETCH_TOOLS } from '../sketch/tools/specs'
@@ -214,6 +215,11 @@ export function Toolbar({
     [help, setHelp] = useState(false)
   const [parametersOpen, setParametersOpen] = useState(false)
   const [kicad, setKicad] = useState<KicadFile | null>(null)
+  useEffect(() => {
+    const dropped = (event: Event) => setKicad((event as CustomEvent<KicadFile>).detail)
+    window.addEventListener(KICAD_EVENT, dropped)
+    return () => window.removeEventListener(KICAD_EVENT, dropped)
+  }, [])
   const [anchor, setAnchor] = useState<React.CSSProperties | undefined>(undefined)
   const [fileOpen, setFileOpen] = useState(false)
   const [pending, setPending] = useState<string | null>(null),
@@ -375,9 +381,11 @@ export function Toolbar({
       if (d) {
         setPending(null)
         useStore.getState().setDoc(d)
+        const note = adoptionNote()
+        if (note) state.setStatus(note)
       }
     } catch (e) {
-      state.setStatus(String(e))
+      state.setStatus(e instanceof Error ? e.message : String(e))
     }
   }
   useEffect(() => {
@@ -715,7 +723,7 @@ export function Toolbar({
           className="quick-icon"
           title="Undo (Ctrl Z)"
           aria-label="Undo"
-          disabled={!state.past.length}
+          disabled={!state.past.length || state.commandOpen}
           onClick={state.undo}
         >
           ↶
@@ -724,7 +732,7 @@ export function Toolbar({
           className="quick-icon"
           title="Redo (Ctrl Y)"
           aria-label="Redo"
-          disabled={!state.future.length}
+          disabled={!state.future.length || state.commandOpen}
           onClick={state.redo}
         >
           ↷

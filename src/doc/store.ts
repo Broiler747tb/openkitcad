@@ -47,6 +47,7 @@ import type { SubPick } from '../viewport/engine'
 import type { ActionResult } from '../sketch/actions'
 import { chamferCorner, filletBetween, filletCorner, type CornerResult } from '../sketch/corner'
 import { addPolygon, addSlot, circularPattern, linearPattern, mirrorEntities } from '../sketch/edit'
+import { deleteSketchItems } from '../sketch/power'
 import { getPart, userParts } from '../catalogue'
 import { planHole, planPillar } from '../fasteners'
 import { v3, type Frame, type Vec3 } from '../core/math'
@@ -108,6 +109,12 @@ interface AppState {
   busy: string | null
   setBusy: (busy: string | null) => void
   kernelReady: boolean
+  kernelError: string | null
+  setKernelError: (message: string | null) => void
+  autosaving: boolean
+  setAutosaving: (on: boolean) => void
+  commandOpen: boolean
+  setCommandOpen: (open: boolean) => void
 
   selection: Selection
   hovered: string | null
@@ -130,10 +137,8 @@ interface AppState {
   statusMessage: string | null
 
   setDoc: (doc: OkcDocument, resetHistory?: boolean) => void
-  commit: (
-    fn: (draft: OkcDocument) => void,
-    opts?: { transient?: boolean; mergeKey?: string; sketchOnly?: boolean },
-  ) => void
+  commit: (fn: (draft: OkcDocument) => void, opts?: CommitOptions) => void
+  commitNext: (next: OkcDocument, opts?: CommitOptions) => void
   undo: () => void
   redo: () => void
   rebuild: () => void
@@ -206,6 +211,12 @@ interface AppState {
 }
 
 export type StoreState = AppState
+
+export interface CommitOptions {
+  transient?: boolean
+  mergeKey?: string
+  sketchOnly?: boolean
+}
 
 const HISTORY_LIMIT = 80
 let statusTimer: number | undefined
@@ -588,6 +599,9 @@ export const useStore = create<AppState>((set, get) => ({
   building: false,
   busy: null,
   kernelReady: false,
+  kernelError: null,
+  autosaving: false,
+  commandOpen: false,
 
   selection: { kind: 'none' },
   hovered: null,
@@ -623,9 +637,13 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   commit(fn, opts) {
-    const state = get()
-    const next = clone(state.doc)
+    const next = clone(get().doc)
     fn(next)
+    get().commitNext(next, opts)
+  },
+
+  commitNext(next, opts) {
+    const state = get()
     resolveParameters(next, true)
 
     const now = performance.now()
@@ -658,7 +676,7 @@ export const useStore = create<AppState>((set, get) => ({
     lastMerge = null
     const state = get()
     const { past, doc, future } = state
-    if (past.length === 0) return
+    if (past.length === 0 || state.commandOpen) return
     const previous = past[past.length - 1]
     const active = state.activeSketch
     const activeSketch =
@@ -685,7 +703,7 @@ export const useStore = create<AppState>((set, get) => ({
     lastMerge = null
     const state = get()
     const { future, doc, past } = state
-    if (future.length === 0) return
+    if (future.length === 0 || state.commandOpen) return
     const next = future[0]
     const active = state.activeSketch
     const activeSketch =
@@ -744,6 +762,15 @@ export const useStore = create<AppState>((set, get) => ({
 
   setKernelReady(kernelReady) {
     set({ kernelReady })
+  },
+  setKernelError(kernelError) {
+    set({ kernelError })
+  },
+  setAutosaving(autosaving) {
+    set({ autosaving })
+  },
+  setCommandOpen(commandOpen) {
+    set({ commandOpen })
   },
   setTool(tool) {
     set({ tool })
@@ -936,10 +963,14 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   updateOccurrence(id, patch, opts) {
-    get().commit(
-      (d) => {
-        const occurrence = findOccurrence(d, id)
-        if (occurrence) Object.assign(occurrence, patch)
+    const doc = get().doc
+    if (!findOccurrence(doc, id)) return
+    get().commitNext(
+      {
+        ...doc,
+        occurrences: doc.occurrences.map((occurrence) =>
+          occurrence.id === id ? { ...occurrence, ...clone(patch) } : occurrence,
+        ),
       },
       { ...opts, mergeKey: `occurrence:${id}:${Object.keys(patch).join(',')}` },
     )
@@ -982,6 +1013,29 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   updateFeature(featureId, patch, opts) {
+    const doc = get().doc
+    const index = featureIndex(doc, featureId)
+    if (index < 0) return
+    const current = doc.timeline[index]
+    const updated = { ...current, ...clone(patch) } as Feature
+    const mergeKey = `feature:${featureId}:${Object.keys(patch).join(',')}`
+    const created = featureCreatesBodies(updated)
+    if (
+      created.join('|') === featureCreatesBodies(current).join('|') &&
+      created.every((bodyId) => !!findBody(doc, bodyId))
+    ) {
+      const timeline = doc.timeline.slice()
+      timeline[index] = updated
+      const bindings = doc.bindings.filter(
+        (link) =>
+          !(
+            link.featureId === featureId &&
+            typeof (patch as Record<string, unknown>)[link.field] === 'number'
+          ),
+      )
+      get().commitNext({ ...doc, timeline, bindings }, { transient: opts?.transient, mergeKey })
+      return
+    }
     get().commit(
       (d) => {
         const index = featureIndex(d, featureId)
@@ -1135,9 +1189,13 @@ export const useStore = create<AppState>((set, get) => ({
     set({ transientBase: null })
   },
   cancelTransient() {
-    const base = get().transientBase
-    if (base) set({ doc: base })
+    const state = get()
+    const base = state.transientBase
     set({ transientBase: null })
+    if (!base || base === state.doc) return
+    set({ doc: base, ...reconcile(state, base) })
+    if (get().activeSketch) sketchDirty = true
+    else get().rebuild()
   },
 
   startSketch(plane, bodyId) {
@@ -1190,13 +1248,15 @@ export const useStore = create<AppState>((set, get) => ({
   editSketch(fn, opts) {
     const active = get().activeSketch
     if (!active) return
-    get().commit(
-      (d) => {
-        const feature = findFeature(d, active.featureId)
-        if (feature?.kind === 'sketch') fn(feature.sketch)
-      },
-      { ...opts, sketchOnly: true },
-    )
+    const doc = get().doc
+    const index = featureIndex(doc, active.featureId)
+    const feature = doc.timeline[index]
+    if (feature?.kind !== 'sketch') return
+    const sketch = clone(feature.sketch)
+    fn(sketch)
+    const timeline = doc.timeline.slice()
+    timeline[index] = { ...feature, sketch }
+    get().commitNext({ ...doc, timeline }, { ...opts, sketchOnly: true })
   },
 
   solveActiveSketch(drag) {
@@ -1246,19 +1306,7 @@ export const useStore = create<AppState>((set, get) => ({
         get().addConstraint(result.constraint)
         break
       case 'deleteEntity':
-        get().editSketch((sketch) => {
-          sketch.entities = sketch.entities.filter((e) => e.id !== result.entityId)
-          sketch.constraints = sketch.constraints.filter(
-            (c) =>
-              !(
-                ('e' in c && c.e === result.entityId) ||
-                ('a' in c && c.a === result.entityId) ||
-                ('b' in c && c.b === result.entityId) ||
-                ('line' in c && c.line === result.entityId) ||
-                ('circle' in c && c.circle === result.entityId)
-              ),
-          )
-        })
+        get().editSketch((sketch) => deleteSketchItems(sketch, { entities: [result.entityId] }))
         get().solveActiveSketch()
         break
       case 'editText':
@@ -1279,9 +1327,7 @@ export const useStore = create<AppState>((set, get) => ({
         get().solveActiveSketch()
         break
       case 'deletePoint':
-        get().editSketch((sketch) => {
-          sketch.points = sketch.points.filter((p) => p.id !== result.pointId)
-        })
+        get().editSketch((sketch) => deleteSketchItems(sketch, { points: [result.pointId] }))
         get().solveActiveSketch()
         break
       case 'filletCorner':

@@ -14,6 +14,7 @@ import {
 } from './naming'
 import { chainBlueprint } from './profile'
 import type { SolidStage } from './solidSteps'
+import { exactBounds } from './bounds'
 
 type OcAny = any
 
@@ -211,11 +212,10 @@ function wallShape(
   let landing = -Infinity
   for (const face of subShapes(oc, inside, 'TopAbs_FACE', scratch)) {
     if (v3.dot(faceNormal(oc, face, scratch), down) > -1e-6) continue
-    const [low, high] = (cast(face) as never as { boundingBox: { bounds: [Vec3, Vec3] } })
-      .boundingBox.bounds
-    for (const x of [low[0], high[0]]) {
-      for (const y of [low[1], high[1]]) {
-        for (const z of [low[2], high[2]]) landing = Math.max(landing, along([x, y, z]))
+    const [x0, y0, z0, x1, y1, z1] = exactBounds(face)
+    for (const x of [x0, x1]) {
+      for (const y of [y0, y1]) {
+        for (const z of [z0, z1]) landing = Math.max(landing, along([x, y, z]))
       }
     }
   }
@@ -273,8 +273,8 @@ export function runRibStep(feature: Feature, stage: SolidStage): boolean {
     )
     return true
   }
-  const [min, max] = body.shape.boundingBox.bounds
-  const reach = Math.max(10, v3.len(v3.sub(max as Vec3, min as Vec3)) * MARGIN)
+  const [x0, y0, z0, x1, y1, z1] = exactBounds(body.shape)
+  const reach = Math.max(10, v3.len(v3.sub([x1, y1, z1], [x0, y0, z0])) * MARGIN)
   const scratch = new Scratch()
   const tools: NamedShape[] = []
   try {

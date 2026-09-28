@@ -8,6 +8,7 @@ import {
   refreshUserParts,
   removeUserPart,
   sizeSummary,
+  STORAGE_FULL,
   uniquePartId,
   upsertUserPart,
   userParts,
@@ -54,7 +55,10 @@ export function YourParts() {
         : ` It is placed ${counted(uses, 'time')} in this design, and those will show as missing.`
       : ''
     if (!confirm(`Delete "${part.name}" from your parts?${warning}`)) return
-    removeUserPart(part.id)
+    if (!removeUserPart(part.id)) {
+      useStore.getState().setStatus(`"${part.name}" could not be deleted: ${STORAGE_FULL}.`)
+      return
+    }
     if (!builtIn) useShelf.getState().forget(part.id)
     changed()
     useStore.getState().setStatus(`"${part.name}" deleted from your parts.`)
@@ -67,7 +71,10 @@ export function YourParts() {
       id: uniquePartId(`${part.id}-copy`, taken),
       name: `${part.name} (copy)`,
     }
-    upsertUserPart(copy)
+    if (!upsertUserPart(copy)) {
+      useStore.getState().setStatus(`"${copy.name}" could not be saved: ${STORAGE_FULL}.`)
+      return
+    }
     changed()
     useStore.getState().setStatus(`"${copy.name}" added to your parts.`)
   }
@@ -77,8 +84,10 @@ export function YourParts() {
     let added = 0
     for (const item of Array.from(files)) {
       const { parts: found, problems } = readPartFile(await item.text())
-      for (const part of found) upsertUserPart(part)
-      added += found.length
+      for (const part of found) {
+        if (upsertUserPart(part)) added++
+        else lines.push(`${item.name}: "${part.name}" could not be saved: ${STORAGE_FULL}.`)
+      }
       lines.push(...problems.map((problem) => `${item.name}: ${problem}`))
     }
     changed()

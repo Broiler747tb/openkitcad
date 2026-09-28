@@ -40,7 +40,7 @@ For printing there are seven fits, each placed by clicking a face: snap fit, ali
 
 Text uses the fonts on your own computer, kept in the design as letter shapes so it travels with the file, and Emboss raises or sinks it on a flat face or round the side of a cylinder.
 
-If you designed the board yourself, File > Import KiCad Board reads a `.kicad_pcb`, takes the outline and the mounting holes off Edge.Cuts, asks you which footprints are connectors and how tall things are, and saves the result with your own parts. From there it places, clips, gets standoffs and goes in an enclosure like any shipped board.
+If you designed the board yourself, File > Import KiCad Board reads a `.kicad_pcb`, takes the outline and the mounting holes off Edge.Cuts, asks you which footprints are connectors and how tall things are, and saves the result with your own parts. From there it places, clips, gets standoffs and goes in an enclosure like any shipped board. Dropping a file on the window works like the File menu: a `.kicad_pcb` starts this import, an STL, OBJ or 3MF starts Insert Mesh, and a saved design opens.
 
 Export is STL, 3MF and OBJ for printing and rendering, STEP if you want to keep working in FreeCAD or Fusion, DXF and SVG for a laser cutter, and a drill template you can print at full size and tape to a project box. That last one is for anyone working with a hand drill and no machines, which is most people starting out.
 

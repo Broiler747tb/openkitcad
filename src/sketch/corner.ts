@@ -25,7 +25,7 @@
  */
 import { v2, type Vec2 } from '../core/math'
 import { entityEnds, entityPointIds } from './curves'
-import type { ArcEntity, LineEntity, NewConstraint, Sketch2D, SketchEntity } from './types'
+import type { ArcEntity, LineEntity, NewConstraint, Sketch2D } from './types'
 
 /** Ends this close together are the same corner, in mm. */
 const WELD = 1e-6

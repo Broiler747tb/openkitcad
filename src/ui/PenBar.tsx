@@ -46,10 +46,10 @@ export function PenBar({
       >
         Finger: orbit
       </button>
-      <button disabled={!state.past.length} onClick={() => state.undo()}>
+      <button disabled={!state.past.length || state.commandOpen} onClick={() => state.undo()}>
         ↶ Undo
       </button>
-      <button disabled={!state.future.length} onClick={() => state.redo()}>
+      <button disabled={!state.future.length || state.commandOpen} onClick={() => state.redo()}>
         ↷ Redo
       </button>
       <button onClick={() => window.dispatchEvent(new Event('okc:cancel'))}>Cancel tool</button>

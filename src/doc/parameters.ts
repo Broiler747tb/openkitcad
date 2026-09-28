@@ -107,7 +107,13 @@ export function resolveParameters(doc: OkcDocument, dropMissing = false): void {
       throw new Error(`Invalid dimension for ${feature.name}.${link.field}: ${value}`)
     writes.push({ feature, field: link.field, value })
   }
-  for (const p of doc.parameters) p.value = values.get(p.name)!
-  for (const w of writes) (w.feature as unknown as Record<string, unknown>)[w.field] = w.value
+  for (const p of doc.parameters) {
+    const value = values.get(p.name)!
+    if (p.value !== value) p.value = value
+  }
+  for (const w of writes) {
+    const record = w.feature as unknown as Record<string, unknown>
+    if (record[w.field] !== w.value) record[w.field] = w.value
+  }
   if (dropMissing) doc.bindings = links.filter((link) => byId.has(link.featureId))
 }

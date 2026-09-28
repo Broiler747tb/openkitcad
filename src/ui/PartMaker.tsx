@@ -9,6 +9,7 @@ import {
   partToDraft,
   refreshUserParts,
   slugify,
+  STORAGE_FULL,
   uniquePartId,
   upsertUserPart,
   type CataloguePart,
@@ -109,7 +110,10 @@ export function PartMaker({
     )
 
   const useIt = () => {
-    upsertUserPart(part)
+    if (!upsertUserPart(part)) {
+      useStore.getState().setStatus(`"${part.name}" could not be saved: ${STORAGE_FULL}.`)
+      return
+    }
     refreshUserParts()
     useShelf.getState().changed()
     setSavedId(part.id)

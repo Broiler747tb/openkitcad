@@ -11,7 +11,7 @@ import {
   splineGeometry,
   type PointLookup,
 } from './curves'
-import { cleanUnusedPoints, constraintRefs } from './power'
+import { removeOrphans } from './power'
 import type { Constraint, NewConstraint, Sketch2D, SketchEntity } from './types'
 
 export interface ModifyResult {
@@ -196,26 +196,6 @@ function buildPieces(
     )
   }
   return created.map((e) => e.id)
-}
-
-function removeOrphans(sketch: Sketch2D) {
-  const used = new Set(['origin'])
-  for (const e of sketch.entities) {
-    for (const id of e.kind === 'spline' ? e.points : Object.values(e)) {
-      if (typeof id === 'string') used.add(id)
-    }
-  }
-  const entityIds = new Set(sketch.entities.map((e) => e.id))
-  const pointIds = new Set(sketch.points.map((p) => p.id))
-  sketch.constraints = sketch.constraints.filter((c) =>
-    constraintRefs(c).every((ref) =>
-      pointIds.has(ref) ? used.has(ref) || c.kind === 'fix' : entityIds.has(ref),
-    ),
-  )
-  sketch.constraints = sketch.constraints.filter(
-    (c) => !(c.kind === 'fix' && c.p !== 'origin' && !used.has(c.p)),
-  )
-  cleanUnusedPoints(sketch)
 }
 
 function deleteEntity(sketch: Sketch2D, id: string) {
