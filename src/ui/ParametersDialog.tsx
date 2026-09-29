@@ -73,7 +73,7 @@ export function ParametersDialog({ onClose }: { onClose: () => void }) {
         </button>
       </header>
       <p>
-        Persistent scalar formulas. Plain numbers are millimetres; type a unit (mm, cm, m, in, ft)
+        Persistent scalar formulas. Plain numbers are millimeters; type a unit (mm, cm, m, in, ft)
         to use another. Angle links read values as degrees.
       </p>
       <h3>Parameter table</h3>

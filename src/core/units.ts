@@ -11,9 +11,9 @@ export const UNIT_FACTOR: Record<LengthUnit, number> = {
 }
 
 export const UNIT_NAME: Record<LengthUnit, string> = {
-  mm: 'Millimetres',
-  cm: 'Centimetres',
-  m: 'Metres',
+  mm: 'Millimeters',
+  cm: 'Centimeters',
+  m: 'Meters',
   in: 'Inches',
   ft: 'Feet',
 }

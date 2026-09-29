@@ -6,7 +6,7 @@
   "manufacturer": "SparkFun",
   "summary": "ATmega32U4 board that can act as a USB keyboard or mouse. 33 x 17.8 mm, no mounting holes.",
   "confidence": "datasheet",
-  "source": "SparkFun Pro Micro v13 Eagle board file (github.com/sparkfun/Pro_Micro): board 17.78 x 33.02 mm, two rows of 12 pins 15.24 mm apart on a 2.54 mm grid starting 1.27 mm from the far end, micro USB centred on the near end sticking out about 1 mm, the ATmega32U4 fitted at 45 degrees. No mounting holes. The many clones copy this layout, usually on a black board.",
+  "source": "SparkFun Pro Micro v13 Eagle board file (github.com/sparkfun/Pro_Micro): board 17.78 x 33.02 mm, two rows of 12 pins 15.24 mm apart on a 2.54 mm grid starting 1.27 mm from the far end, micro USB centered on the near end sticking out about 1 mm, the ATmega32U4 fitted at 45 degrees. No mounting holes. The many clones copy this layout, usually on a black board.",
   "look": {
     "colour": "#b3202a",
     "components": [

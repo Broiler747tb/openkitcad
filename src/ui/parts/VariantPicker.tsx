@@ -181,8 +181,8 @@ function VariantCard({
         <button
           className={`parts-star ${favourite ? 'on' : ''}`}
           aria-pressed={favourite}
-          aria-label={favourite ? 'Remove from favourites' : 'Add to favourites'}
-          title={favourite ? 'Remove from favourites' : 'Add to favourites'}
+          aria-label={favourite ? 'Remove from favorites' : 'Add to favorites'}
+          title={favourite ? 'Remove from favorites' : 'Add to favorites'}
           onClick={() => useShelf.getState().toggleFavourite(part.id)}
         >
           {favourite ? '★' : '☆'}

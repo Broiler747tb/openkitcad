@@ -8,7 +8,7 @@
   "manufacturer": "PJRC",
   "summary": "The long Teensy: 61 x 17.8 mm, 24 pins a side, a microSD slot and no mounting holes.",
   "confidence": "approximate",
-  "source": "PJRC publish the Teensy 4.1 as 2.4 x 0.7 inch (60.96 x 17.78 mm) with every pin on the 0.1 inch grid, which is where the outline and the two rows of 24 pins come from; they are laid out the same way as the Teensy 4.0 in this catalogue, 15.24 mm apart and starting 1.27 mm from the USB end. The micro USB socket is taken to sit where the 4.0's does. The microSD slot at the far end, the Ethernet and USB host pads and the position of the processor have not been checked against a drawing, so the slot's opening is a starting point rather than a number to cut a panel from. Nothing on top is placed from a drawing.",
+  "source": "PJRC publish the Teensy 4.1 as 2.4 x 0.7 inch (60.96 x 17.78 mm) with every pin on the 0.1 inch grid, which is where the outline and the two rows of 24 pins come from; they are laid out the same way as the Teensy 4.0 in this catalog, 15.24 mm apart and starting 1.27 mm from the USB end. The micro USB socket is taken to sit where the 4.0's does. The microSD slot at the far end, the Ethernet and USB host pads and the position of the processor have not been checked against a drawing, so the slot's opening is a starting point rather than a number to cut a panel from. Nothing on top is placed from a drawing.",
   "look": {
     "colour": "#1b6b3a",
     "components": [

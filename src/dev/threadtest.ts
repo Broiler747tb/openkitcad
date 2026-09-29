@@ -196,7 +196,7 @@ export async function runThreadTest(): Promise<TestResult[]> {
       const cosmetic = await evaluate(pegDoc({ modelled: false }))
       const untouched = meshOf(cosmetic, 'peg')
       add(
-        'a thread that is not modelled leaves the peg alone',
+        'a thread that is not modeled leaves the peg alone',
         cosmetic.errors.length === 0 && Math.abs((untouched?.volume ?? 0) - plain) < 0.5,
         `${said(cosmetic)}; ${untouched?.volume.toFixed(1)} against ${plain.toFixed(1)}`,
       )

@@ -6,7 +6,7 @@
   "manufacturer": "JST",
   "summary": "White 2-pin battery and sensor socket lying on its side on a board. The plug needs an 8 x 6.4 mm slot.",
   "confidence": "datasheet",
-  "source": "JST XH catalogue (eXH): the S2B-XH-A side-entry header is 7.4 mm wide with posts at 2.5 mm pitch, stands about 6.1 mm tall and runs 9.2 mm back from its mouth. The mating XHP-2 housing is 7.3 x 5.7 mm, which the 8.0 x 6.4 mm slot clears. The common top-entry B2B-XH-A has the same 7.4 mm width and stands 7.0 mm tall, 9.8 mm with the plug in.",
+  "source": "JST XH catalog (eXH): the S2B-XH-A side-entry header is 7.4 mm wide with posts at 2.5 mm pitch, stands about 6.1 mm tall and runs 9.2 mm back from its mouth. The mating XHP-2 housing is 7.3 x 5.7 mm, which the 8.0 x 6.4 mm slot clears. The common top-entry B2B-XH-A has the same 7.4 mm width and stands 7.0 mm tall, 9.8 mm with the plug in.",
   "look": {
     "style": "jst-xh",
     "pins": 2
@@ -59,7 +59,7 @@
   },
   "links": [
     {
-      "label": "JST XH catalogue",
+      "label": "JST XH catalog",
       "url": "https://www.jst-mfg.com/product/pdf/eng/eXH.pdf"
     }
   ],

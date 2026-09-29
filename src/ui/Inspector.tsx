@@ -86,7 +86,7 @@ function SketchOptions() {
       {option('snapGrid', 'Snap', 'Clicks land on the grid when nothing else is near.')}
       {option('sketchSlice', 'Slice', 'Cuts away the bodies in front of the sketch plane.')}
       {option('sketchShowProfile', 'Show Profile', 'Shades the closed areas you can extrude.')}
-      {option('sketchShowPoints', 'Show Points', 'Shows the end points and centres.')}
+      {option('sketchShowPoints', 'Show Points', 'Shows the end points and centers.')}
       {option('sketchShowDimensions', 'Show Dimensions', 'Shows the sizes you have set.')}
       {option('sketchShowConstraints', 'Show Constraints', 'Shows the constraint glyphs.')}
       {sketch && (

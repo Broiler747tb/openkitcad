@@ -92,7 +92,7 @@ export const CONSTRAINT_TOOLS: readonly ConstraintToolSpec[] = [
     id: 'concentric',
     label: 'Concentric',
     icon: '◎',
-    hint: 'Gives two circles, arcs or ellipses the same centre.',
+    hint: 'Gives two circles, arcs or ellipses the same center.',
     prompt: 'Select two circles or arcs',
   },
   {

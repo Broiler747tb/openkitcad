@@ -1115,7 +1115,7 @@ export const FEATURE_HINT: Record<FeatureKind, string> = {
   surfaceOffset: 'A copy of a surface moved a set distance along its normal.',
   reverseNormal: 'Turns a surface inside out.',
   offsetFace: 'Moves flat faces of a body in or out, stretching the faces around them.',
-  draft: 'Tilts faces by an angle so the part slides out of a mould.',
+  draft: 'Tilts faces by an angle so the part slides out of a mold.',
   constructionPlane: 'A plane to sketch on or cut with, placed from other planes and faces.',
   torus: 'A ring like a doughnut, lying flat on a plane.',
 }

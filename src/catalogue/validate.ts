@@ -81,7 +81,7 @@ function lookProblems(look: unknown): string[] {
   const problems: string[] = []
   for (const key of ['colour', 'accent'])
     if (value[key] !== undefined && !COLOUR.test(value[key]))
-      problems.push(`"look.${key}" has to be a colour like #1f6f4a.`)
+      problems.push(`"look.${key}" has to be a color like #1f6f4a.`)
   if (value.finish !== undefined && !FINISHES.includes(value.finish))
     problems.push(`"look.finish" has to be one of ${FINISHES.join(', ')}.`)
   if (value.components === undefined) return problems
@@ -106,7 +106,7 @@ function lookProblems(look: unknown): string[] {
     if (component.kind === 'port' && !PORTS.includes(component.port))
       problems.push(`${where} "port" has to be one of ${PORTS.join(', ')}.`)
     if (component.colour !== undefined && !COLOUR.test(component.colour))
-      problems.push(`${where} "colour" has to be a colour like #1f6f4a.`)
+      problems.push(`${where} "colour" has to be a color like #1f6f4a.`)
     if (component.finish !== undefined && !FINISHES.includes(component.finish))
       problems.push(`${where} "finish" is not a known finish.`)
   })

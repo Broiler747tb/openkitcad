@@ -302,7 +302,7 @@ export const CONSTRAINT_LABELS: Record<ConstraintKind, string> = {
   diameter: 'Diameter',
   angle: 'Angle',
   collinear: 'In line',
-  concentric: 'Same centre',
+  concentric: 'Same center',
   pointOnCurve: 'On the curve',
   tangentCurves: 'Smooth join',
   smooth: 'Curvature match',

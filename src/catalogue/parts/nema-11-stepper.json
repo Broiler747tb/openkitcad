@@ -5,9 +5,9 @@
   "popularity": 46,
   "family": "nema-stepper",
   "variant": "NEMA 11, 28 mm square",
-  "summary": "Small stepper for light axes and extruders. Four M2.5 holes on a 23 mm square, 22 mm centring boss.",
+  "summary": "Small stepper for light axes and extruders. Four M2.5 holes on a 23 mm square, 22 mm centering boss.",
   "confidence": "datasheet",
-  "source": "NEMA ICS 16 fixes the size 11 faceplate: 23 mm between mounting holes, a 22 mm diameter centring boss 2 mm tall and a 5 mm shaft. The 28 mm body is the usual size for the frame. The four holes are tapped into the end cap. Body length, shaft length and winding vary by model: this entry uses a 32 mm body and a 20 mm shaft, so check the one you buy.",
+  "source": "NEMA ICS 16 fixes the size 11 faceplate: 23 mm between mounting holes, a 22 mm diameter centering boss 2 mm tall and a 5 mm shaft. The 28 mm body is the usual size for the frame. The four holes are tapped into the end cap. Body length, shaft length and winding vary by model: this entry uses a 32 mm body and a 20 mm shaft, so check the one you buy.",
   "geometry": {
     "kind": "motor",
     "frame": 28.0,

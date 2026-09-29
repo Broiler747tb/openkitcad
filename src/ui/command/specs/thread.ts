@@ -50,7 +50,7 @@ export const threadCommand = defineCommand({
     {
       id: 'modelled',
       kind: 'toggle',
-      label: 'Modelled',
+      label: 'Modeled',
       hint: 'Cut the thread into the part. Turn it off to keep the part plain and only record the size.',
       default: true,
     },

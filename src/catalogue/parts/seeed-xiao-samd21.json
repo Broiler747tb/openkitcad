@@ -8,7 +8,7 @@
   "manufacturer": "Seeed Studio",
   "summary": "The original Seeeduino XIAO: a SAMD21 on the XIAO footprint, 21 x 17.8 mm, no radio.",
   "confidence": "approximate",
-  "source": "Outline, corner radius, the two rows of 7 castellated pins and the USB-C socket are the shared Seeed XIAO DIP footprint, copied from the XIAO ESP32C3 in this catalogue, which came from the Seeed OPL KiCad library and the top-layer DXF. Seeed publish the XIAO series as one form factor and one pinout, but this board's own drawing has not been checked, so treat the outline as close rather than exact. The SAMD21 is on top and there is no radio shield. Nothing on top of the board is placed from a drawing: the picture is decoration and the only thing above the board that geometry is generated from is a flat 2 mm keep-clear over the whole of it.",
+  "source": "Outline, corner radius, the two rows of 7 castellated pins and the USB-C socket are the shared Seeed XIAO DIP footprint, copied from the XIAO ESP32C3 in this catalog, which came from the Seeed OPL KiCad library and the top-layer DXF. Seeed publish the XIAO series as one form factor and one pinout, but this board's own drawing has not been checked, so treat the outline as close rather than exact. The SAMD21 is on top and there is no radio shield. Nothing on top of the board is placed from a drawing: the picture is decoration and the only thing above the board that geometry is generated from is a flat 2 mm keep-clear over the whole of it.",
   "look": {
     "colour": "#1b1d20",
     "components": [

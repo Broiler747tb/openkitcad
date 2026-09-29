@@ -273,7 +273,7 @@ export function runAssemblyTest(): TestResult[] {
   const top = square(10, 10, true)
   const bottom = square(0, 10, false)
 
-  test('a flat face snaps to its centre with the outward normal', () => {
+  test('a flat face snaps to its center with the outward normal', () => {
     const mesh = meshOf(
       [
         { name: 'top', triangles: top },
@@ -330,7 +330,7 @@ export function runAssemblyTest(): TestResult[] {
     nearPoint(columnOf(end.frame, 2), [1, 0, 0], 'axis', 1e-6)
   })
 
-  test('a round edge snaps to its centre', () => {
+  test('a round edge snaps to its center', () => {
     const rim = circle([1, 2, 3], 4, 48)
     const mesh = meshOf([], [{ name: 'rim', points: rim }], [-3, -2, -5, 5, 6, 3])
     const snap = edgeSnap(mesh, 'rim')!
@@ -374,7 +374,7 @@ export function runAssemblyTest(): TestResult[] {
     const two = side(['o-plate'], [20, 10, 4], [0, 0, 1], 'top')
     const pickOne = jointSnapPick(doc, one)
     const pickTwo = jointSnapPick(doc, two)
-    check(pickOne.label === 'Centre of Block:1', pickOne.label)
+    check(pickOne.label === 'Center of Block:1', pickOne.label)
     check(pickOne.id !== pickTwo.id, `${pickOne.id} / ${pickTwo.id}`)
     check(jointSnapPick(doc, one).id === pickOne.id, 'same snap, same id')
     const { result } = built(jointCommand, doc, { one: [pickOne], two: [pickTwo] })
@@ -425,7 +425,7 @@ export function runAssemblyTest(): TestResult[] {
   test('Offset lifts component 1 along the joint axis', () => {
     const { a, b } = place({ offset: 3 })
     const lifted: Vec3 = [b[12] + 3 * b[8], b[13] + 3 * b[9], b[14] + 3 * b[10]]
-    nearPoint(originOf(a), lifted, 'three millimetres up', 1e-6)
+    nearPoint(originOf(a), lifted, 'three millimeters up', 1e-6)
   })
 
   test('Angle turns component 1 about the joint axis', () => {

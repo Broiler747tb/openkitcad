@@ -5,9 +5,9 @@
   "popularity": 58,
   "family": "nema-stepper",
   "variant": "NEMA 14, 35.2 mm square",
-  "summary": "Compact stepper, popular on pancake extruders. Four M3 holes on a 26 mm square, 22 mm centring boss.",
+  "summary": "Compact stepper, popular on pancake extruders. Four M3 holes on a 26 mm square, 22 mm centering boss.",
   "confidence": "datasheet",
-  "source": "NEMA ICS 16 fixes the size 14 faceplate: 26 mm between mounting holes, a 22 mm diameter centring boss 2 mm tall and a 5 mm shaft. The 35.2 mm body is the usual size for the frame. The four holes are tapped into the end cap. Body length, shaft length and winding vary by model: this entry uses a 34 mm body and a 20 mm shaft, so check the one you buy.",
+  "source": "NEMA ICS 16 fixes the size 14 faceplate: 26 mm between mounting holes, a 22 mm diameter centering boss 2 mm tall and a 5 mm shaft. The 35.2 mm body is the usual size for the frame. The four holes are tapped into the end cap. Body length, shaft length and winding vary by model: this entry uses a 34 mm body and a 20 mm shaft, so check the one you buy.",
   "geometry": {
     "kind": "motor",
     "frame": 35.2,

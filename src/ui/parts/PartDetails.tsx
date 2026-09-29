@@ -39,7 +39,7 @@ export function PartDetails({ partId, back }: { partId: string; back: PartsView 
           ‹ Back
         </button>
         <div className="parts-empty">
-          <span>This part is no longer in the catalogue.</span>
+          <span>This part is no longer in the catalog.</span>
         </div>
       </>
     )
@@ -128,7 +128,7 @@ export function PartDetails({ partId, back }: { partId: string; back: PartsView 
           aria-pressed={favourite}
           onClick={() => useShelf.getState().toggleFavourite(part.id)}
         >
-          {favourite ? '★ Favourite' : '☆ Favourite'}
+          {favourite ? '★ Favorite' : '☆ Favorite'}
         </button>
         {mine && editable && (
           <button className="btn" onClick={() => openMaker({ mode: 'edit', partId: part.id })}>
@@ -146,7 +146,7 @@ export function PartDetails({ partId, back }: { partId: string; back: PartsView 
         )}
       </div>
       <p className="parts-hint">
-        Dragged onto a face, it lands flat on that face, centred where you let go. Drag the picture
+        Dragged onto a face, it lands flat on that face, centered where you let go. Drag the picture
         to turn it round.
       </p>
     </div>

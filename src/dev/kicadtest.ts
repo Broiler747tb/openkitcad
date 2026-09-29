@@ -180,11 +180,7 @@ export async function runKicadTest(): Promise<TestResult[]> {
       JSON.stringify({ chip, cap }),
     )
     const problems = partProblems(part)
-    add(
-      'the part passes the catalogue checks',
-      problems.length === 0,
-      problems.join('; ') || 'clean',
-    )
+    add('the part passes the catalog checks', problems.length === 0, problems.join('; ') || 'clean')
   })
 
   await check('kicad 5', () => {

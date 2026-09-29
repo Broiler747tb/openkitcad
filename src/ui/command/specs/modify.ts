@@ -625,7 +625,7 @@ export const combineCommand = defineCommand({
 export const moveCommand = defineCommand({
   id: 'move',
   label: 'Move/Copy',
-  hint: 'Move bodies by an exact distance and turn them about their centre.',
+  hint: 'Move bodies by an exact distance and turn them about their center.',
   icon: '✥',
   inputs: [
     {
@@ -754,7 +754,7 @@ export const pressPullCommand: AnyCommandSpec = {
 export const draftCommand = defineCommand({
   id: 'draft',
   label: 'Draft',
-  hint: 'Tilts faces by an angle so a moulded or cast part slides out cleanly.',
+  hint: 'Tilts faces by an angle so a molded or cast part slides out cleanly.',
   icon: '◿',
   inputs: [
     {

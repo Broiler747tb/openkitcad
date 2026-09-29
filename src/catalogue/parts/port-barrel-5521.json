@@ -8,7 +8,7 @@
   "manufacturer": "Switchcraft",
   "summary": "Threaded panel jack for 5.5 x 2.1 mm power plugs. Needs an 8 mm round hole.",
   "confidence": "datasheet",
-  "source": "Switchcraft 722A customer drawing and catalogue page: 5/16-32 NEF threaded bushing 0.216 in (5.5 mm) long, housing 0.434 in (11.0 mm) across and 0.60 in (15.2 mm) deep behind the panel including the solder lugs, 2.0 mm centre pin. Mounts in a 0.313 in (7.95 mm) hole in panels up to 0.125 in (3.2 mm) thick with the nut and washer supplied. 5.5 x 2.1 mm plugs are made for a 2.0 mm pin.",
+  "source": "Switchcraft 722A customer drawing and catalog page: 5/16-32 NEF threaded bushing 0.216 in (5.5 mm) long, housing 0.434 in (11.0 mm) across and 0.60 in (15.2 mm) deep behind the panel including the solder lugs, 2.0 mm center pin. Mounts in a 0.313 in (7.95 mm) hole in panels up to 0.125 in (3.2 mm) thick with the nut and washer supplied. 5.5 x 2.1 mm plugs are made for a 2.0 mm pin.",
   "look": {
     "style": "panel-jack"
   },

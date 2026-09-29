@@ -5,7 +5,7 @@
   "popularity": 54,
   "family": "ball-bearing",
   "variant": "626ZZ, 6 x 19 x 6 mm",
-  "summary": "6 mm bore, 19 mm outside, 6 mm wide. Six millimetre bore, for 6 mm shafts and M6 bolts.",
+  "summary": "6 mm bore, 19 mm outside, 6 mm wide. Six millimeter bore, for 6 mm shafts and M6 bolts.",
   "confidence": "datasheet",
   "source": "626 is a standard ISO 15 bearing size: 6 mm bore, 19 mm outside diameter, 6 mm width. ZZ means metal shields on both sides.",
   "geometry": {

@@ -452,7 +452,7 @@ export async function runReviewTest(): Promise<TestResult[]> {
         box('other', 'b9', 40),
       )
       add(
-        'a step can move up past its neighbour only when it does not depend on it',
+        'a step can move up past its neighbor only when it does not depend on it',
         !canMoveEarlier(doc, 0) && !canMoveEarlier(doc, 1) && canMoveEarlier(doc, 2),
         `${canMoveEarlier(doc, 0)} ${canMoveEarlier(doc, 1)} ${canMoveEarlier(doc, 2)}`,
       )
@@ -648,7 +648,7 @@ export async function runReviewTest(): Promise<TestResult[]> {
               (e) => e.featureId === 'part0' && e.message.startsWith('Could not build'),
             ) &&
             result.errors.some(
-              (e) => e.featureId === 'part1' && e.message.includes('not in the catalogue'),
+              (e) => e.featureId === 'part1' && e.message.includes('not in the catalog'),
             ) &&
             !result.errors.some((e) => e.featureId === ''),
           result.errors.map((e) => `${e.featureId}: ${e.message}`).join(' | '),
@@ -658,7 +658,7 @@ export async function runReviewTest(): Promise<TestResult[]> {
       }
     })
 
-    await check('move and scale about the true centre', async () => {
+    await check('move and scale about the true center', async () => {
       const warm = freshKernel()
       const cold = freshKernel()
       try {

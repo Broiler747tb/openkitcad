@@ -111,7 +111,7 @@ export function occurrencePick(
 }
 
 const KEYPOINT_LABEL: Record<JointKeypoint, string> = {
-  centre: 'Centre',
+  centre: 'Center',
   middle: 'Middle',
   point: 'Point',
   origin: 'Origin',

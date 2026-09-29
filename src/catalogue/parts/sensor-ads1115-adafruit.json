@@ -6,7 +6,7 @@
   "family": "ads1115-board",
   "variant": "Adafruit STEMMA QT (1085)",
   "manufacturer": "Adafruit",
-  "summary": "Four 16-bit analogue inputs over I2C, on a 25.4 x 17.8 mm board with four M2.5 holes.",
+  "summary": "Four 16-bit analog inputs over I2C, on a 25.4 x 17.8 mm board with four M2.5 holes.",
   "confidence": "datasheet",
   "source": "Adafruit's Eagle files for the ADS1115 16-Bit ADC - 4 Channel with Programmable Gain Amplifier - STEMMA QT (product 1085): board 25.4 x 17.78 mm with 2.54 mm corner radii, 4 x 2.5 mm mounting holes 2.54 mm in from the corners, two 6-pin headers at 2.54 mm pitch along the long edges and a STEMMA QT socket on each short edge. The chip and socket positions in the look come from the same files.",
   "look": {

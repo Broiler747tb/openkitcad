@@ -8,7 +8,7 @@
   "manufacturer": "Amass",
   "summary": "Yellow high-current battery connector. Needs a 16.2 x 8.6 mm slot to pass through a wall.",
   "confidence": "measured",
-  "source": "SparkFun's published drawing of the Amass XT60 pair (2013): housing face 15.74 x 8.13 mm, female housing 15.88 mm long, male 19.98 mm long with its pins. SparkFun drew it from the part rather than from an Amass drawing, so this counts as measured. The 16.2 x 8.6 mm slot clears the housing by a quarter of a millimetre a side and ignores the two chamfered corners.",
+  "source": "SparkFun's published drawing of the Amass XT60 pair (2013): housing face 15.74 x 8.13 mm, female housing 15.88 mm long, male 19.98 mm long with its pins. SparkFun drew it from the part rather than from an Amass drawing, so this counts as measured. The 16.2 x 8.6 mm slot clears the housing by a quarter of a millimeter a side and ignores the two chamfered corners.",
   "look": {
     "style": "xt"
   },

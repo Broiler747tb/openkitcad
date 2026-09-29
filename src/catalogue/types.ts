@@ -523,7 +523,7 @@ export const CATEGORY_BLURB: Record<PartCategory, string> = {
   sensor: 'Things that measure the world.',
   power: 'Supplies, regulators and battery holders.',
   fastener: 'Screws, nuts, inserts and pillars.',
-  extrusion: 'Aluminium profile for building frames.',
+  extrusion: 'Aluminum profile for building frames.',
   motor: 'Steppers, servos and gearmotors.',
   motion: 'Bearings, rods and everything that slides or spins.',
   control: 'Panel controls: potentiometers, rotary encoders and their cutouts.',

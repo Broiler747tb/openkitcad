@@ -41,7 +41,7 @@ export function StatusBar() {
           checked={showPlacements}
           onChange={(e) => useStore.getState().setShowPlacements(e.target.checked)}
         />
-        Show catalogue parts
+        Show catalog parts
       </label>
       <label className="status-toggle">
         <input

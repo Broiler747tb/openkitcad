@@ -262,8 +262,8 @@ const rectangleCentre: SketchToolSpec = {
   id: 'rectangleCentre',
   label: 'Center Rectangle',
   menu: 'Rectangle',
-  hint: 'A rectangle square to the sketch, grown out from its centre.',
-  prompts: ['Click the centre', 'Click a corner, or type the width and height'],
+  hint: 'A rectangle square to the sketch, grown out from its center.',
+  prompts: ['Click the center', 'Click a corner, or type the width and height'],
   clicks: 2,
   frame(state, cursor) {
     if (!state.anchors.length) return idle(cursor)
@@ -319,9 +319,9 @@ const circle: SketchToolSpec = {
   id: 'circle',
   label: 'Center Diameter Circle',
   menu: 'Circle',
-  hint: 'A circle from its centre out to its edge.',
+  hint: 'A circle from its center out to its edge.',
   shortcut: 'C',
-  prompts: ['Click the centre', 'Click the edge, or type the diameter'],
+  prompts: ['Click the center', 'Click the edge, or type the diameter'],
   clicks: 2,
   frame(state, cursor) {
     if (!state.anchors.length) return idle(cursor)
@@ -340,7 +340,7 @@ const circle: SketchToolSpec = {
   build(writer, anchors, dims) {
     const radius = v2.dist(anchors[0].point, anchors[1].point)
     if (!(radius > 1e-9))
-      return { error: 'The circle needs a size. Click further from the centre.' }
+      return { error: 'The circle needs a size. Click further from the center.' }
     const c = writer.point(anchors[0])
     const id = writer.entity({ kind: 'circle', c, r: radius, construction: false })
     roundConstraint(writer, anchors[1], id)
@@ -429,8 +429,8 @@ const arcCentre: SketchToolSpec = {
   id: 'arc',
   label: 'Center Point Arc',
   menu: 'Arc',
-  hint: 'An arc around a centre: click the centre, the start, then swing round to the end.',
-  prompts: ['Click the centre', 'Click where the arc starts', 'Swing round and click the end'],
+  hint: 'An arc around a center: click the center, the start, then swing round to the end.',
+  prompts: ['Click the center', 'Click where the arc starts', 'Swing round and click the end'],
   clicks: 3,
   frame(state, cursor) {
     if (!state.anchors.length) return idle(cursor)
@@ -686,7 +686,7 @@ const polygon: SketchToolSpec = {
   label: 'Circumscribed Polygon',
   menu: 'Polygon',
   hint: 'A regular polygon around a circle: the diameter is measured across the flats.',
-  prompts: ['Click the centre', 'Click the middle of an edge, or type the size and sides'],
+  prompts: ['Click the center', 'Click the middle of an edge, or type the size and sides'],
   clicks: 2,
   frame: (state, cursor) => polygonFrame(state, cursor, false),
   build(writer, anchors, dims) {
@@ -711,7 +711,7 @@ const polygonInscribed: SketchToolSpec = {
   label: 'Inscribed Polygon',
   menu: 'Polygon',
   hint: 'A regular polygon inside a circle: the diameter is measured across the corners.',
-  prompts: ['Click the centre', 'Click a corner, or type the size and sides'],
+  prompts: ['Click the center', 'Click a corner, or type the size and sides'],
   clicks: 2,
   frame: (state, cursor) => polygonFrame(state, cursor, true),
   build(writer, anchors, dims) {
@@ -804,8 +804,8 @@ const ellipse: SketchToolSpec = {
   id: 'ellipse',
   label: 'Ellipse',
   menu: 'Ellipse',
-  hint: 'An ellipse from its centre, the end of its long axis, and a point on its side.',
-  prompts: ['Click the centre', 'Click the end of the first axis', 'Click a point on the ellipse'],
+  hint: 'An ellipse from its center, the end of its long axis, and a point on its side.',
+  prompts: ['Click the center', 'Click the end of the first axis', 'Click a point on the ellipse'],
   clicks: 3,
   frame(state, cursor) {
     if (!state.anchors.length) return idle(cursor)
@@ -932,8 +932,8 @@ const slot: SketchToolSpec = {
   id: 'slot',
   label: 'Center to Center Slot',
   menu: 'Slot',
-  hint: 'A slot measured between the centres of its round ends.',
-  prompts: ['Click the first end centre', 'Click the second end centre', 'Click the width'],
+  hint: 'A slot measured between the centers of its round ends.',
+  prompts: ['Click the first end center', 'Click the second end center', 'Click the width'],
   clicks: 3,
   frame(state, cursor) {
     if (!state.anchors.length) return idle(cursor)
@@ -1011,7 +1011,7 @@ const slotCentrePoint: SketchToolSpec = {
   label: 'Center Point Slot',
   menu: 'Slot',
   hint: 'A slot grown out both ways from its middle.',
-  prompts: ['Click the middle of the slot', 'Click one end centre', 'Click the width'],
+  prompts: ['Click the middle of the slot', 'Click one end center', 'Click the width'],
   clicks: 3,
   frame(state, cursor) {
     if (!state.anchors.length) return idle(cursor)

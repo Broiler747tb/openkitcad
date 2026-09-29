@@ -16,7 +16,7 @@ const PLANE = {
 export const fitCouponCommand = defineCommand({
   id: 'fitCoupon',
   label: 'Fit Test Coupon',
-  hint: 'Two small cards to print: a row of pins and a row of holes, each rung a step looser, numbered in hundredths of a millimetre.',
+  hint: 'Two small cards to print: a row of pins and a row of holes, each rung a step looser, numbered in hundredths of a millimeter.',
   icon: '⌗',
   inputs: [
     PLANE,

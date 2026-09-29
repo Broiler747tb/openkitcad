@@ -8,7 +8,7 @@
   "manufacturer": "Raspberry Pi",
   "summary": "The small one. Same footprint as a Zero 2 W but a lot slower.",
   "confidence": "datasheet",
-  "source": "Raspberry Pi Zero W mechanical drawing (Raspberry Pi Ltd), with positions read from its vector geometry: board 65 x 30 mm with 3 mm corners, four 2.75 mm holes 3.5 mm in from the corners on a 58 x 23 mm pattern, 40-pin header holes centred 32.5 mm along the top hole line (no header fitted). Bottom edge: mini HDMI at 12.4 mm, micro USB data at 41.4 mm and micro USB power at 54 mm. The microSD slot is on the top at the left edge and the camera connector at the right edge. Small parts are left out.",
+  "source": "Raspberry Pi Zero W mechanical drawing (Raspberry Pi Ltd), with positions read from its vector geometry: board 65 x 30 mm with 3 mm corners, four 2.75 mm holes 3.5 mm in from the corners on a 58 x 23 mm pattern, 40-pin header holes centered 32.5 mm along the top hole line (no header fitted). Bottom edge: mini HDMI at 12.4 mm, micro USB data at 41.4 mm and micro USB power at 54 mm. The microSD slot is on the top at the left edge and the camera connector at the right edge. Small parts are left out.",
   "look": {
     "colour": "#1f6f4a",
     "components": [

@@ -674,8 +674,8 @@ export const dovetailCommand = defineCommand({
       fills: (pick) => ({ ...pointOnFace(pick), ...mateOnly(pick) }),
     },
     MATE_INPUT,
-    { id: 'x', kind: 'length', label: 'Position X', hint: 'Centre of the rail.', default: 0 },
-    { id: 'y', kind: 'length', label: 'Position Y', hint: 'Centre of the rail.', default: 0 },
+    { id: 'x', kind: 'length', label: 'Position X', hint: 'Center of the rail.', default: 0 },
+    { id: 'y', kind: 'length', label: 'Position Y', hint: 'Center of the rail.', default: 0 },
     {
       id: 'angle',
       kind: 'angle',

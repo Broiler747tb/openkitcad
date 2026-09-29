@@ -7,7 +7,7 @@
   "ads1115-board": {
     "name": "ADS1115 ADC",
     "category": "sensor",
-    "summary": "16-bit, 4-channel analogue inputs over I2C."
+    "summary": "16-bit, 4-channel analog inputs over I2C."
   },
   "arduino-uno": {
     "name": "Arduino Uno outline",
@@ -185,9 +185,9 @@
     "summary": "Fast ARM boards on a 0.1 inch grid, from PJRC."
   },
   "tft-display": {
-    "name": "TFT colour display",
+    "name": "TFT color display",
     "category": "display",
-    "summary": "SPI colour screens from 1.3 to 3.5 inch."
+    "summary": "SPI color screens from 1.3 to 3.5 inch."
   },
   "usb-c-port": {
     "name": "USB-C port",

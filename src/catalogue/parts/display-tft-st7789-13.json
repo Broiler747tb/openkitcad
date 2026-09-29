@@ -6,7 +6,7 @@
   "family": "tft-display",
   "variant": "1.3 in, ST7789",
   "manufacturer": "LCDwiki",
-  "summary": "240x240 colour screen on a 27.8 x 39.2 mm board with four M2 holes and 7 pins along the top.",
+  "summary": "240x240 color screen on a 27.8 x 39.2 mm board with four M2 holes and 7 pins along the top.",
   "confidence": "datasheet",
   "source": "LCDwiki MSP1308 dimension drawing: board 27.78 x 39.22 mm, four 2.0 mm holes 2.5 mm in from the corners (22.78 x 34.22 mm apart), 7 pins at 2.54 mm pitch 6.27 mm in from each side along the top edge, display 29.22 mm tall starting 5.0 mm from each end, active area 23.40 x 23.40 mm 1.33 mm below its top and 1.38 mm in from its side. The board and glass thickness are not on the drawing; 1.6 mm each is assumed.",
   "look": {

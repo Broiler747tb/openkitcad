@@ -5,9 +5,9 @@
   "popularity": 64,
   "family": "nema-stepper",
   "variant": "NEMA 23, 56.4 mm square",
-  "summary": "The big stepper for CNC routers and mills. Four M5 holes on a 47.14 mm square, 38.1 mm centring boss.",
+  "summary": "The big stepper for CNC routers and mills. Four M5 holes on a 47.14 mm square, 38.1 mm centering boss.",
   "confidence": "datasheet",
-  "source": "NEMA ICS 16 fixes the size 23 faceplate: 47.14 mm between mounting holes, a 38.1 mm diameter centring boss 1.6 mm tall and a 6.35 mm shaft. The 56.4 mm body is the usual size for the frame. The four holes go through a flange rather than being tapped, so the screws pass right through. Body length, shaft length and winding vary by model: this entry uses a 56 mm body and a 21 mm shaft, so check the one you buy.",
+  "source": "NEMA ICS 16 fixes the size 23 faceplate: 47.14 mm between mounting holes, a 38.1 mm diameter centering boss 1.6 mm tall and a 6.35 mm shaft. The 56.4 mm body is the usual size for the frame. The four holes go through a flange rather than being tapped, so the screws pass right through. Body length, shaft length and winding vary by model: this entry uses a 56 mm body and a 21 mm shaft, so check the one you buy.",
   "geometry": {
     "kind": "motor",
     "frame": 56.4,

@@ -170,7 +170,7 @@ function Home({ parts }: { parts: CataloguePart[] }) {
     <>
       {favouriteParts.length > 0 && (
         <section className="parts-section">
-          <h4>Favourites</h4>
+          <h4>Favorites</h4>
           {favouriteParts.map((part) => (
             <PartRow key={part.id} part={part} />
           ))}
@@ -359,7 +359,7 @@ Click for details, or drag it onto a face in the view.`}
         <span className="parts-row-text">
           <strong>
             {favourite && (
-              <span className="parts-starred" aria-label="Favourite">
+              <span className="parts-starred" aria-label="Favorite">
                 ★
               </span>
             )}
@@ -381,9 +381,9 @@ Click for details, or drag it onto a face in the view.`}
           className={`parts-star ${favourite ? 'on' : ''}`}
           aria-pressed={favourite}
           aria-label={
-            favourite ? `Remove ${part.name} from favourites` : `Add ${part.name} to favourites`
+            favourite ? `Remove ${part.name} from favorites` : `Add ${part.name} to favorites`
           }
-          title={favourite ? 'Remove from favourites' : 'Add to favourites'}
+          title={favourite ? 'Remove from favorites' : 'Add to favorites'}
           onClick={() => useShelf.getState().toggleFavourite(part.id)}
         >
           {favourite ? '★' : '☆'}

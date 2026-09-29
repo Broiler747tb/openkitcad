@@ -7,7 +7,7 @@
   "variant": "NodeMCU v3, 31 mm wide (generic)",
   "summary": "The wide NodeMCU clone. Its rows are 27.9 mm apart, so it covers most of a small breadboard.",
   "confidence": "approximate",
-  "source": "There is no published drawing for this board; it is the widely sold LoLin-style clone. Measured values: board about 58 x 31 mm with four 3 mm corner holes, two rows of 15 pins 27.94 mm apart, an ESP-12E module at the far end, micro USB and CH340 serial chip at the near end. Sellers differ by a millimetre or two.",
+  "source": "There is no published drawing for this board; it is the widely sold LoLin-style clone. Measured values: board about 58 x 31 mm with four 3 mm corner holes, two rows of 15 pins 27.94 mm apart, an ESP-12E module at the far end, micro USB and CH340 serial chip at the near end. Sellers differ by a millimeter or two.",
   "look": {
     "colour": "#1d2226",
     "components": [

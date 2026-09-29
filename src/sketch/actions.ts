@@ -456,7 +456,7 @@ export function sketchActions(
     push({
       id: 'radius',
       label: 'Radius',
-      hint: 'The measurement from the centre out',
+      hint: 'The measurement from the center out',
       prompt: { label: 'Radius', initial: Math.round(r * 1000) / 1000, unit: 'mm' },
       build: (value) => constraint({ kind: 'radius', e: circle.id, value }),
     })

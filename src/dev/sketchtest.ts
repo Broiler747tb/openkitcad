@@ -95,7 +95,7 @@ export function runSketchTest(): TestResult[] {
     const ellipse = byId(d, e) as Extract<SketchEntity, { kind: 'ellipse' }>
     const turn = ((ellipse.rotation % 180) + 180) % 180
     check(
-      'an ellipse takes its axes, its centre and its rotation from constraints',
+      'an ellipse takes its axes, its center and its rotation from constraints',
       result.ok &&
         Math.abs(ellipse.rx - 20) < 1e-6 &&
         Math.abs(ellipse.ry - 8) < 1e-6 &&
@@ -206,9 +206,9 @@ export function runSketchTest(): TestResult[] {
       v2.cross(v2.norm(v2.sub(at(d, a2), at(d, a1))), v2.sub(at(d, b2), at(d, a1))),
     )
     check(
-      'concentric circles share a centre and collinear lines share a line',
+      'concentric circles share a center and collinear lines share a line',
       result.ok && v2.dist(at(d, c1), at(d, c2)) < 1e-6 && across < 1e-6,
-      `centres ${v2.dist(at(d, c1), at(d, c2)).toExponential(2)} apart, ${across.toExponential(2)} off line`,
+      `centers ${v2.dist(at(d, c1), at(d, c2)).toExponential(2)} apart, ${across.toExponential(2)} off line`,
     )
 
     const m1 = point(d, -10, 50)
@@ -578,7 +578,7 @@ export function runSketchTest(): TestResult[] {
         area: 1200,
       },
       {
-        name: 'a centre rectangle',
+        name: 'a center rectangle',
         tool: 'rectangleCentre',
         steps: [{ at: [10, 10] }, { at: [30, 25] }],
         area: 1200,
@@ -626,7 +626,7 @@ export function runSketchTest(): TestResult[] {
         area: (5 * 100) / (4 * Math.tan(Math.PI / 5)),
       },
       {
-        name: 'a centre to centre slot',
+        name: 'a center to center slot',
         tool: 'slot',
         steps: [{ at: [0, 0] }, { at: [30, 0] }, { at: [15, 5] }],
         area: 300 + Math.PI * 25,
@@ -638,7 +638,7 @@ export function runSketchTest(): TestResult[] {
         area: 300 + Math.PI * 25,
       },
       {
-        name: 'a centre point slot',
+        name: 'a center point slot',
         tool: 'slotCentrePoint',
         steps: [{ at: [0, 0] }, { at: [15, 0] }, { at: [0, 5] }],
         area: 300 + Math.PI * 25,
@@ -700,7 +700,7 @@ export function runSketchTest(): TestResult[] {
     ])
     const swing = swungArc[0] as { kind: string; ccw: boolean; p2: string }
     check(
-      'a centre point arc follows the way the cursor swung, past half a turn',
+      'a center point arc follows the way the cursor swung, past half a turn',
       swing?.kind === 'arc' && swing.ccw && v2.dist(at(swung, swing.p2), [0, -10]) < 1e-9,
       JSON.stringify(swing),
     )

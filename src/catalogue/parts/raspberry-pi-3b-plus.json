@@ -8,7 +8,7 @@
   "manufacturer": "Raspberry Pi",
   "summary": "The last of the 40-pin full-size Pis before the 4. Same holes as a 4.",
   "confidence": "datasheet",
-  "source": "Raspberry Pi 3 Model B+ mechanical drawing (Raspberry Pi Ltd), with positions read from its vector geometry: board 85 x 56 mm with 3 mm corners, four 2.7 mm holes on a 58 x 49 mm pattern, 40-pin header centred 32.5 mm along the top hole line. Bottom edge: micro USB power at 10.6 mm, HDMI at 32 mm, audio jack at 53.5 mm. Right edge: Ethernet centred 10.25 mm, USB pairs at 29 and 47 mm, standing 2 mm past the board. Heights from the drawing: USB 16, Ethernet 13.5, header 8.5, HDMI 6.5, audio 6, camera and display connectors 5.5 mm. The microSD slot is on the underside at the left edge; its position is not on the drawing and is approximate.",
+  "source": "Raspberry Pi 3 Model B+ mechanical drawing (Raspberry Pi Ltd), with positions read from its vector geometry: board 85 x 56 mm with 3 mm corners, four 2.7 mm holes on a 58 x 49 mm pattern, 40-pin header centered 32.5 mm along the top hole line. Bottom edge: micro USB power at 10.6 mm, HDMI at 32 mm, audio jack at 53.5 mm. Right edge: Ethernet centered 10.25 mm, USB pairs at 29 and 47 mm, standing 2 mm past the board. Heights from the drawing: USB 16, Ethernet 13.5, header 8.5, HDMI 6.5, audio 6, camera and display connectors 5.5 mm. The microSD slot is on the underside at the left edge; its position is not on the drawing and is approximate.",
   "look": {
     "colour": "#1f6f4a",
     "components": [

@@ -63,7 +63,7 @@ export function runPartsTest(): TestResult[] {
     (p, i) => i === 0 || (CATALOGUE[i - 1].popularity ?? 0) >= (p.popularity ?? 0),
   )
   check(
-    'the catalogue is sorted most popular first',
+    'the catalog is sorted most popular first',
     order,
     CATALOGUE.slice(0, 3)
       .map((p) => p.id)
@@ -93,7 +93,7 @@ export function runPartsTest(): TestResult[] {
     if (labels.size !== members.length) familyProblems.push(`${family.id} repeats a version label`)
   }
   check(
-    'families are known, share a category, and have at least two labelled versions',
+    'families are known, share a category, and have at least two labeled versions',
     !familyProblems.length,
     familyProblems.slice(0, 3).join(' | ') || `${FAMILIES.size} families`,
   )
@@ -320,7 +320,7 @@ export function runPartsTest(): TestResult[] {
   const centre: Vec3 = [(bx0 + bx1) / 2, (by0 + by1) / 2, bz0]
   const onTop = surfaceMatrix(pi, [10, 20, 5], [0, 0, 1])
   check(
-    'a board dropped on a top face sits on it, centred where it was dropped',
+    'a board dropped on a top face sits on it, centered where it was dropped',
     near(transformPoint(onTop, centre), [10, 20, 5]) &&
       near(transformDirection(onTop, [0, 0, 1]), [0, 0, 1]),
     show(transformPoint(onTop, centre)),
@@ -383,7 +383,7 @@ export function runPartsTest(): TestResult[] {
   }
   const ground = dropPlacement(pi, { point: [10.4, 19.6, 0] }, identityMatrix())
   check(
-    'dropping on empty space lands on the ground, snapped to whole millimetres',
+    'dropping on empty space lands on the ground, snapped to whole millimeters',
     near(transformPoint(ground, centre), [10, 20, 0]) &&
       near(transformDirection(ground, [0, 0, 1]), [0, 0, 1]),
     show(transformPoint(ground, centre)),
@@ -458,7 +458,7 @@ export function runPartsTest(): TestResult[] {
     useShelf.getState().toggleFavourite('servo-sg90')
     const starred = useShelf.getState().favourites.includes('servo-sg90')
     useShelf.getState().toggleFavourite('servo-sg90')
-    check('a star adds and removes a favourite', starred && !useShelf.getState().favourites.length)
+    check('a star adds and removes a favorite', starred && !useShelf.getState().favourites.length)
     for (const p of CATALOGUE.slice(0, RECENT_LIMIT + 2)) useShelf.getState().noteUsed(p.id)
     useShelf.getState().noteUsed(CATALOGUE[3].id)
     const recent = useShelf.getState().recent

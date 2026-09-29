@@ -8,7 +8,7 @@
   "manufacturer": "WEMOS / LOLIN",
   "summary": "Current LOLIN D1 mini: 34.3 x 25.4 mm, USB-C, two 2 mm holes at the aerial end.",
   "confidence": "datasheet",
-  "source": "LOLIN D1 mini v4.0.0 dimension drawing (wemos.cc), scaled from its own 2.54 mm pin pitch: board 25.40 x 34.30 mm with 4 mm corners at the aerial end and a small notch by the USB end, two 2.0 mm holes 20.4 mm apart 3.3 mm from the aerial end, two rows of 8 pins 22.86 mm apart whose centre line is 17.70 mm from the USB end. USB-C on the short edge and the side reset button on the corner. Older v3 boards and most clones use an ESP-12F module and have no holes.",
+  "source": "LOLIN D1 mini v4.0.0 dimension drawing (wemos.cc), scaled from its own 2.54 mm pin pitch: board 25.40 x 34.30 mm with 4 mm corners at the aerial end and a small notch by the USB end, two 2.0 mm holes 20.4 mm apart 3.3 mm from the aerial end, two rows of 8 pins 22.86 mm apart whose center line is 17.70 mm from the USB end. USB-C on the short edge and the side reset button on the corner. Older v3 boards and most clones use an ESP-12F module and have no holes.",
   "look": {
     "colour": "#1b1d20",
     "components": [

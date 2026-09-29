@@ -6,7 +6,7 @@
   "family": "tft-display",
   "variant": "3.5 in, ILI9488",
   "manufacturer": "LCDwiki",
-  "summary": "320x480 colour touch screen on a 56.3 x 98 mm board with four M3 holes and pins on the back.",
+  "summary": "320x480 color touch screen on a 56.3 x 98 mm board with four M3 holes and pins on the back.",
   "confidence": "datasheet",
   "source": "LCDwiki MSP3520 outline drawing (V1.0): board 56.34 x 98.0 mm and 1.6 mm thick, four 3.2 mm holes 3.42 mm in from the sides and 3.0 mm from the top and bottom (49.5 x 92 mm apart), backlight 55.50 x 84.96 mm, touch panel 55.00 x 84.36 mm, active area 48.96 x 73.44 mm, 14 pins at 2.54 mm pitch along the bottom edge 2.0 mm up, starting 11.66 mm from the left. 5.8 mm thick without the pins, which stand 11.17 mm behind the board. An SD card slot sits on the back. This is the widely sold red SPI module these drivers are known by.",
   "look": {

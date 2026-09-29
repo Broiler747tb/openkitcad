@@ -5,9 +5,9 @@
   "popularity": 40,
   "family": "nema-stepper",
   "variant": "NEMA 8, 20 mm square",
-  "summary": "The smallest common stepper. Four M2 holes on a 16 mm square, 15 mm centring boss.",
+  "summary": "The smallest common stepper. Four M2 holes on a 16 mm square, 15 mm centering boss.",
   "confidence": "datasheet",
-  "source": "NEMA ICS 16 fixes the size 8 faceplate: 16 mm between mounting holes, a 15 mm diameter centring boss 1.5 mm tall and a 4 mm shaft. The 20 mm body is the usual size for the frame. The four holes are tapped into the end cap. Body length, shaft length and winding vary by model: this entry uses a 30 mm body and a 10 mm shaft, so check the one you buy.",
+  "source": "NEMA ICS 16 fixes the size 8 faceplate: 16 mm between mounting holes, a 15 mm diameter centering boss 1.5 mm tall and a 4 mm shaft. The 20 mm body is the usual size for the frame. The four holes are tapped into the end cap. Body length, shaft length and winding vary by model: this entry uses a 30 mm body and a 10 mm shaft, so check the one you buy.",
   "geometry": {
     "kind": "motor",
     "frame": 20.0,

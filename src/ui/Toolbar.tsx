@@ -289,8 +289,8 @@ export function Toolbar({
     modifyTool(
       'circularPattern',
       'Circular Pattern',
-      'Repeats the selected geometry around a centre point.',
-      'Circular Pattern: with the geometry selected, click the centre point.',
+      'Repeats the selected geometry around a center point.',
+      'Circular Pattern: with the geometry selected, click the center point.',
     ),
     { ...rectangularPatternAction(), run: rectangularPatternAction().run },
   ]
@@ -750,10 +750,10 @@ export function Toolbar({
         <button className="command-trigger" onClick={() => setPalette(true)}>
           Search commands <kbd>S</kbd>
         </button>
-        <label className="theme-picker" title="Colour theme">
+        <label className="theme-picker" title="Color theme">
           <span aria-hidden="true">{themeState.theme === 'dark' ? '☾' : '☀'}</span>
           <select
-            aria-label="Colour theme"
+            aria-label="Color theme"
             value={themeState.preference}
             onChange={(e) => themeState.setTheme(e.target.value as typeof themeState.preference)}
           >

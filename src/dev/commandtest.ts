@@ -57,7 +57,7 @@ export function runCommandTest(): TestResult[] {
   const check = (name: string, pass: boolean, detail: string) =>
     results.push({ name: `Commands: ${name}`, pass, detail })
 
-  check('inches typed into a millimetre field', parseLength('1 in', 'mm') === 25.4, '1 in')
+  check('inches typed into a millimeter field', parseLength('1 in', 'mm') === 25.4, '1 in')
   check('plain numbers use the document unit', parseLength('10', 'in') === 254, '10 in document')
   check(
     'parameters and arithmetic work in length fields',

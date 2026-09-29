@@ -524,7 +524,7 @@ function catalogueSolid(
       featureId: component.id,
       bodyId: component.id,
       severity: 'error',
-      message: `"${component.name}" is not in the catalogue or in your parts.`,
+      message: `"${component.name}" is not in the catalog or in your parts.`,
       hint: 'Open the design file it came from, or place the part again.',
     })
     return null
@@ -559,7 +559,7 @@ function catalogueSolid(
       bodyId: component.id,
       severity: 'error',
       message: `Could not build "${component.name}": ${entry.error}`,
-      hint: 'This is a problem with the catalogue part, not with your design.',
+      hint: 'This is a problem with the catalog part, not with your design.',
     })
   }
   return entry.shape ? { shape: entry.shape, key, part } : null

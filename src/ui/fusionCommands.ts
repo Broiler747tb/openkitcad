@@ -98,14 +98,14 @@ export function resolveCommand(id: string): ObjectAction | null {
     return {
       id,
       label: 'Appearance',
-      hint: 'Body display colour. Physical material properties are not changed.',
+      hint: 'Body display color. Physical material properties are not changed.',
       choice: {
-        label: 'Colour',
+        label: 'Color',
         initial: found.body.colour,
         options: [
           { value: found.body.colour, label: 'Current' },
           ...[
-            ['#b9c0c7', 'Aluminium'],
+            ['#b9c0c7', 'Aluminum'],
             ['#355c8a', 'Blue'],
             ['#c9642d', 'Orange'],
             ['#31363c', 'Graphite'],

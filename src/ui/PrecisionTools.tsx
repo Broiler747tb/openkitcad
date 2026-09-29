@@ -138,7 +138,7 @@ export function GridSettings() {
           {check('gridVisible', 'Show grid')}
           {check('axesVisible', 'Show axes')}
           {check('snapGrid', 'Snap to grid')}
-          {check('snapGeometry', 'Snap to endpoints / centres')}
+          {check('snapGeometry', 'Snap to endpoints / centers')}
           {check('snapMidpoints', 'Snap to midpoints')}
           {check('snapEdges', 'Snap to edges')}
           {check('snapAlignment', 'Infer horizontal / vertical')}
@@ -337,7 +337,7 @@ export function PrecisionSketchTools() {
           ))}
       </div>
       <p className="hint">
-        Polygon and slot use absolute X/Y as their centre. Select edges to access patterns and
+        Polygon and slot use absolute X/Y as their center. Select edges to access patterns and
         mirrors.
       </p>
       <button

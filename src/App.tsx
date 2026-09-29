@@ -185,8 +185,8 @@ function SketchBanner() {
       'Drag a corner to move it. Select geometry to see available actions in the right panel.',
     line: 'Click for each corner. Right-click or Escape to stop the chain.',
     rectangle: 'Click one corner, then the opposite one.',
-    circle: 'Click the centre, then click to set how big.',
-    arc: 'Click the centre, then the start, then the end.',
+    circle: 'Click the center, then click to set how big.',
+    arc: 'Click the center, then the start, then the end.',
     dimension: 'Click a line or a circle, then type the size you want.',
   }
   return (

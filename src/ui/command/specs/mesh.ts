@@ -78,12 +78,12 @@ function componentOf(doc: OkcDocument, bodyId: string, fallback: string): string
 }
 
 const UNIT_OPTIONS = [
-  { value: 'mm', label: 'Millimetre' },
-  { value: 'cm', label: 'Centimetre' },
-  { value: 'm', label: 'Metre' },
+  { value: 'mm', label: 'Millimeter' },
+  { value: 'cm', label: 'Centimeter' },
+  { value: 'm', label: 'Meter' },
   { value: 'in', label: 'Inch' },
   { value: 'ft', label: 'Foot' },
-  { value: 'um', label: 'Micrometre' },
+  { value: 'um', label: 'Micrometer' },
 ] as const
 
 export function insertTransform(

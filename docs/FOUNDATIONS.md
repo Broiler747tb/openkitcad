@@ -1073,6 +1073,11 @@ dialog that focuses Cancel when the answer destroys work; there are no native `c
 left outside Android. The status-bar toggles no longer inherit the 30 px form-control height.
 `?selftest&suite=polish` covers each.
 
+Two decisions came with it. Home is the front-right corner above the model, as in Fusion (the
+quarter turn to front-left dated from the first version). The app's text is in American spelling,
+as Fusion's is: center, color, favorite, millimeter, catalog, modeled. Identifiers and stored
+fields keep their names (`colour`, `centre`, the `catalogue` kind), so old designs open unchanged.
+
 ## 28. How the work is done
 
 - Agents never start other agents or workflows.

@@ -6,7 +6,7 @@
   "manufacturer": "LCDWIKI / QDtech",
   "summary": "ESP32-S3 development board with a 240 × 320, 2.8 inch capacitive-touch display and four M3-clearance mounting holes.",
   "confidence": "datasheet",
-  "source": "LCDWIKI ES3C28P / ES3N28P Specification V1.0, outline drawing 5.1: PCB 50.00 × 86.00 mm; four Ø3.20 mm holes at 42.00 × 78.00 mm centres; 10.60 mm maximum total depth. The capacitive touch panel is 50.00 × 69.20 mm and starts 8.22 mm from the PCB bottom; its 43.20 × 57.60 mm active LCD area is centred within it. It does not model each connector, button, or the flex cable individually.",
+  "source": "LCDWIKI ES3C28P / ES3N28P Specification V1.0, outline drawing 5.1: PCB 50.00 × 86.00 mm; four Ø3.20 mm holes at 42.00 × 78.00 mm centers; 10.60 mm maximum total depth. The capacitive touch panel is 50.00 × 69.20 mm and starts 8.22 mm from the PCB bottom; its 43.20 × 57.60 mm active LCD area is centered within it. It does not model each connector, button, or the flex cable individually.",
   "look": {
     "colour": "#1d1f22",
     "components": [

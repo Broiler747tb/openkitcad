@@ -105,7 +105,7 @@ function DocumentSettings({ name, units }: { name: string; units: LengthUnit }) 
       </summary>
       <label
         className="browser-setting"
-        title="Lengths are shown and typed in this unit. The design is stored in millimetres."
+        title="Lengths are shown and typed in this unit. The design is stored in millimeters."
         style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 10px' }}
       >
         <span>Units</span>
@@ -449,7 +449,7 @@ function BodyBranch({
         }
       >
         <summary>
-          {steps.length} modelling step{steps.length === 1 ? '' : 's'}
+          {steps.length} modeling step{steps.length === 1 ? '' : 's'}
         </summary>
         {steps.map((feature) => (
           <FeatureRow

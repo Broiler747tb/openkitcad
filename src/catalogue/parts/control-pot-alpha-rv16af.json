@@ -8,7 +8,7 @@
   "manufacturer": "Taiwan Alpha",
   "summary": "Full-size 16 mm panel pot for volume and synth controls. Its M7 bushing needs a 7.2 mm hole.",
   "confidence": "datasheet",
-  "source": "Taiwan Alpha 16 mm metal shaft series catalogue, RV16AF-10: can 16.5 mm across (17 mm over the tabs) and 9.1 mm deep behind the panel, M7 x 0.75 bushing 10 mm long, 6 mm knurled shaft with 18 teeth, anti-rotation tab 7.8 mm from the centre, terminals reaching 13.5 mm below the shaft centre. Modelled with the 15 mm shaft (L measured from the mounting face); 20 and 25 mm are also made. The 7.2 mm hole clears the M7 thread; a 3 mm hole 7.8 mm off centre takes the tab.",
+  "source": "Taiwan Alpha 16 mm metal shaft series catalog, RV16AF-10: can 16.5 mm across (17 mm over the tabs) and 9.1 mm deep behind the panel, M7 x 0.75 bushing 10 mm long, 6 mm knurled shaft with 18 teeth, anti-rotation tab 7.8 mm from the center, terminals reaching 13.5 mm below the shaft center. Modeled with the 15 mm shaft (L measured from the mounting face); 20 and 25 mm are also made. The 7.2 mm hole clears the M7 thread; a 3 mm hole 7.8 mm off center takes the tab.",
   "look": {
     "style": "pot"
   },
@@ -53,7 +53,7 @@
   ],
   "links": [
     {
-      "label": "Taiwan Alpha 16 mm catalogue",
+      "label": "Taiwan Alpha 16 mm catalog",
       "url": "https://electricdruid.net/wp-content/uploads/2016/12/Taiwan-Alpha-16mm-pots-datasheet.pdf"
     }
   ],

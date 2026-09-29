@@ -478,7 +478,7 @@ export async function runKernelTest(): Promise<TestResult[]> {
       )
       const turned = await moved([0, 0, 0], [0, 0, 90])
       add(
-        'turning a body pivots about its own centre',
+        'turning a body pivots about its own center',
         !!turned && turned.bounds.every((v, i) => Math.abs(v - [10, -10, 0, 30, 30, 10][i]) < 1e-6),
         `bounds ${turned?.bounds.map((v) => v.toFixed(2)).join(', ')}`,
       )
@@ -490,7 +490,7 @@ export async function runKernelTest(): Promise<TestResult[]> {
       const diagonal = await moved([0, 0, 0], [0, 0, 45])
       const span = 60 * Math.cos(Math.PI / 4)
       add(
-        'a 45 degree turn spans the diagonal, still centred',
+        'a 45 degree turn spans the diagonal, still centered',
         !!diagonal &&
           Math.abs(diagonal.bounds[3] - diagonal.bounds[0] - span) < 1e-3 &&
           Math.abs((diagonal.bounds[0] + diagonal.bounds[3]) / 2 - 20) < 1e-6,
@@ -832,7 +832,7 @@ export async function runKernelTest(): Promise<TestResult[]> {
         Math.abs(proj.bounds[1]) < 0.01 && Math.abs(proj.bounds[3] - PLATE_D) < 0.01,
         `y spans ${proj.bounds[1].toFixed(2)}..${proj.bounds[3].toFixed(2)} (expected 0..${PLATE_D})`,
       )
-      add('hole centres land exactly under the board', matched === 4, detail)
+      add('hole centers land exactly under the board', matched === 4, detail)
     } catch (e) {
       add('projection finds the four holes as true circles', false, (e as Error).message)
     }

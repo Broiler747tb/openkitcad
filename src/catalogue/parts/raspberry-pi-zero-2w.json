@@ -8,7 +8,7 @@
   "manufacturer": "Raspberry Pi Ltd",
   "summary": "Tiny 65 x 30 mm Pi. Four M2.5 holes on a 58 x 23 mm pattern.",
   "confidence": "datasheet",
-  "source": "Raspberry Pi Zero 2 W mechanical drawing (Raspberry Pi Ltd), with positions read from its vector geometry: board 65 x 30 mm with 3 mm corners, four 2.7 mm holes 3.5 mm in from the corners on a 58 x 23 mm pattern, 40-pin header holes centred 32.5 mm along the top hole line (no header fitted). Bottom edge: mini HDMI at 12.4 mm, micro USB data at 41.4 mm and micro USB power at 54 mm. The microSD slot is on the top at the left edge and the camera connector at the right edge. Which square is the black RP3A0 package and which is the wireless shield was checked against the photo in the product brief.",
+  "source": "Raspberry Pi Zero 2 W mechanical drawing (Raspberry Pi Ltd), with positions read from its vector geometry: board 65 x 30 mm with 3 mm corners, four 2.7 mm holes 3.5 mm in from the corners on a 58 x 23 mm pattern, 40-pin header holes centered 32.5 mm along the top hole line (no header fitted). Bottom edge: mini HDMI at 12.4 mm, micro USB data at 41.4 mm and micro USB power at 54 mm. The microSD slot is on the top at the left edge and the camera connector at the right edge. Which square is the black RP3A0 package and which is the wireless shield was checked against the photo in the product brief.",
   "look": {
     "colour": "#1f6f4a",
     "components": [

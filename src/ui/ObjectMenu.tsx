@@ -358,7 +358,7 @@ function buildObjectActions(
       out.push({
         id: 'draft',
         label: 'Draft',
-        hint: 'Tilts this face by an angle so the part comes out of a mould',
+        hint: 'Tilts this face by an angle so the part comes out of a mold',
         run: () => startCommand('draft', { faces: facePicks() }),
       })
       out.push({
@@ -504,7 +504,7 @@ function buildObjectActions(
     out.push({
       id: 'cut-ball',
       label: 'Sphere Cut',
-      hint: 'Cuts a ball-shaped hollow centred where you clicked',
+      hint: 'Cuts a ball-shaped hollow centered where you clicked',
       run: () =>
         startCommand('sphere', {
           operation: 'cut',

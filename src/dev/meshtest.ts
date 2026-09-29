@@ -64,7 +64,7 @@ export function runMeshTest(): TestResult[] {
     near(solid(read, 'read back').volume, 1000, 'volume', 1e-3)
   })
 
-  test('STL in inches comes in as millimetres', () => {
+  test('STL in inches comes in as millimeters', () => {
     const read = parseStl(writeStlBinary(boxMesh([1, 1, 1])), { unit: 'in' })
     near(analyzeMesh(read).volume, 25.4 ** 3, 'volume', 1e-2)
   })

@@ -122,12 +122,12 @@ export const boxCommand = defineCommand({
 export const cylinderCommand = defineCommand({
   id: 'cylinder',
   label: 'Cylinder',
-  hint: 'A round post, placed by its centre on a plane or a flat face.',
+  hint: 'A round post, placed by its center on a plane or a flat face.',
   icon: '⌭',
   inputs: [
     PLANE_INPUT,
-    { id: 'x', kind: 'length', label: 'Centre X', default: 0 },
-    { id: 'y', kind: 'length', label: 'Centre Y', default: 0 },
+    { id: 'x', kind: 'length', label: 'Center X', default: 0 },
+    { id: 'y', kind: 'length', label: 'Center Y', default: 0 },
     { id: 'diameter', kind: 'length', label: 'Diameter', default: 20, min: 0, exclusiveMin: true },
     {
       id: 'height',
@@ -188,12 +188,12 @@ export const cylinderCommand = defineCommand({
 export const torusCommand = defineCommand({
   id: 'torus',
   label: 'Torus',
-  hint: 'A ring like a doughnut, placed by its centre on a plane or a flat face.',
+  hint: 'A ring like a doughnut, placed by its center on a plane or a flat face.',
   icon: '◎',
   inputs: [
     PLANE_INPUT,
-    { id: 'x', kind: 'length', label: 'Centre X', default: 0 },
-    { id: 'y', kind: 'length', label: 'Centre Y', default: 0 },
+    { id: 'x', kind: 'length', label: 'Center X', default: 0 },
+    { id: 'y', kind: 'length', label: 'Center Y', default: 0 },
     {
       id: 'diameter',
       kind: 'length',
@@ -252,12 +252,12 @@ export const torusCommand = defineCommand({
 export const sphereCommand = defineCommand({
   id: 'sphere',
   label: 'Sphere',
-  hint: 'A ball, placed by its centre on a plane or a flat face.',
+  hint: 'A ball, placed by its center on a plane or a flat face.',
   icon: '◯',
   inputs: [
     PLANE_INPUT,
-    { id: 'x', kind: 'length', label: 'Centre X', default: 0 },
-    { id: 'y', kind: 'length', label: 'Centre Y', default: 0 },
+    { id: 'x', kind: 'length', label: 'Center X', default: 0 },
+    { id: 'y', kind: 'length', label: 'Center Y', default: 0 },
     { id: 'diameter', kind: 'length', label: 'Diameter', default: 20, min: 0, exclusiveMin: true },
     {
       id: 'half',

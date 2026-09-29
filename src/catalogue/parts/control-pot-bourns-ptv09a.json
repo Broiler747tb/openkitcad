@@ -8,7 +8,7 @@
   "manufacturer": "Bourns",
   "summary": "Compact 9 mm pot with a metal M9 bushing for a panel. Needs a 9.2 mm hole.",
   "confidence": "datasheet",
-  "source": "Bourns PTV09 series datasheet, PTV09A-6 horizontal rear mount with metal threaded bushing: body 10.0 mm wide, 11.4 mm tall including the terminal stand and 8.4 mm deep, M9 x 0.75 bushing 5.9 mm long, shaft length L from the body (15 mm modelled). Hardware: nut 11 mm across flats and 2 mm thick, washer 15 mm. The 9.2 mm hole clears the M9 thread.",
+  "source": "Bourns PTV09 series datasheet, PTV09A-6 horizontal rear mount with metal threaded bushing: body 10.0 mm wide, 11.4 mm tall including the terminal stand and 8.4 mm deep, M9 x 0.75 bushing 5.9 mm long, shaft length L from the body (15 mm modeled). Hardware: nut 11 mm across flats and 2 mm thick, washer 15 mm. The 9.2 mm hole clears the M9 thread.",
   "look": {
     "style": "pot"
   },

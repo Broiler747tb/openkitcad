@@ -8,9 +8,9 @@
   "manufacturer": "ALPS Alpine",
   "summary": "The ubiquitous 11 mm EC11 incremental rotary encoder. This PCB-mount version needs a 7 mm panel clearance hole for its 6 mm D-shaft.",
   "confidence": "datasheet",
-  "source": "ALPS Alpine EC11 series catalogue, drawing No.2: 11.7 mm body width, 9.2 mm body depth and 6 mm D-shaft. EC11 is a family: shaft length, presence of push switch, and the five-hole PCB pattern vary by suffix. The 7.0 mm panel hole is a practical clearance for the 6.0 mm shaft, not an ALPS panel-cutout specification.",
+  "source": "ALPS Alpine EC11 series catalog, drawing No.2: 11.7 mm body width, 9.2 mm body depth and 6 mm D-shaft. EC11 is a family: shaft length, presence of push switch, and the five-hole PCB pattern vary by suffix. The 7.0 mm panel hole is a practical clearance for the 6.0 mm shaft, not an ALPS panel-cutout specification.",
   "links": [
-    { "label": "ALPS Alpine EC11 catalogue", "url": "https://tech.alpsalpine.com/assets/catalog/product-catalog-ec-all.en.pdf" }
+    { "label": "ALPS Alpine EC11 catalog", "url": "https://tech.alpsalpine.com/assets/catalog/product-catalog-ec-all.en.pdf" }
   ],
   "look": {"style": "encoder"},
   "geometry": {

@@ -6,7 +6,7 @@
   "manufacturer": "GCT",
   "summary": "Full-size USB-A socket for the edge of a board. Needs a 13 x 6 mm slot.",
   "confidence": "datasheet",
-  "source": "GCT USB1046 drawing, revision B5: shell 12.50 mm wide and 5.12 mm tall, 13.4 mm deep and 14.50 mm over the mounting tabs, front at the board edge. GCT now marks this part not recommended for new designs, but the shell is the USB 2.0 Type-A receptacle outline that current top-mount sockets share. The 13.0 x 6.0 mm slot clears the 12.0 x 4.5 mm plug shell by half a millimetre.",
+  "source": "GCT USB1046 drawing, revision B5: shell 12.50 mm wide and 5.12 mm tall, 13.4 mm deep and 14.50 mm over the mounting tabs, front at the board edge. GCT now marks this part not recommended for new designs, but the shell is the USB 2.0 Type-A receptacle outline that current top-mount sockets share. The 13.0 x 6.0 mm slot clears the 12.0 x 4.5 mm plug shell by half a millimeter.",
   "look": {
     "style": "usb-a"
   },

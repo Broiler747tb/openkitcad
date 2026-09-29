@@ -5,7 +5,7 @@
   "popularity": 55,
   "family": "ads1115-board",
   "variant": "Module (generic)",
-  "summary": "Four analogue inputs with far better resolution than a Pi has.",
+  "summary": "Four analog inputs with far better resolution than a Pi has.",
   "confidence": "approximate",
   "source": "Dimensions follow the commonly sold module. These are made by many suppliers to no common standard, so measure yours before cutting a panel. Hole positions in particular differ between makers - check yours against these.",
   "look": {

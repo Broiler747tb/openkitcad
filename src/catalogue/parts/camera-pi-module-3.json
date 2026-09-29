@@ -6,7 +6,7 @@
   "manufacturer": "Raspberry Pi Ltd",
   "summary": "12 MP autofocus camera: 25 x 23.9 mm board, four 2.2 mm holes on a 21 x 12.5 mm pattern.",
   "confidence": "datasheet",
-  "source": "Raspberry Pi Camera Module 3 (standard) mechanical drawing: board 25 x 23.862 mm and 1.12 mm thick, four 2.2 mm holes 2.0 mm in from the sides at 2.0 and 14.5 mm up, so a 21 x 12.5 mm pattern shared with the older camera modules. The 10.8 mm square lens housing is centred 12.5 mm across and 14.4 mm up; the housing front is 3.875 mm and the 5.75 mm lens 6.98 mm from the back of the board. The 19.61 x 5.71 mm cable connector sits on the back along the top edge, with 11.3 mm overall depth. Field of view 66 x 41 degrees.",
+  "source": "Raspberry Pi Camera Module 3 (standard) mechanical drawing: board 25 x 23.862 mm and 1.12 mm thick, four 2.2 mm holes 2.0 mm in from the sides at 2.0 and 14.5 mm up, so a 21 x 12.5 mm pattern shared with the older camera modules. The 10.8 mm square lens housing is centered 12.5 mm across and 14.4 mm up; the housing front is 3.875 mm and the 5.75 mm lens 6.98 mm from the back of the board. The 19.61 x 5.71 mm cable connector sits on the back along the top edge, with 11.3 mm overall depth. Field of view 66 x 41 degrees.",
   "look": {
     "colour": "#1f6f4a",
     "components": [

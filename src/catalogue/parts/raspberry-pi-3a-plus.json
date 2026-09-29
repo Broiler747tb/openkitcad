@@ -8,7 +8,7 @@
   "manufacturer": "Raspberry Pi",
   "summary": "Short full-size Pi. Same 40-pin header, two thirds the length.",
   "confidence": "datasheet",
-  "source": "Raspberry Pi 3 Model A+ mechanical drawing (Raspberry Pi Ltd): board 65 x 56 mm with 3 mm corners, four 2.7 mm holes on a 58 x 49 mm pattern, 40-pin header centred 32.5 mm along the top hole line, micro USB power at 10.6 mm, HDMI at 32 mm and audio at 53.5 mm along the bottom edge, one USB-A socket centred 31.5 mm up the right edge. Heights: header 8.5, USB 7, HDMI 6.5, audio 6, camera and display connectors 5.5 mm. The A+ drawing is sketchy about part outlines, so shapes shared with the 3B+ use the 3B+ drawing, which has the same dimensioned positions.",
+  "source": "Raspberry Pi 3 Model A+ mechanical drawing (Raspberry Pi Ltd): board 65 x 56 mm with 3 mm corners, four 2.7 mm holes on a 58 x 49 mm pattern, 40-pin header centered 32.5 mm along the top hole line, micro USB power at 10.6 mm, HDMI at 32 mm and audio at 53.5 mm along the bottom edge, one USB-A socket centered 31.5 mm up the right edge. Heights: header 8.5, USB 7, HDMI 6.5, audio 6, camera and display connectors 5.5 mm. The A+ drawing is sketchy about part outlines, so shapes shared with the 3B+ use the 3B+ drawing, which has the same dimensioned positions.",
   "look": {
     "colour": "#1f6f4a",
     "components": [

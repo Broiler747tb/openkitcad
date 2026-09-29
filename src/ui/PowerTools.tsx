@@ -54,7 +54,7 @@ export function powerActions(centre: Vec2 = [0, 0]): ObjectAction[] {
     },
     {
       id: 'exact-rectangle',
-      label: 'Centred rotated rectangle',
+      label: 'Centered rotated rectangle',
       group: 'Precision shapes',
       hint: exactHint,
       prompt: numberField('Width', 30, 'mm', 0.000001),
@@ -115,7 +115,7 @@ export function powerActions(centre: Vec2 = [0, 0]): ObjectAction[] {
       id: 'copy-scale',
       label: 'Scaled copy',
       group: 'Copy geometry',
-      hint: `${copyHint} Scale centre: ${centre.join(', ')} mm.`,
+      hint: `${copyHint} Scale center: ${centre.join(', ')} mm.`,
       prompt: numberField('Scale factor', 2, '', 0.000001, 1000),
       run: (a) => copy(0, 0, 0, a, 1),
     },
@@ -210,12 +210,12 @@ export function SketchPowerTools() {
         </div>
       </details>
       <details open>
-        <summary>Creation centre / copy pivot</summary>
+        <summary>Creation center / copy pivot</summary>
         <div className="coordinate-row">
           <label>
             X (mm)
             <input
-              aria-label="Workshop centre X"
+              aria-label="Workshop center X"
               value={x}
               onChange={(e) => setX(e.target.value)}
             />
@@ -223,7 +223,7 @@ export function SketchPowerTools() {
           <label>
             Y (mm)
             <input
-              aria-label="Workshop centre Y"
+              aria-label="Workshop center Y"
               value={y}
               onChange={(e) => setY(e.target.value)}
             />

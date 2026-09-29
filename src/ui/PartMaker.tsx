@@ -120,7 +120,7 @@ export function PartMaker({
     setSaved(true)
     useStore
       .getState()
-      .setStatus(`"${part.name}" is in your catalogue now, under ${CATEGORY_LABEL[part.category]}.`)
+      .setStatus(`"${part.name}" is in your catalog now, under ${CATEGORY_LABEL[part.category]}.`)
   }
 
   return (
@@ -281,8 +281,8 @@ export function PartMaker({
         <div className="section">
           <h3>How sure are you</h3>
           <p className="hint">
-            This is shown to anyone who uses the part. A catalogue that mixes datasheet figures with
-            someone's best guess quietly is worse than no catalogue, so it is asked outright rather
+            This is shown to anyone who uses the part. A catalog that mixes datasheet figures with
+            someone's best guess quietly is worse than no catalog, so it is asked outright rather
             than assumed.
           </p>
           <div className="row">
@@ -349,10 +349,10 @@ export function PartMaker({
         <div className="modal-actions">
           <button className="btn primary" disabled={blocking.length > 0} onClick={useIt}>
             {saved
-              ? 'Saved. Use it from the catalogue'
+              ? 'Saved. Use it from the catalog'
               : mode === 'edit'
                 ? 'Save changes'
-                : 'Add it to my catalogue'}
+                : 'Add it to my catalog'}
           </button>
           <button
             className="btn"
@@ -382,7 +382,7 @@ export function PartMaker({
           </button>
         </div>
         <p className="hint">
-          The catalogue is CC0, so a part you contribute belongs to everybody, including people who
+          The catalog is CC0, so a part you contribute belongs to everybody, including people who
           never use this app. That is the point of it.
         </p>
       </div>

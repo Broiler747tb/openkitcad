@@ -6,7 +6,7 @@
   "manufacturer": "Arduino",
   "summary": "43.2 x 17.8 mm breadboard board with four small 1.65 mm corner holes.",
   "confidence": "datasheet",
-  "source": "Arduino Nano 3.0 reference design (Arduino, Eagle board file): board 43.18 x 17.78 mm, four 1.65 mm holes 1.27 mm in from each corner, two 15-pin rows along the long edges 15.24 mm apart starting 3.81 mm from the USB end, and a mini USB socket centred on the short edge sticking out 1.8 mm. The ATmega328P sits at 45 degrees; the FTDI USB chip and the 5 V regulator are on the underside. Genuine boards ship with the pin headers soldered underneath. Clones often move or drop the corner holes, so check yours.",
+  "source": "Arduino Nano 3.0 reference design (Arduino, Eagle board file): board 43.18 x 17.78 mm, four 1.65 mm holes 1.27 mm in from each corner, two 15-pin rows along the long edges 15.24 mm apart starting 3.81 mm from the USB end, and a mini USB socket centered on the short edge sticking out 1.8 mm. The ATmega328P sits at 45 degrees; the FTDI USB chip and the 5 V regulator are on the underside. Genuine boards ship with the pin headers soldered underneath. Clones often move or drop the corner holes, so check yours.",
   "look": {
     "colour": "#0f6f94",
     "components": [

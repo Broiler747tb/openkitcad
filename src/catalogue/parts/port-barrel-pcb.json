@@ -8,7 +8,7 @@
   "manufacturer": "Same Sky",
   "summary": "The square black power jack on an Arduino-style board, for 5.5 x 2.1 mm plugs. Needs a 7 mm hole.",
   "confidence": "datasheet",
-  "source": "Same Sky (formerly CUI Devices) PJ-102AH drawing, 2024: body 9.0 mm wide, 11.0 mm tall and 14.4 mm deep, a 6.5 mm opening whose centre is 6.5 mm above the board, 2.0 mm pin, plug goes 9.5 mm in. The 7.0 mm hole clears the 5.5 mm plug barrel; most plug mouldings are 9 to 10 mm across and stay outside, so the jack should sit right behind the wall.",
+  "source": "Same Sky (formerly CUI Devices) PJ-102AH drawing, 2024: body 9.0 mm wide, 11.0 mm tall and 14.4 mm deep, a 6.5 mm opening whose center is 6.5 mm above the board, 2.0 mm pin, plug goes 9.5 mm in. The 7.0 mm hole clears the 5.5 mm plug barrel; most plug mouldings are 9 to 10 mm across and stay outside, so the jack should sit right behind the wall.",
   "look": {
     "style": "barrel"
   },

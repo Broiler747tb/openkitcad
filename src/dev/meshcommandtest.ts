@@ -56,7 +56,7 @@ export function runMeshCommandTest(): TestResult[] {
   ]
   const close = (a: number[], b: number[]) => a.every((value, i) => Math.abs(value - b[i]) < 1e-9)
 
-  test('an inserted mesh is scaled from its unit, stood up, centred and grounded', () => {
+  test('an inserted mesh is scaled from its unit, stood up, centered and grounded', () => {
     const bounds = {
       min: [10, 20, 30] as [number, number, number],
       max: [12, 26, 31] as [number, number, number],
@@ -64,7 +64,7 @@ export function runMeshCommandTest(): TestResult[] {
     const plain = insertTransform(bounds, { unit: 'mm', yUp: false, centre: false, ground: false })
     check(
       close(apply(plain, [10, 20, 30]), [10, 20, 30]),
-      'millimetres with nothing ticked stay put',
+      'millimeters with nothing ticked stay put',
     )
     const inches = insertTransform(bounds, { unit: 'in', yUp: false, centre: true, ground: true })
     check(

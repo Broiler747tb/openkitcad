@@ -176,7 +176,7 @@ export function runSelfTest(): TestResult[] {
     const u = [r.points[p2].x - r.points[a].x, r.points[p2].y - r.points[a].y]
     const v = [r.points[p3].x - r.points[a].x, r.points[p3].y - r.points[a].y]
     const dot = (u[0] * v[0] + u[1] * v[1]) / (Math.hypot(...u) * Math.hypot(...v))
-    near(dot, 0, 'normalised dot product', 1e-6)
+    near(dot, 0, 'normalized dot product', 1e-6)
   })
 
   test('angle constraint holds 30 degrees', () => {
@@ -217,7 +217,7 @@ export function runSelfTest(): TestResult[] {
     b.con({ kind: 'radius', e: circ, value: 10 })
     b.con({ kind: 'tangent', line, circle: circ, side: -1 })
     const r = solveSketch(b.sketch)
-    near(r.points[c].y, 10, 'centre height above the line', 1e-4)
+    near(r.points[c].y, 10, 'center height above the line', 1e-4)
     near(r.radii[circ], 10, 'radius unchanged')
     // The centre may still slide along the line: exactly one free direction.
     check(r.dof === 1, `degrees of freedom ${r.dof} (expected 1)`)
@@ -350,8 +350,8 @@ export function runSelfTest(): TestResult[] {
     near(Math.hypot(P[arc.p1].x - c.x, P[arc.p1].y - c.y), 6, 'arc radius at one end', 1e-3)
     near(Math.hypot(P[arc.p2].x - c.x, P[arc.p2].y - c.y), 6, 'arc radius at the other', 1e-3)
     // Tangent to both edges means the centre sits exactly one radius in from each.
-    near(40 - c.x, 6, 'centre is one radius from the right edge', 1e-3)
-    near(30 - c.y, 6, 'centre is one radius from the top edge', 1e-3)
+    near(40 - c.x, 6, 'center is one radius from the right edge', 1e-3)
+    near(30 - c.y, 6, 'center is one radius from the top edge', 1e-3)
   })
 
   test('cutting a corner off keeps the sketch just as defined as it was', () => {
@@ -398,7 +398,7 @@ export function runSelfTest(): TestResult[] {
     b.line(meet2, up)
 
     const corner = findCorner(b.sketch, meet1)
-    check(!!corner, 'recognised as a corner despite the duplicate points')
+    check(!!corner, 'recognized as a corner despite the duplicate points')
     const result = filletCorner(b.sketch, meet1, 5, nid)
     check(result.ok, `rounded (${result.message ?? 'no error'})`)
     const arc = b.sketch.entities.find((e) => e.kind === 'arc') as any
@@ -430,7 +430,7 @@ export function runSelfTest(): TestResult[] {
     })
 
     const corner = findCorner(b.sketch, lb)
-    check(!!corner, 'a line meeting an arc is recognised as a corner')
+    check(!!corner, 'a line meeting an arc is recognized as a corner')
     const before = b.sketch.entities.length
     const result = filletCorner(b.sketch, lb, 3, nid)
     check(result.ok, `rounded (${result.message ?? 'no error'})`)
@@ -449,7 +449,7 @@ export function runSelfTest(): TestResult[] {
     )
     // Tangency to both edges means the fillet centre sits exactly 3 mm off the
     // straight edge, which lies along y = 0.
-    near(P[fillet.c].y, 3, 'fillet centre is one radius off the straight edge', 1e-3)
+    near(P[fillet.c].y, 3, 'fillet center is one radius off the straight edge', 1e-3)
   })
 
   test('refusing a corner explains which problem it is', () => {
@@ -624,7 +624,7 @@ export function runSelfTest(): TestResult[] {
     const fc = P[fillet.c]
     near(Math.hypot(P[fillet.p1].x - fc.x, P[fillet.p1].y - fc.y), 4, 'fillet radius', 1e-3)
     // Tangent to the vertical line at x = 14 means the centre sits 4 mm off it.
-    near(Math.abs(fc.x - 14), 4, 'centre is one radius off the straight edge', 1e-3)
+    near(Math.abs(fc.x - 14), 4, 'center is one radius off the straight edge', 1e-3)
     // The click at (18, -18) is outside the 20 mm circle, so the corner being
     // rounded is the one outside it and the fillet is externally tangent:
     // centres 20 + 4 apart. Clicking inside would give 20 - 4 instead, which is
@@ -1020,7 +1020,7 @@ export function runSelfTest(): TestResult[] {
     // counts as a position too.
     check(
       ids([{ kind: 'entity', id: circle }]).length === 7,
-      'a picked circle offers them at its centre',
+      'a picked circle offers them at its center',
     )
     // And with nothing picked, where the right-click landed.
     check(ids([], [5, 5]).length === 7, 'nothing picked falls back to the cursor')
@@ -1292,7 +1292,7 @@ export function runSelfTest(): TestResult[] {
     check(radii.length === 6, `six holes (${radii.length})`)
     check(
       radii.every((r) => Math.abs(r - 25) < 1e-6),
-      `all exactly 25 mm from the centre (${radii.map((r) => r.toFixed(3)).join(', ')})`,
+      `all exactly 25 mm from the center (${radii.map((r) => r.toFixed(3)).join(', ')})`,
     )
   })
 

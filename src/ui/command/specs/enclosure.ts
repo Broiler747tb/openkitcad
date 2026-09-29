@@ -232,7 +232,7 @@ export const enclosureCommand = defineCommand({
   validate(values, context) {
     const parts = pickedParts(context.doc, values.parts)
     if (!parts.length || parts.length < values.parts.length) {
-      return { parts: 'Pick parts from the catalogue that are placed in the design.' }
+      return { parts: 'Pick parts from the catalog that are placed in the design.' }
     }
     if (values.lid === 'slide' && values.wall < 1.2) {
       return { wall: 'A sliding lid needs walls at least 1.2 mm thick for its grooves.' }

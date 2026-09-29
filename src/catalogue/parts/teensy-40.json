@@ -8,7 +8,7 @@
   "manufacturer": "PJRC",
   "summary": "Fast 600 MHz board, 35.6 x 17.8 mm. Pins on a 0.1 inch grid, no mounting holes.",
   "confidence": "datasheet",
-  "source": "PJRC Teensy 4.0 published size (1.4 x 0.7 inch, 35.56 x 17.78 mm, every pin on the 0.1 inch grid) with pad positions and part outlines from the teensy.pretty KiCad footprint that follows it: two rows of 14 pins 15.24 mm apart, 5 pads across the far end, the micro USB socket sticking out 1.27 mm past the near end, the i.MX RT1062 processor 10.16 mm square and the program button at the far end. The 10 pads on the underside are not modelled. No mounting holes.",
+  "source": "PJRC Teensy 4.0 published size (1.4 x 0.7 inch, 35.56 x 17.78 mm, every pin on the 0.1 inch grid) with pad positions and part outlines from the teensy.pretty KiCad footprint that follows it: two rows of 14 pins 15.24 mm apart, 5 pads across the far end, the micro USB socket sticking out 1.27 mm past the near end, the i.MX RT1062 processor 10.16 mm square and the program button at the far end. The 10 pads on the underside are not modeled. No mounting holes.",
   "look": {
     "colour": "#2b6d3a",
     "components": [

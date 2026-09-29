@@ -97,7 +97,7 @@ export function scaleAction(): ObjectAction {
       initial: 'origin',
       options: [
         { value: 'origin', label: 'Sketch origin' },
-        { value: 'centre', label: 'Centre of the selection' },
+        { value: 'centre', label: 'Center of the selection' },
       ],
     },
     run: (factor, _b, _c, pivot) => {

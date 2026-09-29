@@ -6,7 +6,7 @@
   "family": "tft-display",
   "variant": "2.4 in, ILI9341",
   "manufacturer": "LCDwiki",
-  "summary": "240x320 colour touch screen on a 42.7 x 77.2 mm board with four M3 holes and pins on the back.",
+  "summary": "240x320 color touch screen on a 42.7 x 77.2 mm board with four M3 holes and pins on the back.",
   "confidence": "datasheet",
   "source": "LCDwiki MSP2402 outline drawing (V1.0): board 42.72 x 77.18 mm and 1.6 mm thick, four 3.2 mm holes 3.0 mm in from the sides, 3.0 mm from the top and 6.92 mm from the bottom (36.72 x 67.26 mm apart), backlight 42.72 x 60.26 mm, active area 36.72 x 48.96 mm, 14 pins at 2.54 mm pitch along the bottom edge 2.0 mm up, starting 4.85 mm from the left. 4.3 mm thick without the pins, which stand 11.17 mm behind the board. An SD card slot sits on the back. This is the widely sold red SPI module these drivers are known by.",
   "look": {

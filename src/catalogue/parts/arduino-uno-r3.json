@@ -8,7 +8,7 @@
   "manufacturer": "Arduino",
   "summary": "The classic 68.6 x 53.3 mm Arduino outline, with its famously off-grid holes.",
   "confidence": "datasheet",
-  "source": "Arduino UNO Rev3 reference design (Arduino, arduino_Uno_Rev3-02-TH Eagle board file): board 68.58 x 53.34 mm with the notched right end, four 3.2 mm holes at (13.97, 2.54), (15.24, 50.8), (66.04, 7.62) and (66.04, 35.56). Header rows along y 2.54 and 50.8 with the 4.06 mm (160 mil) gap between the 10-pin and 8-pin digital headers. The USB-B socket centred 38.1 mm up the left edge sticks out 6.3 mm past the board; the DC jack is centred 7.8 mm up and sticks out 1.8 mm. Part positions in the look come from the same file; resistors and small capacitors are left out.",
+  "source": "Arduino UNO Rev3 reference design (Arduino, arduino_Uno_Rev3-02-TH Eagle board file): board 68.58 x 53.34 mm with the notched right end, four 3.2 mm holes at (13.97, 2.54), (15.24, 50.8), (66.04, 7.62) and (66.04, 35.56). Header rows along y 2.54 and 50.8 with the 4.06 mm (160 mil) gap between the 10-pin and 8-pin digital headers. The USB-B socket centered 38.1 mm up the left edge sticks out 6.3 mm past the board; the DC jack is centered 7.8 mm up and sticks out 1.8 mm. Part positions in the look come from the same file; resistors and small capacitors are left out.",
   "look": {
     "colour": "#0f6f94",
     "components": [

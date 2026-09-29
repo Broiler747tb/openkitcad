@@ -141,7 +141,7 @@ export function runUiTest(): TestResult[] {
       `dark ${dark.background.toString(16)} / ${dark.sketchLine.toString(16)}, light ${light.background.toString(16)} / ${light.sketchLine.toString(16)}`,
     )
     check(
-      'the light palette reads the blue selection colour from the tokens',
+      'the light palette reads the blue selection color from the tokens',
       light.selection !== LIGHT_PALETTE.previewCut &&
         (light.selection & 255) > ((light.selection >> 16) & 255),
       light.selection.toString(16),

@@ -104,7 +104,7 @@ export const boardClipsCommand = defineCommand({
   ],
   validate(values, context) {
     if (!boardOf(context.doc, values.board)) {
-      return { board: 'Pick a board from the catalogue that is placed in the design.' }
+      return { board: 'Pick a board from the catalog that is placed in the design.' }
     }
     const bodyId = values.body[0]?.id
     if (!bodyId || !findBody(context.doc, bodyId)) return { body: 'Pick the body they stand on.' }
