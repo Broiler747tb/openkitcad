@@ -5,6 +5,7 @@ import { adoptionNote, openDocument, saveDocument } from '../doc/persist'
 import { objectActions, type ObjectAction } from './ObjectMenu'
 import { selectedObjectActions } from './workflow'
 import { chooseAction } from './ActionDialog'
+import { ask } from './Confirm'
 import { FlyoutMenu } from './FlyoutMenu'
 import { sketchActions } from '../sketch/actions'
 import { createSketchAction, resolveCommand, SHORTCUTS, toggleVisibility } from './fusionCommands'
@@ -365,15 +366,20 @@ export function Toolbar({
     group: 'Modify',
     run: () => setParametersOpen(true),
   })
-  function newDesign() {
+  async function newDesign() {
     const s = useStore.getState()
     if (
       (s.doc.timeline.length || s.doc.occurrences.length) &&
-      !confirm('Start a new design? Save the current design first to keep it.')
+      !(await ask({
+        title: 'Start a new design?',
+        message: 'This design will be replaced. Save it first to keep it.',
+        confirm: 'Start new design',
+        danger: true,
+      }))
     )
       return
     setPending(null)
-    s.setDoc(emptyDocument())
+    useStore.getState().setDoc(emptyDocument())
   }
   async function open() {
     try {
@@ -447,7 +453,7 @@ export function Toolbar({
           setPalette(true)
         } else if (k === 'n') {
           e.preventDefault()
-          newDesign()
+          void newDesign()
         } else if (k === 'o') {
           e.preventDefault()
           void open()

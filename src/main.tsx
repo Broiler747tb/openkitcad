@@ -63,6 +63,7 @@ if (params.has('selftest') || params.has('kerneltest')) {
     ['thread', async () => (await import('./dev/threadtest')).runThreadTest()],
     ['extent', async () => (await import('./dev/extenttest')).runExtentTest()],
     ['review', async () => (await import('./dev/reviewtest')).runReviewTest()],
+    ['polish', async () => (await import('./dev/polishtest')).runPolishTest()],
   )
   const only = params.get('suite')?.split(',').filter(Boolean)
   ;(async () => {

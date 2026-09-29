@@ -4,8 +4,12 @@ import { useCommand } from './session'
 export function CommandHost() {
   const session = useCommand((s) => s.session)
   const errors = useCommand((s) => s.preview?.errors)
+  const featureIds = useCommand((s) => s.preview?.featureIds)
   if (!session) return null
-  const problem = errors?.find((error) => error.severity === 'error')
+  const own = errors?.find(
+    (error) => error.severity === 'error' && featureIds?.includes(error.featureId),
+  )
+  const problem = own ?? errors?.find((error) => error.severity === 'error')
   return (
     <CommandPanel
       key={session.serial}
@@ -19,6 +23,7 @@ export function CommandHost() {
       onCommit={({ features, values }) => useCommand.getState().commit(features, values)}
       onCancel={() => useCommand.getState().cancel()}
       problem={problem ? `${problem.message}${problem.hint ? ` ${problem.hint}` : ''}` : null}
+      blocked={!!own}
     />
   )
 }

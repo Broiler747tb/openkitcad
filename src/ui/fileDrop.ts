@@ -1,6 +1,7 @@
 import { adoptCustomParts, adoptionNote, parseDesign } from '../doc/persist'
 import { useStore } from '../doc/store'
 import { startCommand } from './command/commands'
+import { ask } from './Confirm'
 import { useCommand } from './command/session'
 import { setPendingMeshes } from './command/specs/mesh'
 import { readKicadFile } from './KicadImport'
@@ -18,9 +19,11 @@ async function openDesign(file: File): Promise<void> {
   const working = store.doc.timeline.length > 0 || store.doc.occurrences.length > 0
   if (
     working &&
-    !confirm(
-      `Open ${file.name}? It replaces the design you are working on. Save that one first to keep it.`,
-    )
+    !(await ask({
+      title: `Open ${file.name}?`,
+      message: 'It replaces the design you are working on. Save that one first to keep it.',
+      confirm: 'Open',
+    }))
   )
     return
   useCommand.getState().cancel()

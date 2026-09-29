@@ -17,6 +17,7 @@ import {
 import { counted } from '../../core/words'
 import { downloadBlob } from '../../doc/persist'
 import { useStore } from '../../doc/store'
+import { ask } from '../Confirm'
 import { partUses } from './actions'
 import { PartThumb } from './PartPicture'
 import { usePartsView, useShelf } from './shelf'
@@ -46,15 +47,21 @@ export function YourParts() {
   const [report, setReport] = useState<string[]>([])
   const shipped = useMemo(() => new Set(CATALOGUE.map((part) => part.id)), [])
 
-  const remove = (part: CataloguePart) => {
+  const remove = async (part: CataloguePart) => {
     const uses = partUses(part.id)
     const builtIn = shipped.has(part.id)
     const warning = uses
       ? builtIn
-        ? ` It is placed ${counted(uses, 'time')} in this design, and those go back to the built-in version.`
-        : ` It is placed ${counted(uses, 'time')} in this design, and those will show as missing.`
-      : ''
-    if (!confirm(`Delete "${part.name}" from your parts?${warning}`)) return
+        ? `It is placed ${counted(uses, 'time')} in this design, and those go back to the built-in version.`
+        : `It is placed ${counted(uses, 'time')} in this design, and those will show as missing.`
+      : 'This cannot be undone.'
+    const confirmed = await ask({
+      title: `Delete "${part.name}" from your parts?`,
+      message: warning,
+      confirm: 'Delete',
+      danger: true,
+    })
+    if (!confirmed) return
     if (!removeUserPart(part.id)) {
       useStore.getState().setStatus(`"${part.name}" could not be deleted: ${STORAGE_FULL}.`)
       return
@@ -190,7 +197,7 @@ export function YourParts() {
               <button className="btn" onClick={() => saveJson(part, `${part.id}.json`)}>
                 Export
               </button>
-              <button className="btn danger" onClick={() => remove(part)}>
+              <button className="btn danger" onClick={() => void remove(part)}>
                 Delete
               </button>
             </div>

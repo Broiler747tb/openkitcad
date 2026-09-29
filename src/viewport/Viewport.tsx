@@ -3,6 +3,7 @@ import {
   elementKey,
   ViewportEngine,
   type HandleScreen,
+  type SavedView,
   type ScreenLabel,
   type SketchOverlay,
   type SubPick,
@@ -348,6 +349,7 @@ export function Viewport() {
     }
   }, [])
   const draggingRef = useRef<{ pointId: string; moved: boolean } | null>(null)
+  const sketchViewRef = useRef<{ view: SavedView; normal: Vec3 } | null>(null)
   const penContactRef = useRef(false)
   const downRef = useRef<{ x: number; y: number } | null>(null)
   /**
@@ -852,10 +854,17 @@ export function Viewport() {
   }, [section])
 
   useEffect(() => {
-    engineRef.current?.setOpacity(!!activeSketch)
-    engineRef.current?.setSketchPlaneHint(frame)
-    if (activeSketch && frame) engineRef.current?.lookAtFrame(frame)
+    const engine = engineRef.current
+    engine?.setOpacity(!!activeSketch)
+    engine?.setSketchPlaneHint(frame)
+    if (activeSketch && frame && engine) {
+      sketchViewRef.current ??= { view: engine.saveView(), normal: frame.normal }
+      engine.lookAtFrame(frame)
+    }
     if (!activeSketch) {
+      const before = sketchViewRef.current
+      sketchViewRef.current = null
+      if (before && engine?.isLookingAlong(before.normal)) engine.restoreView(before.view)
       engineRef.current?.clearSketch()
       engineRef.current?.setDimensionSource(null)
       dimensionPreviewRef.current = null
@@ -870,6 +879,7 @@ export function Viewport() {
     resetTool()
     draggingRef.current = null
     engineRef.current?.setControlsEnabled(true)
+    setCursorHint(null)
   }, [tool, activeSketch?.featureId])
 
   useEffect(() => {
@@ -2126,7 +2136,10 @@ export function Viewport() {
           draggingRef.current = null
           engineRef.current?.setControlsEnabled(true)
         }}
-        onPointerLeave={cancelHold}
+        onPointerLeave={() => {
+          cancelHold()
+          setCursorHint(null)
+        }}
         onContextMenu={(e) => {
           e.preventDefault()
           if (engineRef.current?.consumeRightDrag()) return

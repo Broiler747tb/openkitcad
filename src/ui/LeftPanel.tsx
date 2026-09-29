@@ -30,6 +30,7 @@ import {
 } from '../doc/model'
 import { LENGTH_UNITS, UNIT_NAME } from '../core/units'
 import { PartsPanel } from './parts/PartsPanel'
+import { removeStep } from './removeStep'
 
 export function LeftPanel({
   tab,
@@ -550,9 +551,7 @@ function FeatureRow({
         title="Delete"
         onClick={(e) => {
           e.stopPropagation()
-          if (store.removeFeature(feature.id)) return
-          if (confirm(`Delete ${feature.name} and the steps that depend on it?`))
-            store.removeFeature(feature.id, { withDependents: true })
+          void removeStep(feature)
         }}
       >
         ✕

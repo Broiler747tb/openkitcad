@@ -153,6 +153,12 @@ interface InstanceObject {
  */
 const HOME_CAMERA: Vec3 = [-220, -180, 160]
 
+export interface SavedView {
+  position: Vec3
+  target: Vec3
+  up: Vec3
+}
+
 const SKETCH_TESSELLATION_MM = 0.01
 
 function matchesKey(instance: Instance, key: string | null): boolean {
@@ -202,6 +208,8 @@ export class ViewportEngine {
     target: THREE.Vector3
     distance: number
     start: number
+    fromTarget?: THREE.Vector3
+    fromDistance?: number
   } | null = null
   private palette: ViewportPalette = LIGHT_PALETTE
   private hemisphere: THREE.HemisphereLight | null = null
@@ -772,6 +780,7 @@ export class ViewportEngine {
       ;(child as any).geometry?.dispose?.()
     }
     this.labels = []
+    this.worldLabels = []
     this.onLabels?.([])
   }
 
@@ -2274,16 +2283,52 @@ export class ViewportEngine {
     return [e[0], e[4], e[8], e[1], e[5], e[9], e[2], e[6], e[10]]
   }
 
+  saveView(): SavedView {
+    return {
+      position: this.camera.position.toArray(),
+      target: this.controls.target.toArray(),
+      up: this.camera.up.toArray(),
+    }
+  }
+
+  isLookingAlong(normal: Vec3): boolean {
+    const facing = this.camera.getWorldDirection(new THREE.Vector3())
+    return facing.dot(new THREE.Vector3(...normal).normalize()) < -0.999
+  }
+
+  restoreView(view: SavedView) {
+    const target = new THREE.Vector3(...view.target)
+    const position = new THREE.Vector3(...view.position)
+    const goal = new THREE.Quaternion().setFromRotationMatrix(
+      new THREE.Matrix4().lookAt(position, target, new THREE.Vector3(...view.up)),
+    )
+    this.viewTween = {
+      from: this.camera.quaternion.clone(),
+      to: goal,
+      target,
+      distance: position.distanceTo(target),
+      start: performance.now(),
+      fromTarget: this.controls.target.clone(),
+      fromDistance: this.camera.position.distanceTo(this.controls.target),
+    }
+  }
+
   private stepViewTween() {
     const tween = this.viewTween
     if (!tween) return false
     const t = Math.min(1, (performance.now() - tween.start) / 260)
     const eased = t * t * (3 - 2 * t)
     const q = tween.from.clone().slerp(tween.to, eased)
+    const target = tween.fromTarget
+      ? tween.fromTarget.clone().lerp(tween.target, eased)
+      : tween.target
+    const distance =
+      tween.fromDistance === undefined
+        ? tween.distance
+        : tween.fromDistance + (tween.distance - tween.fromDistance) * eased
+    if (tween.fromTarget) this.controls.target.copy(target)
     this.camera.quaternion.copy(q)
-    this.camera.position
-      .copy(tween.target)
-      .add(new THREE.Vector3(0, 0, tween.distance).applyQuaternion(q))
+    this.camera.position.copy(target).add(new THREE.Vector3(0, 0, distance).applyQuaternion(q))
     this.camera.up.copy(new THREE.Vector3(0, 1, 0).applyQuaternion(q))
     if (t >= 1) {
       this.viewTween = null

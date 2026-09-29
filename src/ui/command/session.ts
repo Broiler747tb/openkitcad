@@ -33,6 +33,7 @@ export interface CommandPreviewScene {
   instances: Instance[]
   meshes: ReadonlyMap<string, BodyMesh>
   errors: KernelError[]
+  featureIds: string[]
 }
 
 export interface CommandStart {
@@ -167,7 +168,14 @@ export const useCommand = create<CommandStore>((set, get) => ({
       for (const mesh of result.meshes) meshes.set(mesh.key, mesh)
       const used = new Set(result.instances.map((instance) => instance.meshKey))
       for (const key of [...meshes.keys()]) if (!used.has(key)) meshes.delete(key)
-      set({ preview: { instances: result.instances, meshes, errors: result.errors } })
+      set({
+        preview: {
+          instances: result.instances,
+          meshes,
+          errors: result.errors,
+          featureIds: features.map((feature) => feature.id),
+        },
+      })
     })
   },
 

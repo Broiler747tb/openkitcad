@@ -412,6 +412,16 @@ select {
   overflow: hidden;
   gap: 12px;
 }
+.status-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+.statusbar input[type='checkbox'] {
+  min-height: 0;
+  margin: 0;
+}
 .engine-state {
   color: var(--ok);
 }

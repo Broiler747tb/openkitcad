@@ -1061,7 +1061,19 @@ panel's output. For Thin Extrude it checks the three wall locations on a square 
 wall around a profile cut from crossing curves, open curves with capped ends, a fillet on a wall
 after a sketch edit, the panel taking curves only when thin, and Tangent Chain.
 
-## 27. How the work is done
+## 27. Polish pass
+
+A walk through the app as a new user found these, fixed on 2026-09-29. Finish Sketch turns the
+camera back to where it was before the sketch opened, unless it was turned away from the sketch
+plane meanwhile, so Extrude's arrow is never seen end-on. Leaving a sketch clears its constraint
+markers (`clearSketch` also empties the world labels). Cursor hints go when the pointer leaves the
+view or the tool changes. A command's OK stays off while its own preview fails; failures of
+earlier steps do not count. Questions are asked by `ask()` in `src/ui/Confirm.tsx`, a themed
+dialog that focuses Cancel when the answer destroys work; there are no native `confirm()` calls
+left outside Android. The status-bar toggles no longer inherit the 30 px form-control height.
+`?selftest&suite=polish` covers each.
+
+## 28. How the work is done
 
 - Agents never start other agents or workflows.
 - New and rewritten code has no comments. Touched files are formatted with Prettier, and the
@@ -1144,6 +1156,10 @@ after a sketch edit, the panel taking curves only when thin, and Tangent Chain.
   Delete: both lines go and the app carries on. Undo, open Box and press Ctrl+Z: nothing happens
   until the panel closes. Drop an STL on the window: Insert Mesh opens. Leave the app alone and see
   the GPU go quiet. Reload: the design comes back, meshes included.
+- **Polish smoke test.** From the Home view, sketch a rectangle on XY and click Finish Sketch: the
+  camera turns back to where it was and no constraint markers are left on the model. Extrude it and
+  fillet an edge by 50 mm: OK stays off until the radius fits. Press Ctrl+N: a dialog asks, with
+  Cancel already focused. Read both status-bar toggles on one line.
 - **EM smoke test (thread).** Make a cylinder of radius 4 and height 12, and a 16 mm block with a
   6.65 mm hole through it. Open CREATE > Thread, click the cylinder near its top and the inside of
   the hole, and OK: the peg becomes an M8 bolt with a lead at the tip and the hole is tapped M8.

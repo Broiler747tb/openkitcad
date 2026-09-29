@@ -62,6 +62,7 @@ export interface CommandPanelProps {
   defaultCollapsed?: boolean
   okLabel?: string
   problem?: string | null
+  blocked?: boolean
   cancelLabel?: string
   className?: string
   style?: CSSProperties
@@ -549,6 +550,7 @@ export function CommandPanel(props: CommandPanelProps) {
   ])
 
   const commit = () => {
+    if (props.blocked) return false
     const result = evaluateCommand(spec, stateRef.current, contextRef.current, { build: true })
     if (!result.valid) return false
     if (!result.features) {
@@ -735,7 +737,7 @@ export function CommandPanel(props: CommandPanelProps) {
               type="button"
               className="okc-cmd-button okc-cmd-ok"
               data-okc-action="ok"
-              disabled={!evaluation.valid}
+              disabled={!evaluation.valid || !!props.blocked}
               onClick={commit}
             >
               {okLabel}

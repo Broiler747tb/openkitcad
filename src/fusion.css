@@ -498,6 +498,17 @@ button.workspace-tab {
 .command-dialog {
   width: min(520px, calc(100vw - 30px));
 }
+.confirm-dialog {
+  width: min(380px, calc(100vw - 30px));
+}
+.confirm-dialog h2 {
+  margin: 0 0 8px;
+}
+.primary-button.danger,
+.primary-button.danger:hover {
+  background: var(--okc-error);
+  border-color: var(--okc-error);
+}
 .shortcut-list > div {
   display: grid;
   grid-template-columns: 145px 1fr;

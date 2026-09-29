@@ -11,6 +11,7 @@ import {
 } from '../doc/model'
 import { GridSettings } from './PrecisionTools'
 import { ContextMenu } from './ContextMenu'
+import { removeStep } from './removeStep'
 import { editFeature } from './command/commands'
 import { featurePick, offerPick, sketchPick } from './command/picks'
 import { useCommand } from './command/session'
@@ -97,13 +98,6 @@ export function Timeline({ onEdit }: { onEdit: () => void }) {
     }
   }
 
-  function remove(feature: Feature) {
-    if (store.removeFeature(feature.id)) return
-    if (confirm(`Delete ${feature.name} and the steps that depend on it?`)) {
-      store.removeFeature(feature.id, { withDependents: true })
-    }
-  }
-
   function stepMenu(feature: Feature, index: number): MenuItem[] {
     const items: MenuItem[] = [
       { id: 'edit', label: 'Edit Feature', run: () => edit(feature) },
@@ -131,7 +125,7 @@ export function Timeline({ onEdit }: { onEdit: () => void }) {
         },
       })
     }
-    items.push({ id: 'delete', label: 'Delete', danger: true, run: () => remove(feature) })
+    items.push({ id: 'delete', label: 'Delete', danger: true, run: () => void removeStep(feature) })
     return items
   }
 

@@ -1,4 +1,5 @@
 import { kernel } from '../kernel/api'
+import { ask } from '../ui/Confirm'
 import {
   adoptCustomParts,
   adoptionNote,
@@ -47,10 +48,12 @@ async function boot(): Promise<void> {
 
 export async function restoreDesign(
   hash: string,
-  replaceWork: () => boolean = () =>
-    confirm(
-      'Open the shared design? It replaces the design you were working on. Save that one first to keep it.',
-    ),
+  replaceWork: () => boolean | Promise<boolean> = () =>
+    ask({
+      title: 'Open the shared design?',
+      message: 'It replaces the design you were working on. Save that one first to keep it.',
+      confirm: 'Open',
+    }),
 ): Promise<string[]> {
   const notes: string[] = []
   let shared: OkcDocument | null = null
@@ -59,7 +62,7 @@ export async function restoreDesign(
   } catch (error) {
     notes.push(reason(error))
   }
-  if (shared && (!hasWork(loadAutosave()?.doc) || replaceWork())) {
+  if (shared && (!hasWork(loadAutosave()?.doc) || (await replaceWork()))) {
     try {
       const note = adoptionNote(adoptCustomParts(shared))
       useStore.getState().setDoc(shared)
