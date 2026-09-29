@@ -143,15 +143,7 @@ interface InstanceObject {
   look?: LookInstance
 }
 
-/**
- * Where the camera sits before anything else has moved it.
- *
- * Turned a quarter of a turn from the obvious front-right-above position, so
- * the model reads rotated 90 degrees anticlockwise compared with the first
- * version. Rotating the camera clockwise about the vertical axis is what makes
- * the *content* appear to turn to the left: they go opposite ways.
- */
-const HOME_CAMERA: Vec3 = [-220, -180, 160]
+const HOME_CAMERA: Vec3 = [220, -180, 160]
 
 export interface SavedView {
   position: Vec3
@@ -2249,7 +2241,7 @@ export class ViewportEngine {
         [0, 0, 1],
       ],
       iso: [
-        [-0.72, -0.6, 0.55],
+        [0.72, -0.6, 0.55],
         [0, 0, 1],
       ],
     }
