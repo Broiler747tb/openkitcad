@@ -84,32 +84,38 @@ const RELS = `<?xml version="1.0" encoding="UTF-8"?>
  * or inches.
  */
 export function meshTo3MF(mesh: MeshData, name = 'part'): Uint8Array {
-  const vertices: string[] = []
-  for (let i = 0; i < mesh.vertices.length; i += 3) {
-    vertices.push(
-      `<vertex x="${round(mesh.vertices[i])}" y="${round(mesh.vertices[i + 1])}" z="${round(mesh.vertices[i + 2])}"/>`,
-    )
-  }
-  const triangles: string[] = []
-  for (let i = 0; i < mesh.triangles.length; i += 3) {
-    triangles.push(
-      `<triangle v1="${mesh.triangles[i]}" v2="${mesh.triangles[i + 1]}" v3="${mesh.triangles[i + 2]}"/>`,
-    )
-  }
+  return meshesTo3MF([{ mesh, name }], name)
+}
 
+export function meshesTo3MF(
+  parts: { mesh: MeshData; name: string }[],
+  name = 'assembly',
+): Uint8Array {
+  if (!parts.length) throw new Error('Select at least one body to export.')
+  const objects = parts.map(({ mesh, name }, index) => {
+    const vertices: string[] = []
+    for (let i = 0; i < mesh.vertices.length; i += 3) {
+      vertices.push(
+        `<vertex x="${round(mesh.vertices[i])}" y="${round(mesh.vertices[i + 1])}" z="${round(mesh.vertices[i + 2])}"/>`,
+      )
+    }
+    const triangles: string[] = []
+    for (let i = 0; i < mesh.triangles.length; i += 3) {
+      triangles.push(
+        `<triangle v1="${mesh.triangles[i]}" v2="${mesh.triangles[i + 1]}" v3="${mesh.triangles[i + 2]}"/>`,
+      )
+    }
+
+    return `<object id="${index + 1}" type="model" name="${escapeXml(name)}"><mesh><vertices>${vertices.join('')}</vertices><triangles>${triangles.join('')}</triangles></mesh></object>`
+  })
   const model = `<?xml version="1.0" encoding="UTF-8"?>
 <model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">
 <metadata name="Application">OpenKitCAD</metadata>
 <metadata name="Title">${escapeXml(name)}</metadata>
 <resources>
-<object id="1" type="model">
-<mesh>
-<vertices>${vertices.join('')}</vertices>
-<triangles>${triangles.join('')}</triangles>
-</mesh>
-</object>
+${objects.join('\n')}
 </resources>
-<build><item objectid="1"/></build>
+<build>${parts.map((_, index) => `<item objectid="${index + 1}"/>`).join('')}</build>
 </model>`
 
   return zipSync({

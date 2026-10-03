@@ -46,6 +46,7 @@ interface PromptField {
 
 export interface ObjectAction {
   id: string
+  recommended?: boolean
   label: string
   /** Heading this sits under. Derived from the id, see objectGroupOf. */
   group?: string
@@ -183,8 +184,21 @@ export function objectActions(
   picked?: PickedFace | null,
   targetBodyId?: string,
 ): ObjectAction[] {
+  if (selection.kind === 'face' || selection.kind === 'edge')
+    selection = { ...selection, kind: 'body' }
+  const edges = useStore
+    .getState()
+    .subSelection.some((item) => item.kind === 'edge' && item.bodyId === selection.id)
+  const preferred = edges
+    ? ['round-picked', 'bevel-picked']
+    : picked
+      ? ['press-pull', 'sketch-on-face', 'hole', 'hollow']
+      : selection.kind === 'occurrence'
+        ? ['move', 'joint', 'enclosure', 'holes']
+        : ['size', 'move', 'edit-sketch', 'hollow']
   return buildObjectActions(selection, picked, targetBodyId).map((a) => ({
     ...a,
+    recommended: preferred.includes(a.id),
     group: objectGroupOf(a.id),
     ...(a.id.startsWith('add-')
       ? {

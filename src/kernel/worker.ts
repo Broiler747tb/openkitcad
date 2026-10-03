@@ -1064,20 +1064,17 @@ const api: KernelApi = {
 
   async exportStep(instanceIds: string[], name: string): Promise<ArrayBuffer> {
     await ensureOC()
-    const parts = instanceIds
-      .filter((id) => live.has(id) && !live.get(id)!.mesh)
-      .map((id) => ({
-        shape: requireWorld(id),
-        name: `${name}-${live.get(id)!.label}`,
-        colour: live.get(id)!.colour,
-      }))
-    if (parts.length === 0) {
+    if (!instanceIds.length || instanceIds.some((id) => !live.has(id)))
+      throw new Error('Nothing to export.')
+    if (instanceIds.some((id) => live.get(id)!.mesh))
       throw new Error(
-        instanceIds.some((id) => live.get(id)?.mesh)
-          ? 'Mesh bodies cannot be written to STEP. Export them as STL, OBJ or 3MF, or convert them to solids first.'
-          : 'Nothing to export.',
+        'Mesh bodies cannot be written to STEP. Export them as STL, OBJ or 3MF, or convert them to solids first.',
       )
-    }
+    const parts = instanceIds.map((id) => ({
+      shape: requireWorld(id),
+      name: `${name}-${live.get(id)!.label}`,
+      colour: live.get(id)!.colour,
+    }))
     return writeStep(parts)
   },
 

@@ -66,6 +66,12 @@ export function Timeline({ onEdit }: { onEdit: () => void }) {
   const warned = new Set(errors.filter((e) => e.severity === 'warning').map((e) => e.featureId))
   const selectedIndex =
     selection.kind === 'feature' && selection.id ? featureIndex(doc, selection.id) : -1
+  useEffect(() => {
+    if (selectedIndex >= 0)
+      stripRef.current
+        ?.querySelector<HTMLElement>(`[data-start="${selectedIndex}"]`)
+        ?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }, [selectedIndex])
 
   useEffect(() => {
     if (!playing) return

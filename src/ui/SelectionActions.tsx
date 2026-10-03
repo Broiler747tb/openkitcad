@@ -4,11 +4,12 @@ import { selectedObjectActions, extrusionAction } from './workflow'
 import { chooseAction } from './ActionDialog'
 import { FlyoutMenu } from './FlyoutMenu'
 
-export function SelectionActions() {
+export function SelectionActions({ compact = false }: { compact?: boolean }) {
   const state = useStore()
   if (state.activeSketch || state.selection.kind === 'none') return null
   const actions = selectedObjectActions()
   const extrude = extrusionAction()
+  const revolve = extrusionAction(true)
   return (
     <div className="selection-actions section">
       <span className="eyebrow">{t('ACTIONS FOR SELECTION')}</span>
@@ -21,7 +22,27 @@ export function SelectionActions() {
           {t('Extrude')}
         </button>
       )}
-      <FlyoutMenu actions={actions} onPick={chooseAction} />
+      {revolve && (
+        <button className="tb" onClick={() => chooseAction(revolve)}>
+          {t('Revolve')}
+        </button>
+      )}
+      {compact ? (
+        actions
+          .filter((action) => action.recommended)
+          .map((action) => (
+            <button
+              className="tb"
+              key={action.id}
+              title={t(action.hint)}
+              onClick={() => chooseAction(action)}
+            >
+              {t(action.label)}
+            </button>
+          ))
+      ) : (
+        <FlyoutMenu actions={actions} onPick={chooseAction} />
+      )}
     </div>
   )
 }
