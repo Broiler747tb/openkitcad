@@ -2,7 +2,7 @@ import { t } from '../i18n'
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../doc/store'
 import { findBody, findOccurrence } from '../doc/model'
-import { EXPORT_FORMATS, exportShape } from '../export'
+import { EXPORT_FORMATS, exportShapes } from '../export'
 import type { ExportFormat, Instance } from '../kernel/types'
 import type { OkcDocument } from '../doc/types'
 
@@ -20,6 +20,8 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
   const doc = useStore((s) => s.doc)
   const instances = useStore((s) => s.instances)
   const selection = useStore((s) => s.selection)
+  const building = useStore((s) => s.building)
+  const errors = useStore((s) => s.errors)
   const bodies = instances.filter(
     (instance) => instance.kind === 'body' && instance.visible && !instance.negative,
   )
@@ -34,11 +36,14 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
       (instance) =>
         selection.kind === 'occurrence' && !!selection.id && instance.path.includes(selection.id),
     )
-  const [target, setTarget] = useState(preferred?.id ?? bodies[0]?.id ?? '')
+  const [targets, setTargets] = useState<string[]>(
+    preferred ? [preferred.id] : bodies.map((body) => body.id),
+  )
   const [busy, setBusy] = useState<ExportFormat | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const chosen = bodies.find((instance) => instance.id === target)
+  const chosen = bodies.filter((instance) => targets.includes(instance.id))
+  const ready = !building && !errors.some((error) => error.severity === 'error')
 
   return (
     <dialog
@@ -59,32 +64,71 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
         ) : (
           <>
             {bodies.length > 1 && (
-              <div className="row" style={{ marginBottom: 14 }}>
-                <label>{t('Which body')}</label>
-                <select value={target} onChange={(e) => setTarget(e.target.value)}>
-                  {bodies.map((instance) => (
-                    <option key={instance.id} value={instance.id}>
-                      {instanceLabel(doc, instance)}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <fieldset className="export-bodies">
+                <legend>{t('Bodies to export')}</legend>
+                <button
+                  className="tb"
+                  disabled={busy !== null}
+                  onClick={() => setTargets(bodies.map((body) => body.id))}
+                >
+                  {t('Select all')}
+                </button>
+                <button className="tb" disabled={busy !== null} onClick={() => setTargets([])}>
+                  {t('Clear selection')}
+                </button>
+                {bodies.map((instance) => (
+                  <label key={instance.id}>
+                    <input
+                      type="checkbox"
+                      disabled={busy !== null}
+                      checked={targets.includes(instance.id)}
+                      onChange={(event) =>
+                        setTargets((ids) =>
+                          event.target.checked
+                            ? [...ids, instance.id]
+                            : ids.filter((id) => id !== instance.id),
+                        )
+                      }
+                    />
+                    {instanceLabel(doc, instance)}
+                  </label>
+                ))}
+              </fieldset>
+            )}
+            {chosen.length > 1 && (
+              <p className="hint">
+                {t(
+                  '3MF and STEP keep the selected bodies together. Other formats download a ZIP with one file per body. Assembly positions are preserved.',
+                )}
+              </p>
+            )}
+            {!ready && (
+              <p role="alert" className="hint">
+                {t(
+                  building
+                    ? 'Wait for the model to rebuild.'
+                    : 'Fix the failed steps before exporting.',
+                )}
+              </p>
             )}
 
             {EXPORT_FORMATS.map((format) => (
               <button
                 key={format.id}
                 className="btn"
-                disabled={busy !== null}
+                disabled={busy !== null || !chosen.length || !ready}
                 onClick={async () => {
-                  if (!chosen) return
+                  if (!chosen.length) return
                   setBusy(format.id)
                   setError(null)
                   try {
-                    await exportShape(format.id, {
-                      id: chosen.id,
-                      name: instanceLabel(doc, chosen),
-                    })
+                    await exportShapes(
+                      format.id,
+                      chosen.map((instance) => ({
+                        id: instance.id,
+                        name: instanceLabel(doc, instance),
+                      })),
+                    )
                   } catch (e) {
                     setError((e as Error).message)
                   } finally {
@@ -93,7 +137,7 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
                 }}
               >
                 {busy === format.id ? t('Preparing {0}…', t(format.label)) : t(format.label)}
-                <small>{format.detail}</small>
+                <small>{t(format.detail)}</small>
               </button>
             ))}
 

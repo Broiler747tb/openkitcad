@@ -63,6 +63,7 @@ interface Item {
   group?: string
   hint?: string
   danger?: boolean
+  recommended?: boolean
   sub?: string
 }
 
@@ -108,18 +109,20 @@ export function ContextMenu<T extends Item>({
     <div
       ref={ref}
       className="sketch-menu"
-      style={
-        position.maxHeight === undefined
-          ? { left: position.left, top: position.top }
-          : { ...position, overflowY: 'auto' }
-      }
+      style={{
+        ...position,
+        maxHeight: position.maxHeight ?? `calc(100vh - ${position.top + 8}px)`,
+        overflowY: 'auto',
+      }}
       aria-label={t('Available actions')}
       onKeyDown={(e) => {
         e.stopPropagation()
         if (e.key === 'Escape') onClose()
         if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
           e.preventDefault()
-          const buttons = [...ref.current!.querySelectorAll<HTMLButtonElement>('button')]
+          const buttons = [...ref.current!.querySelectorAll<HTMLButtonElement>('button')].filter(
+            (button) => button.getClientRects().length,
+          )
           const index = buttons.indexOf(document.activeElement as HTMLButtonElement)
           buttons[
             (index + (e.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length

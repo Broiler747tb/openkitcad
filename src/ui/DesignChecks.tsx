@@ -6,6 +6,8 @@ import type { Clash, Instance, KernelApi, PrintWarning } from '../kernel/types'
 import type { OkcDocument } from '../doc/types'
 import { lengthLabel } from '../core/units'
 import { NumberInput } from './NumberInput'
+import { loadPrintSettings, savePrintSettings, validPrintSettings } from './printSettings'
+import type { PrintOptions } from '../kernel/types'
 
 type CheckKind = 'clashes' | 'print'
 type CheckResult = { doc: OkcDocument; instances: Instance[] } & (
@@ -29,6 +31,16 @@ export function DesignChecks({
   const [result, setResult] = useState<CheckResult | null>(null)
   const [busy, setBusy] = useState<CheckKind | null>(null)
   const ticket = useRef(0)
+  const [settings, setSettings] = useState(loadPrintSettings)
+  const settingsRef = useRef(settings)
+  settingsRef.current = settings
+  function configure(next: PrintOptions) {
+    if (!validPrintSettings(next)) return
+    settingsRef.current = next
+    setSettings(next)
+    savePrintSettings(next)
+    setResult(null)
+  }
   const ready = kernelReady && !building && !errors.some((error) => error.severity === 'error')
   const printable = instances.filter((i) => i.kind === 'body' && i.visible && !i.negative)
   const current = ready && result?.doc === doc && result.instances === instances ? result : null
@@ -49,10 +61,12 @@ export function DesignChecks({
     if (busy || !ready || (kind === 'print' && !printable.length)) return
     const snapshot = useStore.getState()
     const request = ++ticket.current
+    const checkedSettings = settings
     const isCurrent = () => {
       const live = useStore.getState()
       return (
         request === ticket.current &&
+        (kind !== 'print' || settingsRef.current === checkedSettings) &&
         live.doc === snapshot.doc &&
         live.instances === snapshot.instances &&
         !live.building
@@ -70,7 +84,7 @@ export function DesignChecks({
               kind,
               value: await api().printPrep(
                 printable.map((i) => i.id),
-                { nozzle: 0.4, bed: [220, 220, 250] },
+                checkedSettings,
               ),
             }
       if (isCurrent()) setResult(next)
@@ -132,6 +146,31 @@ export function DesignChecks({
 
       <div className="section">
         <h3>{t('Check the design')}</h3>
+        <details className="print-settings">
+          <summary>{t('Printer settings')}</summary>
+          <NumberInput
+            label="Nozzle diameter"
+            value={settings.nozzle}
+            min={0.05}
+            onChange={(nozzle) => configure({ ...settings, nozzle })}
+          />
+          {(['Bed width', 'Bed depth', 'Maximum print height'] as const).map((label, index) => (
+            <NumberInput
+              key={label}
+              label={label}
+              value={settings.bed[index]}
+              min={1}
+              onChange={(size) => {
+                const bed = [...settings.bed] as PrintOptions['bed']
+                bed[index] = size
+                configure({ ...settings, bed })
+              }}
+            />
+          ))}
+          <p className="hint">
+            {t('Checks use the current orientation. These settings stay on this device.')}
+          </p>
+        </details>
         <button
           className="btn"
           disabled={busy !== null || !ready}
@@ -178,6 +217,16 @@ export function DesignChecks({
         )}
         {warnings?.map((w, i) => (
           <div className={`msg ${w.severity === 'error' ? 'error' : 'warn'}`} key={i}>
+            <button
+              className="tb msg-action"
+              onClick={() => {
+                const instance = instances.find((item) => item.id === w.instanceId)
+                if (instance)
+                  store.select({ kind: 'body', id: instance.bodyId, instanceId: instance.id })
+              }}
+            >
+              {w.name}
+            </button>
             <strong>{t(w.message)}</strong>
             {w.hint && <em>{t(w.hint)}</em>}
             {w.span && (

@@ -29,6 +29,8 @@ import { animateJoint, useJointAnimation } from './jointAnimation'
 import { findBody, findComponent, findFeature, findOccurrence } from '../doc/model'
 import { poseOf, withPose, type Pose } from '../doc/placement'
 import { DesignChecks } from './DesignChecks'
+import { HistoryProblems } from './HistoryProblems'
+import { SketchDiagnostics } from './SketchDiagnostics'
 import { NumberInput as Num } from './NumberInput'
 import { lengthLabel, volumeLabel } from '../core/units'
 import { counted } from '../i18n'
@@ -120,7 +122,6 @@ export function Inspector({
   onTab: (tab: 'properties' | 'actions' | 'checks') => void
 }) {
   const selection = useStore((s) => s.selection)
-  const errors = useStore((s) => s.errors)
   const activeSketch = useStore((s) => s.activeSketch)
 
   if (activeSketch) {
@@ -128,6 +129,7 @@ export function Inspector({
       <div className="panel-right">
         <div className="panel-caption">{t('SKETCH PALETTE')}</div>
         <SketchOptions />
+        <SketchDiagnostics />
         <details className="sketch-panel-group">
           <summary>{t('Sketch workshop')}</summary>
           <SketchPowerTools key={activeSketch.featureId} />
@@ -146,17 +148,7 @@ export function Inspector({
 
   return (
     <div className="panel-right">
-      {errors.length > 0 && (
-        <div className="section">
-          <h3>{t('Needs attention')}</h3>
-          {errors.map((e, i) => (
-            <div className={`msg ${e.severity === 'warning' ? 'warn' : 'error'}`} key={i}>
-              <strong>{t(e.message)}</strong>
-              {e.hint && <em>{t(e.hint)}</em>}
-            </div>
-          ))}
-        </div>
-      )}
+      <HistoryProblems onProperties={() => onTab('properties')} />
 
       <div className="tabs inspector-tabs">
         {(['properties', 'actions', 'checks'] as const).map((item) => (
@@ -170,6 +162,7 @@ export function Inspector({
         ))}
       </div>
       {tab !== 'checks' && <SceneTools />}
+      {tab === 'properties' && <SelectionActions compact />}
       {tab === 'checks' ? (
         <DesignChecks />
       ) : tab === 'actions' ? (

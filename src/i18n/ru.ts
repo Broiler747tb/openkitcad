@@ -2400,4 +2400,51 @@ export const ru: Readonly<Record<string, string>> = {
     'Создать новую модель? Сначала сохрани текущую, чтобы не потерять её.',
   'Drag the ring. Snaps to 15 degrees': 'Потяни кольцо. Шаг поворота — 15°',
   'Left-to-right gap only': 'Только расстояние по горизонтали',
+  'Printer settings': 'Настройки принтера',
+  'Nozzle diameter': 'Диаметр сопла',
+  'Bed width': 'Ширина стола',
+  'Bed depth': 'Глубина стола',
+  'Maximum print height': 'Высота печати',
+  'Checks use the current orientation. These settings stay on this device.':
+    'Проверяем деталь в текущем положении. Настройки сохраняются на этом устройстве.',
+  'Reference to repair: {0} on {1}': 'Нужно заново выбрать: {0} на {1}',
+  'Pick geometry again': 'Выбрать геометрию заново',
+  'Show body': 'Показать тело',
+  'Show the step that changed it': 'Показать изменившую её операцию',
+  'Dependent steps: {0}': 'Зависимых операций: {0}',
+  'Sketch health': 'Состояние эскиза',
+  'These constraints cannot all be satisfied. Select one to inspect it before changing or removing it.':
+    'Эти ограничения конфликтуют. Выбери ограничение, чтобы проверить его перед изменением или удалением.',
+  'Remaining degrees of freedom: {0}': 'Осталось степеней свободы: {0}',
+  'Blue geometry can still move. Select it, then add a size or a constraint.':
+    'Синяя геометрия ещё может двигаться. Выбери её и добавь размер или ограничение.',
+  'Show free geometry': 'Показать свободную геометрию',
+  'Recommended for selection': 'Для выбранной геометрии',
+  'More actions ({0})': 'Ещё действия ({0})',
+  'Bodies to export': 'Тела для экспорта',
+  'Select all': 'Выбрать всё',
+  'Clear selection': 'Снять выбор',
+  '3MF and STEP keep the selected bodies together. Other formats download a ZIP with one file per body. Assembly positions are preserved.':
+    '3MF и STEP сохраняют выбранные тела вместе. В остальных форматах скачивается ZIP с отдельным файлом для каждого тела. Положение деталей в сборке сохраняется.',
+  'Wait for the model to rebuild.': 'Дождись пересборки модели.',
+  'Fix the failed steps before exporting.': 'Перед экспортом исправь ошибки операций.',
+  'Select at least one body to export.': 'Выбери хотя бы одно тело для экспорта.',
+  'The design changed during export. Try again.':
+    'Модель изменилась во время экспорта. Попробуй ещё раз.',
+  'Repair sketch plane': 'Исправить плоскость эскиза',
+  'Choose a replacement plane or flat face. Sketch geometry and dependent steps are kept.':
+    'Выбери другую плоскость или плоскую грань. Геометрия эскиза и зависимые операции сохранятся.',
+  'Select a sketch to repair.': 'Выбери эскиз для исправления.',
+  '3D printing. Understood by every slicer.': 'Для 3D-печати. Открывается в любом слайсере.',
+  '3D printing, but carries real units so nothing gets mis-scaled.':
+    'Для 3D-печати. Единицы записаны в файле, масштаб не потеряется.',
+  'Mesh for rendering, games and most other 3D software.':
+    'Сетка для рендера, игр и других 3D-программ.',
+  'Editable solid for FreeCAD, Fusion, SolidWorks.':
+    'Твёрдое тело для редактирования в FreeCAD, Fusion и SolidWorks.',
+  'Flat outline for a laser cutter or CNC.': 'Плоский контур для лазера или ЧПУ.',
+  'Flat outline for vector software and some cutters.':
+    'Плоский контур для векторных редакторов и станков.',
+  'Print at 100%, tape to the part, punch and drill.':
+    'Распечатай в масштабе 100%, приложи к детали, наметь и просверли.',
 }

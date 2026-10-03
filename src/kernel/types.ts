@@ -1,5 +1,5 @@
 import type { Frame } from '../core/math'
-import type { Feature, Matrix4, OkcDocument } from '../doc/types'
+import type { ElementRef, Feature, Matrix4, OkcDocument } from '../doc/types'
 
 export interface MeshData {
   vertices: Float32Array
@@ -50,6 +50,8 @@ export interface KernelError {
   severity: 'error' | 'warning'
   message: string
   hint?: string
+  reference?: ElementRef
+  causeFeatureId?: string
 }
 
 export interface CacheStats {

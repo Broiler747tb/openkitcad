@@ -1,0 +1,321 @@
+{
+  "recordedAt": "2026-10-03T19:32:20.432Z",
+  "cpu": "AMD Ryzen 5 3600 6-Core Processor              ",
+  "platform": "win32 10.0.26200",
+  "browser": "153.0.8010.12",
+  "mode": "Vite development, geometry worker; no viewport rendering in timings",
+  "results": [
+    {
+      "features": 100,
+      "geometry": "Independent 12 × 8 × 4 mm blocks in a grid",
+      "timings": [
+        {
+          "operation": "cold",
+          "roundTripMs": 355,
+          "kernelMs": 349,
+          "cache": {
+            "hits": 0,
+            "misses": 100,
+            "entries": 100
+          }
+        },
+        {
+          "operation": "unchanged",
+          "roundTripMs": 12,
+          "kernelMs": 2,
+          "cache": {
+            "hits": 100,
+            "misses": 0,
+            "entries": 100
+          }
+        },
+        {
+          "operation": "edit first dimension",
+          "roundTripMs": 231,
+          "kernelMs": 227,
+          "cache": {
+            "hits": 0,
+            "misses": 100,
+            "entries": 128
+          }
+        },
+        {
+          "operation": "edit last dimension",
+          "roundTripMs": 11,
+          "kernelMs": 4,
+          "cache": {
+            "hits": 99,
+            "misses": 1,
+            "entries": 128
+          }
+        },
+        {
+          "operation": "undo last edit",
+          "roundTripMs": 3,
+          "kernelMs": 1,
+          "cache": {
+            "hits": 100,
+            "misses": 0,
+            "entries": 128
+          }
+        },
+        {
+          "operation": "redo last edit",
+          "roundTripMs": 4,
+          "kernelMs": 2,
+          "cache": {
+            "hits": 100,
+            "misses": 0,
+            "entries": 128
+          }
+        }
+      ],
+      "previewFramesMs": [
+        5,
+        7,
+        6,
+        7,
+        6,
+        8,
+        7,
+        5,
+        6,
+        6
+      ]
+    },
+    {
+      "features": 300,
+      "geometry": "Independent 12 × 8 × 4 mm blocks in a grid",
+      "timings": [
+        {
+          "operation": "cold",
+          "roundTripMs": 777,
+          "kernelMs": 763,
+          "cache": {
+            "hits": 0,
+            "misses": 300,
+            "entries": 128
+          }
+        },
+        {
+          "operation": "unchanged",
+          "roundTripMs": 20,
+          "kernelMs": 3,
+          "cache": {
+            "hits": 300,
+            "misses": 0,
+            "entries": 128
+          }
+        },
+        {
+          "operation": "edit first dimension",
+          "roundTripMs": 608,
+          "kernelMs": 589,
+          "cache": {
+            "hits": 0,
+            "misses": 300,
+            "entries": 128
+          }
+        },
+        {
+          "operation": "edit last dimension",
+          "roundTripMs": 37,
+          "kernelMs": 10,
+          "cache": {
+            "hits": 299,
+            "misses": 1,
+            "entries": 128
+          }
+        },
+        {
+          "operation": "undo last edit",
+          "roundTripMs": 6,
+          "kernelMs": 2,
+          "cache": {
+            "hits": 300,
+            "misses": 0,
+            "entries": 128
+          }
+        },
+        {
+          "operation": "redo last edit",
+          "roundTripMs": 6,
+          "kernelMs": 2,
+          "cache": {
+            "hits": 300,
+            "misses": 0,
+            "entries": 128
+          }
+        }
+      ],
+      "previewFramesMs": [
+        8,
+        9,
+        8,
+        9,
+        8,
+        9,
+        9,
+        8,
+        8,
+        8
+      ]
+    },
+    {
+      "features": 100,
+      "geometry": "340 × 240 × 4 mm plate with sequential 3 mm through holes",
+      "timings": [
+        {
+          "operation": "cold",
+          "roundTripMs": 4764,
+          "kernelMs": 4762,
+          "cache": {
+            "hits": 0,
+            "misses": 100,
+            "entries": 100
+          }
+        },
+        {
+          "operation": "unchanged",
+          "roundTripMs": 14,
+          "kernelMs": 2,
+          "cache": {
+            "hits": 100,
+            "misses": 0,
+            "entries": 100
+          }
+        },
+        {
+          "operation": "edit first dimension",
+          "roundTripMs": 4104,
+          "kernelMs": 4099,
+          "cache": {
+            "hits": 0,
+            "misses": 100,
+            "entries": 128
+          }
+        },
+        {
+          "operation": "edit last dimension",
+          "roundTripMs": 324,
+          "kernelMs": 310,
+          "cache": {
+            "hits": 99,
+            "misses": 1,
+            "entries": 128
+          }
+        },
+        {
+          "operation": "undo last edit",
+          "roundTripMs": 9,
+          "kernelMs": 1,
+          "cache": {
+            "hits": 100,
+            "misses": 0,
+            "entries": 128
+          }
+        },
+        {
+          "operation": "redo last edit",
+          "roundTripMs": 2,
+          "kernelMs": 1,
+          "cache": {
+            "hits": 100,
+            "misses": 0,
+            "entries": 128
+          }
+        }
+      ],
+      "previewFramesMs": [
+        72,
+        316,
+        318,
+        324,
+        355,
+        322,
+        317,
+        335,
+        344,
+        299
+      ]
+    },
+    {
+      "features": 300,
+      "geometry": "340 × 240 × 4 mm plate with sequential 3 mm through holes",
+      "timings": [
+        {
+          "operation": "cold",
+          "roundTripMs": 32217,
+          "kernelMs": 32205,
+          "cache": {
+            "hits": 0,
+            "misses": 300,
+            "entries": 128
+          }
+        },
+        {
+          "operation": "unchanged",
+          "roundTripMs": 26,
+          "kernelMs": 2,
+          "cache": {
+            "hits": 300,
+            "misses": 0,
+            "entries": 128
+          }
+        },
+        {
+          "operation": "edit first dimension",
+          "roundTripMs": 31154,
+          "kernelMs": 31130,
+          "cache": {
+            "hits": 0,
+            "misses": 300,
+            "entries": 128
+          }
+        },
+        {
+          "operation": "edit last dimension",
+          "roundTripMs": 1689,
+          "kernelMs": 1647,
+          "cache": {
+            "hits": 299,
+            "misses": 1,
+            "entries": 128
+          }
+        },
+        {
+          "operation": "undo last edit",
+          "roundTripMs": 25,
+          "kernelMs": 2,
+          "cache": {
+            "hits": 300,
+            "misses": 0,
+            "entries": 128
+          }
+        },
+        {
+          "operation": "redo last edit",
+          "roundTripMs": 4,
+          "kernelMs": 2,
+          "cache": {
+            "hits": 300,
+            "misses": 0,
+            "entries": 128
+          }
+        }
+      ],
+      "previewFramesMs": [
+        204,
+        1541,
+        1596,
+        1577,
+        1638,
+        1741,
+        1680,
+        1565,
+        1570,
+        1612
+      ]
+    }
+  ]
+}

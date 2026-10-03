@@ -65,6 +65,10 @@ The browser version loads about 11 MB for the geometry engine on first use. The 
 
 English and Russian are available in the top bar. Your language choice is remembered.
 
+Print checks use your nozzle and bed size. Select several bodies in **Export** to save one 3MF or STEP, or a ZIP of separate files. Parts keep their assembly positions.
+
+Broken steps show which geometry needs replacing and which later steps use it. Sketch diagnostics point out conflicting constraints and geometry that can still move.
+
 ## Run it locally
 
 Node.js **22.12 or newer**.

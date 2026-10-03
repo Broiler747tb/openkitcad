@@ -218,6 +218,37 @@ button.workspace-tab {
   padding: 0 10px;
   flex-shrink: 0;
 }
+.export-bodies {
+  border: 1px solid var(--okc-line);
+  max-height: 240px;
+  overflow: auto;
+  margin: 12px 0;
+  padding: 10px;
+}
+.export-bodies label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  overflow-wrap: anywhere;
+}
+.print-settings summary,
+.more-actions summary {
+  cursor: pointer;
+  padding: 8px 0;
+}
+.problem-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 8px 0;
+}
+.broken-reference {
+  overflow-wrap: anywhere;
+}
+.diagnostic-conflict {
+  border-left: 3px solid var(--okc-danger, #d4473d);
+}
 .fusion-group-tools {
   display: flex;
   align-items: center;
@@ -630,7 +661,8 @@ button.workspace-tab {
   }
   .panel-left,
   .panel-right {
-    max-height: calc(100% - 230px);
+    z-index: 40;
+    max-height: calc(100% - 24px);
   }
 }
 .parameters-dialog {

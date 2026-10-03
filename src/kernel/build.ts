@@ -1268,6 +1268,7 @@ export function evaluateFeature(
       `Depends on ${name}, which failed.`,
       'Fix that step first and this one will build again.',
     )
+    errors[errors.length - 1].causeFeatureId = dependency
   } else {
     try {
       runFeature(ctx, feature, key, stage)
@@ -1284,6 +1285,11 @@ export function evaluateFeature(
           ? 'Edit this step and pick the geometry again.'
           : hintForFailure(feature, message)
       report('error', prefix + message, hint)
+      if (e instanceof NamingError) {
+        const error = errors[errors.length - 1]
+        error.reference = e.error.reference
+        if ('featureId' in e.error) error.causeFeatureId = e.error.featureId
+      }
     }
   }
 
