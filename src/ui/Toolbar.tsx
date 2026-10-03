@@ -706,6 +706,7 @@ export function Toolbar({
             <button
               disabled={
                 !state.kernelReady ||
+                !state.autosaving ||
                 state.building ||
                 state.commandOpen ||
                 !!state.transientBase ||
@@ -721,6 +722,7 @@ export function Toolbar({
           className="tb"
           disabled={
             !state.kernelReady ||
+            !state.autosaving ||
             state.building ||
             state.commandOpen ||
             !!state.transientBase ||
