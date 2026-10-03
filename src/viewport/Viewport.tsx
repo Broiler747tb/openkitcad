@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { t } from '../i18n'
 import {
   elementKey,
   ViewportEngine,
@@ -2320,9 +2321,9 @@ export function Viewport() {
             key={field.id}
             className={`vp-headsup${field.id === headsUp.focus ? ' focus' : ''}${field.locked ? ' locked' : ''}`}
             style={{ left: field.x, top: field.y }}
-            title={`${field.label}: type a value, Tab for the next box, Enter to place`}
+            title={t('{0}: type a value, Tab for the next box, Enter to place', t(field.label))}
           >
-            <span className="vp-headsup-label">{field.label}</span>
+            <span className="vp-headsup-label">{t(field.label)}</span>
             <span className="vp-headsup-value">
               {field.id === headsUp.focus && headsUp.text
                 ? headsUp.text
@@ -2358,7 +2359,7 @@ export function Viewport() {
           <input
             name="value"
             defaultValue={prompt.value}
-            aria-label="Dimension value"
+            aria-label={t('Dimension value')}
             ref={(input) => {
               if (input) {
                 requestAnimationFrame(() => {

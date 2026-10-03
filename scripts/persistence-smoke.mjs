@@ -70,7 +70,10 @@ const crashes = []
 try {
   browser = await launch()
   async function openPage(fragment = '', full = false) {
-    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
+    const context = await browser.newContext({
+      locale: 'en-US',
+      viewport: { width: 1280, height: 800 },
+    })
     await context.addInitScript(
       ({ old, incoming, full }) => {
         localStorage.setItem('openkitcad.autosave.v2', JSON.stringify({ savedAt: 'now', doc: old }))

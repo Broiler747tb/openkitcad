@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../doc/store'
 import { findBody, findOccurrence } from '../doc/model'
@@ -45,21 +46,21 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
       className="action-dialog"
       onCancel={onClose}
       onKeyDown={(e) => e.stopPropagation()}
-      aria-label="Export design"
+      aria-label={t('Export design')}
     >
       <div>
-        <h2>Export</h2>
-        <p className="sub">Everything happens in your browser. Nothing is uploaded.</p>
+        <h2>{t('Export')}</h2>
+        <p className="sub">{t('Everything happens in your browser. Nothing is uploaded.')}</p>
 
         {bodies.length === 0 ? (
           <div className="msg info">
-            Create a solid in the Create toolbar, or draw a closed sketch and choose Extrude.
+            {t('Create a solid in the Create toolbar, or draw a closed sketch and choose Extrude.')}
           </div>
         ) : (
           <>
             {bodies.length > 1 && (
               <div className="row" style={{ marginBottom: 14 }}>
-                <label>Which body</label>
+                <label>{t('Which body')}</label>
                 <select value={target} onChange={(e) => setTarget(e.target.value)}>
                   {bodies.map((instance) => (
                     <option key={instance.id} value={instance.id}>
@@ -91,23 +92,24 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
                   }
                 }}
               >
-                {busy === format.id ? `Preparing ${format.label}…` : format.label}
+                {busy === format.id ? t('Preparing {0}…', t(format.label)) : t(format.label)}
                 <small>{format.detail}</small>
               </button>
             ))}
 
-            {error && <div className="msg error">{error}</div>}
+            {error && <div className="msg error">{t(error)}</div>}
 
             <p className="hint">
-              DXF, SVG and the drill template are flattened looking straight down at the body in its
-              assembly position, so lay the face you want to cut flat before exporting.
+              {t(
+                'DXF, SVG and the drill template are flattened looking straight down at the body in its assembly position, so lay the face you want to cut flat before exporting.',
+              )}
             </p>
           </>
         )}
 
         <div className="modal-actions">
           <button className="tb" onClick={onClose}>
-            Close
+            {t('Close')}
           </button>
         </div>
       </div>

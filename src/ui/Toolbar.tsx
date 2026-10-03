@@ -1,3 +1,5 @@
+import { t } from '../i18n'
+import { LanguagePicker } from './LanguagePicker'
 import { useEffect, useRef, useState } from 'react'
 import { activeSketchFeature, useStore, type ToolId } from '../doc/store'
 import { emptyDocument } from '../doc/types'
@@ -364,7 +366,7 @@ export function Toolbar({
     const s = useStore.getState()
     if (
       (s.doc.timeline.length || s.doc.occurrences.length) &&
-      !confirm('Start a new design? Save the current design first to keep it.')
+      !confirm(t('Start a new design? Save the current design first to keep it.'))
     )
       return
     setPending(null)
@@ -524,11 +526,11 @@ export function Toolbar({
     return () => window.removeEventListener('keydown', key)
   })
   const tool = (label: string, icon: ReactNode, run: () => void, key?: string) => (
-    <button className="ribbon-tool" title={label + (key ? ' (' + key + ')' : '')} onClick={run}>
+    <button className="ribbon-tool" title={t(label) + (key ? ' (' + key + ')' : '')} onClick={run}>
       <span className="tool-symbol" aria-hidden="true">
         {icon}
       </span>
-      <span>{label}</span>
+      <span>{t(label)}</span>
     </button>
   )
   const toggleMenu = (key: string, from: HTMLElement) => {
@@ -548,13 +550,13 @@ export function Toolbar({
         aria-expanded={menu === label}
         onClick={(e) => toggleMenu(label, e.currentTarget)}
       >
-        {label} ▾
+        {t(label)} ▾
       </button>
       {menu === label && (
         <div
           className="fusion-dropdown"
           role="region"
-          aria-label={label + ' commands'}
+          aria-label={t('{0} commands', t(label))}
           style={anchor}
         >
           {items.length ? (
@@ -566,7 +568,7 @@ export function Toolbar({
               }}
             />
           ) : (
-            <p className="hint">Select applicable geometry to see commands.</p>
+            <p className="hint">{t('Select applicable geometry to see commands.')}</p>
           )}
         </div>
       )}
@@ -662,14 +664,14 @@ export function Toolbar({
     selectActions,
     <button
       className={'ribbon-tool ' + (selecting ? 'active' : '')}
-      title="Select (Esc)"
+      title={t('Select (Esc)')}
       aria-pressed={selecting}
       onClick={selectMode}
     >
       <span className="tool-symbol" aria-hidden="true">
         <SelectIcon className="okc-icon okc-icon-2d" />
       </span>
-      <span>Select</span>
+      <span>{t('Select')}</span>
     </button>,
   )
   return (
@@ -680,28 +682,33 @@ export function Toolbar({
           OpenKitCAD
         </span>
         <button className="tb" onClick={() => setParametersOpen(true)}>
-          fx Parameters
+          {t('fx Parameters')}
         </button>
         <details className="file-menu" onToggle={(e) => setFileOpen(e.currentTarget.open)}>
-          <summary>File ▾</summary>
+          <summary>{t('File ▾')}</summary>
           <div onClick={(e) => e.currentTarget.closest('details')?.removeAttribute('open')}>
             <button onClick={newDesign}>
-              New Design <kbd>Ctrl N</kbd>
+              {t('New Design ')}
+              <kbd>{t('Ctrl N')}</kbd>
             </button>
             <button onClick={() => void open()}>
-              Open… <kbd>Ctrl O</kbd>
+              {t('Open… ')}
+              <kbd>{t('Ctrl O')}</kbd>
             </button>
             <button onClick={() => saveDocument(state.doc)}>
-              Save <kbd>Ctrl S</kbd>
+              {t('Save ')}
+              <kbd>{t('Ctrl S')}</kbd>
             </button>
             <hr />
             <button onClick={() => void pickKicadBoard().then((file) => file && setKicad(file))}>
-              Import KiCad Board…
+              {t('Import KiCad Board…')}
             </button>
-            <button onClick={() => void insertMeshFile()}>Import Mesh (STL, OBJ, 3MF)…</button>
+            <button onClick={() => void insertMeshFile()}>
+              {t('Import Mesh (STL, OBJ, 3MF)…')}
+            </button>
             <hr />
             <button disabled={!state.instances.length} onClick={onExport}>
-              Export…
+              {t('Export…')}
             </button>
             <button
               disabled={
@@ -714,7 +721,7 @@ export function Toolbar({
               }
               onClick={onShare}
             >
-              Share…
+              {t('Share…')}
             </button>
           </div>
         </details>
@@ -730,20 +737,20 @@ export function Toolbar({
           }
           onClick={onShare}
         >
-          Share
+          {t('Share')}
         </button>
         <button
           className="quick-icon"
-          title="Save (Ctrl S)"
-          aria-label="Save"
+          title={t('Save (Ctrl S)')}
+          aria-label={t('Save')}
           onClick={() => saveDocument(state.doc)}
         >
           ▣
         </button>
         <button
           className="quick-icon"
-          title="Undo (Ctrl Z)"
-          aria-label="Undo"
+          title={t('Undo (Ctrl Z)')}
+          aria-label={t('Undo')}
           disabled={!state.past.length || state.commandOpen || !!state.transientBase}
           onClick={state.undo}
         >
@@ -751,43 +758,45 @@ export function Toolbar({
         </button>
         <button
           className="quick-icon"
-          title="Redo (Ctrl Y)"
-          aria-label="Redo"
+          title={t('Redo (Ctrl Y)')}
+          aria-label={t('Redo')}
           disabled={!state.future.length || state.commandOpen || !!state.transientBase}
           onClick={state.redo}
         >
           ↷
         </button>
         <span className="document-tab">
-          {state.doc.name || 'Untitled'} <small>LOCAL</small>
+          {state.doc.name || t('Untitled')} <small>{t('LOCAL')}</small>
         </span>
         <span className="spacer" />
         <button className="command-trigger" onClick={() => setPalette(true)}>
-          Search commands <kbd>S</kbd>
+          {t('Search commands ')}
+          <kbd>S</kbd>
         </button>
-        <label className="theme-picker" title="Colour theme">
+        <LanguagePicker />
+        <label className="theme-picker" title={t('Colour theme')}>
           <span aria-hidden="true">{themeState.theme === 'dark' ? '☾' : '☀'}</span>
           <select
-            aria-label="Colour theme"
+            aria-label={t('Colour theme')}
             value={themeState.preference}
             onChange={(e) => themeState.setTheme(e.target.value as typeof themeState.preference)}
           >
             {THEME_PREFERENCES.map((preference) => (
               <option key={preference} value={preference}>
-                {THEME_LABEL[preference]}
+                {t(THEME_LABEL[preference])}
               </option>
             ))}
           </select>
         </label>
         <button className="tb" onClick={() => setHelp(true)}>
-          Shortcuts
+          {t('Shortcuts')}
         </button>
         <button className="tb" onClick={onTutorial}>
-          Help
+          {t('Help')}
         </button>
       </div>
       <div className="workspace-tabs">
-        <span className="design-workspace">DESIGN</span>
+        <span className="design-workspace">{t('DESIGN')}</span>
         {WORKSPACES.map((tab) => (
           <button
             key={tab}
@@ -801,12 +810,14 @@ export function Toolbar({
               setWorkspace(tab)
             }}
           >
-            {tab.toUpperCase()}
+            {t(tab.toUpperCase())}
           </button>
         ))}
-        {state.activeSketch && <span className="workspace-tab sketch-tab active">SKETCH</span>}
+        {state.activeSketch && (
+          <span className="workspace-tab sketch-tab active">{t('SKETCH')}</span>
+        )}
         <span className="spacer" />
-        <span className="offline-indicator">● Offline document</span>
+        <span className="offline-indicator">{t('● Offline document')}</span>
       </div>
       <div className="ribbon">
         {state.activeSketch ? (
@@ -825,10 +836,10 @@ export function Toolbar({
                     <button
                       className={'ribbon-tool ' + (active ? 'active' : '')}
                       title={
-                        chosen.label +
+                        t(chosen.label) +
                         (chosen.shortcut ? ' (' + chosen.shortcut + ')' : '') +
                         ' - ' +
-                        chosen.hint
+                        t(chosen.hint)
                       }
                       aria-pressed={active}
                       onClick={() => pickTool(chosen.id)}
@@ -839,12 +850,12 @@ export function Toolbar({
                           return Icon ? <Icon className="okc-icon okc-icon-2d" /> : null
                         })()}
                       </span>
-                      <span>{name}</span>
+                      <span>{t(name)}</span>
                     </button>
                     {tools.length > 1 && (
                       <button
                         className="ribbon-split-arrow"
-                        aria-label={name + ' options'}
+                        aria-label={t('{0} options', t(name))}
                         aria-expanded={menu === flyout}
                         onClick={(e) => toggleMenu(flyout, e.currentTarget)}
                       >
@@ -858,13 +869,13 @@ export function Toolbar({
                             key={tool.id}
                             role="menuitem"
                             className={state.tool === tool.id ? 'active' : ''}
-                            title={tool.hint}
+                            title={t(tool.hint)}
                             onClick={() => {
                               setVariants({ ...variants, [name]: tool.id })
                               pickTool(tool.id)
                             }}
                           >
-                            {tool.label}
+                            {t(tool.label)}
                             {tool.shortcut ? <kbd>{tool.shortcut}</kbd> : null}
                           </button>
                         ))}
@@ -929,7 +940,7 @@ export function Toolbar({
                   () => pickTool('dimension'),
                   'D',
                 )}
-                <div className="constraint-grid" role="group" aria-label="Constraints">
+                <div className="constraint-grid" role="group" aria-label={t('Constraints')}>
                   {CONSTRAINT_TOOLS.map((constraint) => (
                     <button
                       key={constraint.id}
@@ -937,8 +948,8 @@ export function Toolbar({
                         'constraint-tool' +
                         (state.tool === 'constrain:' + constraint.id ? ' active' : '')
                       }
-                      title={constraint.label + ' - ' + constraint.hint}
-                      aria-label={constraint.label}
+                      title={t(constraint.label) + ' - ' + t(constraint.hint)}
+                      aria-label={t(constraint.label)}
                       aria-pressed={state.tool === 'constrain:' + constraint.id}
                       onClick={() => {
                         setPending(null)
@@ -969,7 +980,7 @@ export function Toolbar({
               }}
             >
               <FinishSketchIcon className="okc-icon" width={30} height={30} />
-              <span>Finish Sketch</span>
+              <span>{t('Finish Sketch')}</span>
             </button>
           </>
         ) : workspace === 'surface' ? (
@@ -1267,13 +1278,14 @@ export function Toolbar({
           <strong>{labels[pending] ?? pending}</strong>
           <span>
             {['extrude', 'revolve'].includes(pending)
-              ? 'Select a closed sketch in the Browser or timeline.'
+              ? t('Select a closed sketch in the Browser or timeline.')
               : state.activeSketch
-                ? 'Select applicable sketch geometry.'
-                : 'Select a body, edge or component.'}
+                ? t('Select applicable sketch geometry.')
+                : t('Select a body, edge or component.')}
           </span>
           <button onClick={() => setPending(null)}>
-            Cancel <kbd>Esc</kbd>
+            {t('Cancel ')}
+            <kbd>{t('Esc')}</kbd>
           </button>
         </div>
       )}
@@ -1294,12 +1306,12 @@ function CommandPalette({ actions, onClose }: { actions: ObjectAction[]; onClose
     <dialog
       ref={ref}
       className="action-dialog command-dialog"
-      aria-label="Command toolbox"
+      aria-label={t('Command toolbox')}
       onCancel={onClose}
       onKeyDown={(e) => e.stopPropagation()}
     >
       <div className="dialog-heading">
-        <h2>Design Shortcuts</h2>
+        <h2>{t('Design Shortcuts')}</h2>
         <button onClick={onClose}>×</button>
       </div>
       <FlyoutMenu
@@ -1328,16 +1340,16 @@ function ShortcutDialog({ onClose }: { onClose: () => void }) {
     <dialog
       ref={ref}
       className="action-dialog command-dialog"
-      aria-label="Keyboard shortcuts"
+      aria-label={t('Keyboard shortcuts')}
       onCancel={onClose}
       onKeyDown={(e) => e.stopPropagation()}
     >
       <div className="dialog-heading">
-        <h2>Keyboard & navigation</h2>
+        <h2>{t('Keyboard & navigation')}</h2>
         <button onClick={onClose}>×</button>
       </div>
       <p className="hint">
-        Fusion-style mappings for supported commands. Shortcuts do not run while typing.
+        {t('Fusion-style mappings for supported commands. Shortcuts do not run while typing.')}
       </p>
       <dl className="shortcut-list">
         {SHORTCUTS.map(([key, label]) => (
@@ -1345,20 +1357,22 @@ function ShortcutDialog({ onClose }: { onClose: () => void }) {
             <dt>
               <kbd>{key}</kbd>
             </dt>
-            <dd>{label}</dd>
+            <dd>{t(label)}</dd>
           </div>
         ))}
         {navigation.map(([route, label]) => (
           <div key={`${label}-${route}`}>
             <dt>
-              <kbd>{route}</kbd>
+              <kbd>{t(route)}</kbd>
             </dt>
-            <dd>{label}</dd>
+            <dd>{t(label)}</dd>
           </div>
         ))}
       </dl>
       <p className="hint">
-        Keys follow Fusion 360 wherever the command exists here. Press S to search every command.
+        {t(
+          'Keys follow Fusion 360 wherever the command exists here. Press S to search every command.',
+        )}
       </p>
     </dialog>
   )

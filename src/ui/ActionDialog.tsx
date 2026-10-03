@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { useEffect, useRef, useState } from 'react'
 import { quantity } from '../core/quantity'
 import type { ObjectAction } from './ObjectMenu'
@@ -82,16 +83,16 @@ function ActionDialog({ action, onClose }: { action: ObjectAction; onClose: () =
         }}
       >
         <div className="dialog-heading">
-          <span className="eyebrow">PARAMETERS</span>
-          <button type="button" onClick={onClose} aria-label="Close">
+          <span className="eyebrow">{t('PARAMETERS')}</span>
+          <button type="button" onClick={onClose} aria-label={t('Close')}>
             ×
           </button>
         </div>
-        <h2 id="action-title">{action.label}</h2>
-        {action.hint && <p className="hint">{action.hint}</p>}
+        <h2 id="action-title">{t(action.label)}</h2>
+        {action.hint && <p className="hint">{t(action.hint)}</p>}
         {action.choice && (
           <label className="action-field">
-            <span>{action.choice.label}</span>
+            <span>{t(action.choice.label)}</span>
             <select
               value={choice}
               onChange={(e) => setChoice(e.target.value)}
@@ -99,16 +100,16 @@ function ActionDialog({ action, onClose }: { action: ObjectAction; onClose: () =
             >
               {action.choice.options.map((o) => (
                 <option key={o.value} value={o.value}>
-                  {o.label}
+                  {t(o.label)}
                 </option>
               ))}
             </select>
-            <small>{action.choice.options.find((o) => o.value === choice)?.hint}</small>
+            <small>{t(action.choice.options.find((o) => o.value === choice)?.hint)}</small>
           </label>
         )}
         {fields.map((field, i) => (
           <label className="action-field" key={i}>
-            <span>{field.label}</span>
+            <span>{t(field.label)}</span>
             <div className="unit-input">
               <input
                 required
@@ -124,21 +125,22 @@ function ActionDialog({ action, onClose }: { action: ObjectAction; onClose: () =
         ))}
         {!!fields.length && (
           <p className="hint">
-            Arithmetic: 25.4/2, (10+5)*2, pi. Length fields accept mm, cm, m, in and ft; angles
-            accept deg or rad. Values are evaluated once, not linked formulas.
+            {t(
+              'Arithmetic: 25.4/2, (10+5)*2, pi. Length fields accept mm, cm, m, in and ft; angles accept deg or rad. Values are evaluated once, not linked formulas.',
+            )}
           </p>
         )}
         {error && (
           <p role="alert" className="problem">
-            {error}
+            {t(error)}
           </p>
         )}
         <footer className="dialog-footer">
           <button type="button" className="tb" onClick={onClose}>
-            Cancel
+            {t('Cancel')}
           </button>
           <button type="submit" className="primary-button">
-            OK
+            {t('OK')}
           </button>
         </footer>
       </form>

@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import {
   useEffect,
   useLayoutEffect,
@@ -91,7 +92,7 @@ export function MarkingRing({
   })
 
   return (
-    <div ref={ref} className="marking-ring" style={{ left, top }} aria-label="Marking menu">
+    <div ref={ref} className="marking-ring" style={{ left, top }} aria-label={t('Marking menu')}>
       <div className="marking-hub" />
       {items.map((item, index) => {
         if (!item) return null
@@ -106,7 +107,7 @@ export function MarkingRing({
             className="marking-item"
             style={{ transform: `translate(${dx}px, ${dy}px) translate(${align}, -50%)` }}
             disabled={item.disabled}
-            title={item.label}
+            title={t(item.label)}
             onPointerDown={(event) => {
               event.stopPropagation()
               event.preventDefault()
@@ -116,7 +117,7 @@ export function MarkingRing({
             }}
           >
             {Icon ? <Icon className="okc-icon okc-icon-2d" width={18} height={18} /> : null}
-            <span>{item.label}</span>
+            <span>{t(item.label)}</span>
           </button>
         )
       })}

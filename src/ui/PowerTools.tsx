@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { useState } from 'react'
 import { activeSketchFeature, newId, selectedBodyId, useStore } from '../doc/store'
 import { allBodies, expandInstances, findBody, findComponent } from '../doc/model'
@@ -15,7 +16,7 @@ import { quantity } from '../core/quantity'
 import type { Vec2 } from '../core/math'
 import type { ObjectAction } from './ObjectMenu'
 import { chooseAction } from './ActionDialog'
-import { counted } from '../core/words'
+import { counted } from '../i18n'
 
 const numberField = (label: string, initial: number, unit = 'mm', min?: number, max?: number) => ({
   label,
@@ -189,41 +190,43 @@ export function SketchPowerTools() {
     groups = [...new Set(actions.map((a) => a.group))]
   return (
     <section className="section power-tools">
-      <h3>Sketch workshop</h3>
+      <h3>{t('Sketch workshop')}</h3>
       <p className="hint">
-        {counted(entities.length, 'edge')} · {selected.size} selected · selected length{' '}
-        {geometryLength(feature.sketch, [...selected]).toFixed(3)} mm
+        {counted(entities.length, 'edge')} · {selected.size}
+        {t(' selected · selected length')}{' '}
+        {geometryLength(feature.sketch, [...selected]).toFixed(3)}
+        {t(' mm')}
       </p>
       <details open>
-        <summary>Select geometry</summary>
+        <summary>{t('Select geometry')}</summary>
         <div className="power-buttons">
-          <button onClick={() => select(() => true)}>All</button>
-          <button onClick={() => state.setSketchSelection([])}>None</button>
-          <button onClick={() => select((e) => !selected.has(e.id))}>Invert</button>
+          <button onClick={() => select(() => true)}>{t('All')}</button>
+          <button onClick={() => state.setSketchSelection([])}>{t('None')}</button>
+          <button onClick={() => select((e) => !selected.has(e.id))}>{t('Invert')}</button>
           {(['line', 'circle', 'arc'] as const).map((kind) => (
             <button key={kind} onClick={() => select((e) => e.kind === kind)}>
               {kind}s
             </button>
           ))}
-          <button onClick={() => select((e) => e.construction)}>Guides</button>
-          <button onClick={() => select((e) => !e.construction)}>Profile edges</button>
+          <button onClick={() => select((e) => e.construction)}>{t('Guides')}</button>
+          <button onClick={() => select((e) => !e.construction)}>{t('Profile edges')}</button>
         </div>
       </details>
       <details open>
-        <summary>Creation centre / copy pivot</summary>
+        <summary>{t('Creation centre / copy pivot')}</summary>
         <div className="coordinate-row">
           <label>
-            X (mm)
+            {t('X (mm)')}
             <input
-              aria-label="Workshop centre X"
+              aria-label={t('Workshop centre X')}
               value={x}
               onChange={(e) => setX(e.target.value)}
             />
           </label>
           <label>
-            Y (mm)
+            {t('Y (mm)')}
             <input
-              aria-label="Workshop centre Y"
+              aria-label={t('Workshop centre Y')}
               value={y}
               onChange={(e) => setY(e.target.value)}
             />
@@ -235,9 +238,9 @@ export function SketchPowerTools() {
             setY('0')
           }}
         >
-          Use origin
+          {t('Use origin')}
         </button>
-        {error && <p role="alert">{error}</p>}
+        {error && <p role="alert">{t(error)}</p>}
       </details>
       {groups.map((group) => (
         <details key={group} open={group === 'Precision shapes'}>
@@ -249,17 +252,19 @@ export function SketchPowerTools() {
                 <button
                   key={a.id}
                   disabled={!!error}
-                  title={a.hint}
+                  title={t(a.hint)}
                   onClick={() => chooseAction(a)}
                 >
-                  {a.label}
+                  {t(a.label)}
                 </button>
               ))}
           </div>
         </details>
       ))}
       <p className="hint">
-        All changes support Undo. Search S also includes these commands, using the sketch origin.
+        {t(
+          'All changes support Undo. Search S also includes these commands, using the sketch origin.',
+        )}
       </p>
     </section>
   )
@@ -308,30 +313,31 @@ export function SceneTools() {
     })
   return (
     <section className="section power-tools">
-      <h3>Scene visibility</h3>
+      <h3>{t('Scene visibility')}</h3>
       <p className="hint">
         {counted(bodies.length, 'body', 'bodies')} · {counted(occurrences.length, 'component')} ·{' '}
-        {items.filter((i) => i.visible).length} visible
+        {items.filter((i) => i.visible).length}
+        {t(' visible')}
       </p>
       <div className="power-buttons">
         <button disabled={!items.length} onClick={() => visibility('all')}>
-          Show all
+          {t('Show all')}
         </button>
         <button disabled={!items.length} onClick={() => visibility('none')}>
-          Hide all
+          {t('Hide all')}
         </button>
         <button disabled={!items.length} onClick={() => visibility('invert')}>
-          Invert visibility
+          {t('Invert visibility')}
         </button>
         <button
           disabled={!items.some((i) => i.id === selected)}
           onClick={() => visibility('isolate')}
         >
-          Isolate selected
+          {t('Isolate selected')}
         </button>
       </div>
       <p className="hint">
-        Undo restores previous visibility. Hidden objects remain in the Browser.
+        {t('Undo restores previous visibility. Hidden objects remain in the Browser.')}
       </p>
     </section>
   )

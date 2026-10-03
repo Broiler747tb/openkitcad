@@ -1,3 +1,4 @@
+import { t } from '../../i18n'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
@@ -81,14 +82,22 @@ export function VariantPicker() {
       className={`variant-picker ${dragging ? 'dragging' : ''}`}
       style={{ left: spot.left, top: spot.top, maxHeight: `calc(100vh - ${spot.top + 40}px)` }}
       role="dialog"
-      aria-label={`Choose a version of ${family.name}`}
+      aria-label={t('Choose a version of {0}', family.name)}
     >
       <header className="variant-header">
         <div>
           <strong>{family.name}</strong>
-          <span>{parts.length} versions. Drag one onto a face, or insert it at the origin.</span>
+          <span>
+            {parts.length}
+            {t(' versions. Drag one onto a face, or insert it at the origin.')}
+          </span>
         </div>
-        <button className="variant-close" aria-label="Close" title="Close (Esc)" onClick={close}>
+        <button
+          className="variant-close"
+          aria-label={t('Close')}
+          title={t('Close (Esc)')}
+          onClick={close}
+        >
           ×
         </button>
       </header>
@@ -162,7 +171,7 @@ function VariantCard({
             onDone()
           }}
         >
-          Insert
+          {t('Insert')}
         </button>
         <button
           className="btn"
@@ -176,13 +185,13 @@ function VariantCard({
             onDone()
           }}
         >
-          Details
+          {t('Details')}
         </button>
         <button
           className={`parts-star ${favourite ? 'on' : ''}`}
           aria-pressed={favourite}
-          aria-label={favourite ? 'Remove from favourites' : 'Add to favourites'}
-          title={favourite ? 'Remove from favourites' : 'Add to favourites'}
+          aria-label={favourite ? t('Remove from favourites') : t('Add to favourites')}
+          title={favourite ? t('Remove from favourites') : t('Add to favourites')}
           onClick={() => useShelf.getState().toggleFavourite(part.id)}
         >
           {favourite ? '★' : '☆'}

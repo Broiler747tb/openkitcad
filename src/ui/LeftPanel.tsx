@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { useMemo } from 'react'
 import { editFeature } from './command/commands'
 import {
@@ -41,14 +42,15 @@ export function LeftPanel({
   return (
     <div className={`panel-left ${tab === 'catalogue' ? 'parts-open' : ''}`}>
       <div className="panel-caption">
-        BROWSER <span>▾</span>
+        {t('BROWSER ')}
+        <span>▾</span>
       </div>
       <div className="tabs">
         <button className={tab === 'design' ? 'active' : ''} onClick={() => setTab('design')}>
-          Design
+          {t('Design')}
         </button>
         <button className={tab === 'catalogue' ? 'active' : ''} onClick={() => setTab('catalogue')}>
-          Components
+          {t('Components')}
         </button>
       </div>
       {tab === 'design' ? <DesignTree /> : <PartsPanel />}
@@ -70,26 +72,28 @@ function DesignTree() {
     <div className="tree">
       <DocumentSettings name={doc.name} units={doc.units} />
       <details className="origin-planes">
-        <summary>▱ Origin</summary>
+        <summary>{t('▱ Origin')}</summary>
         {(['XY', 'XZ', 'YZ'] as const).map((name) => (
           <button
             key={name}
-            title={`Use the ${name} plane in the open command, or sketch on it`}
+            title={t('Use the {0} plane in the open command, or sketch on it', name)}
             onClick={() => {
               const plane = { kind: 'named', name, offset: 0 } as const
               if (offerPick(planePick(doc, plane))) return
               store.startSketch(plane)
             }}
           >
-            ▧ {name} Plane
+            ▧ {name}
+            {t(' Plane')}
           </button>
         ))}
       </details>
       {root && <ComponentContents component={root} failed={failed} lineage={[root.id]} />}
       {!doc.timeline.length && !doc.occurrences.length && (
         <div className="empty">
-          Create Sketch → choose a plane → draw a profile → Finish Sketch → Extrude (E). Insert
-          hardware from the toolbar to build around a component.
+          {t(
+            'Create Sketch → choose a plane → draw a profile → Finish Sketch → Extrude (E). Insert hardware from the toolbar to build around a component.',
+          )}
         </div>
       )}
     </div>
@@ -104,18 +108,18 @@ function DocumentSettings({ name, units }: { name: string; units: LengthUnit }) 
       </summary>
       <label
         className="browser-setting"
-        title="Lengths are shown and typed in this unit. The design is stored in millimetres."
+        title={t('Lengths are shown and typed in this unit. The design is stored in millimetres.')}
         style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 10px' }}
       >
-        <span>Units</span>
+        <span>{t('Units')}</span>
         <select
-          aria-label="Document units"
+          aria-label={t('Document units')}
           value={units}
           onChange={(e) => useStore.getState().setUnits(e.target.value as LengthUnit)}
         >
           {LENGTH_UNITS.map((unit) => (
             <option key={unit} value={unit}>
-              {UNIT_NAME[unit]} ({unit})
+              {t(UNIT_NAME[unit])} ({unit})
             </option>
           ))}
         </select>
@@ -180,7 +184,10 @@ function ComponentContents({
     <>
       {solidBodies.length > 0 && (
         <details className="browser-folder" open>
-          <summary>Bodies ({solidBodies.length})</summary>
+          <summary>
+            {t('Bodies (')}
+            {solidBodies.length})
+          </summary>
           {solidBodies.map((body) => (
             <BodyBranch
               key={body.id}
@@ -193,7 +200,10 @@ function ComponentContents({
       )}
       {meshBodies.length > 0 && (
         <details className="browser-folder" open>
-          <summary>Mesh Bodies ({meshBodies.length})</summary>
+          <summary>
+            {t('Mesh Bodies (')}
+            {meshBodies.length})
+          </summary>
           {meshBodies.map((body) => (
             <BodyBranch key={body.id} body={body} failed={failed} />
           ))}
@@ -201,7 +211,10 @@ function ComponentContents({
       )}
       {sketches.length > 0 && (
         <details className="browser-folder">
-          <summary>Sketches ({sketches.length})</summary>
+          <summary>
+            {t('Sketches (')}
+            {sketches.length})
+          </summary>
           {sketches.map((feature) => (
             <FeatureRow
               key={feature.id}
@@ -214,7 +227,10 @@ function ComponentContents({
       )}
       {planes.length > 0 && (
         <details className="browser-folder" open>
-          <summary>Construction ({planes.length})</summary>
+          <summary>
+            {t('Construction (')}
+            {planes.length})
+          </summary>
           {planes.map((feature) => (
             <FeatureRow
               key={feature.id}
@@ -227,7 +243,10 @@ function ComponentContents({
       )}
       {origins.length > 0 && (
         <details className="browser-folder">
-          <summary>Joint Origins ({origins.length})</summary>
+          <summary>
+            {t('Joint Origins (')}
+            {origins.length})
+          </summary>
           {origins.map((feature) => (
             <FeatureRow
               key={feature.id}
@@ -240,7 +259,10 @@ function ComponentContents({
       )}
       {joints.length > 0 && (
         <details className="browser-folder" open>
-          <summary>Joints ({joints.length})</summary>
+          <summary>
+            {t('Joints (')}
+            {joints.length})
+          </summary>
           {joints.map((feature) => (
             <FeatureRow
               key={feature.id}
@@ -253,7 +275,10 @@ function ComponentContents({
       )}
       {studies.length > 0 && (
         <details className="browser-folder">
-          <summary>Motion Studies ({studies.length})</summary>
+          <summary>
+            {t('Motion Studies (')}
+            {studies.length})
+          </summary>
           {studies.map((feature) => (
             <FeatureRow
               key={feature.id}
@@ -310,8 +335,8 @@ function OccurrenceBranch({
           <input
             type="radio"
             className="activate"
-            aria-label={`Activate ${occurrence.name}`}
-            title={active ? 'Active component: new sketches and bodies go here' : 'Activate'}
+            aria-label={t('Activate {0}', occurrence.name)}
+            title={active ? t('Active component: new sketches and bodies go here') : t('Activate')}
             checked={active}
             onClick={(e) => e.stopPropagation()}
             onChange={() => store.activateComponent(component.id)}
@@ -325,8 +350,8 @@ function OccurrenceBranch({
           className="act"
           title={
             occurrence.grounded
-              ? 'Grounded: joints move the other components. Click to unground.'
-              : 'Ground: pin it in place so joints move the other components'
+              ? t('Grounded: joints move the other components. Click to unground.')
+              : t('Ground: pin it in place so joints move the other components')
           }
           aria-pressed={occurrence.grounded}
           style={{ opacity: occurrence.grounded ? 1 : 0.4 }}
@@ -339,7 +364,7 @@ function OccurrenceBranch({
         </button>
         <button
           className="act"
-          title="Linked copy: shares this component's design"
+          title={t("Linked copy: shares this component's design")}
           onClick={(e) => {
             e.stopPropagation()
             store.linkedCopy(occurrence.id)
@@ -349,7 +374,7 @@ function OccurrenceBranch({
         </button>
         <button
           className="act"
-          title={occurrence.visible ? 'Hide' : 'Show'}
+          title={occurrence.visible ? t('Hide') : t('Show')}
           onClick={(e) => {
             e.stopPropagation()
             store.updateOccurrence(occurrence.id, { visible: !occurrence.visible })
@@ -359,7 +384,7 @@ function OccurrenceBranch({
         </button>
         <button
           className="act"
-          title="Delete"
+          title={t('Delete')}
           onClick={(e) => {
             e.stopPropagation()
             store.removeOccurrence(occurrence.id)
@@ -412,7 +437,7 @@ function BodyBranch({
         onMouseEnter={() => store.setHovered(body.id)}
         onMouseLeave={() => store.setHovered(null)}
       >
-        <span className="glyph" title={surface ? 'Surface body' : undefined}>
+        <span className="glyph" title={surface ? t('Surface body') : undefined}>
           {surface ? '▭' : '▣'}
         </span>
         <span className="name" style={{ opacity: body.visible ? 1 : 0.45 }}>
@@ -420,7 +445,7 @@ function BodyBranch({
         </span>
         <button
           className="act"
-          title={body.visible ? 'Hide' : 'Show'}
+          title={body.visible ? t('Hide') : t('Show')}
           onClick={(e) => {
             e.stopPropagation()
             store.updateBody(body.id, { visible: !body.visible })
@@ -430,7 +455,7 @@ function BodyBranch({
         </button>
         <button
           className="act"
-          title="Delete this body and every step that builds it"
+          title={t('Delete this body and every step that builds it')}
           onClick={(e) => {
             e.stopPropagation()
             store.removeBody(body.id)
@@ -448,7 +473,9 @@ function BodyBranch({
         }
       >
         <summary>
-          {steps.length} modelling step{steps.length === 1 ? '' : 's'}
+          {steps.length}
+          {t(' modelling step')}
+          {steps.length === 1 ? '' : 's'}
         </summary>
         {steps.map((feature) => (
           <FeatureRow
@@ -494,16 +521,16 @@ function FeatureRow({
         if (feature.kind === 'sketch') store.openSketch(feature.id)
         else editFeature(feature)
       }}
-      title={feature.kind === 'sketch' ? 'Double-click to edit this sketch' : undefined}
+      title={feature.kind === 'sketch' ? t('Double-click to edit this sketch') : undefined}
     >
       <span className="glyph">{FEATURE_ICON[feature.kind]}</span>
       <span className="name" style={{ opacity: dimmed ? 0.45 : 1 }}>
-        {feature.name || FEATURE_LABEL[feature.kind]}
+        {feature.name || t(FEATURE_LABEL[feature.kind])}
       </span>
       {(feature.kind === 'sketch' || feature.kind === 'constructionPlane') && (
         <button
           className="act"
-          title={feature.visible ? 'Hide' : 'Show'}
+          title={feature.visible ? t('Hide') : t('Show')}
           onClick={(e) => {
             e.stopPropagation()
             store.updateFeature(feature.id, { visible: !feature.visible })
@@ -515,7 +542,7 @@ function FeatureRow({
       {feature.kind === 'sketch' && (
         <button
           className="act"
-          title="Edit Sketch"
+          title={t('Edit Sketch')}
           onClick={(e) => {
             e.stopPropagation()
             store.openSketch(feature.id)
@@ -526,7 +553,7 @@ function FeatureRow({
       )}
       <button
         className="act"
-        title="Move earlier in the timeline"
+        title={t('Move earlier in the timeline')}
         disabled={index <= 0 || !canMoveFeature(doc, feature.id, index - 1)}
         onClick={(e) => {
           e.stopPropagation()
@@ -537,7 +564,7 @@ function FeatureRow({
       </button>
       <button
         className="act"
-        title={feature.suppressed ? 'Unsuppress' : 'Suppress'}
+        title={feature.suppressed ? t('Unsuppress') : t('Suppress')}
         onClick={(e) => {
           e.stopPropagation()
           store.updateFeature(feature.id, { suppressed: !feature.suppressed })
@@ -547,11 +574,11 @@ function FeatureRow({
       </button>
       <button
         className="act"
-        title="Delete"
+        title={t('Delete')}
         onClick={(e) => {
           e.stopPropagation()
           if (store.removeFeature(feature.id)) return
-          if (confirm(`Delete ${feature.name} and the steps that depend on it?`))
+          if (confirm(t('Delete {0} and the steps that depend on it?', feature.name)))
             store.removeFeature(feature.id, { withDependents: true })
         }}
       >

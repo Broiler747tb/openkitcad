@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useStore } from '../doc/store'
 import { FEATURE_HINT, FEATURE_ICON, FEATURE_LABEL, type Feature } from '../doc/types'
@@ -14,7 +15,7 @@ import { ContextMenu } from './ContextMenu'
 import { editFeature } from './command/commands'
 import { featurePick, offerPick, sketchPick } from './command/picks'
 import { useCommand } from './command/session'
-import { counted } from '../core/words'
+import { counted } from '../i18n'
 
 const PLAY_STEP_MS = 450
 const DRAG_SLOP_PX = 6
@@ -99,7 +100,7 @@ export function Timeline({ onEdit }: { onEdit: () => void }) {
 
   function remove(feature: Feature) {
     if (store.removeFeature(feature.id)) return
-    if (confirm(`Delete ${feature.name} and the steps that depend on it?`)) {
+    if (confirm(t('Delete {0} and the steps that depend on it?', feature.name))) {
       store.removeFeature(feature.id, { withDependents: true })
     }
   }
@@ -217,8 +218,8 @@ export function Timeline({ onEdit }: { onEdit: () => void }) {
         className={classes.filter(Boolean).join(' ')}
         data-start={index}
         aria-pressed={index === selectedIndex}
-        aria-label={`${where}${feature.name || FEATURE_LABEL[feature.kind]}${state.length ? `, ${state.join(', ')}` : ''}`}
-        title={`${where}${feature.name || FEATURE_LABEL[feature.kind]} (${FEATURE_LABEL[feature.kind]})${state.length ? ` · ${state.join(' · ')}` : ''}\n${FEATURE_HINT[feature.kind]}\nDouble-click to edit. Drag to reorder.`}
+        aria-label={`${where}${feature.name || t(FEATURE_LABEL[feature.kind])}${state.length ? `, ${state.map((value) => t(value)).join(', ')}` : ''}`}
+        title={`${where}${feature.name || t(FEATURE_LABEL[feature.kind])} (${t(FEATURE_LABEL[feature.kind])})${state.length ? ` · ${state.map((value) => t(value)).join(' · ')}` : ''}\n${t(FEATURE_HINT[feature.kind])}\n${t('Double-click to edit. Drag to reorder.')}`}
         onPointerDown={(e) => onStepPointerDown(e, feature)}
         onPointerMove={onStepPointerMove}
         onPointerUp={(e) => onStepPointerUp(e, feature, index)}
@@ -246,12 +247,14 @@ export function Timeline({ onEdit }: { onEdit: () => void }) {
       key="marker"
       className="tl-marker"
       role="slider"
-      aria-label="History marker"
+      aria-label={t('History marker')}
       aria-valuemin={0}
       aria-valuemax={length}
       aria-valuenow={marker}
       tabIndex={0}
-      title="History marker. Drag it to roll the design back; steps to its right are not built."
+      title={t(
+        'History marker. Drag it to roll the design back; steps to its right are not built.',
+      )}
       onPointerDown={(e) => {
         if (e.button !== 0) return
         e.preventDefault()
@@ -289,20 +292,20 @@ export function Timeline({ onEdit }: { onEdit: () => void }) {
   const slots = slotsOf(length, spans)
 
   return (
-    <section className="design-timeline tl" aria-label="Timeline">
-      <div className="tl-playback" role="toolbar" aria-label="Playback">
-        <button title="Go to the start" onClick={() => store.setMarker(0)} disabled={!length}>
+    <section className="design-timeline tl" aria-label={t('Timeline')}>
+      <div className="tl-playback" role="toolbar" aria-label={t('Playback')}>
+        <button title={t('Go to the start')} onClick={() => store.setMarker(0)} disabled={!length}>
           ⏮
         </button>
         <button
-          title="Step back"
+          title={t('Step back')}
           onClick={() => store.setMarker(Math.max(0, marker - 1))}
           disabled={!length || marker === 0}
         >
           ◀
         </button>
         <button
-          title={playing ? 'Pause' : 'Play the history step by step'}
+          title={playing ? t('Pause') : t('Play the history step by step')}
           onClick={() => {
             if (!playing && marker >= length) store.setMarker(0)
             setPlaying(!playing)
@@ -312,23 +315,25 @@ export function Timeline({ onEdit }: { onEdit: () => void }) {
           {playing ? '⏸' : '▶'}
         </button>
         <button
-          title="Step forward"
+          title={t('Step forward')}
           onClick={() => store.setMarker(marker + 1)}
           disabled={!length || marker >= length}
         >
           ▶|
         </button>
         <button
-          title="Go to the end"
+          title={t('Go to the end')}
           onClick={() => store.setMarker(null)}
           disabled={!length || marker >= length}
         >
           ⏭
         </button>
       </div>
-      <div className="tl-strip" ref={stripRef} role="toolbar" aria-label="Steps">
+      <div className="tl-strip" ref={stripRef} role="toolbar" aria-label={t('Steps')}>
         {!length && (
-          <span className="tl-empty">Create a sketch or solid to begin the feature history.</span>
+          <span className="tl-empty">
+            {t('Create a sketch or solid to begin the feature history.')}
+          </span>
         )}
         {slots.map((slot) => {
           if (slot.kind === 'step') {
@@ -370,7 +375,7 @@ export function Timeline({ onEdit }: { onEdit: () => void }) {
             <div key={span.group.id} className="tl-group-open" onContextMenu={openMenu}>
               <button
                 className="tl-group-label"
-                title="Collapse this group"
+                title={t('Collapse this group')}
                 onClick={() => store.toggleGroup(span.group.id)}
               >
                 ▾ {span.group.name}
@@ -403,25 +408,25 @@ export function Timeline({ onEdit }: { onEdit: () => void }) {
 export function NavigationBar() {
   const state = useStore()
   return (
-    <div className="navigation-bar" aria-label="View navigation">
+    <div className="navigation-bar" aria-label={t('View navigation')}>
       <button
-        title="Home view"
+        title={t('Home view')}
         onClick={() => window.dispatchEvent(new CustomEvent('okc:view', { detail: 'iso' }))}
       >
         ⌂
       </button>
       <button
-        title="Fit view (Home)"
+        title={t('Fit view (Home)')}
         onClick={() => window.dispatchEvent(new CustomEvent('okc:fit'))}
       >
-        ⤢ Fit
+        {t('⤢ Fit')}
       </button>
       <GridSettings />
       <button
         aria-pressed={state.section.enabled}
         onClick={() => state.setSection({ enabled: !state.section.enabled })}
       >
-        Section
+        {t('Section')}
       </button>
     </div>
   )

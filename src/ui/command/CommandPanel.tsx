@@ -1,3 +1,4 @@
+import { t } from '../../i18n'
 import {
   useEffect,
   useId,
@@ -15,7 +16,6 @@ import {
   createCommandState,
   evaluateCommand,
   reduceCommand,
-  selectionSummary,
   type CommandAction,
   type CommandEvaluation,
   type CommandState,
@@ -162,17 +162,19 @@ function SelectionControl({
         aria-pressed={active}
         aria-labelledby={`${labelId} ${rowId}-summary`}
         data-state={waiting ? 'waiting' : picks.length ? 'filled' : 'empty'}
-        title={picks.map((pick) => pick.label).join(', ') || input.hint}
+        title={picks.map((pick) => pick.label).join(', ') || t(input.hint)}
         onClick={() => dispatch({ type: 'activate', id: input.id })}
       >
         <PickIcon />
-        <span id={`${rowId}-summary`}>{selectionSummary(input, picks)}</span>
+        <span id={`${rowId}-summary`}>
+          {picks.length ? t('{0} selected', picks.length) : t(input.prompt ?? 'Select')}
+        </span>
       </button>
       {input.clearable !== false && picks.length > 0 && (
         <button
           type="button"
           className="okc-cmd-clear"
-          aria-label={`Clear ${input.label}`}
+          aria-label={t('Clear {0}', t(input.label))}
           onClick={() => dispatch({ type: 'clear', id: input.id })}
         >
           <CrossIcon />
@@ -202,10 +204,10 @@ function ChoiceControl({
             type="button"
             role="radio"
             aria-checked={option.value === value}
-            title={option.hint}
+            title={t(option.hint)}
             onClick={() => dispatch({ type: 'choice', id: input.id, value: option.value })}
           >
-            {option.label}
+            {t(option.label)}
           </button>
         ))}
       </div>
@@ -219,8 +221,8 @@ function ChoiceControl({
       onChange={(event) => dispatch({ type: 'choice', id: input.id, value: event.target.value })}
     >
       {input.options.map((option) => (
-        <option key={option.value} value={option.value} title={option.hint}>
-          {option.label}
+        <option key={option.value} value={option.value} title={t(option.hint)}>
+          {t(option.label)}
         </option>
       ))}
     </select>
@@ -258,7 +260,7 @@ function ListControl({
     rows = []
   }
   if (!rows.length) {
-    return <p className="okc-cmd-list-empty">{input.empty ?? 'Nothing to choose yet.'}</p>
+    return <p className="okc-cmd-list-empty">{t(input.empty ?? 'Nothing to choose yet.')}</p>
   }
   const chosen = field?.kind === 'list' ? field.value : {}
   const valueOf = (row: ListRow) => chosen[row.id] ?? row.default ?? row.options[0]?.value ?? ''
@@ -287,7 +289,7 @@ function ListControl({
                 })
               }
             />
-            <span>{input.all}</span>
+            <span>{t(input.all)}</span>
           </label>
         )}
         {rows.map((row) => (
@@ -320,19 +322,19 @@ function ListControl({
     <div className="okc-cmd-list" role="group" aria-labelledby={labelId}>
       {input.all && rows.length > 1 && sameOptions(rows) && (
         <div className="okc-cmd-list-row" data-okc-list-all="true">
-          <span className="okc-cmd-list-label">{input.all}</span>
+          <span className="okc-cmd-list-label">{t(input.all)}</span>
           <div className="okc-cmd-segments">
             {rows[0].options.map((option) => (
               <button
                 key={option.value}
                 type="button"
                 aria-pressed={rows.every((row) => valueOf(row) === option.value)}
-                title={option.hint}
+                title={t(option.hint)}
                 onClick={() =>
                   dispatch({ type: 'row', id: input.id, rows: ids, value: option.value })
                 }
               >
-                {option.label}
+                {t(option.label)}
               </button>
             ))}
           </div>
@@ -350,12 +352,12 @@ function ListControl({
                 type="button"
                 role="radio"
                 aria-checked={valueOf(row) === option.value}
-                title={option.hint}
+                title={t(option.hint)}
                 onClick={() =>
                   dispatch({ type: 'row', id: input.id, rows: [row.id], value: option.value })
                 }
               >
-                {option.label}
+                {t(option.label)}
               </button>
             ))}
           </div>
@@ -407,7 +409,7 @@ function InputRow({ input, field, error, active, dispatch, rowId, values, contex
               <button
                 type="button"
                 tabIndex={-1}
-                aria-label={`Increase ${input.label}`}
+                aria-label={t('Increase {0}', t(input.label))}
                 onClick={() => dispatch({ type: 'step', id: input.id, delta: 1 })}
               >
                 <ChevronIcon collapsed={false} />
@@ -415,7 +417,7 @@ function InputRow({ input, field, error, active, dispatch, rowId, values, contex
               <button
                 type="button"
                 tabIndex={-1}
-                aria-label={`Decrease ${input.label}`}
+                aria-label={t('Decrease {0}', t(input.label))}
                 onClick={() => dispatch({ type: 'step', id: input.id, delta: -1 })}
               >
                 <ChevronIcon collapsed />
@@ -470,13 +472,13 @@ function InputRow({ input, field, error, active, dispatch, rowId, values, contex
       data-active={active ? 'true' : undefined}
       data-invalid={error ? 'true' : undefined}
     >
-      <span className="okc-cmd-label" id={labelId} title={input.hint}>
-        {input.label}
+      <span className="okc-cmd-label" id={labelId} title={t(input.hint)}>
+        {t(input.label)}
       </span>
       <div className="okc-cmd-control">{control}</div>
       {error && (
         <div className="okc-cmd-error" id={errorId} role="alert">
-          {error}
+          {t(error)}
         </div>
       )}
     </div>
@@ -673,7 +675,7 @@ export function CommandPanel(props: CommandPanelProps) {
       className={['okc-cmd', className].filter(Boolean).join(' ')}
       style={{ ...style, transform: `translate(${offset.x}px, ${offset.y}px)` }}
       role="dialog"
-      aria-label={spec.label}
+      aria-label={t(spec.label)}
       aria-describedby={collapsed ? undefined : hintId}
       data-okc-command={spec.id}
       data-collapsed={collapsed ? 'true' : undefined}
@@ -692,12 +694,12 @@ export function CommandPanel(props: CommandPanelProps) {
             {spec.icon}
           </span>
         )}
-        <span className="okc-cmd-name">{spec.label}</span>
+        <span className="okc-cmd-name">{t(spec.label)}</span>
         <button
           type="button"
           className="okc-cmd-collapse"
           aria-expanded={!collapsed}
-          aria-label={collapsed ? `Expand ${spec.label}` : `Collapse ${spec.label}`}
+          aria-label={collapsed ? t('Expand {0}', t(spec.label)) : t('Collapse {0}', t(spec.label))}
           onClick={toggleCollapsed}
         >
           <ChevronIcon collapsed={collapsed} />
@@ -706,7 +708,7 @@ export function CommandPanel(props: CommandPanelProps) {
       {!collapsed && (
         <>
           <p className="okc-cmd-hint" id={hintId}>
-            {spec.hint}
+            {t(spec.hint)}
           </p>
           <div className="okc-cmd-body">
             {spec.inputs.map((input, index) =>
@@ -727,7 +729,7 @@ export function CommandPanel(props: CommandPanelProps) {
           </div>
           {message && (
             <div className="okc-cmd-message" role="status" data-tone={tone}>
-              {message}
+              {t(message)}
             </div>
           )}
           <div className="okc-cmd-footer">
@@ -738,7 +740,7 @@ export function CommandPanel(props: CommandPanelProps) {
               disabled={!evaluation.valid}
               onClick={commit}
             >
-              {okLabel}
+              {t(okLabel)}
             </button>
             <button
               type="button"
@@ -746,7 +748,7 @@ export function CommandPanel(props: CommandPanelProps) {
               data-okc-action="cancel"
               onClick={cancel}
             >
-              {cancelLabel}
+              {t(cancelLabel)}
             </button>
           </div>
         </>

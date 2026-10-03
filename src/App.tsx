@@ -1,3 +1,4 @@
+import { t, useLanguage, counted } from './i18n'
 import { useEffect, useState } from 'react'
 import { Viewport } from './viewport/Viewport'
 import { BuildProgress } from './ui/BuildProgress'
@@ -24,6 +25,7 @@ import { ShareDialog } from './ui/ShareDialog'
 import './ui/share.css'
 
 export function App() {
+  useLanguage()
   const [hash, setHash] = useState(() => (isSharedView() ? location.hash : ''))
   useEffect(() => {
     const update = () => setHash(isSharedView() ? location.hash : '')
@@ -131,13 +133,13 @@ function EditorApp() {
           className={sheet === 'left' ? 'active' : ''}
           onClick={() => setSheet(sheet === 'left' ? null : 'left')}
         >
-          Parts
+          {t('Parts')}
         </button>
         <button
           className={sheet === 'right' ? 'active' : ''}
           onClick={() => setSheet(sheet === 'right' ? null : 'right')}
         >
-          Details
+          {t('Details')}
         </button>
       </div>
       <Inspector tab={inspectorTab} onTab={setInspectorTab} />
@@ -168,10 +170,10 @@ function EditorApp() {
               Open<span style={{ color: 'var(--accent)' }}>Kit</span>CAD
             </div>
             <div style={{ color: 'var(--text-dim)', fontSize: 12.5 }}>
-              {kernelError ?? 'Starting the geometry engine…'}
+              {t(kernelError ?? 'Starting the geometry engine…')}
               <br />
               <span style={{ color: 'var(--text-faint)' }}>
-                About 11 MB, and only the first time.
+                {t('About 11 MB, and only the first time.')}
               </span>
             </div>
           </div>
@@ -202,9 +204,10 @@ function SketchBanner() {
   return (
     <div className="sketch-banner">
       <strong>
-        Drawing on {sketch ? planeLabel(sketch.plane, units).toLowerCase() : 'a plane'}
+        {t('Drawing on ')}
+        {sketch ? t(planeLabel(sketch.plane, units)).toLocaleLowerCase() : t('a plane')}
       </strong>
-      <span style={{ color: 'var(--text-faint)' }}>{help[tool]}</span>
+      <span style={{ color: 'var(--text-faint)' }}>{t(help[tool])}</span>
     </div>
   )
 }
@@ -229,19 +232,21 @@ function StatusBar() {
 
   return (
     <div className="statusbar">
-      <span className="engine-state" title={`Last rebuild: ${buildMs} ms`}>
-        {building ? 'Updating geometry…' : '● Ready'}
+      <span className="engine-state" title={t('Last rebuild: {0} ms', buildMs)}>
+        {building ? t('Updating geometry…') : t('● Ready')}
       </span>
-      <span>
-        {shapes.length} shape{shapes.length === 1 ? '' : 's'}
+      <span>{counted(shapes.length, 'shape')}</span>
+      <span className="mesh-stat">
+        {triangles.toLocaleString()}
+        {t(' triangles')}
       </span>
-      <span className="mesh-stat">{triangles.toLocaleString()} triangles</span>
       {failures.length > 0 && (
         <span style={{ color: 'var(--err)' }}>
-          {failures.length} step{failures.length === 1 ? '' : 's'} need attention
+          {counted(failures.length, 'step')}
+          {t(' need attention')}
         </span>
       )}
-      {status && <span style={{ color: 'var(--warn)' }}>{status}</span>}
+      {status && <span style={{ color: 'var(--warn)' }}>{t(status)}</span>}
       <span className="spacer" />
       <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
         <input
@@ -249,7 +254,7 @@ function StatusBar() {
           checked={showPlacements}
           onChange={(e) => useStore.getState().setShowPlacements(e.target.checked)}
         />
-        Show catalogue parts
+        {t('Show catalogue parts')}
       </label>
       <label className="status-toggle">
         <input
@@ -257,9 +262,9 @@ function StatusBar() {
           checked={showFasteners}
           onChange={(e) => useStore.getState().setShowFasteners(e.target.checked)}
         />
-        Show screws
+        {t('Show screws')}
       </label>
-      <span>{UNIT_NAME[units].toLowerCase()}</span>
+      <span>{t(UNIT_NAME[units]).toLocaleLowerCase()}</span>
     </div>
   )
 }

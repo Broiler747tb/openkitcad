@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { useEffect, useState } from 'react'
 import { useStore } from '../doc/store'
 
@@ -45,7 +46,7 @@ export function BuildProgress() {
   return (
     <div className="build-progress" role="status" aria-live="polite">
       <div className="build-progress-text">
-        <span>{label}…</span>
+        <span>{t(label)}…</span>
         {seconds >= 2 && <span className="build-progress-time">{seconds}s</span>}
       </div>
       <div className="build-progress-track">

@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../doc/store'
 import { createShareLink } from '../doc/share'
@@ -22,19 +23,23 @@ export function ShareDialog({ onClose }: { onClose: () => void }) {
     <dialog
       ref={dialog}
       className="action-dialog share-dialog"
-      aria-label="Share model"
+      aria-label={t('Share model')}
       onCancel={onClose}
       onKeyDown={(e) => e.stopPropagation()}
     >
       <div>
-        <h2>Share {doc.name}</h2>
+        <h2>
+          {t('Share ')}
+          {doc.name}
+        </h2>
         <p className="sub">
-          A snapshot inside a link. Nothing is uploaded. Anyone with the link can view it, download
-          it or edit their own copy.
+          {t(
+            'A snapshot inside a link. Nothing is uploaded. Anyone with the link can view it, download it or edit their own copy.',
+          )}
         </p>
         {result.link ? (
           <>
-            <label htmlFor="share-link">Model link</label>
+            <label htmlFor="share-link">{t('Model link')}</label>
             <textarea
               id="share-link"
               ref={field}
@@ -44,8 +49,10 @@ export function ShareDialog({ onClose }: { onClose: () => void }) {
               onFocus={(e) => e.currentTarget.select()}
             />
             <p className="sub">
-              {result.link.length.toLocaleString()} characters. Some messengers may shorten long
-              links. Edits you make later won't change this snapshot.
+              {result.link.length.toLocaleString()}
+              {t(
+                " characters. Some messengers may shorten long links. Edits you make later won't change this snapshot.",
+              )}
             </p>
             <button
               className="btn primary"
@@ -60,19 +67,19 @@ export function ShareDialog({ onClose }: { onClose: () => void }) {
                 }
               }}
             >
-              Copy link
+              {t('Copy link')}
             </button>
           </>
         ) : (
-          <p className="msg info">{result.error}</p>
+          <p className="msg info">{t(result.error)}</p>
         )}
-        <p role="status">{notice}</p>
+        <p role="status">{t(notice)}</p>
         <div className="dialog-footer">
           <button className="btn" onClick={() => void saveDocument(doc)}>
-            Save .okc file
+            {t('Save .okc file')}
           </button>
           <button className="btn" onClick={onClose}>
-            Close
+            {t('Close')}
           </button>
         </div>
       </div>

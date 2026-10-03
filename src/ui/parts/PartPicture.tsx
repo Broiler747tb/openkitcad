@@ -1,3 +1,4 @@
+import { t } from '../../i18n'
 import { useCallback, useEffect, useRef } from 'react'
 import type { CataloguePart } from '../../catalogue'
 import { PartSketch } from './PartSketch'
@@ -79,7 +80,7 @@ export function PartPreview({
     <canvas
       ref={canvas}
       className={`part-preview ${className ?? ''}`}
-      title="Drag to turn it round. Double-click to reset the view."
+      title={t('Drag to turn it round. Double-click to reset the view.')}
       onPointerDown={(e) => {
         e.preventDefault()
         e.stopPropagation()

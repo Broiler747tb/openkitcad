@@ -1,3 +1,4 @@
+import { t, matchesTranslation } from '../i18n'
 import { useState } from 'react'
 import { groupActions } from './menuGroups'
 interface MenuItem {
@@ -20,7 +21,7 @@ export function FlyoutMenu<T extends MenuItem>({
 }) {
   const [query, setQuery] = useState('')
   const filtered = actions.filter((a) =>
-    [a.label, a.group, a.sub, a.hint].join(' ').toLowerCase().includes(query.toLowerCase()),
+    [a.label, a.group, a.sub, a.hint].some((text) => text && matchesTranslation(text, query)),
   )
   return (
     <div
@@ -42,28 +43,28 @@ export function FlyoutMenu<T extends MenuItem>({
       {actions.length > 7 && (
         <input
           className="action-search"
-          aria-label="Search actions"
-          placeholder="Find an action…"
+          aria-label={t('Search actions')}
+          placeholder={t('Find an action…')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
       )}
       {groupActions(filtered, order).map(([name, items]) => (
         <section className="action-group" key={name}>
-          <h4>{name}</h4>
+          <h4>{t(name)}</h4>
           {items.map((action) => (
             <button
               key={action.id}
               className={`sketch-menu-item ${action.danger ? 'danger' : ''}`}
               onClick={() => onPick(action)}
             >
-              <strong>{action.label}</strong>
-              {action.hint && <span>{action.hint}</span>}
+              <strong>{t(action.label)}</strong>
+              {action.hint && <span>{t(action.hint)}</span>}
             </button>
           ))}
         </section>
       ))}
-      {!filtered.length && <p className="hint">No matching actions.</p>}
+      {!filtered.length && <p className="hint">{t('No matching actions.')}</p>}
     </div>
   )
 }

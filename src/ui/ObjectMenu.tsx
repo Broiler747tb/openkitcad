@@ -34,7 +34,7 @@ import { setGrounded, updateJoint } from './command/specs/assemble'
 import { animateJoint } from './jointAnimation'
 import { motionDofs } from '../assembly/motion'
 import { bodyPick, elementPick, occurrencePick } from './command/picks'
-import { counted } from '../core/words'
+import { counted } from '../i18n'
 
 interface PromptField {
   label: string

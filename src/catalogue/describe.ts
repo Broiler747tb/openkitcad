@@ -1,5 +1,5 @@
 import { lengthLabel } from '../core/units'
-import { counted } from '../core/words'
+import { counted, t } from '../i18n'
 import type { LengthUnit } from '../doc/types'
 import { partBounds } from './placement'
 import type { CataloguePart } from './types'
@@ -31,15 +31,15 @@ export function holeSummary(part: CataloguePart, units: LengthUnit): string | nu
   if (!holes.length) return null
   const screws = [...new Set(holes.map((hole) => hole.screw).filter(Boolean))]
   const count = counted(holes.length, 'hole')
-  const fits = screws.length ? `${count} for ${screws.join(' and ')}` : count
+  const fits = screws.length ? t('{0} for {1}', count, screws.join(t(' and '))) : count
   if (holes.length === 2) {
     const [a, b] = holes
-    return `${fits}, ${lengthLabel(Math.hypot(a.x - b.x, a.y - b.y), units)} apart`
+    return t('{0}, {1} apart', fits, lengthLabel(Math.hypot(a.x - b.x, a.y - b.y), units))
   }
   const xs = holes.map((hole) => hole.x)
   const ys = holes.map((hole) => hole.y)
   if (holes.length === 4 && distinct(xs) === 2 && distinct(ys) === 2)
-    return `${fits}, ${sizes([spread(xs), spread(ys)], units)} apart`
+    return t('{0}, {1} apart', fits, sizes([spread(xs), spread(ys)], units))
   return fits
 }
 
@@ -67,7 +67,7 @@ function geometryFacts(part: CataloguePart, units: LengthUnit): PartFact[] {
     case 'screw':
       return [
         { label: 'Thread', value: `${g.thread} × ${mm(g.length)}` },
-        { label: 'Head', value: `${g.head}, ⌀ ${mm(g.headDiameter)}` },
+        { label: 'Head', value: `${t(g.head)}, ⌀ ${mm(g.headDiameter)}` },
       ]
     case 'insert':
       return [
@@ -76,7 +76,7 @@ function geometryFacts(part: CataloguePart, units: LengthUnit): PartFact[] {
       ]
     case 'standoff':
       return [
-        { label: 'Thread', value: `${g.thread}, ${g.style.replace('-', ' to ')}` },
+        { label: 'Thread', value: `${g.thread}, ${t(g.style.replace('-', ' to '))}` },
         { label: 'Across flats', value: mm(g.acrossFlats) },
       ]
     case 'motor':
@@ -88,12 +88,15 @@ function geometryFacts(part: CataloguePart, units: LengthUnit): PartFact[] {
       return [
         {
           label: 'Bore × outside',
-          value: `${sizes([g.innerDiameter, g.outerDiameter], units)}, ${mm(g.width)} wide`,
+          value: t('{0}, {1} wide', sizes([g.innerDiameter, g.outerDiameter], units), mm(g.width)),
         },
       ]
     case 'extrusion':
       return [
-        { label: 'Profile', value: `${sizes([g.size, g.size], units)}, ${g.slots ?? 4} slots` },
+        {
+          label: 'Profile',
+          value: t('{0}, {1} slots', sizes([g.size, g.size], units), g.slots ?? 4),
+        },
       ]
     case 'board':
       return []
@@ -120,11 +123,11 @@ export function partFacts(part: CataloguePart, units: LengthUnit): PartFact[] {
   const power = part.electrical
   if (power?.voltage?.length || power?.currentPeak != null || power?.currentTypical != null) {
     const parts = [
-      power.voltage?.length ? `${power.voltage.join(' or ')} V` : '',
+      power.voltage?.length ? `${power.voltage.join(t(' or '))} ${t('V')}` : '',
       power.currentPeak != null
-        ? `up to ${power.currentPeak} A`
+        ? t('up to {0} A', power.currentPeak)
         : power.currentTypical != null
-          ? `about ${power.currentTypical} A`
+          ? t('about {0} A', power.currentTypical)
           : '',
     ].filter(Boolean)
     facts.push({ label: 'Power', value: parts.join(', ') })

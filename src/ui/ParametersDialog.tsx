@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { useEffect, useRef, useState } from 'react'
 import { newId, useStore } from '../doc/store'
 import { parameterFields, resolveParameters } from '../doc/parameters'
@@ -64,31 +65,32 @@ export function ParametersDialog({ onClose }: { onClose: () => void }) {
       className="parameters-dialog"
       onCancel={onClose}
       onKeyDown={(e) => e.stopPropagation()}
-      aria-label="User parameters"
+      aria-label={t('User parameters')}
     >
       <header className="dialog-heading">
-        <h2>User parameters · fx</h2>
-        <button onClick={onClose} aria-label="Close parameters">
+        <h2>{t('User parameters · fx')}</h2>
+        <button onClick={onClose} aria-label={t('Close parameters')}>
           ×
         </button>
       </header>
       <p>
-        Persistent scalar formulas. Plain numbers are millimetres; type a unit (mm, cm, m, in, ft)
-        to use another. Angle links read values as degrees.
+        {t(
+          'Persistent scalar formulas. Plain numbers are millimetres; type a unit (mm, cm, m, in, ft) to use another. Angle links read values as degrees.',
+        )}
       </p>
-      <h3>Parameter table</h3>
+      <h3>{t('Parameter table')}</h3>
       <div className="parameter-table">
         <div className="parameter-row">
-          <b>Name</b>
-          <b>Expression</b>
-          <b>Value</b>
-          <b>Comment</b>
+          <b>{t('Name')}</b>
+          <b>{t('Expression')}</b>
+          <b>{t('Value')}</b>
+          <b>{t('Comment')}</b>
           <span />
         </div>
         {parameters.map((p, index) => (
           <div className="parameter-row" key={p.id}>
             <input
-              aria-label={`Parameter ${index + 1} name`}
+              aria-label={t('Parameter {0} name', index + 1)}
               value={p.name}
               onChange={(e) =>
                 setParameters(
@@ -97,7 +99,7 @@ export function ParametersDialog({ onClose }: { onClose: () => void }) {
               }
             />
             <input
-              aria-label={`Parameter ${index + 1} expression`}
+              aria-label={t('Parameter {0} expression', index + 1)}
               value={p.expression ?? String(p.value)}
               onChange={(e) =>
                 setParameters(
@@ -113,7 +115,7 @@ export function ParametersDialog({ onClose }: { onClose: () => void }) {
                   })}
             </output>
             <input
-              aria-label={`Parameter ${index + 1} comment`}
+              aria-label={t('Parameter {0} comment', index + 1)}
               value={p.comment ?? ''}
               onChange={(e) =>
                 setParameters(
@@ -122,7 +124,7 @@ export function ParametersDialog({ onClose }: { onClose: () => void }) {
               }
             />
             <button
-              aria-label={`Remove parameter ${p.name}`}
+              aria-label={t('Remove parameter {0}', p.name)}
               onClick={() => setParameters(parameters.filter((q) => q.id !== p.id))}
             >
               ×
@@ -130,47 +132,50 @@ export function ParametersDialog({ onClose }: { onClose: () => void }) {
           </div>
         ))}
       </div>
-      <button onClick={add}>Add parameter</button>
+      <button onClick={add}>{t('Add parameter')}</button>
       <p className="hint">
-        Examples: width = 80; depth = width/2; wall = 3mm. Lowercase names. + − * /, parentheses,
-        pi, mm/cm/m/in/ft. References may point to later rows. Rename referenced names in formulas
-        too.
+        {t(
+          'Examples: width = 80; depth = width/2; wall = 3mm. Lowercase names. + − * /, parentheses, pi, mm/cm/m/in/ft. References may point to later rows. Rename referenced names in formulas too.',
+        )}
       </p>
-      <h3>Printer fit classes</h3>
+      <h3>{t('Printer fit classes')}</h3>
       <p className="hint">
-        The gap each side of a fit, tuned to your printer. Saved in this browser for every design.
-        Snap fits, pins, lips and the other fits read them through the fit_ parameters above.
+        {t(
+          'The gap each side of a fit, tuned to your printer. Saved in this browser for every design. Snap fits, pins, lips and the other fits read them through the fit_ parameters above.',
+        )}
       </p>
       <div className="fit-class-table">
         {FIT_CLASSES.map((fit) => (
-          <label key={fit.value} className="fit-class-row" title={fit.hint}>
-            <span>{fit.label}</span>
+          <label key={fit.value} className="fit-class-row" title={t(fit.hint)}>
+            <span>{t(fit.label)}</span>
             <input
               type="number"
               min={0}
               max={2}
               step={0.05}
-              aria-label={`${fit.label} fit gap`}
+              aria-label={t('{0} fit gap', fit.label)}
               defaultValue={printer[fit.preference]}
               onChange={(e) => {
                 const value = e.target.valueAsNumber
                 if (Number.isFinite(value)) setPreference({ [fit.preference]: value })
               }}
             />
-            <span>mm</span>
-            <small>{fit.hint}</small>
+            <span>{t('mm')}</span>
+            <small>{t(fit.hint)}</small>
           </label>
         ))}
       </div>
-      <button onClick={useFits}>Use these gaps in this design</button>
-      <h3>Linked feature dimensions</h3>
+      <button onClick={useFits}>{t('Use these gaps in this design')}</button>
+      <h3>{t('Linked feature dimensions')}</h3>
       <p className="hint">
-        Numeric edits in Properties detach that field's link. Unlink keeps its last applied value.
+        {t(
+          "Numeric edits in Properties detach that field's link. Unlink keeps its last applied value.",
+        )}
       </p>
       {bindings.map((b, index) => (
         <div className="binding-row" key={index}>
           <select
-            aria-label={`Link ${index + 1} target`}
+            aria-label={t('Link {0} target', index + 1)}
             value={`${b.featureId}/${b.field}`}
             onChange={(e) => {
               const t = targets.find((candidate) => candidate.key === e.target.value)
@@ -189,7 +194,7 @@ export function ParametersDialog({ onClose }: { onClose: () => void }) {
             ))}
           </select>
           <input
-            aria-label={`Link ${index + 1} expression`}
+            aria-label={t('Link {0} expression', index + 1)}
             value={b.expression}
             onChange={(e) =>
               setBindings(
@@ -198,7 +203,7 @@ export function ParametersDialog({ onClose }: { onClose: () => void }) {
             }
           />
           <button onClick={() => setBindings(bindings.filter((_, i) => i !== index))}>
-            Unlink
+            {t('Unlink')}
           </button>
         </div>
       ))}
@@ -222,16 +227,18 @@ export function ParametersDialog({ onClose }: { onClose: () => void }) {
             ])
         }}
       >
-        Link dimension
+        {t('Link dimension')}
       </button>
-      {!targets.length && <p>Create a solid feature first, then link its dimensions here.</p>}
+      {!targets.length && (
+        <p>{t('Create a solid feature first, then link its dimensions here.')}</p>
+      )}
       {(error || failure) && (
         <p role="alert" className="problem">
-          {error || failure}
+          {t(error || failure)}
         </p>
       )}
       <footer className="dialog-footer">
-        <button onClick={onClose}>Cancel</button>
+        <button onClick={onClose}>{t('Cancel')}</button>
         <button
           className="primary-button"
           disabled={!!error}
@@ -247,7 +254,7 @@ export function ParametersDialog({ onClose }: { onClose: () => void }) {
             }
           }}
         >
-          Apply & rebuild
+          {t('Apply & rebuild')}
         </button>
       </footer>
     </dialog>

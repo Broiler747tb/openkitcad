@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { useEffect, useRef, useState } from 'react'
 
 export interface ConfirmRequest {
@@ -15,7 +16,9 @@ let present: ((pending: Pending) => void) | null = null
 
 export function ask(request: ConfirmRequest): Promise<boolean> {
   if (!present) {
-    return Promise.resolve(confirm([request.title, request.message].filter(Boolean).join('\n\n')))
+    return Promise.resolve(
+      confirm([t(request.title), t(request.message)].filter(Boolean).join('\n\n')),
+    )
   }
   const show = present
   return new Promise((resolve) => show({ ...request, resolve }))
@@ -73,11 +76,11 @@ function ConfirmDialog({
       }}
       onKeyDown={(event) => event.stopPropagation()}
     >
-      <h2 id="confirm-title">{request.title}</h2>
-      {request.message && <p className="hint">{request.message}</p>}
+      <h2 id="confirm-title">{t(request.title)}</h2>
+      {request.message && <p className="hint">{t(request.message)}</p>}
       <footer className="dialog-footer">
         <button ref={cancelRef} type="button" className="tb" onClick={() => onAnswer(false)}>
-          Cancel
+          {t('Cancel')}
         </button>
         <button
           ref={confirmRef}
@@ -85,7 +88,7 @@ function ConfirmDialog({
           className={`primary-button${request.danger ? ' danger' : ''}`}
           onClick={() => onAnswer(true)}
         >
-          {request.confirm}
+          {t(request.confirm)}
         </button>
       </footer>
     </dialog>

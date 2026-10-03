@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { useStore } from '../doc/store'
 import { selectedObjectActions, extrusionAction } from './workflow'
 import { chooseAction } from './ActionDialog'
@@ -10,14 +11,14 @@ export function SelectionActions() {
   const extrude = extrusionAction()
   return (
     <div className="selection-actions section">
-      <span className="eyebrow">ACTIONS FOR SELECTION</span>
+      <span className="eyebrow">{t('ACTIONS FOR SELECTION')}</span>
       {extrude && (
         <button
           className="primary-button"
-          title={extrude.hint}
+          title={t(extrude.hint)}
           onClick={() => chooseAction(extrude)}
         >
-          Extrude
+          {t('Extrude')}
         </button>
       )}
       <FlyoutMenu actions={actions} onPick={chooseAction} />
