@@ -108,6 +108,12 @@ interface AppState {
   busy: string | null
   setBusy: (busy: string | null) => void
   kernelReady: boolean
+  kernelError: string | null
+  setKernelError: (message: string | null) => void
+  autosaving: boolean
+  setAutosaving: (on: boolean) => void
+  commandOpen: boolean
+  setCommandOpen: (open: boolean) => void
 
   selection: Selection
   hovered: string | null
@@ -588,6 +594,9 @@ export const useStore = create<AppState>((set, get) => ({
   building: false,
   busy: null,
   kernelReady: false,
+  kernelError: null,
+  autosaving: false,
+  commandOpen: false,
 
   selection: { kind: 'none' },
   hovered: null,
@@ -658,7 +667,7 @@ export const useStore = create<AppState>((set, get) => ({
     lastMerge = null
     const state = get()
     const { past, doc, future } = state
-    if (past.length === 0) return
+    if (past.length === 0 || state.commandOpen) return
     const previous = past[past.length - 1]
     const active = state.activeSketch
     const activeSketch =
@@ -685,7 +694,7 @@ export const useStore = create<AppState>((set, get) => ({
     lastMerge = null
     const state = get()
     const { future, doc, past } = state
-    if (future.length === 0) return
+    if (future.length === 0 || state.commandOpen) return
     const next = future[0]
     const active = state.activeSketch
     const activeSketch =
@@ -744,6 +753,15 @@ export const useStore = create<AppState>((set, get) => ({
 
   setKernelReady(kernelReady) {
     set({ kernelReady })
+  },
+  setKernelError(kernelError) {
+    set({ kernelError })
+  },
+  setAutosaving(autosaving) {
+    set({ autosaving })
+  },
+  setCommandOpen(commandOpen) {
+    set({ commandOpen })
   },
   setTool(tool) {
     set({ tool })

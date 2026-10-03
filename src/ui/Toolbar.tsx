@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { activeSketchFeature, useStore, type ToolId } from '../doc/store'
 import { emptyDocument } from '../doc/types'
 import { openDocument, saveDocument } from '../doc/persist'
+import { replaceDesign } from '../doc/open'
 import { objectActions, type ObjectAction } from './ObjectMenu'
 import { selectedObjectActions } from './workflow'
 import { chooseAction } from './ActionDialog'
@@ -365,14 +366,15 @@ export function Toolbar({
     )
       return
     setPending(null)
+    useCommand.getState().cancel()
     s.setDoc(emptyDocument())
   }
   async function open() {
     try {
       const d = await openDocument()
       if (d) {
+        if (!(await replaceDesign(d))) return
         setPending(null)
-        useStore.getState().setDoc(d)
       }
     } catch (e) {
       state.setStatus(String(e))
@@ -713,7 +715,7 @@ export function Toolbar({
           className="quick-icon"
           title="Undo (Ctrl Z)"
           aria-label="Undo"
-          disabled={!state.past.length}
+          disabled={!state.past.length || state.commandOpen}
           onClick={state.undo}
         >
           ↶
@@ -722,7 +724,7 @@ export function Toolbar({
           className="quick-icon"
           title="Redo (Ctrl Y)"
           aria-label="Redo"
-          disabled={!state.future.length}
+          disabled={!state.future.length || state.commandOpen}
           onClick={state.redo}
         >
           ↷

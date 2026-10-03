@@ -103,6 +103,7 @@ export const useCommand = create<CommandStore>((set, get) => ({
     const links = linkedFields(spec, doc, editing)
     ticket++
     cancelPreview()
+    store.setCommandOpen(true)
     set({
       session: {
         spec,
@@ -176,6 +177,7 @@ export const useCommand = create<CommandStore>((set, get) => ({
     ticket++
     cancelPreview()
     set({ session: null, preview: null })
+    useStore.getState().setCommandOpen(false)
     const editing = session.context.editingFeatureId
     const kept = new Set(
       session.spec.inputs.flatMap((input) => {
@@ -223,5 +225,6 @@ export const useCommand = create<CommandStore>((set, get) => ({
     ticket++
     cancelPreview()
     set({ session: null, preview: null })
+    useStore.getState().setCommandOpen(false)
   },
 }))
