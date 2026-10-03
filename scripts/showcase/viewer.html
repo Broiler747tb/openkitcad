@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OpenKitCAD · Cartesian printer</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: #141c26;
+      color: #dae7ef;
+      font-family: system-ui, sans-serif;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+    }
+    #info {
+      position: fixed;
+      left: 28px;
+      top: 24px;
+      pointer-events: none;
+    }
+    #info b {
+      display: block;
+      font-size: 20px;
+      letter-spacing: -0.5px;
+    }
+    #info span {
+      display: block;
+      font-size: 12px;
+      color: #8b9aa8;
+      margin-top: 5px;
+    }
+    #tools {
+      position: fixed;
+      left: 28px;
+      bottom: 24px;
+      display: flex;
+      gap: 8px;
+    }
+    button {
+      background: #23303a;
+      border: 1px solid #3c505e;
+      border-radius: 6px;
+      padding: 8px 14px;
+      color: #dbe8ef;
+      cursor: pointer;
+    }
+    body.capture #info,
+    body.capture #tools {
+      display: none;
+    }
+  </style>
+  <div id="info">
+    <b>OpenKitCAD · Cartesian printer</b><span>Drag to rotate · scroll to zoom</span>
+  </div>
+  <div id="tools">
+    <button id="home">Front ¾</button><button id="back">Back ¾</button
+    ><button id="head">Toolhead</button><button id="bed">Under the bed</button>
+  </div>
+  <script type="module" src="./viewer.mjs"></script>
+</html>

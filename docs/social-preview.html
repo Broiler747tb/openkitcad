@@ -1,26 +1,121 @@
 <!doctype html>
 <html lang="en">
-<meta charset="utf-8">
-<title>OpenKitCAD — repository cover</title>
-<style>
-*{box-sizing:border-box}html,body{margin:0;width:1280px;height:640px;overflow:hidden;background:#151b22;color:#f6f8fa;font-family:"Segoe UI",Arial,sans-serif}
-.cover{position:relative;width:1280px;height:640px;background:radial-gradient(ellipse at 80% 40%,#234458 0%,#151b22 65%)}
-.screen{position:absolute;width:1280px;height:800px;object-fit:cover;left:235px;top:-75px;opacity:.95}
-.shade{position:absolute;inset:0;background:linear-gradient(90deg,#121920 0%,#121920f5 29%,#121920b0 42%,#12192000 62%),linear-gradient(0deg,#121920 0%,#12192000 30%,#12192000 77%,#121920bb 100%)}
-.copy{position:absolute;left:64px;top:173px}.brand{display:flex;align-items:center;gap:20px}h1{font-size:66px;line-height:1.08;letter-spacing:-3px;margin:0;font-weight:750}h1 span{color:#5bb9f5}.tagline{font-size:29px;line-height:1.35;margin:25px 0 0;letter-spacing:-.5px;color:#e0e8ef;max-width:410px}.formats{font-size:17px;letter-spacing:2.4px;font-weight:600;color:#8eabbf;margin-top:30px}.footer{position:absolute;left:64px;bottom:44px;display:flex;gap:15px;align-items:center;font-size:16px;letter-spacing:1.8px;font-weight:600;color:#afc3d2}.dot{width:4px;height:4px;border-radius:50%;background:#529fca}.line{position:absolute;bottom:0;left:0;width:100%;height:4px;background:linear-gradient(90deg,#1676c5,#62c4f8 62%,#1676c500)}
-</style>
-<div class="cover">
-<img class="screen" src="images/enclosure-dark.png" alt="Raspberry Pi 4 enclosure in OpenKitCAD">
-<div class="shade"></div>
-<div class="copy">
-<div class="brand">
-<svg viewBox="0 0 32 32" width="60" height="60" aria-label="OpenKitCAD logo"><rect x="1" y="1" width="30" height="30" rx="7" fill="#1676c5"/><path d="M7 15.5L16 20.5L25 15.5V24.5L16 29.5L7 24.5Z" fill="#fff" fill-opacity=".22"/><path d="M7 15.5L16 20.5L25 15.5M16 20.5V29.5M7 15.5V24.5L16 29.5L25 24.5V15.5" fill="none" stroke="#fff" stroke-width="1.7" stroke-linejoin="round"/><path d="M7 15.5L16 10.5L25 15.5" fill="none" stroke="#fff" stroke-width="1.7" stroke-linejoin="round" stroke-dasharray="2.2 1.8"/><path d="M16 10.5L20.5 4L29 8.5L25 15.5Z" fill="#fff" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg>
-<h1>OpenKit<span>CAD</span></h1>
-</div>
-<p class="tagline">CAD for the stuff<br>on your workbench.</p>
-<div class="formats">SKETCH · BUILD · PRINT</div>
-</div>
-<div class="footer">BROWSER <span class="dot"></span> WINDOWS PORTABLE <span class="dot"></span> OPEN SOURCE</div>
-<div class="line"></div>
-</div>
+  <meta charset="utf-8" />
+  <title>OpenKitCAD — repository cover</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    html,
+    body {
+      margin: 0;
+      width: 1280px;
+      height: 640px;
+      overflow: hidden;
+      background: #050708;
+      color: #f2f6f8;
+      font-family: 'Segoe UI', Arial, sans-serif;
+    }
+    .cover {
+      position: relative;
+      width: 1280px;
+      height: 640px;
+      overflow: hidden;
+    }
+    .model {
+      position: absolute;
+      left: 520px;
+      top: -25px;
+      width: 760px;
+      height: auto;
+      mask-image: linear-gradient(90deg, transparent, #000 17%);
+    }
+    .mark {
+      position: absolute;
+      left: 64px;
+      top: 66px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: #a0b4c1;
+      font-size: 17px;
+    }
+    .text {
+      position: absolute;
+      left: 64px;
+      top: 239px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 68px;
+      line-height: 1;
+      letter-spacing: -2.5px;
+      font-weight: 700;
+    }
+    h1 span {
+      color: #72c6d7;
+    }
+    p {
+      margin: 25px 0 0;
+      font-size: 25px;
+      color: #c3d0d7;
+      line-height: 1.5;
+    }
+    .formats {
+      margin-top: 23px;
+      color: #7e929f;
+      font-size: 17px;
+      letter-spacing: 2px;
+    }
+    .platforms {
+      position: absolute;
+      left: 64px;
+      bottom: 65px;
+      font-size: 17px;
+      color: #94a9b7;
+      letter-spacing: 1.4px;
+    }
+    .platforms b {
+      font-weight: 500;
+      color: #deebf1;
+    }
+  </style>
+  <div class="cover">
+    <img class="model" src="images/printer.png" alt="An original Cartesian 3D printer assembly" />
+    <div class="mark">
+      <svg viewBox="0 0 32 32" width="42" height="42" aria-label="OpenKitCAD logo">
+        <rect x="1" y="1" width="30" height="30" rx="7" fill="#1676c5" />
+        <path d="M7 15.5L16 20.5L25 15.5V24.5L16 29.5L7 24.5Z" fill="#fff" fill-opacity=".22" />
+        <path
+          d="M7 15.5L16 20.5L25 15.5M16 20.5V29.5M7 15.5V24.5L16 29.5L25 24.5V15.5"
+          fill="none"
+          stroke="#fff"
+          stroke-width="1.7"
+          stroke-linejoin="round"
+        />
+        <path
+          d="M7 15.5L16 10.5L25 15.5"
+          fill="none"
+          stroke="#fff"
+          stroke-width="1.7"
+          stroke-linejoin="round"
+          stroke-dasharray="2.2 1.8"
+        />
+        <path
+          d="M16 10.5L20.5 4L29 8.5L25 15.5Z"
+          fill="#fff"
+          stroke="#fff"
+          stroke-width="1.2"
+          stroke-linejoin="round"
+        />
+      </svg>
+      <span>Open source. On your workbench.</span>
+    </div>
+    <div class="text">
+      <h1>OpenKit<span>CAD</span></h1>
+      <p>CAD for 3D printing<br />and the hardware inside.</p>
+      <div class="formats">STEP &nbsp;·&nbsp; STL &nbsp;·&nbsp; 3MF</div>
+    </div>
+    <div class="platforms"><b>BROWSER</b> &nbsp;/&nbsp; <b>WINDOWS PORTABLE</b></div>
+  </div>
 </html>

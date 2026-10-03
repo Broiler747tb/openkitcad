@@ -44,6 +44,17 @@ Parts are marked **datasheet**, **measured**, or **approximate**. Their source n
 
 </details>
 
+<details>
+<summary>The printer from the cover</summary>
+
+![A Cartesian printer with dual Z screws, linear rails and a direct-drive toolhead](docs/images/printer.png)
+
+[Open this assembly](examples/cartesian-printer.okc?raw=true) with File → Open.
+It includes the frame, drives, hotend, cooling ducts, wiring and electronics.
+The `.okc` contains mesh bodies; [the generator](scripts/showcase) also exports solid STEP geometry.
+
+</details>
+
 ## Your files
 
 Designs stay on your machine. Autosave uses the browser's storage; **Save** gives you an `.okc` file you can keep or move to another computer. Share links carry the design in the link itself.
