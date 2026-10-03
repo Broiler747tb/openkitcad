@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { useEffect, useId, useState } from 'react'
 import { useStore } from '../doc/store'
 import { quantity } from '../core/quantity'
@@ -39,7 +40,7 @@ export function NumberInput({
   }
   return (
     <div className="row">
-      <label htmlFor={id}>{label}</label>
+      <label htmlFor={id}>{t(label)}</label>
       <input
         id={id}
         type="text"

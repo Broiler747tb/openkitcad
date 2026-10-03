@@ -1,3 +1,5 @@
+import { t } from '../i18n'
+import { partSummary } from './parts/translation'
 import { useEffect, useState } from 'react'
 import { SelectionActions } from './SelectionActions'
 import { PrecisionSketchTools } from './PrecisionTools'
@@ -29,7 +31,7 @@ import { poseOf, withPose, type Pose } from '../doc/placement'
 import { DesignChecks } from './DesignChecks'
 import { NumberInput as Num } from './NumberInput'
 import { lengthLabel, volumeLabel } from '../core/units'
-import { counted } from '../core/words'
+import { counted } from '../i18n'
 
 function SketchOptions() {
   const values = usePreferences((s) => s.values)
@@ -38,22 +40,24 @@ function SketchOptions() {
   const sketch = activeSketchFeature(store)
   const selected = store.sketchSelection.filter((t) => t.kind === 'entity')
   const option = (key: keyof typeof values, label: string, hint: string) => (
-    <label className="sketch-option" title={hint}>
+    <label className="sketch-option" title={t(hint)}>
       <input
         type="checkbox"
         checked={values[key] as boolean}
         onChange={(e) => setPreference({ [key]: e.target.checked })}
       />
-      {label}
+      {t(label)}
     </label>
   )
   return (
     <section className="section sketch-options">
-      <h3>Options</h3>
+      <h3>{t('Options')}</h3>
       <div className="sketch-linetype">
-        <span>Linetype</span>
+        <span>{t('Linetype')}</span>
         <button
-          title="Construction - turns the selected curves into guides that are not part of any profile"
+          title={t(
+            'Construction - turns the selected curves into guides that are not part of any profile',
+          )}
           disabled={!selected.length}
           onClick={() => {
             store.editSketch((draft) => {
@@ -64,22 +68,22 @@ function SketchOptions() {
             })
           }}
         >
-          ┄ Construction
+          {t('┄ Construction')}
         </button>
         <button
-          title="Fix/UnFix - pins the selection where it is, or releases it"
+          title={t('Fix/UnFix - pins the selection where it is, or releases it')}
           disabled={!store.sketchSelection.length}
           onClick={() => startConstraintTool('fix')}
         >
-          🔒 Fix/UnFix
+          {t('🔒 Fix/UnFix')}
         </button>
       </div>
       <button
         className="btn sketch-look-at"
-        title="Look At - turns the view to face the sketch"
+        title={t('Look At - turns the view to face the sketch')}
         onClick={() => window.dispatchEvent(new CustomEvent('okc:look-at'))}
       >
-        Look At
+        {t('Look At')}
       </button>
       {option('gridVisible', 'Sketch Grid', 'Shows the grid on the sketch plane.')}
       {option('snapGrid', 'Snap', 'Clicks land on the grid when nothing else is near.')}
@@ -92,13 +96,17 @@ function SketchOptions() {
         <p className="hint">
           {store.sketchStatus
             ? store.sketchStatus.dof === 0
-              ? 'Fully constrained.'
-              : `${store.sketchStatus.dof} degree${store.sketchStatus.dof === 1 ? '' : 's'} of freedom left.`
+              ? t('Fully constrained.')
+              : t(
+                  '{0} degree{1} of freedom left.',
+                  store.sketchStatus.dof,
+                  store.sketchStatus.dof === 1 ? '' : 's',
+                )
             : ''}
         </p>
       )}
       <button className="btn finish-sketch-palette" onClick={() => store.closeSketch()}>
-        ✓ Finish Sketch
+        {t('✓ Finish Sketch')}
       </button>
     </section>
   )
@@ -118,18 +126,18 @@ export function Inspector({
   if (activeSketch) {
     return (
       <div className="panel-right">
-        <div className="panel-caption">SKETCH PALETTE</div>
+        <div className="panel-caption">{t('SKETCH PALETTE')}</div>
         <SketchOptions />
         <details className="sketch-panel-group">
-          <summary>Sketch workshop</summary>
+          <summary>{t('Sketch workshop')}</summary>
           <SketchPowerTools key={activeSketch.featureId} />
         </details>
         <details className="sketch-panel-group">
-          <summary>Pointer coordinates & polar input</summary>
+          <summary>{t('Pointer coordinates & polar input')}</summary>
           <PrecisionSketchTools />
         </details>
         <details className="sketch-panel-group">
-          <summary>Selection dimensions & constraints</summary>
+          <summary>{t('Selection dimensions & constraints')}</summary>
           <SketchSelectionPanel />
         </details>
       </div>
@@ -140,20 +148,24 @@ export function Inspector({
     <div className="panel-right">
       {errors.length > 0 && (
         <div className="section">
-          <h3>Needs attention</h3>
+          <h3>{t('Needs attention')}</h3>
           {errors.map((e, i) => (
             <div className={`msg ${e.severity === 'warning' ? 'warn' : 'error'}`} key={i}>
-              <strong>{e.message}</strong>
-              {e.hint && <em>{e.hint}</em>}
+              <strong>{t(e.message)}</strong>
+              {e.hint && <em>{t(e.hint)}</em>}
             </div>
           ))}
         </div>
       )}
 
       <div className="tabs inspector-tabs">
-        {(['properties', 'actions', 'checks'] as const).map((t) => (
-          <button className={tab === t ? 'active' : ''} key={t} onClick={() => onTab(t)}>
-            {t === 'properties' ? 'Properties' : t === 'actions' ? 'Actions' : 'Checks'}
+        {(['properties', 'actions', 'checks'] as const).map((item) => (
+          <button className={tab === item ? 'active' : ''} key={item} onClick={() => onTab(item)}>
+            {item === 'properties'
+              ? t('Properties')
+              : item === 'actions'
+                ? t('Actions')
+                : t('Checks')}
           </button>
         ))}
       </div>
@@ -164,7 +176,7 @@ export function Inspector({
         <>
           <SelectionActions />
           {selection.kind === 'none' && (
-            <div className="empty">Select a body or hardware part to see its actions.</div>
+            <div className="empty">{t('Select a body or hardware part to see its actions.')}</div>
           )}
         </>
       ) : (
@@ -185,16 +197,16 @@ export function Inspector({
           )}
           {selection.kind === 'none' && (
             <div className="section">
-              <h3>Nothing selected</h3>
+              <h3>{t('Nothing selected')}</h3>
               <p className="hint">
-                Click a part in the 3D view or in the list on the left to change it.
+                {t('Click a part in the 3D view or in the list on the left to change it.')}
               </p>
             </div>
           )}
 
           {selection.kind !== 'none' && (
             <button className="inspector-action-link" onClick={() => onTab('actions')}>
-              Show all actions for this selection →
+              {t('Show all actions for this selection →')}
             </button>
           )}
         </>
@@ -222,8 +234,10 @@ function JointPanel({ feature }: { feature: JointFeature }) {
   return (
     <>
       <p className="hint" style={{ marginTop: 0 }}>
-        {motion?.label ?? 'Joint'} between {owner(feature.one.occurrencePath)} and{' '}
-        {owner(feature.two.occurrencePath)}. {motion?.hint}
+        {t(motion?.label ?? 'Joint')}
+        {t(' between ')}
+        {owner(feature.one.occurrencePath)}
+        {t(' and')} {owner(feature.two.occurrencePath)}. {t(motion?.hint)}
       </p>
       {dofs.map((dof, index) => {
         const unit = dof.kind === 'rotate' ? '°' : 'mm'
@@ -253,11 +267,11 @@ function JointPanel({ feature }: { feature: JointFeature }) {
                   setLimit(index, { min: e.target.checked ? current[index] - span : undefined })
                 }
               />
-              Minimum
+              {t('Minimum')}
             </label>
             {limit.min !== undefined && (
               <Num
-                label="Minimum"
+                label={t('Minimum')}
                 value={limit.min}
                 suffix={unit}
                 onChange={(value) => setLimit(index, { min: value })}
@@ -271,11 +285,11 @@ function JointPanel({ feature }: { feature: JointFeature }) {
                   setLimit(index, { max: e.target.checked ? current[index] + span : undefined })
                 }
               />
-              Maximum
+              {t('Maximum')}
             </label>
             {limit.max !== undefined && (
               <Num
-                label="Maximum"
+                label={t('Maximum')}
                 value={limit.max}
                 suffix={unit}
                 onChange={(value) => setLimit(index, { max: value })}
@@ -291,10 +305,10 @@ function JointPanel({ feature }: { feature: JointFeature }) {
             checked={!!feature.locked}
             onChange={(e) => setProblem(updateJoint(feature.id, { locked: e.target.checked }))}
           />
-          Lock
+          {t('Lock')}
         </label>
       )}
-      {problem && <p className="hint error">{problem}</p>}
+      {problem && <p className="hint error">{t(problem)}</p>}
       {dofs.length > 0 && !feature.locked && (
         <button
           className="btn"
@@ -309,11 +323,11 @@ function JointPanel({ feature }: { feature: JointFeature }) {
             }
           }}
         >
-          {animating ? 'Click anywhere to stop' : 'Animate Joint'}
+          {animating ? t('Click anywhere to stop') : t('Animate Joint')}
         </button>
       )}
       <button className="btn primary" onClick={() => editFeature(feature)}>
-        Edit Joint
+        {t('Edit Joint')}
       </button>
     </>
   )
@@ -364,15 +378,15 @@ function OccurrenceInspector({ id, instanceId }: { id: string; instanceId?: stri
         <h3>{occurrence.name}</h3>
         {part && (
           <p className="hint" style={{ marginTop: 0 }}>
-            {part.summary}
+            {partSummary(part)}
           </p>
         )}
         {part?.family && versions.length > 1 && (
           <div className="row">
-            <label>Version</label>
+            <label>{t('Version')}</label>
             <select
-              aria-label="Part version"
-              title="Swap this part for another version. Its position is kept."
+              aria-label={t('Part version')}
+              title={t('Swap this part for another version. Its position is kept.')}
               value={part.id}
               onChange={(e) => store.swapCataloguePart(component.id, e.target.value)}
             >
@@ -385,29 +399,29 @@ function OccurrenceInspector({ id, instanceId }: { id: string; instanceId?: stri
           </div>
         )}
         <Num
-          label="Across (X)"
+          label={t('Across (X)')}
           value={pose.position[0]}
           onChange={(v) => setPose({ position: [v, pose.position[1], pose.position[2]] })}
         />
         <Num
-          label="Along (Y)"
+          label={t('Along (Y)')}
           value={pose.position[1]}
           onChange={(v) => setPose({ position: [pose.position[0], v, pose.position[2]] })}
         />
         <Num
-          label="Height (Z)"
+          label={t('Height (Z)')}
           value={pose.position[2]}
           onChange={(v) => setPose({ position: [pose.position[0], pose.position[1], v] })}
         />
         <Num
-          label="Turn"
+          label={t('Turn')}
           value={pose.turn}
           step={15}
           suffix="°"
           onChange={(v) => setPose({ turn: v })}
         />
         <div className="row">
-          <label>Upside down</label>
+          <label>{t('Upside down')}</label>
           <input
             type="checkbox"
             checked={pose.flipped}
@@ -417,12 +431,14 @@ function OccurrenceInspector({ id, instanceId }: { id: string; instanceId?: stri
         {source.kind === 'catalogue' && part && hasHeaderChoice(part) && (
           <div
             className="row"
-            title="Soldered pin headers. Untick for a board sold bare or soldered flat; tick to add them to one sold without."
+            title={t(
+              'Soldered pin headers. Untick for a board sold bare or soldered flat; tick to add them to one sold without.',
+            )}
           >
-            <label>Pin headers</label>
+            <label>{t('Pin headers')}</label>
             <input
               type="checkbox"
-              aria-label="Pin headers fitted"
+              aria-label={t('Pin headers fitted')}
               checked={source.headers ?? headersFitted(part)}
               onChange={(e) =>
                 store.updateComponent(component.id, {
@@ -434,7 +450,7 @@ function OccurrenceInspector({ id, instanceId }: { id: string; instanceId?: stri
         )}
         {source.kind === 'catalogue' && part?.geometry.kind === 'extrusion' && (
           <Num
-            label="Length"
+            label={t('Length')}
             value={source.overrides?.length ?? part.geometry.length}
             step={10}
             min={10}
@@ -448,34 +464,41 @@ function OccurrenceInspector({ id, instanceId }: { id: string; instanceId?: stri
       </div>
 
       <div className="section">
-        <h3>Component</h3>
+        <h3>{t('Component')}</h3>
         <button
           className="btn"
-          title="Another occurrence of the same component. Changing one changes both."
+          title={t('Another occurrence of the same component. Changing one changes both.')}
           onClick={() => store.linkedCopy(id)}
         >
-          Linked Copy
-          <small>Another occurrence of {component.name} beside this one</small>
+          {t('Linked Copy')}
+          <small>
+            {t('Another occurrence of ')}
+            {component.name}
+            {t(' beside this one')}
+          </small>
         </button>
         {source.kind === 'design' && (
           <button
             className="btn"
             disabled={activeComponentId === component.id}
-            title="New sketches, bodies and features go into the active component."
+            title={t('New sketches, bodies and features go into the active component.')}
             onClick={() => store.activateComponent(component.id)}
           >
-            {activeComponentId === component.id ? 'Active component' : 'Activate Component'}
-            <small>New sketches, bodies and features go into {component.name}</small>
+            {activeComponentId === component.id ? t('Active component') : t('Activate Component')}
+            <small>
+              {t('New sketches, bodies and features go into ')}
+              {component.name}
+            </small>
           </button>
         )}
       </div>
 
       {part && (
         <div className="section">
-          <h3>Build around this part</h3>
+          <h3>{t('Build around this part')}</h3>
           {bodies.length > 1 && (
             <div className="row">
-              <label>Into</label>
+              <label>{t('Into')}</label>
               <select value={body} onChange={(e) => setTargetBody(e.target.value)}>
                 {bodies.map((b) => (
                   <option key={b.value} value={b.value}>
@@ -491,17 +514,21 @@ function OccurrenceInspector({ id, instanceId }: { id: string; instanceId?: stri
             disabled={!part.mountingHoles?.length}
             onClick={() => generate('holes')}
           >
-            Mounting holes
+            {t('Mounting holes')}
             <small>
               {part.mountingHoles?.length
-                ? `${counted(part.mountingHoles.length, 'hole')}, sized for ${part.mountingHoles[0].screw ?? 'the screws'}, cut right through`
-                : 'This part has no mounting holes'}
+                ? t(
+                    '{0}, sized for {1}, cut right through',
+                    counted(part.mountingHoles.length, 'hole'),
+                    part.mountingHoles[0].screw ?? 'the screws',
+                  )
+                : t('This part has no mounting holes')}
             </small>
           </button>
 
           {!!part.mountingHoles?.length && (
             <Num
-              label="Pillar height"
+              label={t('Pillar height')}
               value={pillarHeight}
               min={0.5}
               onChange={setStandoffHeight}
@@ -512,11 +539,17 @@ function OccurrenceInspector({ id, instanceId }: { id: string; instanceId?: stri
             disabled={!part.mountingHoles?.length}
             onClick={() => generate('standoffs')}
           >
-            Standoffs
+            {t('Standoffs')}
             <small>
               {standoffHeight === null
-                ? `Printed pillars ${lengthLabel(pillarHeight, doc.units)} tall under each hole, which is where the board is sitting`
-                : `Printed pillars ${lengthLabel(pillarHeight, doc.units)} tall under each hole, bored for a self-tapping screw`}
+                ? t(
+                    'Printed pillars {0} tall under each hole, which is where the board is sitting',
+                    lengthLabel(pillarHeight, doc.units),
+                  )
+                : t(
+                    'Printed pillars {0} tall under each hole, bored for a self-tapping screw',
+                    lengthLabel(pillarHeight, doc.units),
+                  )}
             </small>
           </button>
 
@@ -525,14 +558,18 @@ function OccurrenceInspector({ id, instanceId }: { id: string; instanceId?: stri
             disabled={!part.connectors?.length}
             onClick={() => generate('ports')}
           >
-            Port openings
+            {t('Port openings')}
             <small>
               {part.connectors?.length
-                ? `Cuts openings for ${part.connectors
-                    .map((c) => c.label)
-                    .slice(0, 3)
-                    .join(', ')}${part.connectors.length > 3 ? '…' : ''}`
-                : 'This part has no connectors listed'}
+                ? t(
+                    'Cuts openings for {0}{1}',
+                    part.connectors
+                      .map((c) => c.label)
+                      .slice(0, 3)
+                      .join(', '),
+                    part.connectors.length > 3 ? '…' : '',
+                  )
+                : t('This part has no connectors listed')}
             </small>
           </button>
         </div>
@@ -540,16 +577,26 @@ function OccurrenceInspector({ id, instanceId }: { id: string; instanceId?: stri
 
       {part && (
         <div className="section">
-          <h3>About this part</h3>
+          <h3>{t('About this part')}</h3>
           <div className={`msg ${part.confidence === 'approximate' ? 'warn' : 'info'}`}>
-            <strong>{CONFIDENCE_LABEL[part.confidence]}</strong>
+            <strong>{t(CONFIDENCE_LABEL[part.confidence])}</strong>
             <em>{part.source}</em>
           </div>
           {part.electrical && (
             <p className="hint" style={{ marginTop: 0 }}>
-              {part.electrical.voltage && <>Runs on {part.electrical.voltage.join(' or ')} V. </>}
+              {part.electrical.voltage && (
+                <>
+                  {t('Runs on ')}
+                  {part.electrical.voltage.join(' or ')}
+                  {t(' V. ')}
+                </>
+              )}
               {part.electrical.currentPeak != null && (
-                <>Draws up to {part.electrical.currentPeak} A. </>
+                <>
+                  {t('Draws up to ')}
+                  {part.electrical.currentPeak}
+                  {t(' A. ')}
+                </>
               )}
               {part.electrical.note}
             </p>
@@ -594,7 +641,7 @@ function BodyInspector({ id, instanceId }: { id: string; instanceId?: string }) 
       <div className="section">
         <h3>{body.name}</h3>
         <div className="row">
-          <label>Name</label>
+          <label>{t('Name')}</label>
           <input
             value={body.name}
             onChange={(e) => store.updateBody(id, { name: e.target.value })}
@@ -605,29 +652,35 @@ function BodyInspector({ id, instanceId }: { id: string; instanceId?: string }) 
             {show(size[0])} × {show(size[1])} × {show(size[2])} {units}
             <br />
             {mesh.kind === 'mesh' && !mesh.watertight
-              ? 'Open mesh, so it has no volume'
+              ? t('Open mesh, so it has no volume')
               : mesh.kind === 'surface'
-                ? 'Surface body, so it has no volume'
-                : `${volumeLabel(mesh.volume, units)} of material`}
+                ? t('Surface body, so it has no volume')
+                : t('{0} of material', volumeLabel(mesh.volume, units))}
           </p>
         )}
         {mesh?.kind === 'mesh' && (
           <p className="hint" style={{ marginTop: 0 }}>
-            Mesh body: {(mesh.mesh.triangles.length / 3).toLocaleString()} triangles
-            {mesh.pieces && mesh.pieces > 1 ? `, ${mesh.pieces} loose pieces` : ''}.{' '}
-            {mesh.watertight ? 'Watertight.' : 'It has open edges; Repair closes small holes.'}
+            {t('Mesh body: ')}
+            {(mesh.mesh.triangles.length / 3).toLocaleString()}
+            {t(' triangles')}
+            {mesh.pieces && mesh.pieces > 1 ? t(', {0} loose pieces', mesh.pieces) : ''}.{' '}
+            {mesh.watertight
+              ? t('Watertight.')
+              : t('It has open edges; Repair closes small holes.')}
           </p>
         )}
         {mesh?.kind === 'solid' && !!mesh.pieces && mesh.pieces > 1 && (
           <p className="hint" style={{ marginTop: 0 }}>
-            {mesh.pieces} separate pieces that do not touch. Anything floating falls over when you
-            print it.
+            {mesh.pieces}
+            {t(
+              ' separate pieces that do not touch. Anything floating falls over when you print it.',
+            )}
           </p>
         )}
       </div>
 
       <div className="section" hidden={mesh?.kind === 'mesh'}>
-        <h3>Quick actions</h3>
+        <h3>{t('Quick actions')}</h3>
         {objectActions({ kind: 'body', id })
           .filter((a) =>
             (mesh?.kind === 'surface'
@@ -637,8 +690,8 @@ function BodyInspector({ id, instanceId }: { id: string; instanceId?: string }) 
           )
           .map((action) => (
             <button key={action.id} className="btn" onClick={() => chooseAction(action)}>
-              {action.label}
-              <small>{action.hint}</small>
+              {t(action.label)}
+              <small>{t(action.hint)}</small>
             </button>
           ))}
       </div>
@@ -668,11 +721,13 @@ function FeatureInspector({ featureId }: { featureId: string }) {
       {feature.kind === 'sketch' && (
         <>
           <p className="hint" style={{ marginTop: 0 }}>
-            {feature.sketch.entities.length} line
-            {feature.sketch.entities.length === 1 ? '' : 's'} drawn.
+            {feature.sketch.entities.length}
+            {t(' line')}
+            {feature.sketch.entities.length === 1 ? '' : 's'}
+            {t(' drawn.')}
           </p>
           <button className="btn primary" onClick={() => store.openSketch(featureId)}>
-            Edit this sketch
+            {t('Edit this sketch')}
           </button>
         </>
       )}
@@ -682,18 +737,19 @@ function FeatureInspector({ featureId }: { featureId: string }) {
       {feature.kind === 'jointOrigin' && (
         <>
           <p className="hint" style={{ marginTop: 0 }}>
-            A saved snap point on {component?.name ?? 'a component'}. Joints that use it follow it
-            when it changes.
+            {t('A saved snap point on ')}
+            {component?.name ?? t('a component')}
+            {t('. Joints that use it follow it when it changes.')}
           </p>
           <button className="btn primary" onClick={() => editFeature(feature)}>
-            Edit Joint Origin
+            {t('Edit Joint Origin')}
           </button>
         </>
       )}
 
       {feature.kind === 'rigidGroup' && (
         <p className="hint" style={{ marginTop: 0 }}>
-          Holds{' '}
+          {t('Holds')}{' '}
           {feature.members
             .map((path) =>
               path.length
@@ -701,51 +757,53 @@ function FeatureInspector({ featureId }: { featureId: string }) {
                 : doc.name || 'the top design',
             )
             .join(', ')}{' '}
-          together.
+          {t('together.')}
         </p>
       )}
 
       {feature.kind === 'motionStudy' && (
         <>
           <p className="hint" style={{ marginTop: 0 }}>
-            {feature.tracks.length} joint{feature.tracks.length === 1 ? '' : 's'} over{' '}
-            {counted(feature.steps, 'step')}.
+            {feature.tracks.length}
+            {t(' joint')}
+            {feature.tracks.length === 1 ? '' : 's'}
+            {t(' over')} {counted(feature.steps, 'step')}.
           </p>
           <button className="btn primary" onClick={() => editFeature(feature)}>
-            Play and edit
+            {t('Play and edit')}
           </button>
         </>
       )}
 
       {feature.kind === 'motionLink' && (
         <p className="hint" style={{ marginTop: 0 }}>
-          {findFeature(doc, feature.a.jointId)?.name ?? 'A missing joint'} drives{' '}
-          {findFeature(doc, feature.b.jointId)?.name ?? 'a missing joint'} at a ratio of{' '}
-          {fmt(feature.ratio)}.
+          {findFeature(doc, feature.a.jointId)?.name ?? t('A missing joint')}
+          {t(' drives')} {findFeature(doc, feature.b.jointId)?.name ?? t('a missing joint')}
+          {t(' at a ratio of')} {fmt(feature.ratio)}.
         </p>
       )}
 
       {feature.kind === 'extrude' && (
         <>
           <Num
-            label="Thickness"
+            label={t('Thickness')}
             value={feature.distance}
             onChange={(v) => {
               if (v) patch({ distance: v } as Partial<Feature>)
             }}
           />
           <div className="row">
-            <label>Direction</label>
+            <label>{t('Direction')}</label>
             <select
               value={feature.reverse ? 'down' : 'up'}
               onChange={(e) => patch({ reverse: e.target.value === 'down' } as Partial<Feature>)}
             >
-              <option value="up">Upwards</option>
-              <option value="down">Downwards</option>
+              <option value="up">{t('Upwards')}</option>
+              <option value="down">{t('Downwards')}</option>
             </select>
           </div>
           <div className="row">
-            <label title="New Body, Join or Cut">Operation</label>
+            <label title={t('New Body, Join or Cut')}>{t('Operation')}</label>
             <select
               value={resultValue(feature.result)}
               onChange={(e) => {
@@ -765,15 +823,17 @@ function FeatureInspector({ featureId }: { featureId: string }) {
                 patch({ result } as Partial<Feature>)
               }}
             >
-              <option value="new">New Body</option>
+              <option value="new">{t('New Body')}</option>
               {component?.bodies
                 .filter((b) => feature.result.kind !== 'newBody' || b.id !== feature.result.bodyId)
                 .flatMap((b) => [
                   <option key={`join:${b.id}`} value={`join:${b.id}`}>
-                    Join to {b.name}
+                    {t('Join to ')}
+                    {b.name}
                   </option>,
                   <option key={`cut:${b.id}`} value={`cut:${b.id}`}>
-                    Cut {b.name}
+                    {t('Cut ')}
+                    {b.name}
                   </option>,
                 ])}
             </select>
@@ -784,7 +844,7 @@ function FeatureInspector({ featureId }: { featureId: string }) {
       {feature.kind === 'revolve' && (
         <>
           <Num
-            label="How far round"
+            label={t('How far round')}
             value={feature.angle}
             step={15}
             min={1}
@@ -792,18 +852,19 @@ function FeatureInspector({ featureId }: { featureId: string }) {
             onChange={(v) => patch({ angle: Math.min(360, v) } as Partial<Feature>)}
           />
           <div className="row">
-            <label>Spin about</label>
+            <label>{t('Spin about')}</label>
             <select
               value={feature.axis}
               onChange={(e) => patch({ axis: e.target.value } as Partial<Feature>)}
             >
-              <option value="x">The sideways axis</option>
-              <option value="y">The upright axis</option>
+              <option value="x">{t('The sideways axis')}</option>
+              <option value="y">{t('The upright axis')}</option>
             </select>
           </div>
           <p className="hint">
-            Draw the outline to one side of the axis, not across it, or it will try to pass through
-            itself.
+            {t(
+              'Draw the outline to one side of the axis, not across it, or it will try to pass through itself.',
+            )}
           </p>
         </>
       )}
@@ -811,19 +872,19 @@ function FeatureInspector({ featureId }: { featureId: string }) {
       {feature.kind === 'sphere' && (
         <>
           <Num
-            label="Radius"
+            label={t('Radius')}
             value={feature.radius}
             min={0.1}
             onChange={(v) => patch({ radius: v } as Partial<Feature>)}
           />
           <div className="row">
-            <label>Shape</label>
+            <label>{t('Shape')}</label>
             <select
               value={feature.half ? 'half' : 'full'}
               onChange={(e) => patch({ half: e.target.value === 'half' } as Partial<Feature>)}
             >
-              <option value="full">A whole ball</option>
-              <option value="half">A dome, flat side down</option>
+              <option value="full">{t('A whole ball')}</option>
+              <option value="half">{t('A dome, flat side down')}</option>
             </select>
           </div>
         </>
@@ -832,40 +893,41 @@ function FeatureInspector({ featureId }: { featureId: string }) {
       {feature.kind === 'vent' && (
         <>
           <div className="row">
-            <label>Hole shape</label>
+            <label>{t('Hole shape')}</label>
             <select
               value={feature.shape}
               onChange={(e) => patch({ shape: e.target.value } as Partial<Feature>)}
             >
-              <option value="hex">Hexagons</option>
-              <option value="round">Round</option>
-              <option value="square">Square</option>
+              <option value="hex">{t('Hexagons')}</option>
+              <option value="round">{t('Round')}</option>
+              <option value="square">{t('Square')}</option>
             </select>
           </div>
           <Num
-            label={feature.shape === 'hex' ? 'Across flats' : 'Hole size'}
+            label={feature.shape === 'hex' ? t('Across flats') : t('Hole size')}
             value={feature.size}
             step={0.5}
             min={0.2}
             onChange={(v) => patch({ size: v } as Partial<Feature>)}
           />
           <Num
-            label="Gap between"
+            label={t('Gap between')}
             value={feature.spacing}
             step={0.2}
             min={0.2}
             onChange={(v) => patch({ spacing: v } as Partial<Feature>)}
           />
           <Num
-            label="Edge border"
+            label={t('Edge border')}
             value={feature.margin}
             step={0.5}
             min={0}
             onChange={(v) => patch({ margin: v } as Partial<Feature>)}
           />
           <p className="hint">
-            The border is solid material left all the way round, so the grid never runs off the edge
-            and leaves slivers that snap off.
+            {t(
+              'The border is solid material left all the way round, so the grid never runs off the edge and leaves slivers that snap off.',
+            )}
           </p>
         </>
       )}
@@ -873,13 +935,15 @@ function FeatureInspector({ featureId }: { featureId: string }) {
       {feature.kind === 'lid' && (
         <>
           <Num
-            label="Thickness"
+            label={t('Thickness')}
             value={feature.thickness}
             min={0.2}
             onChange={(v) => patch({ thickness: v } as Partial<Feature>)}
           />
           <p className="hint">
-            A separate body, so you can hide it to see inside, vent it, or export it on its own.
+            {t(
+              'A separate body, so you can hide it to see inside, vent it, or export it on its own.',
+            )}
           </p>
         </>
       )}
@@ -887,18 +951,18 @@ function FeatureInspector({ featureId }: { featureId: string }) {
       {feature.kind === 'hole' && (
         <>
           <div className="row">
-            <label>Type</label>
+            <label>{t('Type')}</label>
             <select
               value={feature.style}
               onChange={(e) => patch({ style: e.target.value } as Partial<Feature>)}
             >
-              <option value="simple">Plain hole</option>
-              <option value="counterbore">Counterbored (screw head sits flush)</option>
-              <option value="countersink">Countersunk (for a tapered head)</option>
+              <option value="simple">{t('Plain hole')}</option>
+              <option value="counterbore">{t('Counterbored (screw head sits flush)')}</option>
+              <option value="countersink">{t('Countersunk (for a tapered head)')}</option>
             </select>
           </div>
           <Num
-            label="Hole size"
+            label={t('Hole size')}
             value={feature.diameter}
             step={0.1}
             min={0.5}
@@ -907,14 +971,14 @@ function FeatureInspector({ featureId }: { featureId: string }) {
           {feature.style !== 'simple' && (
             <>
               <Num
-                label="Head size"
+                label={t('Head size')}
                 value={feature.counterboreDiameter ?? feature.diameter * 2}
                 step={0.1}
                 onChange={(v) => patch({ counterboreDiameter: v } as Partial<Feature>)}
               />
               {feature.style === 'counterbore' && (
                 <Num
-                  label="Head depth"
+                  label={t('Head depth')}
                   value={feature.counterboreDepth ?? 2}
                   step={0.1}
                   onChange={(v) => patch({ counterboreDepth: v } as Partial<Feature>)}
@@ -923,27 +987,29 @@ function FeatureInspector({ featureId }: { featureId: string }) {
             </>
           )}
           <div className="row">
-            <label>Depth</label>
+            <label>{t('Depth')}</label>
             <select
               value={feature.depth === 'through' ? 'through' : 'blind'}
               onChange={(e) =>
                 patch({ depth: e.target.value === 'through' ? 'through' : 5 } as Partial<Feature>)
               }
             >
-              <option value="through">All the way through</option>
-              <option value="blind">A set depth</option>
+              <option value="through">{t('All the way through')}</option>
+              <option value="blind">{t('A set depth')}</option>
             </select>
           </div>
           {feature.depth !== 'through' && (
             <Num
-              label="Deep"
+              label={t('Deep')}
               value={feature.depth}
               onChange={(v) => patch({ depth: v } as Partial<Feature>)}
             />
           )}
           {feature.source.kind === 'occurrence' && (
             <p className="hint">
-              These follow the part they were made for. Move the board and the holes move with it.
+              {t(
+                'These follow the part they were made for. Move the board and the holes move with it.',
+              )}
             </p>
           )}
         </>
@@ -952,32 +1018,33 @@ function FeatureInspector({ featureId }: { featureId: string }) {
       {feature.kind === 'standoff' && (
         <>
           <Num
-            label="Height"
+            label={t('Height')}
             value={feature.height}
             min={0.5}
             onChange={(v) => patch({ height: v } as Partial<Feature>)}
           />
           <Num
-            label="Pillar size"
+            label={t('Pillar size')}
             value={feature.outerDiameter}
             step={0.5}
             onChange={(v) => patch({ outerDiameter: v } as Partial<Feature>)}
           />
           <Num
-            label="Screw hole"
+            label={t('Screw hole')}
             value={feature.boreDiameter}
             step={0.1}
             onChange={(v) => patch({ boreDiameter: v } as Partial<Feature>)}
           />
           <Num
-            label="Hole depth"
+            label={t('Hole depth')}
             value={feature.boreDepth}
             step={0.5}
             onChange={(v) => patch({ boreDepth: v } as Partial<Feature>)}
           />
           <p className="hint">
-            For a self-tapping screw make the hole about 0.4 mm under the screw size. For a brass
-            heat-set insert, use the insert's recommended hole instead.
+            {t(
+              "For a self-tapping screw make the hole about 0.4 mm under the screw size. For a brass heat-set insert, use the insert's recommended hole instead.",
+            )}
           </p>
         </>
       )}
@@ -985,21 +1052,22 @@ function FeatureInspector({ featureId }: { featureId: string }) {
       {feature.kind === 'portCutout' && (
         <>
           <Num
-            label="Extra room"
+            label={t('Extra room')}
             value={feature.tolerance}
             step={0.1}
             onChange={(v) => patch({ tolerance: v } as Partial<Feature>)}
           />
           <p className="hint">
-            Added all the way round each opening. 0.5 mm is usually enough for a printed wall; go
-            bigger if your printer runs wide.
+            {t(
+              'Added all the way round each opening. 0.5 mm is usually enough for a printed wall; go bigger if your printer runs wide.',
+            )}
           </p>
         </>
       )}
 
       {feature.kind === 'fillet' && (
         <Num
-          label="Radius"
+          label={t('Radius')}
           value={feature.radius}
           min={0.1}
           onChange={(v) => patch({ radius: v } as Partial<Feature>)}
@@ -1007,7 +1075,7 @@ function FeatureInspector({ featureId }: { featureId: string }) {
       )}
       {feature.kind === 'chamfer' && (
         <Num
-          label="Size"
+          label={t('Size')}
           value={feature.distance}
           min={0.1}
           onChange={(v) => patch({ distance: v } as Partial<Feature>)}
@@ -1015,7 +1083,7 @@ function FeatureInspector({ featureId }: { featureId: string }) {
       )}
       {feature.kind === 'shell' && (
         <Num
-          label="Wall"
+          label={t('Wall')}
           value={feature.thickness}
           min={0.2}
           onChange={(v) => patch({ thickness: v } as Partial<Feature>)}
@@ -1042,13 +1110,13 @@ function SubSelectionPanel() {
 
   return (
     <div className="section">
-      <h3>Picked on the shape</h3>
+      <h3>{t('Picked on the shape')}</h3>
       <p className="hint" style={{ marginTop: 0 }}>
-        {parts.join(', ')} selected. Shift-click to add more, then use Actions for what you can do
-        with them.
+        {parts.join(', ')}
+        {t(' selected. Shift-click to add more, then use Actions for what you can do with them.')}
       </p>
       <button className="btn" onClick={() => useStore.getState().setSubSelection([])}>
-        Clear the selection
+        {t('Clear the selection')}
       </button>
     </div>
   )
@@ -1072,24 +1140,29 @@ function SketchSelectionPanel() {
   return (
     <>
       <div className="section">
-        <h3>This sketch</h3>
+        <h3>{t('This sketch')}</h3>
         {status && (
           <p className="hint" style={{ marginTop: 0 }}>
             {status.failing.length > 0
-              ? 'Some of the sizes you have set contradict each other.'
+              ? t('Some of the sizes you have set contradict each other.')
               : status.dof === 0
-                ? 'Fully defined. Nothing can move by accident.'
-                : `${status.dof} thing${status.dof === 1 ? '' : 's'} can still move. Set more sizes to lock it down.`}
+                ? t('Fully defined. Nothing can move by accident.')
+                : t(
+                    '{0} thing{1} can still move. Set more sizes to lock it down.',
+                    status.dof,
+                    status.dof === 1 ? '' : 's',
+                  )}
           </p>
         )}
       </div>
 
       {selection.length === 0 ? (
         <div className="section">
-          <h3>Nothing picked</h3>
+          <h3>{t('Nothing picked')}</h3>
           <p className="hint" style={{ marginTop: 0 }}>
-            Click a line, a circle or a corner. Shift-click to add a second one. Available
-            dimensions and constraints appear here.
+            {t(
+              'Click a line, a circle or a corner. Shift-click to add a second one. Available dimensions and constraints appear here.',
+            )}
           </p>
         </div>
       ) : (
@@ -1097,13 +1170,13 @@ function SketchSelectionPanel() {
           <h3>
             {entity
               ? entity.kind === 'line'
-                ? 'Line'
+                ? t('Line')
                 : entity.kind === 'circle'
-                  ? 'Circle'
-                  : 'Arc'
+                  ? t('Circle')
+                  : t('Arc')
               : single?.kind === 'point'
-                ? 'Corner'
-                : `${selection.length} things picked`}
+                ? t('Corner')
+                : t('{0} things picked', selection.length)}
           </h3>
 
           {entity?.kind === 'line' &&
@@ -1115,7 +1188,7 @@ function SketchSelectionPanel() {
               return (
                 <>
                   <Num
-                    label="Length"
+                    label={t('Length')}
                     value={Math.round(length * 1000) / 1000}
                     step={1}
                     min={0.01}
@@ -1129,7 +1202,9 @@ function SketchSelectionPanel() {
                     }
                   />
                   <p className="hint mono" style={{ marginTop: 0 }}>
-                    runs at {fmt(angle, 1)}° from horizontal
+                    {t('runs at ')}
+                    {fmt(angle, 1)}
+                    {t('° from horizontal')}
                   </p>
                 </>
               )
@@ -1137,7 +1212,7 @@ function SketchSelectionPanel() {
 
           {entity?.kind === 'circle' && (
             <Num
-              label="Diameter"
+              label={t('Diameter')}
               value={Math.round(entity.r * 2000) / 1000}
               step={1}
               min={0.02}
@@ -1150,14 +1225,15 @@ function SketchSelectionPanel() {
               const p = pts.get(single.id)
               return p ? (
                 <p className="hint mono" style={{ marginTop: 0 }}>
-                  at {lengthLabel(p.x, units, false)}, {lengthLabel(p.y, units)}
+                  {t('at ')}
+                  {lengthLabel(p.x, units, false)}, {lengthLabel(p.y, units)}
                 </p>
               ) : null
             })()}
 
           {actions.length > 0 && (
             <>
-              <h3 style={{ marginTop: 14 }}>What you can do</h3>
+              <h3 style={{ marginTop: 14 }}>{t('What you can do')}</h3>
               <FlyoutMenu actions={actions} onPick={chooseSketchAction} />
             </>
           )}

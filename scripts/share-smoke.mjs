@@ -35,7 +35,10 @@ let lastPage
 try {
   await dev.listen()
   browser = await launch()
-  const producer = await browser.newContext({ viewport: { width: 1280, height: 800 } })
+  const producer = await browser.newContext({
+    locale: 'en-US',
+    viewport: { width: 1280, height: 800 },
+  })
   const page = await producer.newPage()
   lastPage = page
   const observe = async (page) => {
@@ -159,6 +162,7 @@ try {
   console.log(`Share fixture link: ${link.length} characters`)
 
   const context = await browser.newContext({
+    locale: 'en-US',
     viewport: { width: 1280, height: 800 },
     acceptDownloads: true,
   })
@@ -245,6 +249,7 @@ try {
   checked++
 
   const mobile = await browser.newContext({
+    locale: 'en-US',
     viewport: { width: 390, height: 844 },
     isMobile: true,
     hasTouch: true,
@@ -266,7 +271,10 @@ try {
   await narrow.locator('.app-header').waitFor()
   checked++
 
-  const startup = await browser.newContext({ viewport: { width: 1280, height: 800 } })
+  const startup = await browser.newContext({
+    locale: 'en-US',
+    viewport: { width: 1280, height: 800 },
+  })
   await startup.addInitScript(
     (old) =>
       localStorage.setItem('openkitcad.autosave.v2', JSON.stringify({ savedAt: 'now', doc: old })),

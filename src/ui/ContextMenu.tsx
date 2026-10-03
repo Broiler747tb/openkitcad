@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { FlyoutMenu } from './FlyoutMenu'
 
@@ -112,7 +113,7 @@ export function ContextMenu<T extends Item>({
           ? { left: position.left, top: position.top }
           : { ...position, overflowY: 'auto' }
       }
-      aria-label="Available actions"
+      aria-label={t('Available actions')}
       onKeyDown={(e) => {
         e.stopPropagation()
         if (e.key === 'Escape') onClose()
@@ -127,8 +128,8 @@ export function ContextMenu<T extends Item>({
       }}
     >
       <div className="menu-caption">
-        Available actions{' '}
-        <button onClick={onClose} aria-label="Close menu">
+        {t('Available actions')}{' '}
+        <button onClick={onClose} aria-label={t('Close menu')}>
           ×
         </button>
       </div>

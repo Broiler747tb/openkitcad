@@ -1,3 +1,4 @@
+import { t } from '../../i18n'
 import { useMemo, useRef, useState } from 'react'
 import {
   allParts,
@@ -13,7 +14,7 @@ import {
   userParts,
   type CataloguePart,
 } from '../../catalogue'
-import { counted } from '../../core/words'
+import { counted } from '../../i18n'
 import { downloadBlob } from '../../doc/persist'
 import { useStore } from '../../doc/store'
 import { partUses } from './actions'
@@ -50,10 +51,16 @@ export function YourParts() {
     const builtIn = shipped.has(part.id)
     const warning = uses
       ? builtIn
-        ? ` It is placed ${counted(uses, 'time')} in this design, and those go back to the built-in version.`
-        : ` It is placed ${counted(uses, 'time')} in this design, and those will show as missing.`
+        ? t(
+            ' It is placed {0} in this design, and those go back to the built-in version.',
+            counted(uses, 'time'),
+          )
+        : t(
+            ' It is placed {0} in this design, and those will show as missing.',
+            counted(uses, 'time'),
+          )
       : ''
-    if (!confirm(`Delete "${part.name}" from your parts?${warning}`)) return
+    if (!confirm(t('Delete "{0}" from your parts?{1}', part.name, warning))) return
     removeUserPart(part.id)
     if (!builtIn) useShelf.getState().forget(part.id)
     changed()
@@ -88,28 +95,29 @@ export function YourParts() {
   return (
     <div className="parts-mine">
       <button className="parts-back" onClick={() => show({ kind: 'home' })}>
-        ‹ All parts
+        {t('‹ All parts')}
       </button>
       <div className="parts-heading">
-        <strong>Your parts</strong>
+        <strong>{t('Your parts')}</strong>
         <span>
-          Parts you measured or imported. They live in this browser, so export them to keep a copy
-          or move them to another computer.
+          {t(
+            'Parts you measured or imported. They live in this browser, so export them to keep a copy or move them to another computer.',
+          )}
         </span>
       </div>
       <div className="parts-actions">
         <button className="btn primary" onClick={() => openMaker({ mode: 'new' })}>
-          New part
+          {t('New part')}
         </button>
         <button className="btn" onClick={() => file.current?.click()}>
-          Import…
+          {t('Import…')}
         </button>
         <button
           className="btn"
           disabled={!parts.length}
           onClick={() => saveJson(parts, 'openkitcad-parts.json')}
         >
-          Export all
+          {t('Export all')}
         </button>
         <input
           ref={file}
@@ -126,15 +134,16 @@ export function YourParts() {
       {report.length > 0 && (
         <div className="parts-report" role="status">
           {report.map((line, i) => (
-            <span key={i}>{line}</span>
+            <span key={i}>{t(line)}</span>
           ))}
         </div>
       )}
       {!parts.length && (
         <div className="parts-empty">
           <span>
-            Nothing here yet. Measure a board with New part, or import a part file somebody sent
-            you.
+            {t(
+              'Nothing here yet. Measure a board with New part, or import a part file somebody sent you.',
+            )}
           </span>
         </div>
       )}
@@ -151,13 +160,16 @@ export function YourParts() {
                 <strong>
                   {part.name}
                   {shipped.has(part.id) && (
-                    <span className="parts-tag" title="Replaces the built-in part with the same id">
-                      override
+                    <span
+                      className="parts-tag"
+                      title={t('Replaces the built-in part with the same id')}
+                    >
+                      {t('override')}
                     </span>
                   )}
                 </strong>
                 <span>
-                  {CATEGORY_LABEL[part.category]} · {sizeSummary(part, units)}
+                  {t(CATEGORY_LABEL[part.category])} · {sizeSummary(part, units)}
                   {uses ? ` · used ${counted(uses, 'time')}` : ''}
                 </span>
               </span>
@@ -168,21 +180,23 @@ export function YourParts() {
                 disabled={!partToDraft(part)}
                 title={
                   partToDraft(part)
-                    ? 'Change its measurements'
-                    : 'Only rectangular boards can be edited here. Export it and edit the file instead.'
+                    ? t('Change its measurements')
+                    : t(
+                        'Only rectangular boards can be edited here. Export it and edit the file instead.',
+                      )
                 }
                 onClick={() => openMaker({ mode: 'edit', partId: part.id })}
               >
-                Edit
+                {t('Edit')}
               </button>
               <button className="btn" onClick={() => duplicate(part)}>
-                Duplicate
+                {t('Duplicate')}
               </button>
               <button className="btn" onClick={() => saveJson(part, `${part.id}.json`)}>
-                Export
+                {t('Export')}
               </button>
               <button className="btn danger" onClick={() => remove(part)}>
-                Delete
+                {t('Delete')}
               </button>
             </div>
           </div>

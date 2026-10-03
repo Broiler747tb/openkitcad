@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 /**
  * The guided first run.
  *
@@ -72,12 +73,12 @@ export function Tutorial({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="tutorial">
-      <h4>{step.title}</h4>
-      <p>{step.body}</p>
+      <h4>{t(step.title)}</h4>
+      <p>{t(step.body)}</p>
       <div className="tutorial-foot">
         <span className="step">
           {complete ? (
-            <span className="tutorial-done">Done — nice one.</span>
+            <span className="tutorial-done">{t('Done — nice one.')}</span>
           ) : (
             `Step ${index + 1} of ${STEPS.length}`
           )}
@@ -87,18 +88,18 @@ export function Tutorial({ onClose }: { onClose: () => void }) {
           disabled={index === 0}
           onClick={() => setIndex((i) => Math.max(0, i - 1))}
         >
-          Back
+          {t('Back')}
         </button>
         {index < STEPS.length - 1 ? (
           <button className="tb active" onClick={() => setIndex((i) => i + 1)}>
-            Skip
+            {t('Skip')}
           </button>
         ) : (
           <button className="tb active" onClick={onClose}>
-            Finish
+            {t('Finish')}
           </button>
         )}
-        <button className="tb" title="Close the guide" onClick={onClose}>
+        <button className="tb" title={t('Close the guide')} onClick={onClose}>
           ✕
         </button>
       </div>

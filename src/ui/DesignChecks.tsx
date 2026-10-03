@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../doc/store'
 import { kernel } from '../kernel/api'
@@ -89,9 +90,9 @@ export function DesignChecks({
   return (
     <>
       <div className="section">
-        <h3>Look inside</h3>
+        <h3>{t('Look inside')}</h3>
         <div className="row">
-          <label>Cut away</label>
+          <label>{t('Cut away')}</label>
           <input
             type="checkbox"
             checked={section.enabled}
@@ -101,24 +102,24 @@ export function DesignChecks({
         {section.enabled && (
           <>
             <div className="row">
-              <label>Direction</label>
+              <label>{t('Direction')}</label>
               <select
                 value={section.axis}
                 onChange={(e) => store.setSection({ axis: e.target.value as 'x' | 'y' | 'z' })}
               >
-                <option value="x">Left to right</option>
-                <option value="y">Front to back</option>
-                <option value="z">Top to bottom</option>
+                <option value="x">{t('Left to right')}</option>
+                <option value="y">{t('Front to back')}</option>
+                <option value="z">{t('Top to bottom')}</option>
               </select>
             </div>
             <NumberInput
-              label="Position"
+              label={t('Position')}
               value={section.position}
               step={1}
               onChange={(v) => store.setSection({ position: v })}
             />
             <div className="row">
-              <label>Other side</label>
+              <label>{t('Other side')}</label>
               <input
                 type="checkbox"
                 checked={section.flipped}
@@ -130,14 +131,14 @@ export function DesignChecks({
       </div>
 
       <div className="section">
-        <h3>Check the design</h3>
+        <h3>{t('Check the design')}</h3>
         <button
           className="btn"
           disabled={busy !== null || !ready}
           onClick={() => void run('clashes')}
         >
-          {busy === 'clashes' ? 'Checking for clashes…' : 'Check for clashes'}
-          <small>Does anything overlap something it shouldn't?</small>
+          {busy === 'clashes' ? t('Checking for clashes…') : t('Check for clashes')}
+          <small>{t("Does anything overlap something it shouldn't?")}</small>
         </button>
 
         <button
@@ -145,28 +146,40 @@ export function DesignChecks({
           disabled={busy !== null || !ready || printable.length === 0}
           onClick={() => void run('print')}
         >
-          {busy === 'print' ? 'Checking printability…' : 'Check it will print'}
-          <small>Overhangs, thin walls, and whether it fits the bed</small>
+          {busy === 'print' ? t('Checking printability…') : t('Check it will print')}
+          <small>{t('Overhangs, thin walls, and whether it fits the bed')}</small>
         </button>
 
         {current?.kind === 'error' && (
-          <div className="msg error">Could not check the design: {current.value}</div>
+          <div className="msg error">
+            {t('Could not check the design: ')}
+            {t(current.value)}
+          </div>
         )}
-        {clashes?.length === 0 && <div className="msg info">Nothing overlaps. All clear.</div>}
+        {clashes?.length === 0 && (
+          <div className="msg info">{t('Nothing overlaps. All clear.')}</div>
+        )}
         {clashes?.map((c, i) => (
           <div className="msg warn" key={i}>
             <strong>
-              {c.aLabel} runs into {c.bLabel}
+              {c.aLabel}
+              {t(' runs into ')}
+              {c.bLabel}
             </strong>
-            <em>Overlapping by roughly {lengthLabel(c.overlap, doc.units)}.</em>
+            <em>
+              {t('Overlapping by roughly ')}
+              {lengthLabel(c.overlap, doc.units)}.
+            </em>
           </div>
         ))}
 
-        {warnings?.length === 0 && <div className="msg info">No printing problems spotted.</div>}
+        {warnings?.length === 0 && (
+          <div className="msg info">{t('No printing problems spotted.')}</div>
+        )}
         {warnings?.map((w, i) => (
           <div className={`msg ${w.severity === 'error' ? 'error' : 'warn'}`} key={i}>
-            <strong>{w.message}</strong>
-            {w.hint && <em>{w.hint}</em>}
+            <strong>{t(w.message)}</strong>
+            {w.hint && <em>{t(w.hint)}</em>}
             {w.span && (
               <button
                 className="tb msg-action"
@@ -177,7 +190,7 @@ export function DesignChecks({
                   store.addMeasurePoint(span.to)
                 }}
               >
-                Show
+                {t('Show')}
               </button>
             )}
           </div>

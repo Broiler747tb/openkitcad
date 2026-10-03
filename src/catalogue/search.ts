@@ -1,4 +1,6 @@
 import familyData from './families.json'
+import { ru } from '../i18n/ru'
+import { partSummaries, familySummaries } from '../i18n/catalogue'
 import { CATEGORY_LABEL, type CataloguePart, type PartCategory } from './types'
 
 export interface PartFamily {
@@ -123,6 +125,29 @@ export function groupedEntries(
 }
 
 const SYNONYMS: Record<string, string[]> = {
+  винт: ['screw', 'bolt'],
+  винты: ['screw', 'bolt'],
+  болт: ['screw', 'bolt'],
+  гайка: ['nut', 'insert'],
+  шайба: ['washer'],
+  стойка: ['standoff'],
+  подшипник: ['bearing'],
+  двигатель: ['motor', 'stepper', 'servo'],
+  мотор: ['motor', 'stepper', 'servo'],
+  серво: ['servo'],
+  шаговый: ['stepper'],
+  плата: ['board'],
+  экран: ['display', 'screen'],
+  дисплей: ['display', 'screen'],
+  датчик: ['sensor'],
+  разъем: ['socket', 'jack', 'port', 'connector'],
+  кнопка: ['switch', 'button'],
+  питание: ['power', 'dc'],
+  батарея: ['battery', 'cell'],
+  аккумулятор: ['battery', '18650', 'cell'],
+  профиль: ['extrusion'],
+  энкодер: ['encoder'],
+  потенциометр: ['potentiometer'],
   rpi: ['raspberry'],
   raspi: ['raspberry'],
   raspberrypi: ['raspberry'],
@@ -155,12 +180,16 @@ const SYNONYMS: Record<string, string[]> = {
 function normalise(text: string): string {
   return text
     .toLowerCase()
-    .replace(/[^a-z0-9.]+/g, ' ')
+    .replace(/ё/g, 'е')
+    .replace(/[^\p{L}0-9.]+/gu, ' ')
     .trim()
 }
 
 function compact(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9.]+/g, '')
+  return text
+    .toLowerCase()
+    .replace(/ё/g, 'е')
+    .replace(/[^\p{L}0-9.]+/gu, '')
 }
 
 function queryTokens(query: string): string[] {
@@ -225,8 +254,10 @@ function fieldsOf(part: CataloguePart): Field[] {
     field((part.tags ?? []).join(' '), 2),
     field(part.id, 2),
     field(part.manufacturer ?? '', 1.5),
-    field(CATEGORY_LABEL[part.category], 1),
+    field(`${CATEGORY_LABEL[part.category]} ${ru[CATEGORY_LABEL[part.category]] ?? ''}`, 1),
     field(part.summary, 1),
+    field(partSummaries[part.id] ?? '', 1),
+    field(family ? (familySummaries[family.id] ?? '') : '', 1),
   ]
 }
 

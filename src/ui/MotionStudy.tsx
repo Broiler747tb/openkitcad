@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { useEffect, useRef, useState } from 'react'
 import { create } from 'zustand'
 import { motionDofs } from '../assembly/motion'
@@ -188,7 +189,7 @@ function MotionStudyPanel() {
     feature.kind === 'joint'
       ? motionDofs(feature.motion).map((dof, index) => ({
           value: `${feature.id}:${index}`,
-          label: `${feature.name} · ${DOF_LABEL[dof.name]}`,
+          label: `${feature.name} · ${t(DOF_LABEL[dof.name])}`,
           unit: dof.kind === 'rotate' ? '°' : doc.units,
         }))
       : [],
@@ -202,19 +203,19 @@ function MotionStudyPanel() {
   }
 
   return (
-    <div className="okc-cmd okc-study" role="dialog" aria-label="Motion Study">
+    <div className="okc-cmd okc-study" role="dialog" aria-label={t('Motion Study')}>
       <div className="okc-cmd-title">
         <span className="okc-cmd-icon" aria-hidden="true">
           ⏵
         </span>
-        <span className="okc-cmd-name">Motion Study</span>
+        <span className="okc-cmd-name">{t('Motion Study')}</span>
       </div>
       <p className="okc-cmd-hint">
-        Moves joints over time. Add a joint, give it a value at a few steps, then play.
+        {t('Moves joints over time. Add a joint, give it a value at a few steps, then play.')}
       </p>
       <div className="okc-cmd-body">
         <label className="okc-cmd-row">
-          <span className="okc-cmd-label">Name</span>
+          <span className="okc-cmd-label">{t('Name')}</span>
           <input
             className="okc-cmd-input"
             value={draft.name}
@@ -222,9 +223,9 @@ function MotionStudyPanel() {
           />
         </label>
         <div className="okc-cmd-row">
-          <span className="okc-cmd-label">Steps</span>
+          <span className="okc-cmd-label">{t('Steps')}</span>
           <NumberCell
-            label="Steps"
+            label={t('Steps')}
             value={draft.steps}
             onChange={(value) => updateDraft((next) => void (next.steps = value))}
           />
@@ -233,7 +234,7 @@ function MotionStudyPanel() {
           <button
             type="button"
             className="okc-cmd-button"
-            aria-label={playing ? 'Pause' : 'Play'}
+            aria-label={playing ? t('Pause') : t('Play')}
             disabled={!draft.tracks.length}
             onClick={() => {
               if (!playing && step >= draft.steps) showStep(0)
@@ -244,7 +245,7 @@ function MotionStudyPanel() {
           </button>
           <input
             type="range"
-            aria-label="Step"
+            aria-label={t('Step')}
             min={0}
             max={draft.steps}
             step={1}
@@ -255,13 +256,13 @@ function MotionStudyPanel() {
             }}
           />
           <span className="okc-study-step">{Math.round(step)}</span>
-          <label className="okc-study-loop" title="Start again at the end">
+          <label className="okc-study-loop" title={t('Start again at the end')}>
             <input
               type="checkbox"
               checked={loop}
               onChange={(e) => useMotionStudy.setState({ loop: e.target.checked })}
             />
-            Loop
+            {t('Loop')}
           </label>
         </div>
         {draft.tracks.map((track, trackIndex) => {
@@ -269,11 +270,11 @@ function MotionStudyPanel() {
           return (
             <div key={`${track.jointId}:${track.dof}`} className="okc-study-track">
               <div className="okc-study-track-head">
-                <span>{option?.label ?? 'A missing joint'}</span>
+                <span>{option?.label ?? t('A missing joint')}</span>
                 <button
                   type="button"
                   className="okc-study-remove"
-                  aria-label="Remove joint from the study"
+                  aria-label={t('Remove joint from the study')}
                   onClick={() => updateDraft((next) => void next.tracks.splice(trackIndex, 1))}
                 >
                   ✕
@@ -281,9 +282,9 @@ function MotionStudyPanel() {
               </div>
               {track.keys.map((key, keyIndex) => (
                 <div key={keyIndex} className="okc-study-key">
-                  <span>Step</span>
+                  <span>{t('Step')}</span>
                   <NumberCell
-                    label="Step"
+                    label={t('Step')}
                     value={key.step}
                     onChange={(value) =>
                       updateDraft(
@@ -297,7 +298,7 @@ function MotionStudyPanel() {
                   />
                   <span>{option?.unit ?? ''}</span>
                   <NumberCell
-                    label="Value"
+                    label={t('Value')}
                     value={key.value}
                     onChange={(value) =>
                       updateDraft(
@@ -308,7 +309,7 @@ function MotionStudyPanel() {
                   <button
                     type="button"
                     className="okc-study-remove"
-                    aria-label="Remove key"
+                    aria-label={t('Remove key')}
                     onClick={() =>
                       updateDraft((next) => void next.tracks[trackIndex].keys.splice(keyIndex, 1))
                     }
@@ -332,16 +333,17 @@ function MotionStudyPanel() {
                   })
                 }
               >
-                + Key at step {Math.round(step)}
+                {t('+ Key at step ')}
+                {Math.round(step)}
               </button>
             </div>
           )
         })}
         <div className="okc-cmd-row">
-          <span className="okc-cmd-label">Add joint</span>
+          <span className="okc-cmd-label">{t('Add joint')}</span>
           <select
             className="okc-cmd-input"
-            aria-label="Add joint"
+            aria-label={t('Add joint')}
             value=""
             disabled={!unused.length}
             onChange={(e) => {
@@ -359,7 +361,9 @@ function MotionStudyPanel() {
               )
             }}
           >
-            <option value="">{unused.length ? 'Choose a joint' : 'No joints with motion'}</option>
+            <option value="">
+              {unused.length ? t('Choose a joint') : t('No joints with motion')}
+            </option>
             {unused.map((entry) => (
               <option key={entry.value} value={entry.value}>
                 {entry.label}
@@ -375,10 +379,10 @@ function MotionStudyPanel() {
           onClick={commitMotionStudy}
           disabled={!draft.name.trim()}
         >
-          {editingId ? 'OK' : 'Create'}
+          {editingId ? t('OK') : t('Create')}
         </button>
         <button type="button" className="okc-cmd-button okc-cmd-cancel" onClick={closeMotionStudy}>
-          Cancel
+          {t('Cancel')}
         </button>
       </div>
     </div>

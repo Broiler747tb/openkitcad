@@ -1,3 +1,5 @@
+import { t } from '../../i18n'
+import { partSummary, familySummary } from './translation'
 import { useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   allParts,
@@ -63,8 +65,8 @@ export function PartsPanel() {
           <input
             ref={input}
             value={query}
-            aria-label="Search parts"
-            placeholder={`Search ${parts.length} parts: pi, usb-c, m3…`}
+            aria-label={t('Search parts')}
+            placeholder={t('Search {0} parts: pi, usb-c, m3…', parts.length)}
             onChange={(e) => {
               setQuery(e.target.value)
               if (view.kind !== 'home') show({ kind: 'home' })
@@ -79,8 +81,8 @@ export function PartsPanel() {
           {query && (
             <button
               className="parts-clear"
-              aria-label="Clear search"
-              title="Clear search"
+              aria-label={t('Clear search')}
+              title={t('Clear search')}
               onClick={() => {
                 setQuery('')
                 input.current?.focus()
@@ -90,20 +92,20 @@ export function PartsPanel() {
             </button>
           )}
         </div>
-        <div className="parts-chips" role="group" aria-label="Filters">
+        <div className="parts-chips" role="group" aria-label={t('Filters')}>
           <Chip
             on={!!filters.official}
-            title="Only parts whose sizes come from a published drawing or were measured"
+            title={t('Only parts whose sizes come from a published drawing or were measured')}
             onClick={() => setFilters({ ...filters, official: !filters.official })}
           >
-            Verified sizes
+            {t('Verified sizes')}
           </Chip>
           <Chip
             on={!!filters.mountingHoles}
-            title="Only parts with mounting holes you can screw through"
+            title={t('Only parts with mounting holes you can screw through')}
             onClick={() => setFilters({ ...filters, mountingHoles: !filters.mountingHoles })}
           >
-            Mounting holes
+            {t('Mounting holes')}
           </Chip>
         </div>
       </div>
@@ -141,7 +143,7 @@ function Chip({
     <button
       className={`parts-chip ${on ? 'on' : ''}`}
       aria-pressed={on}
-      title={title}
+      title={t(title)}
       onClick={onClick}
     >
       {children}
@@ -170,7 +172,7 @@ function Home({ parts }: { parts: CataloguePart[] }) {
     <>
       {favouriteParts.length > 0 && (
         <section className="parts-section">
-          <h4>Favourites</h4>
+          <h4>{t('Favourites')}</h4>
           {favouriteParts.map((part) => (
             <PartRow key={part.id} part={part} />
           ))}
@@ -178,43 +180,43 @@ function Home({ parts }: { parts: CataloguePart[] }) {
       )}
       {recentParts.length > 0 && (
         <section className="parts-section">
-          <h4>Recently used</h4>
+          <h4>{t('Recently used')}</h4>
           {recentParts.map((part) => (
             <PartRow key={part.id} part={part} />
           ))}
         </section>
       )}
       <section className="parts-section">
-        <h4>Popular</h4>
+        <h4>{t('Popular')}</h4>
         {popular.map((entry) => (
           <EntryRow key={entry.id} entry={entry} />
         ))}
       </section>
       <section className="parts-section">
-        <h4>Browse by type</h4>
+        <h4>{t('Browse by type')}</h4>
         {groups.map((group) => (
           <button
             key={group.category}
             className="parts-type"
-            title={CATEGORY_BLURB[group.category]}
+            title={t(CATEGORY_BLURB[group.category])}
             onClick={() => show({ kind: 'type', category: group.category })}
           >
-            <strong>{group.label}</strong>
+            <strong>{t(group.label)}</strong>
             <span className="parts-count">{group.count}</span>
             <span className="parts-arrow">›</span>
           </button>
         ))}
       </section>
       <section className="parts-section">
-        <h4>Your parts</h4>
+        <h4>{t('Your parts')}</h4>
         <button className="parts-type" onClick={() => show({ kind: 'mine' })}>
-          <strong>Manage your parts</strong>
+          <strong>{t('Manage your parts')}</strong>
           <span className="parts-count">{mine}</span>
           <span className="parts-arrow">›</span>
         </button>
         <button className="btn parts-make" onClick={() => openMaker({ mode: 'new' })}>
-          Add a part that isn't here
-          <small>Measure it once and use it straight away</small>
+          {t("Add a part that isn't here")}
+          <small>{t('Measure it once and use it straight away')}</small>
         </button>
       </section>
     </>
@@ -238,13 +240,17 @@ function SearchResults({ parts }: { parts: CataloguePart[] }) {
   if (!entries.length)
     return (
       <div className="parts-empty">
-        <strong>Nothing matches “{query.trim()}”.</strong>
+        <strong>
+          {t('Nothing matches “')}
+          {query.trim()}”.
+        </strong>
         <span>
-          Try a shorter word, or turn off the filters. If a part you use is missing, you can measure
-          it in a couple of minutes.
+          {t(
+            'Try a shorter word, or turn off the filters. If a part you use is missing, you can measure it in a couple of minutes.',
+          )}
         </span>
         <button className="btn" onClick={() => openMaker({ mode: 'new' })}>
-          Add a part that isn't here
+          {t("Add a part that isn't here")}
         </button>
       </div>
     )
@@ -252,18 +258,19 @@ function SearchResults({ parts }: { parts: CataloguePart[] }) {
   return (
     <>
       {counts.size > 1 && (
-        <div className="parts-chips parts-types" role="group" aria-label="Narrow by type">
+        <div className="parts-chips parts-types" role="group" aria-label={t('Narrow by type')}>
           <Chip on={!only} onClick={() => setOnly(null)}>
-            All {entries.length}
+            {t('All ')}
+            {entries.length}
           </Chip>
           {[...counts].map(([category, count]) => (
             <Chip
               key={category}
               on={only === category}
-              title={CATEGORY_LABEL[category]}
+              title={t(CATEGORY_LABEL[category])}
               onClick={() => setOnly(only === category ? null : category)}
             >
-              {CATEGORY_SHORT[category]} {count}
+              {t(CATEGORY_SHORT[category])} {count}
             </Chip>
           ))}
         </div>
@@ -288,18 +295,18 @@ function TypeList({ category, parts }: { category: PartCategory; parts: Catalogu
   return (
     <>
       <button className="parts-back" onClick={() => show({ kind: 'home' })}>
-        ‹ All parts
+        {t('‹ All parts')}
       </button>
       <div className="parts-heading">
-        <strong>{CATEGORY_LABEL[category]}</strong>
-        <span>{CATEGORY_BLURB[category]}</span>
+        <strong>{t(CATEGORY_LABEL[category])}</strong>
+        <span>{t(CATEGORY_BLURB[category])}</span>
       </div>
       {entries.map((entry) => (
         <EntryRow key={entry.id} entry={entry} />
       ))}
       {!entries.length && (
         <div className="parts-empty">
-          <span>No parts of this type pass the filters.</span>
+          <span>{t('No parts of this type pass the filters.')}</span>
         </div>
       )}
     </>
@@ -316,7 +323,7 @@ function Filtered({ parts }: { parts: CataloguePart[] }) {
     <>
       {groups.map((group) => (
         <section key={group.category} className="parts-section">
-          <h4>{group.label}</h4>
+          <h4>{t(group.label)}</h4>
           {group.entries.map((entry) => (
             <EntryRow key={entry.id} entry={entry} />
           ))}
@@ -324,7 +331,7 @@ function Filtered({ parts }: { parts: CataloguePart[] }) {
       ))}
       {!groups.length && (
         <div className="parts-empty">
-          <span>No parts pass these filters.</span>
+          <span>{t('No parts pass these filters.')}</span>
         </div>
       )}
     </>
@@ -347,7 +354,7 @@ export function PartRow({ part }: { part: CataloguePart }) {
       <button
         className="parts-row-main"
         title={`${part.name}
-${part.summary}
+${partSummary(part)}
 
 Click for details, or drag it onto a face in the view.`}
         onClick={() => {
@@ -359,20 +366,20 @@ Click for details, or drag it onto a face in the view.`}
         <span className="parts-row-text">
           <strong>
             {favourite && (
-              <span className="parts-starred" aria-label="Favourite">
+              <span className="parts-starred" aria-label={t('Favourite')}>
                 ★
               </span>
             )}
             {part.name}
           </strong>
           <span>
-            {isUserPart(part.id) && <span className="parts-tag">yours</span>}
+            {isUserPart(part.id) && <span className="parts-tag">{t('yours')}</span>}
             {part.confidence === 'approximate' && (
-              <span className="parts-tag warn" title={CONFIDENCE_LABEL.approximate}>
-                approx
+              <span className="parts-tag warn" title={t(CONFIDENCE_LABEL.approximate)}>
+                {t('approx')}
               </span>
             )}
-            {part.summary}
+            {partSummary(part)}
           </span>
         </span>
       </button>
@@ -381,9 +388,11 @@ Click for details, or drag it onto a face in the view.`}
           className={`parts-star ${favourite ? 'on' : ''}`}
           aria-pressed={favourite}
           aria-label={
-            favourite ? `Remove ${part.name} from favourites` : `Add ${part.name} to favourites`
+            favourite
+              ? t('Remove {0} from favourites', part.name)
+              : t('Add {0} to favourites', part.name)
           }
-          title={favourite ? 'Remove from favourites' : 'Add to favourites'}
+          title={favourite ? t('Remove from favourites') : t('Add to favourites')}
           onClick={() => useShelf.getState().toggleFavourite(part.id)}
         >
           {favourite ? '★' : '☆'}
@@ -391,7 +400,7 @@ Click for details, or drag it onto a face in the view.`}
         <button
           className="parts-add"
           aria-label={`Insert ${part.name}`}
-          title="Insert at the origin"
+          title={t('Insert at the origin')}
           onClick={() => placePart(part.id)}
         >
           ＋
@@ -412,9 +421,9 @@ function FamilyRow({ entry }: { entry: Extract<CatalogueEntry, { kind: 'family' 
     >
       <button
         className="parts-row-main"
-        aria-label={`${entry.name}: choose one of ${entry.parts.length} versions`}
+        aria-label={t('{0}: choose one of {1} versions', entry.name, entry.parts.length)}
         title={`${entry.name}
-${entry.family.summary}
+${familySummary(entry.family)}
 
 Click to choose a version. Dragging places the most common one, ${top.variant ?? top.name}.`}
         onClick={() => usePartsView.getState().openPicker(entry.id)}
@@ -425,8 +434,11 @@ Click to choose a version. Dragging places the most common one, ${top.variant ??
         <span className="parts-row-text">
           <strong>{entry.name}</strong>
           <span>
-            <span className="parts-versions">{entry.parts.length} versions</span>
-            {entry.family.summary}
+            <span className="parts-versions">
+              {entry.parts.length}
+              {t(' versions')}
+            </span>
+            {familySummary(entry.family)}
           </span>
         </span>
         <span className="parts-arrow">›</span>

@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { useState } from 'react'
 import { usePreferences, type Preferences } from '../doc/preferences'
 import { activeSketchFeature, useStore } from '../doc/store'
@@ -24,7 +25,7 @@ export function GridSettings() {
         checked={Boolean(p[key])}
         onChange={(e) => set({ [key]: e.target.checked })}
       />
-      {label}
+      {t(label)}
     </label>
   )
   return (
@@ -37,33 +38,35 @@ export function GridSettings() {
     >
       <button
         aria-pressed={p.gridVisible}
-        title="Show grid"
+        title={t('Show grid')}
         onClick={() => set({ gridVisible: !p.gridVisible })}
       >
-        ▦ Grid
+        {t('▦ Grid')}
       </button>
       <button
         aria-pressed={p.snapGrid}
-        title="Snap to grid (Alt temporarily disables snapping)"
+        title={t('Snap to grid (Alt temporarily disables snapping)')}
         onClick={() => set({ snapGrid: !p.snapGrid })}
       >
-        ⌖ Snap {p.gridStep} mm
+        {t('⌖ Snap ')}
+        {p.gridStep}
+        {t(' mm')}
       </button>
       <button aria-expanded={open} onClick={() => setOpen(!open)}>
-        Grid settings
+        {t('Grid settings')}
       </button>
       {open && (
-        <section className="grid-settings" aria-label="Grid and snapping settings">
+        <section className="grid-settings" aria-label={t('Grid and snapping settings')}>
           <div className="dialog-heading">
-            <h3>Grid & precision</h3>
-            <button aria-label="Close grid settings" onClick={() => setOpen(false)}>
+            <h3>{t('Grid & precision')}</h3>
+            <button aria-label={t('Close grid settings')} onClick={() => setOpen(false)}>
               ×
             </button>
           </div>
           <label className="precision-number">
-            Pan, zoom and orbit like
+            {t('Pan, zoom and orbit like')}
             <select
-              aria-label="Navigation scheme"
+              aria-label={t('Navigation scheme')}
               value={scheme}
               onChange={(e) => setScheme(e.target.value as MouseSchemeId)}
             >
@@ -75,14 +78,18 @@ export function GridSettings() {
             </select>
           </label>
           <small>
-            Orbit: {summary.orbit.join(' or ')}. Pan: {summary.pan.join(' or ')}. Zoom:{' '}
-            {summary.zoom.join(' or ')}.
+            {t('Orbit: ')}
+            {summary.orbit.map((route) => t(route)).join(t(' or '))}
+            {t('. Pan: ')}
+            {summary.pan.map((route) => t(route)).join(t(' or '))}
+            {t('. Zoom:')} {summary.zoom.map((route) => t(route)).join(t(' or '))}.
           </small>
           {scheme === 'touchpad' && (
             <label className="precision-check">
-              Touchpad speed {p.touchpadSpeed.toFixed(2)}×
+              {t('Touchpad speed ')}
+              {p.touchpadSpeed.toFixed(2)}×
               <input
-                aria-label="Touchpad speed"
+                aria-label={t('Touchpad speed')}
                 type="range"
                 min="-2"
                 max="2"
@@ -98,35 +105,36 @@ export function GridSettings() {
           <div className="precision-presets">
             {[0.1, 0.5, 1, 5, 10].map((step) => (
               <button key={step} onClick={() => set({ gridStep: step })}>
-                {step} mm
+                {step}
+                {t(' mm')}
               </button>
             ))}
           </div>
           <Setting
-            label="Grid spacing (mm)"
+            label={t('Grid spacing (mm)')}
             value={p.gridStep}
             min={0.01}
             max={1000}
             onChange={(gridStep) => set({ gridStep })}
           />
           <Setting
-            label="Grid extent (mm)"
+            label={t('Grid extent (mm)')}
             value={p.gridExtent}
             min={10}
             max={10000}
             onChange={(gridExtent) => set({ gridExtent })}
           />
           <Setting
-            label="Major line every"
+            label={t('Major line every')}
             value={p.majorEvery}
             min={2}
             max={20}
             onChange={(majorEvery) => set({ majorEvery })}
           />
           <label className="precision-check">
-            Grid contrast
+            {t('Grid contrast')}
             <input
-              aria-label="Grid contrast"
+              aria-label={t('Grid contrast')}
               type="range"
               min="0.05"
               max="1"
@@ -143,39 +151,40 @@ export function GridSettings() {
           {check('snapEdges', 'Snap to edges')}
           {check('snapAlignment', 'Infer horizontal / vertical')}
           <Setting
-            label="Snap radius (pixels)"
+            label={t('Snap radius (pixels)')}
             value={p.snapRadius}
             min={2}
             max={40}
             onChange={(snapRadius) => set({ snapRadius })}
           />
           <Setting
-            label="Gizmo move step (mm; 0 = free)"
+            label={t('Gizmo move step (mm; 0 = free)')}
             value={p.moveSnap}
             min={0}
             max={1000}
             onChange={(moveSnap) => set({ moveSnap })}
           />
           <Setting
-            label="Gizmo angle step (°; 0 = free)"
+            label={t('Gizmo angle step (°; 0 = free)')}
             value={p.angleSnap}
             min={0}
             max={180}
             onChange={(angleSnap) => set({ angleSnap })}
           />
           <p className="hint">
-            Grid follows the active sketch plane. Geometry snaps take priority over the grid. Hold
-            Alt for free placement. Dimensions and constraints still take priority when dragging.
+            {t(
+              'Grid follows the active sketch plane. Geometry snaps take priority over the grid. Hold Alt for free placement. Dimensions and constraints still take priority when dragging.',
+            )}
           </p>
           {p.gridExtent / p.gridStep > 400 && (
             <p className="hint">
-              Some grid lines are hidden at this density; the snapping interval is unchanged.
+              {t('Some grid lines are hidden at this density; the snapping interval is unchanged.')}
             </p>
           )}
           <button className="tb" onClick={reset}>
-            Reset defaults
+            {t('Reset defaults')}
           </button>
-          <small>Saved locally, independently of your design.</small>
+          <small>{t('Saved locally, independently of your design.')}</small>
         </section>
       )}
     </div>
@@ -196,10 +205,10 @@ function Setting({
 }) {
   return (
     <label className="precision-number">
-      <span>{label}</span>
+      <span>{t(label)}</span>
       <input
         key={value}
-        aria-label={label}
+        aria-label={t(label)}
         type="number"
         step="any"
         min={min}
@@ -244,9 +253,9 @@ export function PrecisionSketchTools() {
   const actions = sketchActions(sketch.sketch, state.sketchSelection, [px, py])
   return (
     <section className="section precision-sketch">
-      <h3>Precision construction</h3>
+      <h3>{t('Precision construction')}</h3>
       <label>
-        Coordinates
+        {t('Coordinates')}
         <select
           value={polar ? 'polar' : 'cartesian'}
           onChange={(e) => {
@@ -255,8 +264,8 @@ export function PrecisionSketchTools() {
             setY('0')
           }}
         >
-          <option value="cartesian">Cartesian X / Y</option>
-          <option value="polar">Polar distance / angle</option>
+          <option value="cartesian">{t('Cartesian X / Y')}</option>
+          <option value="polar">{t('Polar distance / angle')}</option>
         </select>
       </label>
       <form
@@ -270,9 +279,9 @@ export function PrecisionSketchTools() {
       >
         <div className="coordinate-row">
           <label>
-            {polar ? 'Distance (mm)' : 'X'}{' '}
+            {polar ? t('Distance (mm)') : 'X'}{' '}
             <input
-              aria-label="Sketch X"
+              aria-label={t('Sketch X')}
               type="text"
               required
               value={x}
@@ -280,9 +289,9 @@ export function PrecisionSketchTools() {
             />
           </label>
           <label>
-            {polar ? 'Angle (°)' : 'Y'}{' '}
+            {polar ? t('Angle (°)') : 'Y'}{' '}
             <input
-              aria-label="Sketch Y"
+              aria-label={t('Sketch Y')}
               type="text"
               required
               value={y}
@@ -290,21 +299,24 @@ export function PrecisionSketchTools() {
             />
           </label>
         </div>
-        {!valid && <p role="alert">Enter valid numbers or expressions with compatible units.</p>}
+        {!valid && (
+          <p role="alert">{t('Enter valid numbers or expressions with compatible units.')}</p>
+        )}
         <label className="precision-check">
           <input
             type="checkbox"
             checked={relative}
             onChange={(e) => setRelative(e.target.checked)}
           />
-          Relative to previous drawing point
+          {t('Relative to previous drawing point')}
         </label>
         <button className="btn" disabled={!valid || !drawing}>
-          Place exact point
+          {t('Place exact point')}
         </button>
         <p className="hint">
-          Choose Line, Rectangle, Circle or Arc. Coordinates are in the sketch plane, in mm; exact
-          input bypasses snapping.
+          {t(
+            'Choose Line, Rectangle, Circle or Arc. Coordinates are in the sketch plane, in mm; exact input bypasses snapping.',
+          )}
         </p>
       </form>
       <div className="precision-presets">
@@ -337,8 +349,9 @@ export function PrecisionSketchTools() {
           ))}
       </div>
       <p className="hint">
-        Polygon and slot use absolute X/Y as their centre. Select edges to access patterns and
-        mirrors.
+        {t(
+          'Polygon and slot use absolute X/Y as their centre. Select edges to access patterns and mirrors.',
+        )}
       </p>
       <button
         className="btn"
@@ -348,7 +361,7 @@ export function PrecisionSketchTools() {
           )
         }
       >
-        Select all sketch geometry
+        {t('Select all sketch geometry')}
       </button>
     </section>
   )

@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { lengthText } from '../core/units'
 import { activeSketchFeature, useStore } from '../doc/store'
@@ -225,22 +226,23 @@ function TextPanel({ request, onClose }: { request: TextEditRequest; onClose: ()
     <div
       className="okc-cmd okc-text-panel"
       role="dialog"
-      aria-label="Text"
+      aria-label={t('Text')}
       data-okc-command="text"
       onKeyDown={keys}
       onPointerDown={(event) => event.stopPropagation()}
     >
       <div className="okc-cmd-title">
-        <span className="okc-cmd-name">Text</span>
+        <span className="okc-cmd-name">{t('Text')}</span>
       </div>
       <p className="okc-cmd-hint">
-        The letter shapes are saved in the design, so it opens the same on computers without this
-        font.
+        {t(
+          'The letter shapes are saved in the design, so it opens the same on computers without this font.',
+        )}
       </p>
       <div className="okc-cmd-body">
         <div className="okc-cmd-row">
           <span className="okc-cmd-label" id="okc-text-words">
-            Text
+            {t('Text')}
           </span>
           <div className="okc-cmd-control">
             <input
@@ -256,7 +258,7 @@ function TextPanel({ request, onClose }: { request: TextEditRequest; onClose: ()
         </div>
         <div className="okc-cmd-row">
           <span className="okc-cmd-label" id="okc-text-font">
-            Font
+            {t('Font')}
           </span>
           <div className="okc-cmd-control">
             <select
@@ -274,7 +276,7 @@ function TextPanel({ request, onClose }: { request: TextEditRequest; onClose: ()
               }}
             >
               {!current && (
-                <option value="">{fontId ? `${fontId} (missing)` : 'Pick a font'}</option>
+                <option value="">{fontId ? `${fontId} (missing)` : t('Pick a font')}</option>
               )}
               {families.map((family) => (
                 <option key={family} value={family}>
@@ -287,7 +289,7 @@ function TextPanel({ request, onClose }: { request: TextEditRequest; onClose: ()
         {styles.length > 1 && (
           <div className="okc-cmd-row">
             <span className="okc-cmd-label" id="okc-text-style">
-              Style
+              {t('Style')}
             </span>
             <div className="okc-cmd-control">
               <select
@@ -309,9 +311,9 @@ function TextPanel({ request, onClose }: { request: TextEditRequest; onClose: ()
           <span
             className="okc-cmd-label"
             id="okc-text-height"
-            title="Height of the capital letters"
+            title={t('Height of the capital letters')}
           >
-            Height
+            {t('Height')}
           </span>
           <div className="okc-cmd-control">
             <div className="okc-cmd-number">
@@ -329,7 +331,7 @@ function TextPanel({ request, onClose }: { request: TextEditRequest; onClose: ()
         </div>
         <div className="okc-cmd-row">
           <span className="okc-cmd-label" id="okc-text-angle">
-            Angle
+            {t('Angle')}
           </span>
           <div className="okc-cmd-control">
             <div className="okc-cmd-number">
@@ -346,14 +348,14 @@ function TextPanel({ request, onClose }: { request: TextEditRequest; onClose: ()
           </div>
         </div>
         <div className="okc-cmd-row">
-          <span className="okc-cmd-label">Font file</span>
+          <span className="okc-cmd-label">{t('Font file')}</span>
           <div className="okc-cmd-control">
             <button
               type="button"
               className="okc-cmd-button okc-text-file"
               onClick={() => fileRef.current?.click()}
             >
-              Load a font file...
+              {t('Load a font file...')}
             </button>
             <input
               ref={fileRef}
@@ -370,25 +372,25 @@ function TextPanel({ request, onClose }: { request: TextEditRequest; onClose: ()
       </div>
       {listing === 'loading' && (
         <div className="okc-cmd-message" role="status" data-tone="warning">
-          Looking for the fonts on this computer...
+          {t('Looking for the fonts on this computer...')}
         </div>
       )}
       {listing === 'blocked' && (
         <div className="okc-cmd-message" role="status" data-tone="warning">
-          Your fonts are not shared with OpenKitCAD yet.{' '}
+          {t('Your fonts are not shared with OpenKitCAD yet.')}{' '}
           <button type="button" className="okc-text-link" onClick={() => void list()}>
-            Use my computer's fonts
+            {t("Use my computer's fonts")}
           </button>
         </div>
       )}
       {listing === 'unsupported' && !fonts.length && (
         <div className="okc-cmd-message" role="status" data-tone="warning">
-          This browser cannot list your fonts. Load a font file instead.
+          {t('This browser cannot list your fonts. Load a font file instead.')}
         </div>
       )}
       {problem && (
         <div className="okc-cmd-message" role="status" data-tone="error">
-          {problem}
+          {t(problem)}
         </div>
       )}
       <div className="okc-cmd-footer">
@@ -399,7 +401,7 @@ function TextPanel({ request, onClose }: { request: TextEditRequest; onClose: ()
           disabled={!valid}
           onClick={finish}
         >
-          OK
+          {t('OK')}
         </button>
         <button
           type="button"
@@ -407,7 +409,7 @@ function TextPanel({ request, onClose }: { request: TextEditRequest; onClose: ()
           data-okc-action="cancel"
           onClick={cancel}
         >
-          Cancel
+          {t('Cancel')}
         </button>
       </div>
     </div>

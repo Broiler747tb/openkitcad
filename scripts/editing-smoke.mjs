@@ -29,7 +29,7 @@ const crashes = []
 try {
   await server.listen()
   browser = await launch()
-  page = await browser.newPage({ viewport: { width: 1280, height: 800 } })
+  page = await browser.newPage({ locale: 'en-US', viewport: { width: 1280, height: 800 } })
   // The app has no favicon; Chromium's automatic request is unrelated to these checks.
   await page.route('**/favicon.ico', (route) => route.fulfill({ status: 204 }))
   page.on('pageerror', (error) => crashes.push(String(error)))

@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { useMemo, useState } from 'react'
 import {
   allParts,
@@ -96,51 +97,56 @@ export function KicadImport({ board, file, onClose }: KicadFile & { onClose: () 
   return (
     <div className="modal-backdrop" onPointerDown={onClose}>
       <div className="modal wide kicad-import" onPointerDown={(e) => e.stopPropagation()}>
-        <h2>Import {file}</h2>
+        <h2>
+          {t('Import ')}
+          {file}
+        </h2>
         <p className="hint">
-          The outline, thickness and mounting holes come straight from the board file. Heights are
-          guessed from each footprint's name, so change any that look wrong. Tick the parts that
-          need a hole through a wall: they become openings for Port Cutouts and Enclosure.
+          {t(
+            "The outline, thickness and mounting holes come straight from the board file. Heights are guessed from each footprint's name, so change any that look wrong. Tick the parts that need a hole through a wall: they become openings for Port Cutouts and Enclosure.",
+          )}
         </p>
 
         <div className="section">
-          <h3>What it is</h3>
+          <h3>{t('What it is')}</h3>
           <div className="row">
-            <label>Name</label>
+            <label>{t('Name')}</label>
             <input value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div className="row">
-            <label>Kind</label>
+            <label>{t('Kind')}</label>
             <select value={category} onChange={(e) => setCategory(e.target.value as PartCategory)}>
               {CATEGORIES.map((entry) => (
                 <option key={entry} value={entry}>
-                  {CATEGORY_LABEL[entry]}
+                  {t(CATEGORY_LABEL[entry])}
                 </option>
               ))}
             </select>
           </div>
           <p className="hint">
-            {size}, {board.holes.length} mounting {board.holes.length === 1 ? 'hole' : 'holes'},{' '}
-            {board.footprints.length} {board.footprints.length === 1 ? 'part' : 'parts'}.
+            {size}, {board.holes.length}
+            {t(' mounting ')}
+            {board.holes.length === 1 ? t('hole') : t('holes')}, {board.footprints.length}{' '}
+            {board.footprints.length === 1 ? t('part') : t('parts')}.
           </p>
           {board.warnings.map((warning) => (
             <p key={warning} className="warn-line">
-              {warning}
+              {t(warning)}
             </p>
           ))}
         </div>
 
         <div className="section">
-          <h3>Parts on the board</h3>
+          <h3>{t('Parts on the board')}</h3>
           {rows.length ? (
             <div className="kicad-parts">
               <table>
                 <thead>
                   <tr>
-                    <th>Connector</th>
-                    <th>Part</th>
-                    <th>Footprint</th>
-                    <th>Height</th>
+                    <th>{t('Connector')}</th>
+                    <th>{t('Part')}</th>
+                    <th>{t('Footprint')}</th>
+                    <th>{t('Height')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -149,15 +155,15 @@ export function KicadImport({ board, file, onClose }: KicadFile & { onClose: () 
                       <td>
                         <input
                           type="checkbox"
-                          aria-label={`${footprint.ref} needs an opening`}
+                          aria-label={t('{0} needs an opening', footprint.ref)}
                           checked={connectors.has(footprint.key)}
                           onChange={() => toggle(footprint.key)}
                         />
                       </td>
                       <td title={footprint.value}>
                         {footprint.ref}
-                        {footprint.back && <small> underneath</small>}
-                        {footprint.edge && <small> at the edge</small>}
+                        {footprint.back && <small>{t(' underneath')}</small>}
+                        {footprint.edge && <small>{t(' at the edge')}</small>}
                       </td>
                       <td className="kicad-footprint" title={footprint.name}>
                         {shortName(footprint.name)}
@@ -184,16 +190,18 @@ export function KicadImport({ board, file, onClose }: KicadFile & { onClose: () 
               </table>
             </div>
           ) : (
-            <p className="hint">No footprints on this board, so it comes in as a bare board.</p>
+            <p className="hint">
+              {t('No footprints on this board, so it comes in as a bare board.')}
+            </p>
           )}
         </div>
 
         <div className="modal-actions">
           <button className="btn primary" onClick={save}>
-            Add it to my parts
+            {t('Add it to my parts')}
           </button>
           <button className="btn" onClick={onClose}>
-            Cancel
+            {t('Cancel')}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { CommandPanel } from './CommandPanel'
+import { t } from '../../i18n'
 import { useCommand } from './session'
 
 export function CommandHost() {
@@ -18,7 +19,7 @@ export function CommandHost() {
       }
       onCommit={({ features, values }) => useCommand.getState().commit(features, values)}
       onCancel={() => useCommand.getState().cancel()}
-      problem={problem ? `${problem.message}${problem.hint ? ` ${problem.hint}` : ''}` : null}
+      problem={problem ? `${t(problem.message)}${problem.hint ? ` ${t(problem.hint)}` : ''}` : null}
     />
   )
 }

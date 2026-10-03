@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { useState } from 'react'
 import {
   allParts,
@@ -124,66 +125,70 @@ export function PartMaker({
       <div className="modal wide" onPointerDown={(e) => e.stopPropagation()}>
         <h2>
           {mode === 'edit'
-            ? `Edit ${base?.name ?? 'your part'}`
+            ? t('Edit {0}', base?.name ?? 'your part')
             : mode === 'copy'
-              ? `Your own copy of ${base?.name ?? 'a part'}`
-              : "Add a part that isn't here yet"}
+              ? t('Your own copy of {0}', base?.name ?? 'a part')
+              : t("Add a part that isn't here yet")}
         </h2>
         <p className="hint">
           {mode === 'new'
-            ? "Measure the board in front of you and it becomes usable straight away, holes and standoffs and all. If you want to send it in afterwards so nobody else has to measure the same board, there's a button for that at the bottom."
-            : 'Change the measurements and save. Parts already placed in your design update to match.'}
+            ? t(
+                "Measure the board in front of you and it becomes usable straight away, holes and standoffs and all. If you want to send it in afterwards so nobody else has to measure the same board, there's a button for that at the bottom.",
+              )
+            : t(
+                'Change the measurements and save. Parts already placed in your design update to match.',
+              )}
         </p>
 
         <div className="section">
-          <h3>What it is</h3>
+          <h3>{t('What it is')}</h3>
           <div className="row">
-            <label>Name</label>
+            <label>{t('Name')}</label>
             <input
               autoFocus
               value={draft.name}
-              placeholder="Seeed XIAO ESP32-C3"
+              placeholder={t('Seeed XIAO ESP32-C3')}
               onChange={(e) => set('name', e.target.value)}
             />
           </div>
           <div className="row">
-            <label>Kind</label>
+            <label>{t('Kind')}</label>
             <select
               value={draft.category}
               onChange={(e) => set('category', e.target.value as PartCategory)}
             >
               {CATEGORIES.map((c) => (
                 <option key={c} value={c}>
-                  {CATEGORY_LABEL[c]}
+                  {t(CATEGORY_LABEL[c])}
                 </option>
               ))}
             </select>
           </div>
           <div className="row">
-            <label>Made by</label>
+            <label>{t('Made by')}</label>
             <input
               value={draft.manufacturer}
-              placeholder="Optional"
+              placeholder={t('Optional')}
               onChange={(e) => set('manufacturer', e.target.value)}
             />
           </div>
           <div className="row">
-            <label>One line</label>
+            <label>{t('One line')}</label>
             <input
               value={draft.summary}
-              placeholder="What someone reads in the list"
+              placeholder={t('What someone reads in the list')}
               onChange={(e) => set('summary', e.target.value)}
             />
           </div>
         </div>
 
         <div className="section">
-          <h3>Size</h3>
+          <h3>{t('Size')}</h3>
           <p className="hint">
-            Measured across the board itself, not including anything hanging over the edge.
+            {t('Measured across the board itself, not including anything hanging over the edge.')}
           </p>
           <div className="row">
-            <label>Width</label>
+            <label>{t('Width')}</label>
             <input
               type="number"
               step="0.1"
@@ -192,7 +197,7 @@ export function PartMaker({
             />
           </div>
           <div className="row">
-            <label>Depth</label>
+            <label>{t('Depth')}</label>
             <input
               type="number"
               step="0.1"
@@ -201,7 +206,7 @@ export function PartMaker({
             />
           </div>
           <div className="row">
-            <label>Thickness</label>
+            <label>{t('Thickness')}</label>
             <input
               type="number"
               step="0.1"
@@ -210,7 +215,7 @@ export function PartMaker({
             />
           </div>
           <div className="row">
-            <label>Corner radius</label>
+            <label>{t('Corner radius')}</label>
             <input
               type="number"
               step="0.5"
@@ -221,11 +226,11 @@ export function PartMaker({
         </div>
 
         <div className="section">
-          <h3>Mounting holes</h3>
+          <h3>{t('Mounting holes')}</h3>
           <p className="hint">
-            Measured from the bottom-left corner of the board, which is how datasheets dimension
-            them, so the numbers copy straight across. This is the part that earns its keep: it is
-            what generates holes and standoffs later.
+            {t(
+              'Measured from the bottom-left corner of the board, which is how datasheets dimension them, so the numbers copy straight across. This is the part that earns its keep: it is what generates holes and standoffs later.',
+            )}
           </p>
           {draft.holes.map((hole, i) => (
             <div className="row hole-row" key={i}>
@@ -249,12 +254,12 @@ export function PartMaker({
               />
               <input
                 value={hole.screw ?? ''}
-                placeholder="M2.5"
+                placeholder={t('M2.5')}
                 onChange={(e) => setHole(i, { screw: e.target.value })}
               />
               <button
                 className="tb"
-                title="Remove this hole"
+                title={t('Remove this hole')}
                 onClick={() =>
                   set(
                     'holes',
@@ -267,52 +272,52 @@ export function PartMaker({
             </div>
           ))}
           {draft.holes.length > 0 && (
-            <p className="hint hole-legend">across, up, hole size, screw</p>
+            <p className="hint hole-legend">{t('across, up, hole size, screw')}</p>
           )}
           <button className="btn" onClick={addHole}>
-            Add a hole
+            {t('Add a hole')}
           </button>
         </div>
 
         <div className="section">
-          <h3>How sure are you</h3>
+          <h3>{t('How sure are you')}</h3>
           <p className="hint">
-            This is shown to anyone who uses the part. A catalogue that mixes datasheet figures with
-            someone's best guess quietly is worse than no catalogue, so it is asked outright rather
-            than assumed.
+            {t(
+              "This is shown to anyone who uses the part. A catalogue that mixes datasheet figures with someone's best guess quietly is worse than no catalogue, so it is asked outright rather than assumed.",
+            )}
           </p>
           <div className="row">
-            <label>These numbers</label>
+            <label>{t('These numbers')}</label>
             <select
               value={draft.confidence}
               onChange={(e) => set('confidence', e.target.value as PartDraft['confidence'])}
             >
-              <option value="datasheet">Come from a datasheet drawing</option>
-              <option value="measured">I measured with calipers</option>
-              <option value="approximate">Are close enough to lay out around</option>
+              <option value="datasheet">{t('Come from a datasheet drawing')}</option>
+              <option value="measured">{t('I measured with calipers')}</option>
+              <option value="approximate">{t('Are close enough to lay out around')}</option>
             </select>
           </div>
           <div className="row">
-            <label>Where from</label>
+            <label>{t('Where from')}</label>
             <input
               value={draft.source}
-              placeholder="Which datasheet, or what you measured and what you didn't"
+              placeholder={t("Which datasheet, or what you measured and what you didn't")}
               onChange={(e) => set('source', e.target.value)}
             />
           </div>
           <div className="row">
-            <label>Datasheet link</label>
+            <label>{t('Datasheet link')}</label>
             <input
               value={draft.datasheet}
-              placeholder="Optional"
+              placeholder={t('Optional')}
               onChange={(e) => set('datasheet', e.target.value)}
             />
           </div>
           <div className="row">
-            <label>Search terms</label>
+            <label>{t('Search terms')}</label>
             <input
               value={draft.tags}
-              placeholder="esp32 xiao wifi"
+              placeholder={t('esp32 xiao wifi')}
               onChange={(e) => set('tags', e.target.value)}
             />
           </div>
@@ -338,17 +343,17 @@ export function PartMaker({
         )}
 
         <details className="section">
-          <summary>See the file this makes</summary>
+          <summary>{t('See the file this makes')}</summary>
           <pre className="json-preview">{json}</pre>
         </details>
 
         <div className="modal-actions">
           <button className="btn primary" disabled={blocking.length > 0} onClick={useIt}>
             {saved
-              ? 'Saved. Use it from the catalogue'
+              ? t('Saved. Use it from the catalogue')
               : mode === 'edit'
-                ? 'Save changes'
-                : 'Add it to my catalogue'}
+                ? t('Save changes')
+                : t('Add it to my catalogue')}
           </button>
           <button
             className="btn"
@@ -357,8 +362,8 @@ export function PartMaker({
               downloadBlob(new Blob([json], { type: 'application/json' }), `${part.id}.json`)
             }
           >
-            Download the file
-            <small>Drop it in src/catalogue/parts/ and open a pull request</small>
+            {t('Download the file')}
+            <small>{t('Drop it in src/catalogue/parts/ and open a pull request')}</small>
           </button>
           <a
             className="btn"
@@ -370,16 +375,17 @@ export function PartMaker({
             target="_blank"
             rel="noreferrer"
           >
-            Send it in
-            <small>Opens a pre-filled issue with the file in it</small>
+            {t('Send it in')}
+            <small>{t('Opens a pre-filled issue with the file in it')}</small>
           </a>
           <button className="btn" onClick={onClose}>
-            Close
+            {t('Close')}
           </button>
         </div>
         <p className="hint">
-          The catalogue is CC0, so a part you contribute belongs to everybody, including people who
-          never use this app. That is the point of it.
+          {t(
+            'The catalogue is CC0, so a part you contribute belongs to everybody, including people who never use this app. That is the point of it.',
+          )}
         </p>
       </div>
     </div>

@@ -63,6 +63,8 @@ Designs stay on your machine. Autosave uses the browser's storage; **Save** give
 
 The browser version loads about 11 MB for the geometry engine on first use. The Windows EXE includes it and runs offline.
 
+English and Russian are available in the top bar. Your language choice is remembered.
+
 ## Run it locally
 
 Node.js **22.12 or newer**.

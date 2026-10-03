@@ -25,7 +25,7 @@ async function launch() {
 const server = await preview({ preview: { port: 4273, strictPort: true, open: false } })
 const base = server.resolvedUrls?.local?.[0] ?? `http://localhost:4273/`
 const browser = await launch()
-const page = await browser.newPage({ viewport: { width: 1280, height: 800 } })
+const page = await browser.newPage({ locale: 'en-US', viewport: { width: 1280, height: 800 } })
 
 const crashes = []
 page.on('pageerror', (error) => crashes.push(String(error)))

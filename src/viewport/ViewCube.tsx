@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { t } from '../i18n'
 
 export type CubeFace = 'top' | 'bottom' | 'front' | 'back' | 'left' | 'right'
 
@@ -53,11 +54,11 @@ export function ViewCube({
   const go = (view: string) => window.dispatchEvent(new CustomEvent('okc:view', { detail: view }))
 
   return (
-    <div className="view-cube" aria-label="View cube">
+    <div className="view-cube" aria-label={t('View cube')}>
       <button
         className="view-cube-home"
-        title="Home view"
-        aria-label="Home view"
+        title={t('Home view')}
+        aria-label={t('Home view')}
         onClick={() => go('iso')}
       >
         <svg viewBox="0 0 16 16" width={14} height={14} aria-hidden="true">
@@ -79,10 +80,10 @@ export function ViewCube({
                 faceRefs.current[index] = element
               }}
               className="view-cube-face"
-              title={`Look at the ${face.label.toLowerCase()}`}
+              title={t('Look at the {0}', t(face.label).toLocaleLowerCase())}
               onClick={() => go(face.id)}
             >
-              {face.label}
+              {t(face.label)}
             </button>
           ))}
         </div>

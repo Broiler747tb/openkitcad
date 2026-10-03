@@ -1,3 +1,5 @@
+import { t } from '../i18n'
+import { LanguagePicker } from './LanguagePicker'
 import { useEffect, useRef, useState } from 'react'
 import { readSharedSnapshot } from '../doc/share'
 import { downloadBlob, parseDesign, setAsideAutosave } from '../doc/persist'
@@ -117,10 +119,11 @@ export function SharedModelView({ hash, onOpen }: { hash: string; onOpen: () => 
           OpenKitCAD
         </span>
         <div className="shared-title">
-          <strong>{doc?.name ?? 'Shared model'}</strong>
-          <span>View only</span>
+          <strong>{doc?.name ?? t('Shared model')}</strong>
+          <span>{t('View only')}</span>
         </div>
         <div className="shared-actions">
+          <LanguagePicker />
           <button
             className="btn"
             disabled={!doc}
@@ -132,7 +135,7 @@ export function SharedModelView({ hash, onOpen }: { hash: string; onOpen: () => 
                 )
             }}
           >
-            Download .okc
+            {t('Download .okc')}
           </button>
           <button
             className="btn primary"
@@ -158,14 +161,14 @@ export function SharedModelView({ hash, onOpen }: { hash: string; onOpen: () => 
               }
             }}
           >
-            {opening ? 'Opening…' : 'Open a copy'}
+            {opening ? t('Opening…') : t('Open a copy')}
           </button>
         </div>
       </header>
-      <div className="shared-canvas" ref={mount} aria-label="Shared model 3D view" />
+      <div className="shared-canvas" ref={mount} aria-label={t('Shared model 3D view')} />
       {(loading || error) && (
         <div className="shared-message" role="status">
-          {error || 'Building the model…'}
+          {t(error || 'Building the model…')}
           {error && (
             <p>
               <button
@@ -175,7 +178,7 @@ export function SharedModelView({ hash, onOpen }: { hash: string; onOpen: () => 
                   onOpen()
                 }}
               >
-                Back to CAD
+                {t('Back to CAD')}
               </button>
             </p>
           )}
@@ -183,15 +186,17 @@ export function SharedModelView({ hash, onOpen }: { hash: string; onOpen: () => 
       )}
       <footer className="shared-footer">
         <span>
-          {warning ||
-            'Drag to orbit · Scroll to zoom. Viewing this model does not replace your work.'}
+          {t(
+            warning ||
+              'Drag to orbit · Scroll to zoom. Viewing this model does not replace your work.',
+          )}
         </span>
         <button
           className="btn"
           disabled={loading || !doc}
           onClick={() => engine.current?.frameAll()}
         >
-          Fit view
+          {t('Fit view')}
         </button>
       </footer>
       <ConfirmHost />
