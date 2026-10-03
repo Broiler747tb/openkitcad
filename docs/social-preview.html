@@ -24,16 +24,19 @@
     }
     .model {
       position: absolute;
-      left: 520px;
-      top: -25px;
-      width: 760px;
+      left: 660px;
+      top: 40px;
+      width: 590px;
       height: auto;
-      mask-image: linear-gradient(90deg, transparent, #000 17%);
+      mask-image:
+        linear-gradient(90deg, transparent, #000 17%),
+        linear-gradient(0deg, transparent, #000 8%, #000 93%, transparent);
+      mask-composite: intersect;
     }
     .mark {
       position: absolute;
       left: 64px;
-      top: 66px;
+      top: 112px;
       display: flex;
       align-items: center;
       gap: 14px;
@@ -70,7 +73,7 @@
     .platforms {
       position: absolute;
       left: 64px;
-      bottom: 65px;
+      bottom: 116px;
       font-size: 17px;
       color: #94a9b7;
       letter-spacing: 1.4px;
