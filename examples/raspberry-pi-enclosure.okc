@@ -1,0 +1,127 @@
+{
+  "format": "openkitcad",
+  "version": 2,
+  "name": "Raspberry Pi 4 enclosure",
+  "units": "mm",
+  "parameters": [],
+  "bindings": [],
+  "rootComponentId": "root",
+  "components": [
+    {
+      "id": "root",
+      "name": "Enclosure",
+      "source": {
+        "kind": "design"
+      },
+      "bodies": [
+        {
+          "id": "box",
+          "name": "Case",
+          "visible": true,
+          "colour": "#87a5b7"
+        },
+        {
+          "id": "lid",
+          "name": "Lid",
+          "visible": true,
+          "colour": "#b4c5ce"
+        }
+      ]
+    },
+    {
+      "id": "pi-part",
+      "name": "Raspberry Pi 4 Model B",
+      "source": {
+        "kind": "catalogue",
+        "partId": "raspberry-pi-4b"
+      },
+      "bodies": []
+    }
+  ],
+  "occurrences": [
+    {
+      "id": "pi",
+      "parentComponentId": "root",
+      "componentId": "pi-part",
+      "name": "Raspberry Pi 4 Model B",
+      "transform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        -42.5,
+        -28,
+        6,
+        1
+      ],
+      "visible": true,
+      "grounded": true
+    }
+  ],
+  "timeline": [
+    {
+      "id": "en",
+      "name": "Case, mounts and port openings",
+      "componentId": "root",
+      "kind": "enclosure",
+      "contextPath": [],
+      "mounts": [
+        {
+          "occurrencePath": [
+            "pi"
+          ],
+          "kind": "standoffs",
+          "connectorIds": [
+            "usb2",
+            "usb3",
+            "eth",
+            "usbc",
+            "hdmi0",
+            "hdmi1",
+            "av"
+          ]
+        }
+      ],
+      "clearance": 2,
+      "under": 4,
+      "wall": 2,
+      "floor": 2,
+      "lid": "screws",
+      "lidThickness": 2,
+      "gap": 0.2,
+      "screw": 3,
+      "tolerance": 0.6,
+      "bodyId": "box",
+      "lidBodyId": "lid"
+    },
+    {
+      "id": "lid-move",
+      "name": "Move lid aside",
+      "componentId": "root",
+      "kind": "move",
+      "bodyIds": [
+        "lid"
+      ],
+      "offset": [
+        0,
+        76,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "marker": null,
+  "groups": []
+}
