@@ -537,15 +537,24 @@ export function Viewport() {
     observer.observe(mountRef.current)
 
     const onView = (e: Event) => engine.setStandardView((e as CustomEvent).detail)
+    const onCubeOrbit = (e: Event) => {
+      const { dx, dy } = (e as CustomEvent<{ dx: number; dy: number }>).detail
+      engine.orbitView(dx, dy)
+    }
+    const onCubeRoll = (e: Event) => engine.rollView((e as CustomEvent<number>).detail)
     const onFit = () => engine.frameAll()
     const onPartDragEnd = () => engine.setDropGhost(null)
     window.addEventListener('okc:view', onView)
+    window.addEventListener('okc:cube-orbit', onCubeOrbit)
+    window.addEventListener('okc:cube-roll', onCubeRoll)
     window.addEventListener('okc:fit', onFit)
     window.addEventListener('okc:part-drag-end', onPartDragEnd)
 
     return () => {
       observer.disconnect()
       window.removeEventListener('okc:view', onView)
+      window.removeEventListener('okc:cube-orbit', onCubeOrbit)
+      window.removeEventListener('okc:cube-roll', onCubeRoll)
       window.removeEventListener('okc:fit', onFit)
       window.removeEventListener('okc:part-drag-end', onPartDragEnd)
       engine.dispose()
@@ -1392,7 +1401,9 @@ export function Viewport() {
     }
     const hit = engine.pick(e.clientX, e.clientY)
     if ((hit?.instanceId ?? null) !== store.hovered) store.setHovered(hit?.instanceId ?? null)
-    engine.setHoverPick(engine.pickSub(e.clientX, e.clientY))
+    engine.setHoverPick(
+      engine.pickSub(e.clientX, e.clientY, { catalogue: store.tool === 'measure' }),
+    )
   }
 
   const onPointerDown = (e: React.PointerEvent) => {
@@ -1731,10 +1742,15 @@ export function Viewport() {
     const hit = engine.pick(e.clientX, e.clientY)
 
     if (store.tool === 'measure') {
-      if (hit) store.addMeasurePoint(hit.point)
+      const sub = engine.pickSub(e.clientX, e.clientY, { catalogue: true, pointOnEdge: true })
+      const instance = sub ? store.instances.find((item) => item.id === sub.instanceId) : null
+      if (sub && instance) store.addMeasurePoint(transformPoint(instance.matrix, sub.point))
+      else if (hit) store.addMeasurePoint(hit.point)
       else store.setStatus('Click on a part, not empty space.')
       return
     }
+
+    const sub = engine.pickSub(e.clientX, e.clientY)
 
     const glyph = engine.pickJointGlyph(e.clientX, e.clientY)
     const glyphFeature = glyph ? findFeature(store.doc, glyphFeatureId(glyph)) : undefined
@@ -1744,7 +1760,7 @@ export function Viewport() {
       return
     }
 
-    if (!hit) {
+    if (!hit && !sub) {
       const construction = engine.pickConstructionPlane(e.clientX, e.clientY)
       if (construction) {
         store.select({ kind: 'feature', id: construction })
@@ -1758,7 +1774,7 @@ export function Viewport() {
       return
     }
 
-    if (hit.kind === 'catalogue') {
+    if (hit?.kind === 'catalogue' && !sub) {
       store.select({
         kind: 'occurrence',
         id: hit.path[hit.path.length - 1],
@@ -1768,9 +1784,9 @@ export function Viewport() {
       return
     }
 
-    store.select({ kind: 'body', id: hit.bodyId, instanceId: hit.instanceId })
-
-    const sub = engine.pickSub(e.clientX, e.clientY)
+    const pickedBody = sub ?? hit
+    if (!pickedBody) return
+    store.select({ kind: 'body', id: pickedBody.bodyId, instanceId: pickedBody.instanceId })
     if (!sub) {
       store.setSubSelection([])
       return

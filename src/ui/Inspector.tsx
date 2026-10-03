@@ -31,6 +31,7 @@ import { poseOf, withPose, type Pose } from '../doc/placement'
 import { DesignChecks } from './DesignChecks'
 import { HistoryProblems } from './HistoryProblems'
 import { SketchDiagnostics } from './SketchDiagnostics'
+import { MeasurePanel } from './MeasurePanel'
 import { NumberInput as Num } from './NumberInput'
 import { lengthLabel, volumeLabel } from '../core/units'
 import { counted } from '../i18n'
@@ -149,6 +150,7 @@ export function Inspector({
   return (
     <div className="panel-right">
       <HistoryProblems onProperties={() => onTab('properties')} />
+      <MeasurePanel />
 
       <div className="tabs inspector-tabs">
         {(['properties', 'actions', 'checks'] as const).map((item) => (
