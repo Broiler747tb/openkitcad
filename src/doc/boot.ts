@@ -24,12 +24,13 @@ function hasWork(doc: OkcDocument | undefined): boolean {
   return !!doc && (doc.timeline.length > 0 || doc.occurrences.length > 0)
 }
 
-export function bootOnce(): Promise<void> {
-  booting ??= boot()
+export function bootOnce(ignoreSharedLink = false): Promise<void> {
+  booting ??= boot(ignoreSharedLink)
   return booting
 }
 
-async function boot(): Promise<void> {
+async function boot(ignoreSharedLink: boolean): Promise<void> {
+  const hash = ignoreSharedLink ? '' : location.hash
   discardOldAutosave()
   try {
     await kernel().ready()
@@ -38,8 +39,8 @@ async function boot(): Promise<void> {
     return
   }
   useStore.getState().setKernelReady(true)
-  const notes = await restoreDesign(location.hash)
-  if (/[#&]d=/.test(location.hash)) {
+  const notes = await restoreDesign(hash)
+  if (!ignoreSharedLink && hash === location.hash && /[#&]d=/.test(hash)) {
     history.replaceState(null, '', location.pathname + location.search)
   }
   useStore.getState().setAutosaving(true)

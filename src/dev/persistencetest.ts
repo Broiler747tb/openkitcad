@@ -23,6 +23,7 @@ import { createMesh } from '../mesh/types'
 import { useCommand } from '../ui/command/session'
 import { boxCommand } from '../ui/command/specs/primitives'
 import type { TestResult } from './selftest'
+import { runShareTest } from './sharetest'
 
 const AUTOSAVE = 'openkitcad.autosave.v2'
 const ASIDE = `${AUTOSAVE}.unopened`
@@ -284,5 +285,5 @@ export async function runPersistenceTest(): Promise<TestResult[]> {
     useCommand.setState(command)
     useStore.setState(store)
   }
-  return results
+  return [...results, ...runShareTest()]
 }
