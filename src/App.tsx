@@ -56,6 +56,7 @@ function EditorApp() {
   const activeSketch = useStore((s) => s.activeSketch)
   const selection = useStore((s) => s.selection)
   const hasProblems = useStore((s) => s.errors.length > 0)
+  const measuring = useStore((s) => s.tool === 'measure' || !!s.measure.a)
   const commanding = useCommand((s) => !!s.session)
 
   useEffect(() => {
@@ -105,7 +106,7 @@ function EditorApp() {
 
   return (
     <div
-      className={`app ${activeSketch ? 'sketching' : ''} ${selection.kind === 'none' && !activeSketch && !hasProblems && inspectorTab === 'properties' ? 'inspector-empty' : ''} ${sheet ? `sheet-${sheet}` : ''} ${commanding ? 'commanding' : ''}`}
+      className={`app ${activeSketch ? 'sketching' : ''} ${selection.kind === 'none' && !activeSketch && !hasProblems && !measuring && inspectorTab === 'properties' ? 'inspector-empty' : ''} ${sheet ? `sheet-${sheet}` : ''} ${commanding ? 'commanding' : ''}`}
     >
       <Toolbar
         onExport={() => setShowExport(true)}

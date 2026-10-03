@@ -1803,9 +1803,17 @@ export class ViewportEngine {
       .map((entry) => entry.mesh)
   }
 
+  private clipped(point: THREE.Vector3): boolean {
+    return this.sectionPlanes.some((plane) => plane.distanceToPoint(point) < -1e-7)
+  }
+
+  private visibleHit(ray: THREE.Raycaster, objects: THREE.Object3D[]) {
+    return ray.intersectObjects(objects, false).find((hit) => !this.clipped(hit.point))
+  }
+
   pick(clientX: number, clientY: number): PickResult | null {
     this.raycaster.setFromCamera(this.pointerToNdc(clientX, clientY), this.camera)
-    const hit = this.raycaster.intersectObjects(this.pickables(), false)[0]
+    const hit = this.visibleHit(this.raycaster, this.pickables())
     if (!hit) return null
     const entry = this.objects.get(hit.object.userData.instanceId)
     if (!entry) return null
@@ -1856,7 +1864,7 @@ export class ViewportEngine {
   pickSub(
     clientX: number,
     clientY: number,
-    options: { catalogue?: boolean; vertices?: boolean } = {},
+    options: { catalogue?: boolean; vertices?: boolean; pointOnEdge?: boolean } = {},
   ): SubPick | null {
     const ndc = this.pointerToNdc(clientX, clientY)
     this.raycaster.setFromCamera(ndc, this.camera)
@@ -1873,6 +1881,17 @@ export class ViewportEngine {
       (entry) =>
         (entry.instance.kind === 'body' || !!options.catalogue) && !entry.instance.previewTool,
     )
+    const occluders = this.pickables()
+    const sight = new THREE.Raycaster()
+    const visible = (point: THREE.Vector3) => {
+      if (this.clipped(point)) return false
+      const projected = point.clone().project(this.camera)
+      if (projected.z < -1 || projected.z > 1) return false
+      sight.setFromCamera(new THREE.Vector2(projected.x, projected.y), this.camera)
+      const hit = this.visibleHit(sight, occluders)
+      const tolerance = Math.max(1e-4, this.pixelSize([point.x, point.y, point.z]) * 0.05)
+      return !hit || hit.distance >= sight.ray.origin.distanceTo(point) - tolerance
+    }
 
     const VERTEX_PX = 9
     let bestVertex: { entry: InstanceObject; pos: Vec3; d: number } | null = null
@@ -1891,7 +1910,7 @@ export class ViewportEngine {
         world.set(x, y, z).applyMatrix4(entry.mesh.matrixWorld)
         const [sx, sy] = toScreen(world)
         const d = Math.hypot(sx - cx, sy - cy)
-        if (d < VERTEX_PX && (!bestVertex || d < bestVertex.d)) {
+        if (d < VERTEX_PX && (!bestVertex || d < bestVertex.d) && visible(world)) {
           bestVertex = { entry, pos: [x, y, z], d }
         }
       }
@@ -1908,21 +1927,20 @@ export class ViewportEngine {
       }
     }
 
-    const hit = this.raycaster.intersectObjects(
-      bodies.map((entry) => entry.mesh),
-      false,
-    )[0]
+    const hit = this.visibleHit(this.raycaster, occluders)
     if (!hit) return null
 
     const entry = this.objects.get(hit.object.userData.instanceId)
     const data = entry ? this.geometries.get(entry.instance.meshKey)?.data : undefined
-    if (!entry || !data) return null
+    if (!entry || !data || !bodies.includes(entry)) return null
     const worldPoint: Vec3 = [hit.point.x, hit.point.y, hit.point.z]
     const localHit = hit.object.worldToLocal(hit.point.clone())
 
     const previous = this.raycaster.params.Line?.threshold
     this.raycaster.params.Line = { threshold: this.pixelSize(worldPoint) * 6 }
-    const lineHit = this.raycaster.intersectObject(entry.outline, false)[0]
+    const lineHit = this.raycaster
+      .intersectObject(entry.outline, false)
+      .find((candidate) => visible(candidate.point))
     this.raycaster.params.Line = { threshold: previous ?? 1 }
     if (lineHit && lineHit.distance <= hit.distance + this.pixelSize(worldPoint) * 6) {
       const vertexIndex = lineHit.index ?? 0
@@ -1936,7 +1954,9 @@ export class ViewportEngine {
           kind: 'edge',
           id: elementKey('e', group.name, group.edgeId),
           name: group.name,
-          point: this.edgeMidpoint(data, group),
+          point: options.pointOnEdge
+            ? (hit.object.worldToLocal(lineHit.point.clone()).toArray() as Vec3)
+            : this.edgeMidpoint(data, group),
           length: this.edgeLength(data, group),
         }
       }
@@ -2218,11 +2238,21 @@ export class ViewportEngine {
         [0, 0, 1],
       ],
       iso: [
-        [-0.72, -0.6, 0.55],
+        [0.72, -0.6, 0.55],
         [0, 0, 1],
       ],
     }
-    const chosen = dirs[view]
+    const direction = /^(-?1|0),(-?1|0),(-?1|0)$/.test(view)
+      ? (view.split(',').map(Number) as Vec3)
+      : null
+    const chosen =
+      dirs[view] ??
+      (direction && direction.some(Boolean)
+        ? ([direction, direction[0] || direction[1] ? [0, 0, 1] : [0, direction[2], 0]] as [
+            Vec3,
+            Vec3,
+          ])
+        : null)
     if (!chosen) return
     const [dir, up] = chosen
     const eye = target.clone().addScaledVector(new THREE.Vector3(...dir).normalize(), distance)
@@ -2244,6 +2274,26 @@ export class ViewportEngine {
     return () => {
       this.viewListeners.delete(listener)
     }
+  }
+
+  orbitView(dx: number, dy: number) {
+    this.viewTween = null
+    const target = this.controls.target
+    const offset = this.camera.position.clone().sub(target)
+    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(this.camera.quaternion)
+    const rotation = new THREE.Quaternion()
+      .setFromAxisAngle(this.camera.up.clone().normalize(), (-dx * Math.PI) / 160)
+      .multiply(new THREE.Quaternion().setFromAxisAngle(right, (-dy * Math.PI) / 160))
+    this.camera.position.copy(target).add(offset.applyQuaternion(rotation))
+    this.camera.up.applyQuaternion(rotation).normalize()
+    this.camera.lookAt(target)
+  }
+
+  rollView(angle: number) {
+    this.viewTween = null
+    const axis = this.camera.position.clone().sub(this.controls.target).normalize()
+    this.camera.up.applyAxisAngle(axis, angle).normalize()
+    this.camera.lookAt(this.controls.target)
   }
 
   private viewRotation(): number[] {

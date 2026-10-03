@@ -2447,4 +2447,20 @@ export const ru: Readonly<Record<string, string>> = {
     'Плоский контур для векторных редакторов и станков.',
   'Print at 100%, tape to the part, punch and drill.':
     'Распечатай в масштабе 100%, приложи к детали, наметь и просверли.',
+  Measurement: 'Измерение',
+  'New measurement': 'Новое измерение',
+  'Pick two points on visible geometry. Corners and edges snap exactly.':
+    'Выбери две точки на видимой геометрии. Углы и рёбра выбираются точно.',
+  'Pick the second point. Corners and edges snap exactly.':
+    'Выбери вторую точку. Углы и рёбра выбираются точно.',
+  'Click again to start a new measurement.': 'Следующий клик начнёт новое измерение.',
+  'Roll counterclockwise': 'Повернуть против часовой стрелки',
+  'Roll clockwise': 'Повернуть по часовой стрелке',
+  'View above': 'Вид сверху от текущего',
+  'View below': 'Вид снизу от текущего',
+  'View to the left': 'Вид слева от текущего',
+  'View to the right': 'Вид справа от текущего',
+  'View: {0}': 'Вид: {0}',
+  'Drag to orbit. Click a face, edge or corner to align the view.':
+    'Потяни для вращения. Нажми грань, ребро или угол для точного вида.',
 }

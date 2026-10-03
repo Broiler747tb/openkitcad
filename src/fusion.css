@@ -791,9 +791,9 @@ button.workspace-tab {
 .view-cube {
   position: absolute;
   top: 14px;
-  right: 318px;
-  width: 96px;
-  height: 104px;
+  right: 308px;
+  width: 144px;
+  height: 154px;
   padding: 0;
   display: block;
   background: none;
@@ -802,68 +802,129 @@ button.workspace-tab {
   pointer-events: none;
 }
 .inspector-empty .view-cube {
-  right: 24px;
+  right: 14px;
+}
+.view-cube .view-cube-home,
+.view-cube .view-cube-roll button,
+.view-cube .cube-adjacent {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--okc-cube-text);
+  pointer-events: auto;
+  cursor: pointer;
+  width: 26px;
+  height: 26px;
 }
 .view-cube-home {
   position: absolute;
   top: 0;
-  left: 0;
-  width: 22px;
-  height: 22px;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  border: 1px solid var(--okc-cube-border);
-  border-radius: var(--okc-radius-sm);
-  background: var(--okc-cube-face);
-  color: var(--okc-cube-text);
-  pointer-events: auto;
-  cursor: pointer;
+  left: 4px;
 }
-.view-cube-home:hover {
+.view-cube-roll {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  z-index: 1;
+}
+.view-cube .view-cube-roll button {
+  font-size: 24px;
+}
+.view-cube-home:hover,
+.view-cube-roll button:hover,
+.cube-adjacent:hover {
   background: var(--okc-cube-face-hover);
+  color: var(--okc-accent);
 }
 .view-cube-stage {
-  position: absolute;
-  left: 16px;
-  top: 20px;
-  width: 64px;
-  height: 64px;
+  width: 144px;
+  height: 154px;
+  touch-action: none;
+  overflow: visible;
 }
-.view-cube-body {
-  position: absolute;
-  left: 32px;
-  top: 32px;
-  width: 0;
-  height: 0;
-  transform-style: preserve-3d;
-}
-.view-cube-face {
-  position: absolute;
-  left: -32px;
-  top: -32px;
-  width: 64px;
-  height: 64px;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  border: 1px solid var(--okc-cube-border);
-  border-radius: 0;
-  background: var(--okc-cube-face);
-  color: var(--okc-cube-text);
-  font: 700 10px/1 var(--okc-font-ui);
-  letter-spacing: 0.4px;
-  backface-visibility: hidden;
+.cube-zone {
   pointer-events: auto;
-  cursor: pointer;
-  transform-origin: 50% 50%;
+  cursor: grab;
+  outline: none;
 }
-.view-cube-face:hover {
-  background: var(--okc-cube-face-hover);
-  border-color: var(--okc-accent);
+.cube-zone:active {
+  cursor: grabbing;
+}
+.cube-zone polygon {
+  stroke: var(--okc-cube-border);
+  stroke-width: 0.7;
+  stroke-linejoin: round;
+}
+.cube-zone:hover polygon,
+.cube-zone:focus-visible polygon {
+  fill: var(--okc-cube-face-hover);
+  stroke: var(--okc-accent);
+  stroke-width: 1.4;
+}
+.cube-zone[aria-pressed='true'] polygon {
+  fill: var(--okc-cube-face-active);
+}
+.cube-zone text {
+  fill: var(--okc-cube-text);
+  font: 600 11px var(--okc-font-ui);
+  pointer-events: none;
+}
+.view-cube .cube-adjacent {
+  position: absolute;
+  font-size: 22px;
+}
+.cube-up {
+  top: 26px;
+  left: 59px;
+}
+.cube-down {
+  bottom: 8px;
+  left: 59px;
+}
+.cube-left {
+  top: 67px;
+  left: 5px;
+}
+.cube-right {
+  top: 67px;
+  right: 5px;
+}
+.measurement-distance {
+  display: block;
   color: var(--okc-accent-text);
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+  margin: 12px 0;
 }
-
+.vp-label.vp-label-measure {
+  color: var(--okc-text-on-accent);
+  background: var(--okc-accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+.measurement-components {
+  display: grid;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.measurement-components div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.measurement-components dd {
+  margin: 0;
+}
+@media (max-width: 900px) {
+  .view-cube,
+  .inspector-empty .view-cube {
+    right: 8px;
+  }
+}
 .marking-ring {
   position: fixed;
   width: 0;
