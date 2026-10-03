@@ -30,6 +30,8 @@ if (params.has('selftest') || params.has('kerneltest')) {
     suites.push(
       ['solver', async () => (await import('./dev/selftest')).runSelfTest()],
       ['workflow', async () => (await import('./dev/workflowtest')).runWorkflowTest()],
+      ['history', async () => (await import('./dev/historytest')).runHistoryTest()],
+      ['checks', async () => (await import('./dev/checkstest')).runChecksTest()],
       ['precision', async () => (await import('./dev/precisiontest')).runPrecisionTest()],
       ['workshop', async () => (await import('./dev/powertest')).runPowerTest()],
       ['parameters', async () => (await import('./dev/parametertest')).runParameterTest()],

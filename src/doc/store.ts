@@ -613,6 +613,7 @@ export const useStore = create<AppState>((set, get) => ({
   setDoc(doc, resetHistory = true) {
     doc = clone(doc)
     resolveParameters(doc)
+    lastMerge = null
     set(
       resetHistory
         ? {
@@ -625,6 +626,11 @@ export const useStore = create<AppState>((set, get) => ({
             subSelection: [],
             sketchSelection: [],
             activeComponentId: doc.rootComponentId,
+            transientBase: null,
+            tool: 'select',
+            pickingSketchPlane: false,
+            hovered: null,
+            measure: { a: null, b: null },
           }
         : { doc, ...reconcile(get(), doc) },
     )
@@ -639,15 +645,20 @@ export const useStore = create<AppState>((set, get) => ({
 
     const now = performance.now()
     const merges =
+      !opts?.transient &&
+      state.past.length > 0 &&
+      state.future.length === 0 &&
       !!opts?.mergeKey &&
       lastMerge !== null &&
       lastMerge.key === opts.mergeKey &&
       now - lastMerge.at < MERGE_WINDOW_MS
-    lastMerge = opts?.mergeKey ? { key: opts.mergeKey, at: now } : null
+    lastMerge = !opts?.transient && opts?.mergeKey ? { key: opts.mergeKey, at: now } : null
 
     const fixes = reconcile(state, next)
-    if (opts?.transient || merges) {
+    if (opts?.transient) {
       set({ doc: next, ...fixes })
+    } else if (merges) {
+      set({ doc: next, future: [], ...fixes })
     } else {
       set({
         doc: next,
@@ -667,7 +678,7 @@ export const useStore = create<AppState>((set, get) => ({
     lastMerge = null
     const state = get()
     const { past, doc, future } = state
-    if (past.length === 0 || state.commandOpen) return
+    if (past.length === 0 || state.commandOpen || state.transientBase) return
     const previous = past[past.length - 1]
     const active = state.activeSketch
     const activeSketch =
@@ -694,7 +705,7 @@ export const useStore = create<AppState>((set, get) => ({
     lastMerge = null
     const state = get()
     const { future, doc, past } = state
-    if (future.length === 0 || state.commandOpen) return
+    if (future.length === 0 || state.commandOpen || state.transientBase) return
     const next = future[0]
     const active = state.activeSketch
     const activeSketch =
@@ -1140,9 +1151,11 @@ export const useStore = create<AppState>((set, get) => ({
   },
   transientBase: null,
   beginTransient() {
+    lastMerge = null
     if (!get().transientBase) set({ transientBase: get().doc })
   },
   endTransient() {
+    lastMerge = null
     const base = get().transientBase
     if (base && base !== get().doc) {
       set({
@@ -1153,9 +1166,14 @@ export const useStore = create<AppState>((set, get) => ({
     set({ transientBase: null })
   },
   cancelTransient() {
+    lastMerge = null
     const base = get().transientBase
-    if (base) set({ doc: base })
-    set({ transientBase: null })
+    if (base && base !== get().doc) {
+      set({ doc: base, transientBase: null, ...reconcile(get(), base) })
+      get().rebuild()
+    } else {
+      set({ transientBase: null })
+    }
   },
 
   startSketch(plane, bodyId) {

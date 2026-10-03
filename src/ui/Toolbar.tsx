@@ -715,7 +715,7 @@ export function Toolbar({
           className="quick-icon"
           title="Undo (Ctrl Z)"
           aria-label="Undo"
-          disabled={!state.past.length || state.commandOpen}
+          disabled={!state.past.length || state.commandOpen || !!state.transientBase}
           onClick={state.undo}
         >
           ↶
@@ -724,7 +724,7 @@ export function Toolbar({
           className="quick-icon"
           title="Redo (Ctrl Y)"
           aria-label="Redo"
-          disabled={!state.future.length || state.commandOpen}
+          disabled={!state.future.length || state.commandOpen || !!state.transientBase}
           onClick={state.redo}
         >
           ↷

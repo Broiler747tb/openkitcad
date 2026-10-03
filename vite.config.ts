@@ -7,7 +7,12 @@ export default defineConfig({
   // on GitHub Pages without reconfiguration.
   base: './',
   worker: { format: 'es' },
+  // Keep linked dependencies on the checkout's drive: raw /@fs/ assets on a
+  // different Windows drive are otherwise served as the application's HTML.
+  resolve: { preserveSymlinks: true },
   optimizeDeps: {
+    // Showcase HTML uses its own rendering dependencies, outside the CAD app.
+    entries: ['index.html'],
     // The OpenCascade glue is a huge emscripten bundle; prebundling it is slow
     // and breaks the `locateFile` hook used to find the .wasm.
     exclude: ['replicad-opencascadejs'],

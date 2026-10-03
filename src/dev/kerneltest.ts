@@ -1799,6 +1799,17 @@ export async function runKernelTest(): Promise<TestResult[]> {
         ? errorText(inserted)
         : `${insertedMesh?.kind} body, ${insertedMesh?.volume.toFixed(3)} mm3, ${insertedMesh?.edges.edgeGroups.length} edges drawn`,
     )
+    const meshPrint = await kernel.printPrep(['root|mesh'], {
+      nozzle: 0.4,
+      bed: [220, 220, 250],
+    })
+    add(
+      'the print check reports an unchecked mesh instead of claiming it passed',
+      meshPrint.some(
+        (warning) => warning.instanceId === 'root|mesh' && /mesh/i.test(warning.message),
+      ),
+      meshPrint.map((warning) => warning.message).join('; ') || 'no warnings',
+    )
 
     const halves = await evaluate(
       meshDoc(
@@ -1973,16 +1984,37 @@ export async function runKernelTest(): Promise<TestResult[]> {
         Math.abs(fitted - bare - header) < 1,
         `${(fitted - bare).toFixed(1)} mm3 less, header ${header.toFixed(1)}`,
       )
-      const clashes = async (headers: boolean | undefined) =>
-        (await kernel.clearance(boardDoc('arduino-nano', headers, 8))).filter((clash) =>
+      const clashes = async (
+        headers: boolean | undefined,
+        visible = true,
+        negative = false,
+        cuttingPart = false,
+      ) => {
+        const doc = boardDoc('arduino-nano', headers, 8)
+        doc.components[0].bodies[0].visible = visible
+        doc.components[0].bodies[0].negative = negative
+        doc.occurrences[0].negative = cuttingPart
+        await evaluate(doc)
+        return (await kernel.clearance(doc)).filter((clash) =>
           `${clash.aLabel} ${clash.bLabel}`.includes('Header pins below'),
         ).length
+      }
       const withPins = await clashes(undefined)
       const withoutPins = await clashes(false)
       add(
         'a Nano sitting just above a plate clashes through its pins, and not once they are off',
         withPins > 0 && withoutPins === 0,
         `${withPins} clash(es) with pins, ${withoutPins} without`,
+      )
+      const hidden = await clashes(undefined, false)
+      const negative = await clashes(undefined, true, true)
+      const cuttingPart = await clashes(undefined, true, false, true)
+      add('keepouts ignore hidden bodies', hidden === 0, `${hidden} clash(es)`)
+      add('keepouts ignore cutting bodies', negative === 0, `${negative} clash(es)`)
+      add(
+        'keepouts ignore parts used as cutting tools',
+        cuttingPart === 0,
+        `${cuttingPart} clash(es)`,
       )
     }
   } catch (e) {

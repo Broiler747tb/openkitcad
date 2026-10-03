@@ -1,0 +1,188 @@
+import { useEffect, useRef, useState } from 'react'
+import { useStore } from '../doc/store'
+import { kernel } from '../kernel/api'
+import type { Clash, Instance, KernelApi, PrintWarning } from '../kernel/types'
+import type { OkcDocument } from '../doc/types'
+import { lengthLabel } from '../core/units'
+import { NumberInput } from './NumberInput'
+
+type CheckKind = 'clashes' | 'print'
+type CheckResult = { doc: OkcDocument; instances: Instance[] } & (
+  | { kind: 'clashes'; value: Clash[] }
+  | { kind: 'print'; value: PrintWarning[] }
+  | { kind: 'error'; value: string }
+)
+
+export function DesignChecks({
+  api = kernel,
+}: {
+  api?: () => Pick<KernelApi, 'clearance' | 'printPrep'>
+}) {
+  const section = useStore((s) => s.section)
+  const instances = useStore((s) => s.instances)
+  const doc = useStore((s) => s.doc)
+  const building = useStore((s) => s.building)
+  const kernelReady = useStore((s) => s.kernelReady)
+  const errors = useStore((s) => s.errors)
+  const store = useStore.getState()
+  const [result, setResult] = useState<CheckResult | null>(null)
+  const [busy, setBusy] = useState<CheckKind | null>(null)
+  const ticket = useRef(0)
+  const ready = kernelReady && !building && !errors.some((error) => error.severity === 'error')
+  const printable = instances.filter((i) => i.kind === 'body' && i.visible && !i.negative)
+  const current = ready && result?.doc === doc && result.instances === instances ? result : null
+  const clashes = current?.kind === 'clashes' ? current.value : null
+  const warnings = current?.kind === 'print' ? current.value : null
+
+  useEffect(() => {
+    setResult(null)
+  }, [doc, instances])
+  useEffect(
+    () => () => {
+      ticket.current++
+    },
+    [],
+  )
+
+  async function run(kind: CheckKind): Promise<void> {
+    if (busy || !ready || (kind === 'print' && !printable.length)) return
+    const snapshot = useStore.getState()
+    const request = ++ticket.current
+    const isCurrent = () => {
+      const live = useStore.getState()
+      return (
+        request === ticket.current &&
+        live.doc === snapshot.doc &&
+        live.instances === snapshot.instances &&
+        !live.building
+      )
+    }
+    setBusy(kind)
+    setResult(null)
+    try {
+      const next: CheckResult =
+        kind === 'clashes'
+          ? { doc, instances, kind, value: await api().clearance(doc) }
+          : {
+              doc,
+              instances,
+              kind,
+              value: await api().printPrep(
+                printable.map((i) => i.id),
+                { nozzle: 0.4, bed: [220, 220, 250] },
+              ),
+            }
+      if (isCurrent()) setResult(next)
+    } catch (error) {
+      if (isCurrent())
+        setResult({
+          doc,
+          instances,
+          kind: 'error',
+          value: error instanceof Error ? error.message : String(error),
+        })
+    } finally {
+      if (request === ticket.current) setBusy(null)
+    }
+  }
+
+  return (
+    <>
+      <div className="section">
+        <h3>Look inside</h3>
+        <div className="row">
+          <label>Cut away</label>
+          <input
+            type="checkbox"
+            checked={section.enabled}
+            onChange={(e) => store.setSection({ enabled: e.target.checked })}
+          />
+        </div>
+        {section.enabled && (
+          <>
+            <div className="row">
+              <label>Direction</label>
+              <select
+                value={section.axis}
+                onChange={(e) => store.setSection({ axis: e.target.value as 'x' | 'y' | 'z' })}
+              >
+                <option value="x">Left to right</option>
+                <option value="y">Front to back</option>
+                <option value="z">Top to bottom</option>
+              </select>
+            </div>
+            <NumberInput
+              label="Position"
+              value={section.position}
+              step={1}
+              onChange={(v) => store.setSection({ position: v })}
+            />
+            <div className="row">
+              <label>Other side</label>
+              <input
+                type="checkbox"
+                checked={section.flipped}
+                onChange={(e) => store.setSection({ flipped: e.target.checked })}
+              />
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="section">
+        <h3>Check the design</h3>
+        <button
+          className="btn"
+          disabled={busy !== null || !ready}
+          onClick={() => void run('clashes')}
+        >
+          {busy === 'clashes' ? 'Checking for clashes…' : 'Check for clashes'}
+          <small>Does anything overlap something it shouldn't?</small>
+        </button>
+
+        <button
+          className="btn"
+          disabled={busy !== null || !ready || printable.length === 0}
+          onClick={() => void run('print')}
+        >
+          {busy === 'print' ? 'Checking printability…' : 'Check it will print'}
+          <small>Overhangs, thin walls, and whether it fits the bed</small>
+        </button>
+
+        {current?.kind === 'error' && (
+          <div className="msg error">Could not check the design: {current.value}</div>
+        )}
+        {clashes?.length === 0 && <div className="msg info">Nothing overlaps. All clear.</div>}
+        {clashes?.map((c, i) => (
+          <div className="msg warn" key={i}>
+            <strong>
+              {c.aLabel} runs into {c.bLabel}
+            </strong>
+            <em>Overlapping by roughly {lengthLabel(c.overlap, doc.units)}.</em>
+          </div>
+        ))}
+
+        {warnings?.length === 0 && <div className="msg info">No printing problems spotted.</div>}
+        {warnings?.map((w, i) => (
+          <div className={`msg ${w.severity === 'error' ? 'error' : 'warn'}`} key={i}>
+            <strong>{w.message}</strong>
+            {w.hint && <em>{w.hint}</em>}
+            {w.span && (
+              <button
+                className="tb msg-action"
+                onClick={() => {
+                  const span = w.span!
+                  store.clearMeasure()
+                  store.addMeasurePoint(span.from)
+                  store.addMeasurePoint(span.to)
+                }}
+              >
+                Show
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}

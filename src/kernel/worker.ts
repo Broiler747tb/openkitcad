@@ -1124,7 +1124,7 @@ const api: KernelApi = {
 
     const keepouts: Array<{ label: string; solid: any }> = []
     for (const node of expandInstances(doc)) {
-      if (!node.visible) continue
+      if (!node.visible || node.negative) continue
       const component = findComponent(doc, node.componentId)
       if (component?.source.kind !== 'catalogue') continue
       const shipped = getPart(component.source.partId)
@@ -1145,7 +1145,9 @@ const api: KernelApi = {
       }
     }
 
-    const entries = [...live.values()].filter((entry) => !entry.mesh)
+    const entries = [...live.values()].filter(
+      (entry) => !entry.mesh && entry.instance.visible && !entry.instance.negative,
+    )
     const bodies = entries.filter((entry) => entry.instance.kind === 'body')
     for (const keepout of keepouts) {
       for (const body of bodies)
@@ -1162,13 +1164,10 @@ const api: KernelApi = {
       }
     }
     pairs(
-      entries.filter((entry) => entry.instance.kind === 'catalogue' && entry.instance.visible),
+      entries.filter((entry) => entry.instance.kind === 'catalogue'),
       () => false,
     )
-    pairs(
-      bodies.filter((entry) => entry.instance.visible && !entry.instance.negative),
-      (a, b) => a.instance.path.join('/') === b.instance.path.join('/'),
-    )
+    pairs(bodies, (a, b) => a.instance.path.join('/') === b.instance.path.join('/'))
     return clashes
   },
 
@@ -1177,7 +1176,19 @@ const api: KernelApi = {
     const out: PrintWarning[] = []
     for (const id of instanceIds) {
       const entry = live.get(id)
-      if (!entry || entry.mesh) continue
+      if (!entry)
+        throw new Error('That body is no longer available. Rebuild the design and try again.')
+      if (entry.instance.negative) continue
+      if (entry.mesh) {
+        out.push({
+          instanceId: id,
+          name: entry.label,
+          severity: 'warning',
+          message: `Print checks are not available for the mesh body "${entry.label}".`,
+          hint: 'Convert it to a solid to check it here, or inspect it in your slicer.',
+        })
+        continue
+      }
       const shape = worldOf(entry)
       const name = entry.label
       const warn = (

@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { SelectionActions } from './SelectionActions'
 import { PrecisionSketchTools } from './PrecisionTools'
 import { SketchPowerTools, SceneTools } from './PowerTools'
@@ -26,10 +26,9 @@ import { DOF_LABEL, MOTION_OPTIONS, driveJoint, updateJoint } from './command/sp
 import { animateJoint, useJointAnimation } from './jointAnimation'
 import { findBody, findComponent, findFeature, findOccurrence } from '../doc/model'
 import { poseOf, withPose, type Pose } from '../doc/placement'
-import { kernel } from '../kernel/api'
-import type { Clash, PrintWarning } from '../kernel/types'
-import { quantity } from '../core/quantity'
-import { lengthLabel, lengthText, volumeLabel } from '../core/units'
+import { DesignChecks } from './DesignChecks'
+import { NumberInput as Num } from './NumberInput'
+import { lengthLabel, volumeLabel } from '../core/units'
 import { counted } from '../core/words'
 
 function SketchOptions() {
@@ -160,7 +159,7 @@ export function Inspector({
       </div>
       {tab !== 'checks' && <SceneTools />}
       {tab === 'checks' ? (
-        <ToolsSection />
+        <DesignChecks />
       ) : tab === 'actions' ? (
         <>
           <SelectionActions />
@@ -317,69 +316,6 @@ function JointPanel({ feature }: { feature: JointFeature }) {
         Edit Joint
       </button>
     </>
-  )
-}
-
-function Num({
-  label,
-  value,
-  onChange,
-  min,
-  suffix = 'mm',
-}: {
-  label: string
-  value: number
-  onChange: (v: number) => void
-  step?: number
-  min?: number
-  suffix?: string
-}) {
-  const id = useId()
-  const units = useStore((s) => s.doc.units)
-  const isLength = suffix === 'mm'
-  const shown = isLength ? lengthText(value, units) : String(Math.round(value * 1000) / 1000)
-  const [draft, setDraft] = useState(shown)
-  useEffect(() => setDraft(shown), [shown])
-  const commit = () => {
-    if (draft.trim() === shown) return
-    let v: number
-    try {
-      v = quantity(draft, isLength ? units : suffix === '°' ? '°' : '')
-    } catch {
-      setDraft(shown)
-      return
-    }
-    if (min != null && v < min) {
-      setDraft(shown)
-      return
-    }
-    if (v !== value) onChange(v)
-  }
-  return (
-    <div className="row">
-      <label htmlFor={id}>{label}</label>
-      <input
-        id={id}
-        type="text"
-        inputMode="decimal"
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault()
-            e.currentTarget.blur()
-          }
-          if (e.key === 'Escape') {
-            e.stopPropagation()
-            setDraft(shown)
-          }
-        }}
-      />
-      <span style={{ color: 'var(--text-faint)', fontSize: 11, width: 20 }}>
-        {isLength ? units : suffix}
-      </span>
-    </div>
   )
 }
 
@@ -1227,135 +1163,6 @@ function SketchSelectionPanel() {
           )}
         </div>
       )}
-    </>
-  )
-}
-
-function ToolsSection() {
-  const section = useStore((s) => s.section)
-  const instances = useStore((s) => s.instances)
-  const doc = useStore((s) => s.doc)
-  const store = useStore.getState()
-  const [clashes, setClashes] = useState<Clash[] | null>(null)
-  const [warnings, setWarnings] = useState<PrintWarning[] | null>(null)
-  const [busy, setBusy] = useState(false)
-  const printable = instances.filter((i) => i.kind === 'body' && i.visible)
-
-  return (
-    <>
-      <div className="section">
-        <h3>Look inside</h3>
-        <div className="row">
-          <label>Cut away</label>
-          <input
-            type="checkbox"
-            checked={section.enabled}
-            onChange={(e) => store.setSection({ enabled: e.target.checked })}
-          />
-        </div>
-        {section.enabled && (
-          <>
-            <div className="row">
-              <label>Direction</label>
-              <select
-                value={section.axis}
-                onChange={(e) => store.setSection({ axis: e.target.value as 'x' | 'y' | 'z' })}
-              >
-                <option value="x">Left to right</option>
-                <option value="y">Front to back</option>
-                <option value="z">Top to bottom</option>
-              </select>
-            </div>
-            <Num
-              label="Position"
-              value={section.position}
-              step={1}
-              onChange={(v) => store.setSection({ position: v })}
-            />
-            <div className="row">
-              <label>Other side</label>
-              <input
-                type="checkbox"
-                checked={section.flipped}
-                onChange={(e) => store.setSection({ flipped: e.target.checked })}
-              />
-            </div>
-          </>
-        )}
-      </div>
-
-      <div className="section">
-        <h3>Check the design</h3>
-        <button
-          className="btn"
-          disabled={busy}
-          onClick={async () => {
-            setBusy(true)
-            setWarnings(null)
-            try {
-              setClashes(await kernel().clearance(doc))
-            } finally {
-              setBusy(false)
-            }
-          }}
-        >
-          Check for clashes
-          <small>Does anything overlap something it shouldn't?</small>
-        </button>
-
-        <button
-          className="btn"
-          disabled={busy || printable.length === 0}
-          onClick={async () => {
-            setBusy(true)
-            setClashes(null)
-            try {
-              setWarnings(
-                await kernel().printPrep(
-                  printable.map((i) => i.id),
-                  { nozzle: 0.4, bed: [220, 220, 250] },
-                ),
-              )
-            } finally {
-              setBusy(false)
-            }
-          }}
-        >
-          Check it will print
-          <small>Overhangs, thin walls, and whether it fits the bed</small>
-        </button>
-
-        {clashes?.length === 0 && <div className="msg info">Nothing overlaps. All clear.</div>}
-        {clashes?.map((c, i) => (
-          <div className="msg warn" key={i}>
-            <strong>
-              {c.aLabel} runs into {c.bLabel}
-            </strong>
-            <em>Overlapping by roughly {lengthLabel(c.overlap, doc.units)}.</em>
-          </div>
-        ))}
-
-        {warnings?.length === 0 && <div className="msg info">No printing problems spotted.</div>}
-        {warnings?.map((w, i) => (
-          <div className={`msg ${w.severity === 'error' ? 'error' : 'warn'}`} key={i}>
-            <strong>{w.message}</strong>
-            {w.hint && <em>{w.hint}</em>}
-            {w.span && (
-              <button
-                className="tb msg-action"
-                onClick={() => {
-                  const span = w.span!
-                  store.clearMeasure()
-                  store.addMeasurePoint(span.from)
-                  store.addMeasurePoint(span.to)
-                }}
-              >
-                Show
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
     </>
   )
 }
