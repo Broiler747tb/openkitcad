@@ -57,7 +57,9 @@ The `.okc` contains mesh bodies; [the generator](scripts/showcase) also exports 
 
 ## Your files
 
-Designs stay on your machine. Autosave uses the browser's storage; **Save** gives you an `.okc` file you can keep or move to another computer. Share links carry the design in the link itself.
+Designs stay on your machine. Autosave uses the browser's storage; **Save** gives you an `.okc` file you can keep or move to another computer.
+
+**Share** packs a snapshot into a link. Open it to look around in 3D, download the `.okc`, or edit your own copy. No account, uploads, or model server. Bigger models may need a file instead — a link can't hold everything. [How sharing works](docs/SHARING.md).
 
 The browser version loads about 11 MB for the geometry engine on first use. The Windows EXE includes it and runs offline.
 
@@ -81,7 +83,7 @@ npm test
 npm run dist:portable   # Windows x64
 ```
 
-`npm test` runs 1073 checks and five UI scenarios. You can also [run the checks in your browser](https://broiler747tb.github.io/openkitcad/?selftest).
+`npm test` checks the solver, geometry, saving, editing, and sharing, including browser UI scenarios. You can also [run the checks in your browser](https://broiler747tb.github.io/openkitcad/?selftest).
 
 The app uses React, TypeScript, and three.js. [replicad](https://github.com/sgenoud/replicad) wraps OpenCascade, which runs in a worker. The sketch solver lives in [src/sketch](src/sketch), hardware data in [src/catalogue](src/catalogue).
 

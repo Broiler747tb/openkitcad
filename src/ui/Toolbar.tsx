@@ -199,11 +199,13 @@ const labels: Record<string, string> = {
 }
 export function Toolbar({
   onExport,
+  onShare,
   onTutorial,
   onCatalogue,
   onInspect,
 }: {
   onExport: () => void
+  onShare: () => void
   onTutorial: () => void
   onCatalogue: () => void
   onInspect: () => void
@@ -701,8 +703,35 @@ export function Toolbar({
             <button disabled={!state.instances.length} onClick={onExport}>
               Export…
             </button>
+            <button
+              disabled={
+                !state.kernelReady ||
+                !state.autosaving ||
+                state.building ||
+                state.commandOpen ||
+                !!state.transientBase ||
+                commanding
+              }
+              onClick={onShare}
+            >
+              Share…
+            </button>
           </div>
         </details>
+        <button
+          className="tb"
+          disabled={
+            !state.kernelReady ||
+            !state.autosaving ||
+            state.building ||
+            state.commandOpen ||
+            !!state.transientBase ||
+            commanding
+          }
+          onClick={onShare}
+        >
+          Share
+        </button>
         <button
           className="quick-icon"
           title="Save (Ctrl S)"

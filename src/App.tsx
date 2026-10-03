@@ -18,9 +18,28 @@ import { Timeline, NavigationBar } from './ui/Timeline'
 import { PenBar } from './ui/PenBar'
 import { isAndroidApp } from './platform/android'
 import { useCommand } from './ui/command/session'
+import { isSharedView } from './doc/share'
+import { SharedModelView } from './ui/SharedModelView'
+import { ShareDialog } from './ui/ShareDialog'
+import './ui/share.css'
 
 export function App() {
+  const [hash, setHash] = useState(() => (isSharedView() ? location.hash : ''))
+  useEffect(() => {
+    const update = () => setHash(isSharedView() ? location.hash : '')
+    window.addEventListener('hashchange', update)
+    return () => window.removeEventListener('hashchange', update)
+  }, [])
+  return hash ? (
+    <SharedModelView key={hash} hash={hash} onOpen={() => setHash('')} />
+  ) : (
+    <EditorApp />
+  )
+}
+
+function EditorApp() {
   const [showExport, setShowExport] = useState(false)
+  const [showShare, setShowShare] = useState(false)
   const [leftTab, setLeftTab] = useState<'design' | 'catalogue'>('design')
   const [inspectorTab, setInspectorTab] = useState<'properties' | 'actions' | 'checks'>(
     'properties',
@@ -87,6 +106,7 @@ export function App() {
     >
       <Toolbar
         onExport={() => setShowExport(true)}
+        onShare={() => setShowShare(true)}
         onTutorial={() => setShowTutorial(true)}
         onCatalogue={() => {
           setLeftTab('catalogue')
@@ -161,6 +181,7 @@ export function App() {
       {activeSketch && <SketchBanner />}
       {showTutorial && <Tutorial onClose={() => setShowTutorial(false)} />}
       {showExport && <ExportDialog onClose={() => setShowExport(false)} />}
+      {showShare && <ShareDialog onClose={() => setShowShare(false)} />}
     </div>
   )
 }
