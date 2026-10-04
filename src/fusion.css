@@ -846,6 +846,31 @@ button.workspace-tab {
   touch-action: none;
   overflow: visible;
 }
+.view-cube .view-horizon-lock {
+  position: absolute;
+  top: 0;
+  left: 32px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--okc-text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.view-cube .view-horizon-lock[aria-pressed='true'] {
+  border-color: var(--okc-accent);
+  color: var(--okc-accent);
+}
+.view-cube .view-cube-roll button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
 .cube-zone {
   pointer-events: auto;
   cursor: grab;
@@ -878,11 +903,11 @@ button.workspace-tab {
   font-size: 22px;
 }
 .cube-up {
-  top: 26px;
+  top: 13px;
   left: 59px;
 }
 .cube-down {
-  bottom: 8px;
+  top: 121px;
   left: 59px;
 }
 .cube-left {
