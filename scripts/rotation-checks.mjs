@@ -21,27 +21,25 @@ async function rotationTarget(page, axis) {
       )
     const rect = engine.renderer.domElement.getBoundingClientRect()
     const candidates = []
-    for (let i = 0; i < 96; i++) {
-      const angle = (i * Math.PI) / 48
+    for (let i = 0; i < 24; i++) {
+      const angle = (i * Math.PI) / 12
       const start = point(angle)
       const end = point(angle + 0.25)
+      candidates.push({ start, end, distance: Math.hypot(end[0] - start[0], end[1] - start[1]) })
+    }
+    candidates.sort((a, b) => b.distance - a.distance)
+    const candidate = candidates.find(({ start }) => {
       tc.pointerHover({
         x: ((start[0] - rect.left) / rect.width) * 2 - 1,
         y: (-(start[1] - rect.top) / rect.height) * 2 + 1,
         button: -1,
       })
-      if (tc.axis === axis)
-        candidates.push({
-          start,
-          end,
-          distance: Math.hypot(end[0] - start[0], end[1] - start[1]),
-        })
-    }
-    candidates.sort((a, b) => b.distance - a.distance)
-    if (!candidates.length) throw new Error('Cannot pick rotation ring: ' + axis)
+      return tc.axis === axis
+    })
+    if (!candidate) throw new Error('Cannot pick rotation ring: ' + axis)
     tc.axis = null
     return {
-      ...candidates[0],
+      ...candidate,
       camera: engine.camera.quaternion.toArray(),
       position: engine.gizmoProxy.position.toArray(),
     }
