@@ -82,4 +82,23 @@ export function styleTransformControls(helper: THREE.Object3D) {
   }
   add(visible, 'XYZ', new THREE.BoxGeometry(0.085, 0.085, 0.085), material(0x7c8a9b))
   add(picker, 'XYZ', new THREE.BoxGeometry(0.17, 0.17, 0.17), material(0x7c8a9b))
+  const rings = gizmo.gizmo.rotate
+  const ringPicker = gizmo.picker.rotate
+  for (const group of [rings, ringPicker]) {
+    for (const child of [...group.children]) {
+      group.remove(child)
+      ;(child as THREE.Mesh).geometry.dispose()
+    }
+  }
+  for (const [name, axis, colour] of axes) {
+    const turn = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), axis)
+    const ring = (thickness: number) =>
+      new THREE.TorusGeometry(0.84, thickness, 12, 128).applyMatrix4(
+        new THREE.Matrix4().makeRotationFromQuaternion(turn),
+      )
+    add(rings, name, ring(0.018), material(colour))
+    add(ringPicker, name, ring(0.085), material(colour))
+  }
+  add(rings, 'E', new THREE.TorusGeometry(1.06, 0.012, 12, 128), material(0xb6c3cf, 0.65))
+  add(ringPicker, 'E', new THREE.TorusGeometry(1.06, 0.065, 12, 128), material(0xb6c3cf))
 }

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { createServer } from 'vite'
 import { chromium } from 'playwright'
 import { checkNavigation } from './navigation-checks.mjs'
+import { checkRotation } from './rotation-checks.mjs'
 
 const server = await createServer({
   server: { host: '127.0.0.1', port: 4283, strictPort: true, open: false },
@@ -272,6 +273,7 @@ try {
   await cube.getByRole('button', { name: 'Home view', exact: true }).click()
   await page.waitForFunction(() => !window.__okcEngine.viewTween)
   await checkNavigation(page)
+  await checkRotation(page)
   if (process.env.OKC_VIEWPORT_SCREENSHOT)
     await page.screenshot({ path: process.env.OKC_VIEWPORT_SCREENSHOT })
   if (process.env.OKC_VIEWPORT_SCREENSHOT)

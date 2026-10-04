@@ -558,6 +558,16 @@ snaps to whole millimetres. The placement is computed in the active component's 
 Typing a position, turning or flipping keeps any rotation that is not a turn about Z (`withPose`),
 and so do the move arrows and paste.
 
+**Free rotation.** Rotate exposes X, Y and Z for catalogue occurrences as well as bodies.
+The handles are full coloured rings with wider invisible pickers and a neutral outer ring
+for turning in the camera plane. `ViewportTransformControls` accumulates a signed angle
+in the rotation plane, avoiding the native control's unstable cross product and keeping
+the turn in step with the cursor. Edge-on rings retain the native tangent drag. Body
+gizmos convert between world and component frames and use the same
+X-then-Y-then-Z order as the kernel's Move step. `scripts/rotation-checks.mjs` drags real
+rings on three catalogue parts in four views and tests compound body turns inside a tilted
+component, including camera stability, forward/reverse 450-degree turns and undo/redo.
+
 **Versions after placing.** Properties shows a Version list for a part in a family. Changing it swaps
 the part in place (`swapCataloguePart`), keeping the placement and renaming the component and its
 occurrences if they still had the old name.

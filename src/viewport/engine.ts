@@ -8,6 +8,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
+import { ViewportTransformControls } from './TransformControls'
 import { styleTransformControls } from './transformStyle'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import type { FastenerGhost } from './ghosts'
@@ -1599,7 +1600,7 @@ export class ViewportEngine {
 
   private ensureTransform(): TransformControls {
     if (this.transform) return this.transform
-    const tc = new TransformControls(this.camera, this.renderer.domElement)
+    const tc = new ViewportTransformControls(this.camera, this.renderer.domElement)
     tc.setSize(354 / Math.max(1, this.renderer.domElement.clientHeight))
     const preferences = usePreferences.getState().values
     tc.setTranslationSnap(preferences.moveSnap || null)
@@ -1672,9 +1673,8 @@ export class ViewportEngine {
     }
     tc.attach(this.gizmoProxy)
     tc.setMode(mode)
-    const freeTurn = mode === 'translate' || !target.matrix
-    tc.showX = freeTurn
-    tc.showY = freeTurn
+    tc.showX = true
+    tc.showY = true
     tc.showZ = true
   }
 
