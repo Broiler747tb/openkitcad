@@ -1,85 +1,85 @@
-# OpenKitCAD
+<p align="center">
+  <img src="docs/images/social-preview.png" alt="OpenKitCAD — Your next print starts here. A detailed 3D printer assembly, with CAD in orange." width="100%">
+</p>
 
-CAD for the stuff on your workbench: enclosures, mounting plates, brackets, and the boards that go inside them.
+<p align="center">
+  <strong><a href="https://broiler747tb.github.io/openkitcad/">Open in your browser ↗</a></strong>
+  &nbsp; · &nbsp;
+  <strong><a href="https://github.com/Broiler747tb/openkitcad/releases/latest">Download for Windows ↓</a></strong>
+  &nbsp; · &nbsp;
+  <a href="https://github.com/Broiler747tb/openkitcad/issues">Found a bug?</a>
+</p>
 
-[![Build](https://github.com/Broiler747tb/openkitcad/actions/workflows/deploy.yml/badge.svg)](https://github.com/Broiler747tb/openkitcad/actions/workflows/deploy.yml) [![Release](https://img.shields.io/github/v/release/Broiler747tb/openkitcad?color=2678c7)](https://github.com/Broiler747tb/openkitcad/releases/latest) [![Licence](https://img.shields.io/badge/licence-AGPL--3.0-blue)](LICENSE) [![Parts](https://img.shields.io/badge/catalogue-257_parts-2f855a)](src/catalogue/parts)
+<p align="center">
+  <a href="https://github.com/Broiler747tb/openkitcad/actions/workflows/deploy.yml"><img src="https://github.com/Broiler747tb/openkitcad/actions/workflows/deploy.yml/badge.svg" alt="Build"></a>
+  <a href="https://github.com/Broiler747tb/openkitcad/releases/latest"><img src="https://img.shields.io/github/v/release/Broiler747tb/openkitcad?label=release&color=ed9148" alt="Latest release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-8799a4" alt="AGPL-3.0 licence"></a>
+</p>
 
-**[Open in your browser](https://broiler747tb.github.io/openkitcad/)** · **[Windows Portable EXE](https://github.com/Broiler747tb/openkitcad/releases/latest)** · [Report a bug](https://github.com/Broiler747tb/openkitcad/issues)
+CAD for the stuff on your workbench. A case for your board, a bracket that actually fits, a replacement for the bit that snapped.
 
-Drop in a Raspberry Pi, build a case around it, and export something you can print. The catalogue already has the board size, mounting holes, and ports, so you don't have to type them in again.
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/enclosure-dark.png">
-  <img src="docs/images/enclosure-light.png" alt="OpenKitCAD showing a Raspberry Pi 4 inside a generated enclosure, with its screw lid moved aside">
-</picture>
-
-*A Pi 4 case with standoffs and port openings. [Download this design](examples/raspberry-pi-enclosure.okc?raw=true) and open it with File → Open.*
+Start with a sketch or pick real hardware from the parts drawer. Model around it, check the fit, export to your slicer. Runs in the browser; the Windows portable also works offline. English and Russian included.
 
 ## From board to box
 
-1. Pick a board from **Components** and place it.
-2. Right-click it and choose **Enclosure**.
-3. Set the wall thickness, mounts, lid, and ports you want open.
-4. Export STL or 3MF and send it to your slicer.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/enclosure-dark.png">
+  <img src="docs/images/enclosure-light.png" alt="The actual OpenKitCAD editor: a Raspberry Pi 4 fitted inside a case, with mounting posts, port openings and a separate screw lid." width="100%">
+</picture>
 
-You can also sketch a part from scratch. Give it dimensions, extrude it, then go back and change those dimensions when the first print doesn't fit.
+*A Pi 4, its case, and a lid moved aside. [Try this design →](examples/raspberry-pi-enclosure.okc?raw=true)*
 
-## What's in here
+| 01 · Pick the hardware | 02 · Make it fit | 03 · Print it |
+| --- | --- | --- |
+| Choose a board in **Components**. Sizes, ports, and mounting holes are already there. | Right-click → **Enclosure**. Set walls, mounts, and lid. Or sketch your own part. | Export **STL** or **3MF**. Change a dimension after the first test print. |
 
-| Toolbox | What's there |
+## A proper toolbox
+
+| Tool | What it does |
 | --- | --- |
-| Sketches | Dimensions, constraints, trim, offsets, patterns, and text. |
-| Modelling | Extrude, revolve, loft, sweep, fillet, shell, booleans, and an editable timeline. |
-| Real parts | 257 boards, connectors, motors, bearings, screws, and inserts. Import your own KiCad board too. |
-| Printed parts | Standoffs, board clips, snap fits, hinges, ribs, and cable entries. |
-| Assemblies | Linked components, joints, limits, and motion studies. |
-| Export | STL, 3MF, OBJ, STEP, DXF, SVG, and printable drill templates. |
+| **Sketch & model** | Dimensions and constraints. Extrude, revolve, loft, sweep, fillet, shell, and booleans. Go back and edit the timeline. |
+| **Build around real parts** | 257 boards, connectors, motors, bearings, screws, and inserts. Bring your own board from KiCad. |
+| **Make the small stuff** | Standoffs, clips, snap fits, hinges, ribs, and cable entries. Fit allowances and checks for your nozzle and bed. |
+| **Put it together** | Linked components, joints, limits, and motion studies. Export several bodies with their positions intact. |
+| **Take it elsewhere** | STEP, STL, 3MF, OBJ, DXF, SVG, and printable drill templates. |
 
 <details>
-<summary>A look at the parts drawer</summary>
+<summary><strong>Inside the parts drawer</strong></summary>
 
-![Searching the hardware catalogue in the dark theme](docs/images/parts.png)
+![Hardware catalogue with board previews, search and mounting-hole filters](docs/images/parts.png)
 
-Parts are marked **datasheet**, **measured**, or **approximate**. Their source notes say which dimensions were checked.
+Parts say **datasheet**, **measured**, or **approximate**. Source notes tell you which dimensions were checked. A pretty model isn't a measurement.
 
 </details>
 
 <details>
-<summary>The printer from the cover</summary>
+<summary><strong>Yes, you can open the printer from the cover</strong></summary>
 
-![A Cartesian printer with dual Z screws, linear rails and a direct-drive toolhead](docs/images/printer.png)
+![The full Cartesian printer assembly: frame, dual Z screws, linear rails, direct-drive toolhead, cooling, wiring and electronics](docs/images/printer.png)
 
-[Open this assembly](examples/cartesian-printer.okc?raw=true) with File → Open.
-It includes the frame, drives, hotend, cooling ducts, wiring and electronics.
-The `.okc` contains mesh bodies; [the generator](scripts/showcase) also exports solid STEP geometry.
+[Download the assembly →](examples/cartesian-printer.okc?raw=true) Then **File → Open**.
+
+This example contains imported mesh bodies. Want the solid STEP too? [The model generator is here](scripts/showcase).
 
 </details>
 
-## Your files
+## Your design stays yours
 
-Designs stay on your machine. Autosave uses the browser's storage; **Save** gives you an `.okc` file you can keep or move to another computer.
+Autosave stays in your browser. **Save** gives you an `.okc` file.
 
-**Share** packs a snapshot into a link. Open it to look around in 3D, download the `.okc`, or edit your own copy. No account, uploads, or model server. Bigger models may need a file instead — a link can't hold everything. [How sharing works](docs/SHARING.md).
+**Share** puts a snapshot in a link: someone else can rotate it, download it, or edit a copy. No account or model server. Big assemblies are better sent as files. [How it works →](docs/SHARING.md)
 
-The browser version loads about 11 MB for the geometry engine on first use. The Windows EXE includes it and runs offline.
+The browser downloads about 11 MB for the geometry engine on first use. The portable EXE includes it.
 
-English and Russian are available in the top bar. Your language choice is remembered.
+<details>
+<summary><strong>Run locally / work on the code</strong></summary>
 
-Print checks use your nozzle and bed size. Select several bodies in **Export** to save one 3MF or STEP, or a ZIP of separate files. Parts keep their assembly positions.
-
-Broken steps show which geometry needs replacing and which later steps use it. Sketch diagnostics point out conflicting constraints and geometry that can still move.
-
-## Run it locally
-
-Node.js **22.12 or newer**.
+Node.js **22.12+**.
 
 ```sh
 npm ci
 npm run dev
 ```
-
-<details>
-<summary>Builds, tests, and the code</summary>
 
 ```sh
 npm run typecheck
@@ -89,27 +89,31 @@ npm test
 npm run dist:portable   # Windows x64
 ```
 
-`npm test` checks the solver, geometry, saving, editing, and sharing, including browser UI scenarios. You can also [run the checks in your browser](https://broiler747tb.github.io/openkitcad/?selftest).
+React, TypeScript, three.js, and [replicad](https://github.com/sgenoud/replicad) / OpenCascade in a worker. Tests cover geometry, the solver, saving, editing, sharing, and browser interactions. [Run the checks in your browser](https://broiler747tb.github.io/openkitcad/?selftest).
 
-The app uses React, TypeScript, and three.js. [replicad](https://github.com/sgenoud/replicad) wraps OpenCascade, which runs in a worker. The sketch solver lives in [src/sketch](src/sketch), hardware data in [src/catalogue](src/catalogue).
-
-[Architecture notes](docs/FOUNDATIONS.md) · [Android / S Pen build](docs/ANDROID.md)
+[Architecture](docs/FOUNDATIONS.md) · [Sketch solver](src/sketch) · [Catalogue](src/catalogue) · [Android / S Pen](docs/ANDROID.md)
 
 </details>
 
-## Add a part
+<details>
+<summary><strong>Add a part to the catalogue</strong></summary>
 
-A caliper helps more than a fancy model. Add a JSON file to [src/catalogue/parts](src/catalogue/parts); [the schema](src/catalogue/types.ts) and [this bearing](src/catalogue/parts/bearing-608zz.json) are a good starting point.
+A caliper helps more than a fancy model. Add a JSON file to [src/catalogue/parts](src/catalogue/parts); [the schema](src/catalogue/types.ts) and [this bearing](src/catalogue/parts/bearing-608zz.json) are good starting points.
 
-Use millimetres, put the origin at the lower-left corner with Z up, and say where the measurements came from. Guesses are fine if they're labelled as guesses.
+Use millimetres, put the origin at the lower-left corner with Z up, and say where the measurements came from. Guesses are fine if they're labelled.
 
-## Still missing
+</details>
 
-Sheet metal, drawing sheets, simulation, and CAM. Some direct face-editing tools aren't available in the bundled kernel. Files from OpenKitCAD 0.6 and older won't open in this version.
+<details>
+<summary><strong>What's still missing</strong></summary>
 
-## Licence and support
+Sheet metal, drawing sheets, simulation, and CAM. Some direct face-editing tools aren't supported by the bundled kernel. Files from version 0.6 and older won't open.
 
-The app is [AGPL-3.0-or-later](LICENSE). The [parts catalogue is CC0](src/catalogue/LICENSE), so other tools can use the measurements too.
+</details>
+
+---
+
+The app is [AGPL-3.0-or-later](LICENSE). The [parts catalogue is CC0](src/catalogue/LICENSE) — use those measurements in your own tools too.
 
 If this saved you an afternoon, you can chip in for filament.
 

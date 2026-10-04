@@ -12,113 +12,201 @@
       width: 1280px;
       height: 640px;
       overflow: hidden;
-      background: #050708;
-      color: #f2f6f8;
+    }
+    body {
+      color: #f4f2ed;
       font-family: 'Segoe UI', Arial, sans-serif;
+      background: #101416;
     }
     .cover {
       position: relative;
       width: 1280px;
       height: 640px;
       overflow: hidden;
+      background:
+        radial-gradient(ellipse at 82% 32%, #25343b 0, transparent 55%),
+        linear-gradient(120deg, #161c20, #080b0d);
+    }
+    .grid {
+      position: absolute;
+      inset: 0 0 64px 560px;
+      background-image:
+        linear-gradient(#9db5c10b 1px, transparent 1px),
+        linear-gradient(90deg, #9db5c10b 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: linear-gradient(90deg, transparent, black 50%);
+    }
+    .orbit {
+      position: absolute;
+      width: 550px;
+      height: 550px;
+      border: 1px solid #8baab51c;
+      border-radius: 50%;
+      left: 670px;
+      top: 20px;
+    }
+    .orbit::after {
+      content: '';
+      position: absolute;
+      inset: 32px;
+      border: 1px dashed #8baab518;
+      border-radius: 50%;
     }
     .model {
       position: absolute;
-      left: 660px;
-      top: 40px;
-      width: 590px;
+      left: 585px;
+      top: -14px;
+      width: 675px;
       height: auto;
       mask-image:
-        linear-gradient(90deg, transparent, #000 17%),
-        linear-gradient(0deg, transparent, #000 8%, #000 93%, transparent);
+        linear-gradient(90deg, transparent, black 20%, black 96%, transparent),
+        linear-gradient(0deg, transparent, black 6%, black 90%, transparent);
       mask-composite: intersect;
     }
-    .mark {
+    .top {
       position: absolute;
-      left: 64px;
-      top: 112px;
+      top: 35px;
+      left: 52px;
+      right: 52px;
       display: flex;
       align-items: center;
-      gap: 14px;
-      color: #a0b4c1;
-      font-size: 17px;
+      justify-content: space-between;
+      font:
+        12px 'Consolas',
+        monospace;
+      letter-spacing: 2px;
+      color: #9aa9ad;
+    }
+    .signature {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .signature svg {
+      width: 28px;
+      height: 28px;
+    }
+    .top-right {
+      color: #b6c2c4;
     }
     .text {
       position: absolute;
-      left: 64px;
-      top: 239px;
+      left: 52px;
+      top: 153px;
     }
     h1 {
-      margin: 0;
-      font-size: 68px;
+      font-size: 81px;
+      letter-spacing: -4.5px;
+      font-weight: 750;
       line-height: 1;
-      letter-spacing: -2.5px;
-      font-weight: 700;
+      margin: 0;
     }
     h1 span {
-      color: #f59b5c;
+      color: #ff9a50;
     }
-    p {
-      margin: 25px 0 0;
-      font-size: 25px;
-      color: #c3d0d7;
+    .accent {
+      width: 44px;
+      height: 3px;
+      margin: 30px 0 25px;
+      background: #ff9a50;
+    }
+    h2 {
+      margin: 0;
+      font-size: 43px;
+      line-height: 1.12;
+      letter-spacing: -1.5px;
+      font-weight: 550;
+    }
+    .description {
+      margin: 23px 0 0;
+      font-size: 20px;
       line-height: 1.5;
+      color: #aebcc1;
     }
     .formats {
-      margin-top: 23px;
-      color: #7e929f;
-      font-size: 17px;
-      letter-spacing: 2px;
+      margin-top: 28px;
+      display: flex;
+      gap: 9px;
     }
-    .platforms {
+    .formats span {
+      padding: 7px 12px;
+      border: 1px solid #74858e40;
+      border-radius: 5px;
+      font:
+        12px 'Consolas',
+        monospace;
+      letter-spacing: 1px;
+      color: #d2dbde;
+      background: #121a1d80;
+    }
+    .footer {
       position: absolute;
-      left: 64px;
-      bottom: 116px;
-      font-size: 17px;
-      color: #94a9b7;
-      letter-spacing: 1.4px;
+      bottom: 0;
+      left: 52px;
+      right: 52px;
+      height: 64px;
+      border-top: 1px solid #8da1aa30;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font:
+        11px 'Consolas',
+        monospace;
+      letter-spacing: 1.5px;
+      color: #9dabb0;
     }
-    .platforms b {
-      font-weight: 500;
-      color: #deebf1;
+    .footer b {
+      color: #e0e7e9;
+      font-weight: 400;
+    }
+    .dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      margin-right: 10px;
+      border-radius: 50%;
+      background: #ff9a50;
+    }
+    .footer .assembly {
+      color: #92a4ab;
     }
   </style>
   <div class="cover">
-    <img class="model" src="images/printer.png" alt="An original Cartesian 3D printer assembly" />
-    <div class="mark">
-      <svg viewBox="0 0 32 32" width="42" height="42" aria-label="OpenKitCAD logo">
-        <rect x="1" y="1" width="30" height="30" rx="7" fill="#1676c5" />
-        <path d="M7 15.5L16 20.5L25 15.5V24.5L16 29.5L7 24.5Z" fill="#fff" fill-opacity=".22" />
-        <path
-          d="M7 15.5L16 20.5L25 15.5M16 20.5V29.5M7 15.5V24.5L16 29.5L25 24.5V15.5"
-          fill="none"
-          stroke="#fff"
-          stroke-width="1.7"
-          stroke-linejoin="round"
-        />
-        <path
-          d="M7 15.5L16 10.5L25 15.5"
-          fill="none"
-          stroke="#fff"
-          stroke-width="1.7"
-          stroke-linejoin="round"
-          stroke-dasharray="2.2 1.8"
-        />
-        <path
-          d="M16 10.5L20.5 4L29 8.5L25 15.5Z"
-          fill="#fff"
-          stroke="#fff"
-          stroke-width="1.2"
-          stroke-linejoin="round"
-        />
-      </svg>
-      <span>Open source. On your workbench.</span>
+    <div class="grid"></div>
+    <div class="orbit"></div>
+    <img
+      class="model"
+      src="images/printer.png"
+      alt="A detailed Cartesian 3D printer assembly made for OpenKitCAD"
+    />
+    <div class="top">
+      <div class="signature">
+        <svg viewBox="0 0 32 32" aria-label="OpenKitCAD logo">
+          <rect x="1" y="1" width="30" height="30" rx="7" fill="#1676c5" />
+          <path d="M7 15.5L16 20.5L25 15.5V24.5L16 29.5L7 24.5Z" fill="#fff" fill-opacity=".22" />
+          <path
+            d="M7 15.5L16 20.5L25 15.5M16 20.5V29.5M7 15.5V24.5L16 29.5L25 24.5V15.5M7 15.5L16 10.5L25 15.5"
+            fill="none"
+            stroke="#fff"
+            stroke-width="1.7"
+            stroke-linejoin="round"
+          />
+          <path d="M16 10.5L20.5 4L29 8.5L25 15.5Z" fill="#fff" />
+        </svg>
+        OPEN SOURCE / MADE FOR MAKING
+      </div>
+      <span class="top-right">DESIGN &nbsp;→&nbsp; BUILD &nbsp;→&nbsp; PRINT</span>
     </div>
     <div class="text">
       <h1>OpenKit<span>CAD</span></h1>
-      <p>CAD for 3D printing<br />and the hardware inside.</p>
-      <div class="formats">STEP &nbsp;·&nbsp; STL &nbsp;·&nbsp; 3MF</div>
+      <div class="accent"></div>
+      <h2>Your next print<br />starts here.</h2>
+      <p class="description">Sketch a part. Fit the hardware.<br />Send it to your slicer.</p>
+      <div class="formats"><span>STEP</span><span>STL</span><span>3MF</span></div>
     </div>
-    <div class="platforms"><b>BROWSER</b> &nbsp;/&nbsp; <b>WINDOWS PORTABLE</b></div>
+    <div class="footer">
+      <span><i class="dot"></i><b>BROWSER</b> &nbsp;/&nbsp; <b>WINDOWS PORTABLE</b></span>
+      <span class="assembly">REAL MODEL. OPEN THE .okc. MAKE IT YOURS.</span>
+    </div>
   </div>
 </html>
