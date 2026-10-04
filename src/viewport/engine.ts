@@ -8,6 +8,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
+import { styleTransformControls } from './transformStyle'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import type { FastenerGhost } from './ghosts'
 import { createLook, disposeLook, type LookInstance, type LookPrototype } from './partLook'
@@ -1340,11 +1341,17 @@ export class ViewportEngine {
       const colour = handle.id === hot ? this.palette.handleHot : this.palette.handle
       const tip = this.handleTip(handle)
       const material = () =>
-        new THREE.MeshBasicMaterial({ color: colour, depthTest: false, transparent: true })
+        new THREE.MeshBasicMaterial({
+          color: colour,
+          depthTest: false,
+          depthWrite: false,
+          toneMapped: false,
+          transparent: true,
+        })
       const points = this.handlePath(handle)
       for (let i = 0; i + 1 < points.length; i++) {
         const shaft = new THREE.Mesh(
-          new THREE.CylinderGeometry(1.5, 1.5, 1, 8).translate(0, 0.5, 0),
+          new THREE.CylinderGeometry(1.2, 1.2, 1, 12).translate(0, 0.5, 0),
           material(),
         )
         const from = new THREE.Vector3(...points[i])
@@ -1359,8 +1366,8 @@ export class ViewportEngine {
       }
       const knob = new THREE.Mesh(
         handle.kind === 'arrow'
-          ? new THREE.ConeGeometry(7, 22, 24).translate(0, -11, 0)
-          : new THREE.SphereGeometry(7, 16, 12),
+          ? new THREE.ConeGeometry(5, 16, 24).translate(0, -8, 0)
+          : new THREE.SphereGeometry(5, 16, 12),
         material(),
       )
       knob.position.set(...tip)
@@ -1495,21 +1502,47 @@ export class ViewportEngine {
     const x = clientX - rect.left
     const y = clientY - rect.top
     let best: { id: string; distance: number } | null = null
+    let bestTip: { id: string; distance: number } | null = null
     for (const handle of this.handles) {
-      const screen = this.screenOf(this.handleTip(handle))
-      if (!screen) continue
-      const distance = Math.hypot(screen[0] - x, screen[1] - y)
-      if (distance < HANDLE_GRAB_PX && (!best || distance < best.distance)) {
+      const tip = this.screenOf(this.handleTip(handle))
+      if (!tip) continue
+      let distance = Math.hypot(tip[0] - x, tip[1] - y)
+      if (distance < HANDLE_GRAB_PX && (!bestTip || distance < bestTip.distance))
+        bestTip = { id: handle.id, distance }
+      let onShaft = false
+      const points = this.handlePath(handle).map((point) => this.screenOf(point))
+      for (let i = 0; i + 1 < points.length; i++) {
+        const a = points[i]
+        const b = points[i + 1]
+        if (!a || !b) continue
+        const dx = b[0] - a[0]
+        const dy = b[1] - a[1]
+        const span = dx * dx + dy * dy
+        if (span < 1) continue
+        const along = THREE.MathUtils.clamp(((x - a[0]) * dx + (y - a[1]) * dy) / span, 0, 1)
+        const near = Math.hypot(x - a[0] - along * dx, y - a[1] - along * dy)
+        if (near < 9 && near < distance) {
+          distance = near
+          onShaft = true
+        }
+      }
+      if ((onShaft || distance < HANDLE_GRAB_PX) && (!best || distance < best.distance)) {
         best = { id: handle.id, distance }
       }
     }
-    return best?.id ?? null
+    return bestTip?.id ?? best?.id ?? null
   }
 
   arrowParameter(clientX: number, clientY: number, origin: Vec3, direction: Vec3): number | null {
     this.raycaster.setFromCamera(this.pointerToNdc(clientX, clientY), this.camera)
     const ray = this.raycaster.ray
     const d = new THREE.Vector3(...direction).normalize()
+    if (Math.abs(d.dot(this.camera.getWorldDirection(new THREE.Vector3()))) > 0.99) {
+      const screen = this.screenOf(origin)
+      if (!screen) return null
+      const rect = this.renderer.domElement.getBoundingClientRect()
+      return (screen[1] - (clientY - rect.top)) * this.pixelSize(origin)
+    }
     const w = new THREE.Vector3(...origin).sub(ray.origin)
     const b = d.dot(ray.direction)
     const denominator = 1 - b * b
@@ -1567,7 +1600,7 @@ export class ViewportEngine {
   private ensureTransform(): TransformControls {
     if (this.transform) return this.transform
     const tc = new TransformControls(this.camera, this.renderer.domElement)
-    tc.setSize(0.9)
+    tc.setSize(354 / Math.max(1, this.renderer.domElement.clientHeight))
     const preferences = usePreferences.getState().values
     tc.setTranslationSnap(preferences.moveSnap || null)
     tc.setRotationSnap(
@@ -1595,6 +1628,16 @@ export class ViewportEngine {
         ? (tc as unknown as { getHelper: () => THREE.Object3D }).getHelper()
         : (tc as unknown as THREE.Object3D)
     this.overlayGroup.add(helper)
+    styleTransformControls(helper)
+    tc.addEventListener('change', () => {
+      this.renderer.domElement.style.cursor = tc.object
+        ? tc.dragging
+          ? 'grabbing'
+          : tc.axis
+            ? 'grab'
+            : ''
+        : ''
+    })
     this.transform = tc
     return tc
   }
@@ -2278,6 +2321,11 @@ export class ViewportEngine {
 
   orbitView(dx: number, dy: number) {
     this.viewTween = null
+    if (this.horizonLocked && !this.horizonSuspended) {
+      this.orbitByPixels(dx, dy, Math.PI / 160)
+      this.levelHorizon()
+      return
+    }
     const target = this.controls.target
     const offset = this.camera.position.clone().sub(target)
     const right = new THREE.Vector3(1, 0, 0).applyQuaternion(this.camera.quaternion)
@@ -2290,6 +2338,7 @@ export class ViewportEngine {
   }
 
   rollView(angle: number) {
+    if (this.horizonLocked && !this.horizonSuspended) return
     this.viewTween = null
     const axis = this.camera.position.clone().sub(this.controls.target).normalize()
     this.camera.up.applyAxisAngle(axis, angle).normalize()
@@ -2327,6 +2376,30 @@ export class ViewportEngine {
 
   setTouchpadSpeed(speed: number) {
     this.touchpadSpeed = speed
+  }
+
+  private horizonLocked = true
+  private horizonSuspended = false
+
+  setHorizonLock(enabled: boolean, suspended = false) {
+    this.horizonLocked = enabled
+    this.horizonSuspended = suspended
+    if (enabled && !suspended) {
+      this.viewTween = null
+      this.levelHorizon()
+    }
+  }
+
+  private levelHorizon() {
+    const direction = this.camera.position.clone().sub(this.controls.target).normalize()
+    if (Math.abs(direction.z) < 0.999999) {
+      this.camera.up.set(0, 0, 1)
+    } else {
+      this.camera.up.z = 0
+      if (this.camera.up.lengthSq() < 1e-8) this.camera.up.set(0, direction.z > 0 ? 1 : -1, 0)
+      this.camera.up.normalize()
+    }
+    this.camera.lookAt(this.controls.target)
   }
 
   setMouseScheme(scheme: MouseScheme) {
@@ -2371,16 +2444,17 @@ export class ViewportEngine {
    * coordinates assume and back again, which is what OrbitControls does with
    * its own drag.
    */
-  private orbitByPixels(dx: number, dy: number) {
+  private orbitByPixels(dx: number, dy: number, radiansPerPixel?: number) {
     const height = this.renderer.domElement.clientHeight || 1
     const toYUp = new THREE.Quaternion().setFromUnitVectors(
-      this.camera.up,
+      this.horizonLocked && !this.horizonSuspended ? new THREE.Vector3(0, 0, 1) : this.camera.up,
       new THREE.Vector3(0, 1, 0),
     )
     const offset = this.camera.position.clone().sub(this.controls.target).applyQuaternion(toYUp)
     const spherical = new THREE.Spherical().setFromVector3(offset)
-    spherical.theta -= (2 * Math.PI * dx) / height
-    spherical.phi -= (2 * Math.PI * dy) / height
+    const rate = radiansPerPixel ?? (2 * Math.PI) / height
+    spherical.theta -= rate * dx
+    spherical.phi -= rate * dy
     spherical.phi = THREE.MathUtils.clamp(spherical.phi, 1e-6, Math.PI - 1e-6)
     this.camera.position
       .copy(this.controls.target)
@@ -2408,6 +2482,8 @@ export class ViewportEngine {
     if (this.disposed) return
     requestAnimationFrame(this.animate)
     if (!this.stepViewTween()) this.controls.update()
+    if (this.horizonLocked && !this.horizonSuspended) this.levelHorizon()
+    this.transform?.setSize(354 / Math.max(1, this.renderer.domElement.clientHeight))
     if (this.viewListeners.size) {
       const view = this.viewRotation()
       const key = view.map((v) => v.toFixed(4)).join(',')

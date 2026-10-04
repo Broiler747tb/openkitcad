@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { t } from '../i18n'
+import { usePreferences } from '../doc/preferences'
 import { CUBE_ZONES, directionLabels, projectCube, type Axis } from './cubeGeometry'
 
 export type CubeFace = 'top' | 'bottom' | 'front' | 'back' | 'left' | 'right'
@@ -10,6 +11,7 @@ export function ViewCube({
   subscribe: (listener: (view: number[]) => void) => () => void
 }) {
   const [view, setView] = useState([1, 0, 0, 0, 1, 0, 0, 0, 1])
+  const horizonLock = usePreferences((s) => s.values.horizonLock)
   const drag = useRef<{
     x: number
     y: number
@@ -53,6 +55,7 @@ export function ViewCube({
       <div className="view-cube-roll">
         <button
           aria-label={t('Roll counterclockwise')}
+          disabled={horizonLock}
           title={t('Roll counterclockwise')}
           onClick={() =>
             window.dispatchEvent(new CustomEvent('okc:cube-roll', { detail: Math.PI / 2 }))
@@ -62,6 +65,7 @@ export function ViewCube({
         </button>
         <button
           aria-label={t('Roll clockwise')}
+          disabled={horizonLock}
           title={t('Roll clockwise')}
           onClick={() =>
             window.dispatchEvent(new CustomEvent('okc:cube-roll', { detail: -Math.PI / 2 }))
@@ -70,6 +74,24 @@ export function ViewCube({
           ↷
         </button>
       </div>
+      <button
+        className="view-horizon-lock"
+        aria-label={t('Horizon lock')}
+        aria-pressed={horizonLock}
+        title={t('Keep the camera upright while orbiting')}
+        onClick={() => usePreferences.getState().set({ horizonLock: !horizonLock })}
+      >
+        <svg viewBox="0 0 20 20" width={18} height={18} aria-hidden="true">
+          <path
+            d="M2 13h16M5 9l3-4 4 6 3-3 3 5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
       <svg
         className="view-cube-stage"
         viewBox="0 0 144 154"

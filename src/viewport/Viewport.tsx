@@ -384,7 +384,9 @@ export function Viewport() {
   const [labels, setLabels] = useState<ScreenLabel[]>([])
   const [handleScreens, setHandleScreens] = useState<HandleScreen[]>([])
   const [hotHandle, setHotHandle] = useState<string | null>(null)
-  const handleDragRef = useRef<ActiveHandle | null>(null)
+  const handleDragRef = useRef<{ handle: ActiveHandle; parameter: number; value: number } | null>(
+    null,
+  )
   const [cursorHint, setCursorHint] = useState<{ x: number; y: number; text: string } | null>(null)
   const [prompt, setPrompt] = useState<DimensionPrompt | null>(null)
   const [, forceRender] = useState(0)
@@ -819,6 +821,14 @@ export function Viewport() {
   )
   useEffect(() => {
     engineRef.current?.setHandles(activeHandles, hotHandle)
+    if (
+      handleDragRef.current &&
+      !activeHandles.some((h) => h.id === handleDragRef.current?.handle.id)
+    ) {
+      handleDragRef.current = null
+      downRef.current = null
+      engineRef.current?.setControlsEnabled(true)
+    }
   }, [activeHandles, hotHandle])
 
   useEffect(() => {
@@ -846,24 +856,31 @@ export function Viewport() {
     return input?.kind === 'selection' ? new Set(input.filter) : acceptedKinds()
   }
 
-  function dragHandle(handle: ActiveHandle, e: React.PointerEvent) {
+  function dragHandle(drag: NonNullable<typeof handleDragRef.current>, e: React.PointerEvent) {
+    const { handle } = drag
     const engine = engineRef.current
     const session = useCommand.getState().session
     const input = session ? findInput(session.spec, handle.input) : undefined
     if (!engine || !input || (input.kind !== 'length' && input.kind !== 'angle')) return
     const preferences = usePreferences.getState().values
     const step = e.altKey ? 0 : handle.kind === 'arc' ? preferences.angleSnap : preferences.moveSnap
-    let value =
+    const parameter =
       handle.kind === 'arc'
         ? engine.arcAngle(e.clientX, e.clientY, handle)
         : engine.arrowParameter(e.clientX, e.clientY, handle.origin, handle.direction)
-    if (value === null) return
-    if (handle.kind === 'arrow') value /= handle.scale
+    if (parameter === null) return
+    let delta = parameter - drag.parameter
+    if (handle.kind === 'arc') delta = ((delta + 540) % 360) - 180
+    drag.parameter = parameter
+    drag.value += delta / handle.scale
+    let value = drag.value
     if (step) value = Math.round(value / step) * step
     if (input.min !== undefined) {
       value = Math.max(value, input.exclusiveMin ? input.min + (step || 0.01) : input.min)
     }
     if (input.max !== undefined) value = Math.min(value, input.max)
+    if (input.min !== undefined) drag.value = Math.max(drag.value, input.min)
+    if (input.max !== undefined) drag.value = Math.min(drag.value, input.max)
     useCommand.getState().dispatch({
       type: 'text',
       id: handle.input,
@@ -905,6 +922,8 @@ export function Viewport() {
     const cancel = () => {
       toolActionsRef.current?.reset()
       draggingRef.current = null
+      handleDragRef.current = null
+      downRef.current = null
       cancelHold()
       engineRef.current?.setControlsEnabled(true)
       useStore.getState().setTool('select')
@@ -924,6 +943,10 @@ export function Viewport() {
   useEffect(() => {
     engineRef.current?.setTouchpadSpeed(preferences.touchpadSpeed)
   }, [preferences.touchpadSpeed])
+
+  useEffect(() => {
+    engineRef.current?.setHorizonLock(preferences.horizonLock, !!activeSketch)
+  }, [preferences.horizonLock, !!activeSketch])
 
   const measure = useStore((s) => s.measure)
   const units = useStore((s) => s.doc.units)
@@ -1410,6 +1433,10 @@ export function Viewport() {
     if (e.button !== 0) return
     const engine = engineRef.current
     if (!engine) return
+    if (engine.isGizmoDragging()) {
+      downRef.current = null
+      return
+    }
     const store = useStore.getState()
 
     if (activeSketch && frame) {
@@ -1586,7 +1613,12 @@ export function Viewport() {
       (handle) => handle.id === engine.pickHandle(e.clientX, e.clientY),
     )
     if (grabbed) {
-      handleDragRef.current = grabbed
+      const parameter =
+        grabbed.kind === 'arc'
+          ? engine.arcAngle(e.clientX, e.clientY, grabbed)
+          : engine.arrowParameter(e.clientX, e.clientY, grabbed.origin, grabbed.direction)
+      if (parameter === null) return
+      handleDragRef.current = { handle: grabbed, parameter, value: grabbed.length / grabbed.scale }
       engine.setControlsEnabled(false)
       ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
       return
@@ -2093,6 +2125,15 @@ export function Viewport() {
           if (drop) placePart(part.id, drop.local)
         }}
         onPointerDownCapture={(e) => {
+          if (
+            e.button === 0 &&
+            activeHandles.length &&
+            engineRef.current?.pickHandle(e.clientX, e.clientY)
+          ) {
+            onPointerDown(e)
+            e.stopPropagation()
+            return
+          }
           if (!isAndroidApp) return
           if (e.pointerType === 'pen') penContactRef.current = true
           if (e.pointerType === 'touch' && penContactRef.current) {
@@ -2167,6 +2208,8 @@ export function Viewport() {
           cancelHold()
           if (draggingRef.current?.moved) useStore.getState().endTransient()
           draggingRef.current = null
+          handleDragRef.current = null
+          downRef.current = null
           engineRef.current?.setControlsEnabled(true)
         }}
         onPointerLeave={cancelHold}

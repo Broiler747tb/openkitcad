@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { createServer } from 'vite'
 import { chromium } from 'playwright'
+import { checkNavigation } from './navigation-checks.mjs'
 
 const server = await createServer({
   server: { host: '127.0.0.1', port: 4283, strictPort: true, open: false },
@@ -195,6 +196,28 @@ try {
     await cube.getByRole('button', { name: 'FRONT', exact: true }).getAttribute('aria-pressed'),
     'true',
   )
+  const arrowLayout = await cube.evaluate((element) => {
+    const centre = (selector) => {
+      const rect = element.querySelector(selector).getBoundingClientRect()
+      return [rect.x + rect.width / 2, rect.y + rect.height / 2]
+    }
+    const stage = element.querySelector('.view-cube-stage').getBoundingClientRect()
+    return {
+      up: centre('.cube-up'),
+      down: centre('.cube-down'),
+      left: centre('.cube-left'),
+      right: centre('.cube-right'),
+      cube: [stage.x + 72, stage.y + 80],
+    }
+  })
+  assert.ok(Math.abs((arrowLayout.up[1] + arrowLayout.down[1]) / 2 - arrowLayout.cube[1]) < 0.5)
+  assert.ok(Math.abs((arrowLayout.left[0] + arrowLayout.right[0]) / 2 - arrowLayout.cube[0]) < 0.5)
+  assert.ok(
+    Math.abs(
+      arrowLayout.down[1] - arrowLayout.cube[1] - (arrowLayout.right[0] - arrowLayout.cube[0]),
+    ) < 0.5,
+  )
+  await cube.getByRole('button', { name: 'Horizon lock', exact: true }).click()
   await cube.getByRole('button', { name: 'Roll clockwise', exact: true }).click()
   const roll = await page.evaluate(() => window.__okcEngine.camera.up.toArray())
   assert.ok(Math.abs(roll[0]) > 0.999)
@@ -248,6 +271,7 @@ try {
   )
   await cube.getByRole('button', { name: 'Home view', exact: true }).click()
   await page.waitForFunction(() => !window.__okcEngine.viewTween)
+  await checkNavigation(page)
   if (process.env.OKC_VIEWPORT_SCREENSHOT)
     await page.screenshot({ path: process.env.OKC_VIEWPORT_SCREENSHOT })
   if (process.env.OKC_VIEWPORT_SCREENSHOT)
@@ -260,6 +284,10 @@ try {
   const mobileCube = await cube.boundingBox()
   assert.ok(mobileCube.x >= 0 && mobileCube.x + mobileCube.width <= 390)
   await cube.getByRole('button', { name: 'Исходный вид', exact: true }).waitFor()
+  if (process.env.OKC_VIEWPORT_SCREENSHOT)
+    await page.screenshot({
+      path: process.env.OKC_VIEWPORT_SCREENSHOT.replace('.png', '-mobile.png'),
+    })
   assert.deepEqual(failures, [])
   console.log(
     '3 viewport scenarios passed: occluded picking, exact Measure points, cube navigation and dragging.',

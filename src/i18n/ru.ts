@@ -1,4 +1,6 @@
 export const ru: Readonly<Record<string, string>> = {
+  'Horizon lock': 'Горизонт',
+  'Keep the camera upright while orbiting': 'Не заваливать камеру при вращении',
   'Interface language': 'Язык интерфейса',
   PARAMETERS: 'ПАРАМЕТРЫ',
   Close: 'Закрыть',
@@ -1679,6 +1681,9 @@ export const ru: Readonly<Record<string, string>> = {
   'Sensors & modules': 'Датчики и модули',
   Power: 'Питание',
   'Screws & standoffs': 'Винты и стойки',
+  'Tooth pitch': 'Шаг зубьев',
+  'Fasteners & magnets': 'Крепёж и магниты',
+  'Buttons, switches & rotary controls': 'Кнопки, выключатели и регуляторы',
   'Extrusion & framing': 'Профили и рамы',
   'Motors & servos': 'Моторы и сервоприводы',
   'Bearings & linear motion': 'Подшипники и направляющие',
