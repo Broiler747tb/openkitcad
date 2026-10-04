@@ -1,4 +1,5 @@
 import { extrusionSection } from '../../catalogue/extrusion'
+import { beltProfile } from '../../catalogue/hardware'
 import type { ReactNode } from 'react'
 import {
   CATEGORY_COLOUR,
@@ -153,6 +154,40 @@ function connector(part: CataloguePart, g: Extract<PartGeometry, { kind: 'connec
 function drawing(part: CataloguePart): Drawing {
   const g = part.geometry
   switch (g.kind) {
+    case 'coupling':
+      return {
+        box: [0, 0, g.outerDiameter, g.length],
+        content: (
+          <>
+            <rect width={g.outerDiameter} height={g.length} {...line({ fill: STEEL })} />
+            <rect
+              x={(g.outerDiameter - g.boreA) / 2}
+              width={g.boreA}
+              height={g.length / 2}
+              {...line(CUT)}
+            />
+            <rect
+              x={(g.outerDiameter - g.boreB) / 2}
+              y={g.length / 2}
+              width={g.boreB}
+              height={g.length / 2}
+              {...line(CUT)}
+            />
+          </>
+        ),
+      }
+    case 'belt':
+      return {
+        box: [0, 0, g.length, g.thickness],
+        content: (
+          <polygon
+            points={beltProfile(g)
+              .map((p) => p.join(','))
+              .join(' ')}
+            {...line({ fill: BLACK })}
+          />
+        ),
+      }
     case 'board':
       return board(part, g)
     case 'connector':

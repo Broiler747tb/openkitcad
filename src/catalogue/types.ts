@@ -218,6 +218,21 @@ export type PartGeometry =
       boltSpacing: number
     }
   | {
+      kind: 'coupling'
+      outerDiameter: number
+      length: number
+      boreA: number
+      boreB: number
+    }
+  | {
+      kind: 'belt'
+      length: number
+      width: number
+      thickness: number
+      pitch: number
+      toothHeight: number
+    }
+  | {
       kind: 'bearing'
       innerDiameter: number
       outerDiameter: number
@@ -530,11 +545,11 @@ export const CATEGORY_LABEL: Record<PartCategory, string> = {
   display: 'Screens & displays',
   sensor: 'Sensors & modules',
   power: 'Power',
-  fastener: 'Screws & standoffs',
+  fastener: 'Fasteners & magnets',
   extrusion: 'Extrusion & framing',
   motor: 'Motors & servos',
   motion: 'Bearings & linear motion',
-  control: 'Knobs, potentiometers & encoders',
+  control: 'Buttons, switches & rotary controls',
 }
 
 /** One line under each category heading, for people who do not know the jargon. */
@@ -550,7 +565,7 @@ export const CATEGORY_BLURB: Record<PartCategory, string> = {
   extrusion: 'Aluminium profile for building frames.',
   motor: 'Steppers, servos and gearmotors.',
   motion: 'Bearings, rods and everything that slides or spins.',
-  control: 'Panel controls: potentiometers, rotary encoders and their cutouts.',
+  control: 'Buttons, limit switches, potentiometers and rotary encoders.',
 }
 
 /** Bounding footprint of a part in its own XY plane, in mm. */
@@ -577,6 +592,10 @@ export function partFootprint(part: CataloguePart): { w: number; h: number; z: n
       return { w: g.acrossFlats, h: g.acrossFlats, z: g.length }
     case 'motor':
       return { w: g.frame, h: g.frame, z: g.bodyLength }
+    case 'coupling':
+      return { w: g.outerDiameter, h: g.outerDiameter, z: g.length }
+    case 'belt':
+      return { w: g.length, h: g.width, z: g.thickness }
     case 'bearing':
       return { w: g.outerDiameter, h: g.outerDiameter, z: g.width }
     case 'connector':

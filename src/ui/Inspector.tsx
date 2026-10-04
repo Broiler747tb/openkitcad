@@ -12,6 +12,7 @@ import { usePreferences } from '../doc/preferences'
 import { startConstraintTool } from './sketchConstraints'
 import { sketchActions } from '../sketch/actions'
 import {
+  adjustableDimensions,
   allParts,
   byPopularity,
   CONFIDENCE_LABEL,
@@ -443,19 +444,23 @@ function OccurrenceInspector({ id, instanceId }: { id: string; instanceId?: stri
             />
           </div>
         )}
-        {source.kind === 'catalogue' && part?.geometry.kind === 'extrusion' && (
-          <Num
-            label={t('Length')}
-            value={source.overrides?.length ?? part.geometry.length}
-            step={10}
-            min={10}
-            onChange={(v) =>
-              store.updateComponent(component.id, {
-                source: { ...source, overrides: { ...source.overrides, length: v } },
-              })
-            }
-          />
-        )}
+        {source.kind === 'catalogue' &&
+          part &&
+          adjustableDimensions(part).map((field) => (
+            <Num
+              key={field.key}
+              label={t(field.label)}
+              value={source.overrides?.[field.key] ?? field.value}
+              step={field.step}
+              min={field.min}
+              max={field.max}
+              onChange={(v) =>
+                store.updateComponent(component.id, {
+                  source: { ...source, overrides: { ...source.overrides, [field.key]: v } },
+                })
+              }
+            />
+          ))}
       </div>
 
       <div className="section">

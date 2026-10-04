@@ -1,0 +1,88 @@
+{
+  "id": "motion-scs8uu",
+  "name": "SCS8UU housed linear bearing (generic)",
+  "category": "motion",
+  "popularity": 65,
+  "summary": "30 × 34 × 22 mm housing for an 8 mm shaft, with four top M4 mounting bores.",
+  "confidence": "approximate",
+  "source": "Common SCS8UU envelope 30 × 34 × 22 mm; shaft centre 11 mm above the base, four M4 holes on an 18 × 25 mm pattern. These dimensions vary between clones. Model uses 3.3 mm blind pilot bores 9 mm deep, not threads. End seals and internal LM8UU are simplified.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 30,
+      "h": 34
+    },
+    "thickness": 4,
+    "bumps": [
+      {
+        "x": 0,
+        "y": 0,
+        "z": 4,
+        "w": 30,
+        "h": 34,
+        "height": 18,
+        "label": "Linear bearing housing",
+        "colour": "#a6abb0"
+      }
+    ],
+    "slots": [
+      {
+        "axis": "x",
+        "x": 0,
+        "y": 17,
+        "z": 11,
+        "w": 8,
+        "h": 8,
+        "depth": 30
+      }
+    ],
+    "bores": [
+      {
+        "x": 6,
+        "y": 4.5,
+        "z": 13,
+        "diameter": 3.3,
+        "depth": 9
+      },
+      {
+        "x": 24,
+        "y": 4.5,
+        "z": 13,
+        "diameter": 3.3,
+        "depth": 9
+      },
+      {
+        "x": 6,
+        "y": 29.5,
+        "z": 13,
+        "diameter": 3.3,
+        "depth": 9
+      },
+      {
+        "x": 24,
+        "y": 29.5,
+        "z": 13,
+        "diameter": 3.3,
+        "depth": 9
+      }
+    ]
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.robotdigg.com/product/882/"
+    }
+  ],
+  "tags": [
+    "linear",
+    "bearing",
+    "scs8uu",
+    "shaft",
+    "подшипник",
+    "блок"
+  ],
+  "look": {
+    "finish": "metal"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "id": "control-panel-button-19mm",
+  "name": "Panel pushbutton, 19 mm hole (generic)",
+  "category": "control",
+  "popularity": 65,
+  "summary": "Metal pushbutton for a 19 mm panel hole, with terminal clearance behind.",
+  "confidence": "approximate",
+  "source": "E-Switch PV2/PV1 families illustrate 16/19 mm mounting-hole variants. This generic model selects a 22 mm bezel, 24 mm rear envelope, 2 mm protrusion and up to 6 mm panel. These are not the dimensions of every PV model; check your button drawing, thread and terminal arrangement.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 22,
+    "bodyHeight": 22,
+    "bodyDepth": 24,
+    "protrusion": 2,
+    "cutout": {
+      "shape": "circle",
+      "d": 19
+    },
+    "panelThickness": 6
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.e-switch.com/product-catalog/sealed/"
+    }
+  ],
+  "tags": [
+    "button",
+    "pushbutton",
+    "panel",
+    "кнопка"
+  ],
+  "family": "panel-pushbutton",
+  "variant": "19 mm",
+  "look": {
+    "style": "pushbutton",
+    "finish": "metal"
+  },
+  "connectors": [
+    {
+      "id": "button",
+      "label": "Button panel hole",
+      "side": "+y",
+      "shape": "circle",
+      "x": 11,
+      "y": 24,
+      "z": 11,
+      "width": 19,
+      "height": 19,
+      "diameter": 19,
+      "protrusion": 2
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "contacts",
+      "label": "Terminal wiring space",
+      "x": 0,
+      "y": -12,
+      "z": 0,
+      "w": 22,
+      "h": 12,
+      "height": 22
+    }
+  ]
+}

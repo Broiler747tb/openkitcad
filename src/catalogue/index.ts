@@ -74,6 +74,7 @@ export function getPart(id: string): CataloguePart | undefined {
   return userParts().find((p) => p.id === id) ?? byId.get(id)
 }
 
+export * from './hardware'
 export * from './describe'
 export * from './headers'
 export * from './placement'

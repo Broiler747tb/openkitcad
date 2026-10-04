@@ -1,3 +1,4 @@
+import { beltProfile } from '../catalogue/hardware'
 import { extrusionSection } from '../catalogue/extrusion'
 import { prototypingHoles } from '../catalogue/prototyping'
 import { pulleyDimensions } from '../catalogue/pulley'
@@ -937,6 +938,13 @@ function luminance(hex: string): number {
 }
 
 function boardLook(look: Look, part: CataloguePart, g: Geometry<'board'>) {
+  if (part.look?.style === 'lipo-pouch' && g.outline.shape === 'rect') {
+    const { w, h } = g.outline
+    look.box('metal', '#c9cbd0', 0, 0, 0, w, h, g.thickness, Math.min(1, g.thickness / 3))
+    for (const y of [0, h - 2]) look.box('plastic', '#d6ac36', 0, y, 0.02, w, 2, g.thickness - 0.04)
+    look.box('plastic', '#e5e7e9', w * 0.12, h * 0.22, g.thickness, w * 0.76, h * 0.55, 0.02)
+    return
+  }
   const finish = part.look?.finish ?? 'pcb'
   const colour = part.look?.colour ?? (finish === 'pcb' ? BOARD_COLOUR[part.category] : undefined)
   const shape =
@@ -992,14 +1000,37 @@ function boardLook(look: Look, part: CataloguePart, g: Geometry<'board'>) {
     ] as Array<[number, string]>)
       look.box('plastic', railColour, 3, y, g.thickness, w - 6, 0.45, 0.025)
   }
-  look.extrude(
-    finish,
-    colour,
-    shape,
-    breadboard ? 2 : 0,
-    g.thickness - (breadboard ? 2 : 0),
-    protoHoles.length ? 6 : 24,
-  )
+  const crossBores =
+    g.outline.shape === 'rect'
+      ? (g.slots ?? []).filter(
+          (slot) =>
+            slot.axis === 'x' &&
+            slot.x <= 0 &&
+            slot.depth >= (g.outline.shape === 'rect' ? g.outline.w : 0) &&
+            slot.z - slot.h / 2 >= 0 &&
+            slot.z + slot.h / 2 <= g.thickness,
+        )
+      : []
+  if (crossBores.length && g.outline.shape === 'rect') {
+    const section = roundedRect(new THREE.Shape(), 0, 0, g.outline.h, g.thickness, 0)
+    for (const slot of crossBores)
+      section.holes.push(circle(new THREE.Path(), slot.y, slot.z, slot.w / 2))
+    const mesh = new THREE.ExtrudeGeometry(section, {
+      depth: g.outline.w,
+      bevelEnabled: false,
+      curveSegments: 24,
+    })
+    mesh.applyMatrix4(new THREE.Matrix4().set(0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1))
+    look.add(finish, colour, mesh)
+  } else
+    look.extrude(
+      finish,
+      colour,
+      shape,
+      breadboard ? 2 : 0,
+      g.thickness - (breadboard ? 2 : 0),
+      protoHoles.length ? 6 : 24,
+    )
   if (part.category === 'proto' && !breadboard) {
     for (const [x, y] of protoHoles) {
       const pad = circle(new THREE.Shape(), x, y, 0.9)
@@ -1810,6 +1841,19 @@ function bearingLook(look: Look, part: CataloguePart, g: Geometry<'bearing'>) {
     return shape
   }
   const inner = g.innerDiameter / 2
+  if (part.look?.style === 'washer') {
+    look.extrude(part.look.finish ?? 'metal', part.look.colour, ring(r, inner), 0, g.width, 48)
+    return
+  }
+  if (part.look?.style === 'idler') {
+    const lip = 1
+    look.extrude('metal', undefined, ring(r, inner), 0, lip, 48)
+    look.extrude('metal', undefined, ring(r - 1.5, inner), lip, g.width - 2 * lip, 48)
+    look.extrude('metal', undefined, ring(r, inner), g.width - lip, lip, 48)
+    for (const z of [0.01, g.width - 0.11])
+      look.extrude('plastic', '#24272b', ring(Math.min(r - 2, 4.9), inner), z, 0.1, 36)
+    return
+  }
   const wall = Math.max(0.6, (r - inner) * 0.22)
   if (part.look?.style === 'linear') {
     look.extrude('metal', undefined, ring(r, inner + wall), 1, g.width - 2, 48)
@@ -1849,6 +1893,23 @@ function rodLook(look: Look, part: CataloguePart, g: Geometry<'rod'>) {
   const finish = part.look?.finish ?? 'metal'
   const colour = part.look?.colour
   const chamfer = Math.min(0.4, r * 0.2)
+  if (part.look?.style === 'battery-cell') {
+    look.cylinder(
+      'plastic',
+      part.look.colour ?? '#62a5bb',
+      r,
+      r,
+      0.3,
+      g.diameter,
+      g.length - 0.6,
+      48,
+    )
+    look.cylinder('metal', '#adb2b7', r, r, 0, g.diameter - 0.2, 0.3, 48)
+    look.cylinder('metal', '#b9bdc1', r, r, g.length - 0.3, g.diameter - 1.2, 0.3, 48)
+    look.cylinder('plastic', '#24272b', r, r, g.length - 0.29, g.diameter * 0.65, 0.28, 40)
+    look.cylinder('metal', '#b9bdc1', r, r, g.length - 0.28, g.diameter * 0.4, 0.28, 40)
+    return
+  }
   const threaded = /lead|thread|t8/i.test(g.spec ?? '')
   if (!threaded) {
     look.lathe(
@@ -1933,6 +1994,28 @@ export function lookPrototype(part: CataloguePart): LookPrototype {
     case 'motor':
       motorLook(look, part, g)
       break
+    case 'coupling': {
+      const r = g.outerDiameter / 2
+      const ring = (bore: number) => {
+        const shape = circle(new THREE.Shape(), r, r, r)
+        shape.holes.push(circle(new THREE.Path(), r, r, bore / 2))
+        return shape
+      }
+      look.extrude('metal', part.look?.colour, ring(g.boreA), 0, g.length / 2, 48)
+      look.extrude('metal', part.look?.colour, ring(g.boreB), g.length / 2, g.length / 2, 48)
+      for (const z of [g.length * 0.15, g.length * 0.85])
+        look.cylinderY('plastic', DARK, r, r - 0.02, z, 2.5, r, 16)
+      break
+    }
+    case 'belt': {
+      const profile = polygon(new THREE.Shape(), beltProfile(g))
+      const mesh = new THREE.ExtrudeGeometry(profile, { depth: g.width, bevelEnabled: false })
+      mesh.applyMatrix4(
+        new THREE.Matrix4().set(1, 0, 0, 0, 0, 0, -1, g.width, 0, 1, 0, 0, 0, 0, 0, 1),
+      )
+      look.add('rubber', part.look?.colour, mesh)
+      break
+    }
     case 'bearing':
       bearingLook(look, part, g)
       break

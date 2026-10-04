@@ -1,0 +1,85 @@
+{
+  "id": "fan-3010",
+  "name": "30 × 30 × 10 mm axial fan (Sunon MF30101V1-1000U-A99)",
+  "category": "connector",
+  "popularity": 65,
+  "summary": "30 mm frame, 10 mm depth; 24 mm mounting square.",
+  "confidence": "approximate",
+  "source": "Sunon MF30101V1 catalogue drawing: frame 30 × 30 × 10 mm, three 3.2 mm mounting holes on a 24 mm square at lower-left, lower-right and upper-left when the missing corner is upper-right. The circular panel opening, hub and support strut are simplified design geometry. Inlet and outlet are direction-specific; verify mounting orientation.",
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 30,
+    "bodyHeight": 30,
+    "bodyDepth": 10,
+    "protrusion": 0,
+    "cutout": {
+      "shape": "circle",
+      "d": 26
+    }
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.sunon.com/eu/MANAGE/Docs/WEBCONT/Files/1236/Sunon%20DC%20Brushless%20Fan%20%26%20Blower_%28240-E%29.pdf"
+    }
+  ],
+  "tags": [
+    "fan",
+    "cooling",
+    "3010",
+    "вентилятор"
+  ],
+  "family": "axial-fan",
+  "variant": "30 × 30 × 10 mm",
+  "manufacturer": "Sunon",
+  "look": {
+    "style": "fan"
+  },
+  "mountingHoles": [
+    {
+      "id": "m0",
+      "x": 3,
+      "y": 3,
+      "diameter": 3.2,
+      "screw": "M3",
+      "label": "Mounting hole"
+    },
+    {
+      "id": "m1",
+      "x": 27,
+      "y": 3,
+      "diameter": 3.2,
+      "screw": "M3",
+      "label": "Mounting hole"
+    },
+    {
+      "id": "m2",
+      "x": 3,
+      "y": 27,
+      "diameter": 3.2,
+      "screw": "M3",
+      "label": "Mounting hole"
+    }
+  ],
+  "connectors": [
+    {
+      "id": "air",
+      "label": "Air opening",
+      "side": "+y",
+      "shape": "circle",
+      "x": 15,
+      "y": 10,
+      "z": 15,
+      "width": 26,
+      "height": 26,
+      "diameter": 26,
+      "protrusion": 0
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      12
+    ],
+    "currentTypical": 0.055
+  }
+}

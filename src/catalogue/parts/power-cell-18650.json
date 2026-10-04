@@ -1,0 +1,40 @@
+{
+  "id": "power-cell-18650",
+  "name": "18650 bare lithium cell (maximum layout envelope)",
+  "category": "power",
+  "popularity": 65,
+  "summary": "Unprotected cell space claim, Ø18.5 × 65.3 mm; length can be adjusted.",
+  "confidence": "approximate",
+  "source": "Selected conservative bare-cell envelope 18.5 × 65.3 mm. Model codes are nominal size classes, not exact dimensions; wrapping and maker tolerances vary. Protected and button-top cells can be longer. Override Length to match a measured cell. End contacts are visual details within the envelope; no capacity or current rating is assumed.",
+  "geometry": {
+    "kind": "rod",
+    "diameter": 18.5,
+    "length": 65.3,
+    "spec": "Bare cell"
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.molicel.com/product/"
+    }
+  ],
+  "tags": [
+    "battery",
+    "cell",
+    "18650",
+    "аккумулятор"
+  ],
+  "family": "cylindrical-cell",
+  "variant": "18650",
+  "look": {
+    "style": "battery-cell",
+    "colour": "#73a894"
+  },
+  "electrical": {
+    "voltage": [
+      3.6,
+      3.7
+    ],
+    "note": "Nominal cell voltage; this is a source, not a load."
+  }
+}

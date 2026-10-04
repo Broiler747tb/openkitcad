@@ -1,0 +1,70 @@
+{
+  "id": "fastener-nut-m5",
+  "name": "M5 hex nut (DIN 934 envelope)",
+  "category": "fastener",
+  "popularity": 85,
+  "summary": "8 mm across flats, 4 mm high, nominal M5 bore.",
+  "confidence": "approximate",
+  "source": "DIN 934 envelope: 8 mm across flats and nominal 4 mm height. Supplier sheet reports minimum heights, whereas this model uses the common nominal envelope. Perfect hex corners, chamfers and the nominal circular bore simplify the real thread. Check the nut before setting a tight printed pocket.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "poly",
+      "points": [
+        [
+          9.237604307034013,
+          4
+        ],
+        [
+          6.9282032302755105,
+          8
+        ],
+        [
+          2.3094010767585043,
+          8
+        ],
+        [
+          0,
+          4.000000000000001
+        ],
+        [
+          2.309401076758501,
+          0
+        ],
+        [
+          6.9282032302755105,
+          0
+        ]
+      ]
+    },
+    "thickness": 4,
+    "bores": [
+      {
+        "x": 4.618802153517007,
+        "y": 4,
+        "z": 0,
+        "diameter": 5,
+        "depth": 4
+      }
+    ]
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.westfieldfasteners.co.uk/Datasheets/Nut_Hex_M.pdf"
+    }
+  ],
+  "tags": [
+    "nut",
+    "hex",
+    "din934",
+    "m5",
+    "гайка"
+  ],
+  "family": "hex-nut",
+  "variant": "M5",
+  "look": {
+    "finish": "metal",
+    "components": []
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "id": "motion-gt2-idler-5mm",
+  "name": "GT2 smooth idler, 5 mm bore (generic)",
+  "category": "motion",
+  "popularity": 65,
+  "summary": "5 mm bore, 18 mm flanges and an 8 mm belt channel.",
+  "confidence": "approximate",
+  "source": "Generic flanged idler for a 6 mm-wide GT2 belt. Chosen flange diameter 18 mm, overall width 10 mm, two 1 mm lips and 5 mm through bore. No common standard fixes these envelopes; measure the bought idler. Bearings and bearing shields are visual simplifications.",
+  "geometry": {
+    "kind": "bearing",
+    "innerDiameter": 5,
+    "outerDiameter": 18,
+    "width": 10
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.robotdigg.com/product/426/GT2-Idler-Pulley"
+    }
+  ],
+  "tags": [
+    "idler",
+    "roller",
+    "gt2",
+    "belt",
+    "ролик"
+  ],
+  "family": "gt2-idler",
+  "variant": "5 mm bore",
+  "look": {
+    "style": "idler"
+  }
+}

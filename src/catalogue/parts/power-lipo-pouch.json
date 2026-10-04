@@ -1,0 +1,52 @@
+{
+  "id": "power-lipo-pouch",
+  "name": "LiPo pouch cell, adjustable envelope",
+  "category": "power",
+  "popularity": 65,
+  "summary": "Change Width, Length and Thickness to match your pouch cell.",
+  "confidence": "approximate",
+  "source": "Generic 30 × 50 × 6 mm layout envelope for a pouch cell. These dimensions identify no specific capacity or product. Width, length and thickness are editable; the foil seal and lead exit need additional space. Check the measured cell including its protection board and lead folds.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 30,
+      "h": 50
+    },
+    "thickness": 6
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.adafruit.com/category/574"
+    }
+  ],
+  "tags": [
+    "battery",
+    "lipo",
+    "pouch",
+    "аккумулятор"
+  ],
+  "look": {
+    "style": "lipo-pouch",
+    "finish": "metal"
+  },
+  "keepouts": [
+    {
+      "id": "lead-exit",
+      "label": "Battery lead exit",
+      "x": 12,
+      "y": 50,
+      "z": 0,
+      "w": 6,
+      "h": 12,
+      "height": 6
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      3.7
+    ],
+    "note": "Nominal source voltage; capacity is not inferred from size."
+  }
+}

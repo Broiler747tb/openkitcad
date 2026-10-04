@@ -1,0 +1,32 @@
+{
+  "id": "magnet-disc-10x3",
+  "name": "Disc magnet 10 × 3 mm",
+  "category": "fastener",
+  "popularity": 65,
+  "summary": "Round magnet envelope, 10 mm diameter and 3 mm thick.",
+  "confidence": "approximate",
+  "source": "Nominal selected size, also used in the Supermagnete disc-magnet range. Coating thickness, chamfers, grade and force are not represented. Add fitting clearance to a printed pocket rather than using the nominal cylinder as a press fit.",
+  "geometry": {
+    "kind": "rod",
+    "diameter": 10,
+    "length": 3
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.supermagnete.de/eng/overview-neodymium-magnets"
+    }
+  ],
+  "tags": [
+    "magnet",
+    "disc",
+    "neodymium",
+    "магнит"
+  ],
+  "family": "disc-magnet",
+  "variant": "Ø10 × 3 mm",
+  "look": {
+    "finish": "metal",
+    "colour": "#b9bec4"
+  }
+}

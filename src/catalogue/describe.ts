@@ -84,6 +84,13 @@ function geometryFacts(part: CataloguePart, units: LengthUnit): PartFact[] {
         { label: 'Frame', value: mm(g.frame) },
         { label: 'Shaft', value: `⌀ ${mm(g.shaftDiameter)} × ${mm(g.shaftLength)}` },
       ]
+    case 'coupling':
+      return [{ label: 'Bore × outside', value: sizes([g.boreA, g.boreB, g.outerDiameter], units) }]
+    case 'belt':
+      return [
+        { label: 'Tooth pitch', value: mm(g.pitch) },
+        { label: 'Width', value: mm(g.width) },
+      ]
     case 'bearing':
       return [
         {

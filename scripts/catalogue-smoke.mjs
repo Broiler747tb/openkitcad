@@ -207,3 +207,5 @@ try {
   await browser?.close()
   await server.close()
 }
+
+await import('./catalogue-expansion-smoke.mjs')

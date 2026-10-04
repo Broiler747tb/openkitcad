@@ -1,0 +1,40 @@
+{
+  "id": "power-cell-21700",
+  "name": "21700 bare lithium cell (maximum layout envelope)",
+  "category": "power",
+  "popularity": 65,
+  "summary": "Unprotected cell space claim, Ø21.7 × 70.2 mm; length can be adjusted.",
+  "confidence": "approximate",
+  "source": "Selected conservative bare-cell envelope 21.7 × 70.2 mm. Model codes are nominal size classes, not exact dimensions; wrapping and maker tolerances vary. Protected and button-top cells can be longer. Override Length to match a measured cell. End contacts are visual details within the envelope; no capacity or current rating is assumed.",
+  "geometry": {
+    "kind": "rod",
+    "diameter": 21.7,
+    "length": 70.2,
+    "spec": "Bare cell"
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.molicel.com/product/"
+    }
+  ],
+  "tags": [
+    "battery",
+    "cell",
+    "21700",
+    "аккумулятор"
+  ],
+  "family": "cylindrical-cell",
+  "variant": "21700",
+  "look": {
+    "style": "battery-cell",
+    "colour": "#699bac"
+  },
+  "electrical": {
+    "voltage": [
+      3.6,
+      3.7
+    ],
+    "note": "Nominal cell voltage; this is a source, not a load."
+  }
+}

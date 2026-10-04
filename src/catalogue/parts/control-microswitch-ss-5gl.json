@@ -1,0 +1,102 @@
+{
+  "id": "control-microswitch-ss-5gl",
+  "name": "Microswitch SS-5GL, lever (Omron envelope)",
+  "category": "control",
+  "popularity": 65,
+  "summary": "19.8 × 6.4 × 9.5 mm body, 9.5 mm mounting pitch; lever.",
+  "confidence": "approximate",
+  "source": "Omron SS drawing: body 19.8 × 6.4 × 9.5 mm. Local body length follows Y, mounting axes follow X at y=5.1/14.6 and z=2.9 mm. The two 2.35 mm channels approximate the specified round and elongated mounting apertures. Lever/roller poses and solder terminals are simplified; a 10 mm actuator keepout covers the maximum free position of the roller variant.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 6.4,
+      "h": 19.8
+    },
+    "thickness": 9.5,
+    "bumps": [
+      {
+        "x": 0.9,
+        "y": 6.5,
+        "z": 9.5,
+        "w": 3,
+        "h": 2,
+        "height": 1.2,
+        "label": "Plunger",
+        "colour": "#d54336"
+      },
+      {
+        "x": 0.5,
+        "y": 0,
+        "z": 10,
+        "w": 3.6,
+        "h": 17.5,
+        "height": 0.5,
+        "label": "Lever",
+        "colour": "#a6abb0"
+      }
+    ],
+    "slots": [
+      {
+        "axis": "x",
+        "x": 0,
+        "y": 5.1,
+        "z": 2.9,
+        "w": 2.35,
+        "h": 2.35,
+        "depth": 6.4
+      },
+      {
+        "axis": "x",
+        "x": 0,
+        "y": 14.6,
+        "z": 2.9,
+        "w": 2.35,
+        "h": 2.35,
+        "depth": 6.4
+      }
+    ]
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://omronfs.omron.com/en_US/ecb/products/pdf/en-ss.pdf"
+    }
+  ],
+  "tags": [
+    "microswitch",
+    "limit",
+    "endstop",
+    "концевик",
+    "кнопка"
+  ],
+  "family": "micro-limit-switch",
+  "variant": "Lever",
+  "manufacturer": "Omron",
+  "look": {
+    "finish": "plastic",
+    "colour": "#24272b"
+  },
+  "keepouts": [
+    {
+      "id": "terminals",
+      "label": "Solder terminal space",
+      "x": 0,
+      "y": 0,
+      "z": -5,
+      "w": 6.4,
+      "h": 19.8,
+      "height": 5
+    },
+    {
+      "id": "actuator",
+      "label": "Actuator movement",
+      "x": 0,
+      "y": 0,
+      "z": 9.5,
+      "w": 6.4,
+      "h": 19.8,
+      "height": 10
+    }
+  ]
+}

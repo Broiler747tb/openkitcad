@@ -1,0 +1,34 @@
+{
+  "id": "motion-gt2-belt-9mm",
+  "name": "GT2 timing belt strip, 9 mm wide",
+  "category": "motion",
+  "popularity": 65,
+  "summary": "Straight belt strip with 2 mm pitch. Change Length in the inspector.",
+  "confidence": "approximate",
+  "source": "Generic 2 mm-pitch GT2-style layout strip, 9 mm wide and 1.38 mm total thickness. Tooth depth 0.75 mm and trapezoidal tooth faces approximate a commercial rounded profile. It is a purchased-belt space claim, not a mould or a manufacturing tooth definition. Adjustable length 2–2000 mm.",
+  "geometry": {
+    "kind": "belt",
+    "length": 100,
+    "width": 9,
+    "thickness": 1.38,
+    "pitch": 2,
+    "toothHeight": 0.75
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.gates.com/us/en/power-transmission/synchronous-belts/rubber-synchronous-belts.p.9231-000000-000000.html"
+    }
+  ],
+  "tags": [
+    "belt",
+    "gt2",
+    "timing",
+    "ремень"
+  ],
+  "family": "gt2-belt",
+  "variant": "9 mm wide",
+  "look": {
+    "finish": "rubber"
+  }
+}

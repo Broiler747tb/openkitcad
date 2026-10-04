@@ -8,6 +8,7 @@ export function NumberInput({
   value,
   onChange,
   min,
+  max,
   suffix = 'mm',
 }: {
   label: string
@@ -15,6 +16,7 @@ export function NumberInput({
   onChange: (v: number) => void
   step?: number
   min?: number
+  max?: number
   suffix?: string
 }) {
   const id = useId()
@@ -32,7 +34,7 @@ export function NumberInput({
       setDraft(shown)
       return
     }
-    if (min != null && v < min) {
+    if ((min != null && v < min) || (max != null && v > max)) {
       setDraft(shown)
       return
     }
