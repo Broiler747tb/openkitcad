@@ -1,0 +1,95 @@
+{
+  "id": "fastener-nyloc-m5",
+  "name": "M5 nylon locking nut (DIN 985 envelope)",
+  "category": "fastener",
+  "popularity": 65,
+  "summary": "8 mm across flats and 5 mm overall height, including the collar.",
+  "confidence": "approximate",
+  "source": "DIN 985 supplier sheet gives M2.5/M3/M4/M5 maximum heights 3.8/4/5/5 mm and across-flats 5/5.5/7/8 mm. M2 is a generic approximate 2.7 mm-high envelope. The hex-to-collar split and collar diameter are visual approximations; the thread is a nominal circular bore.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "poly",
+      "points": [
+        [
+          9.237604307034013,
+          4
+        ],
+        [
+          6.9282032302755105,
+          8
+        ],
+        [
+          2.3094010767585043,
+          8
+        ],
+        [
+          0,
+          4.000000000000001
+        ],
+        [
+          2.309401076758501,
+          0
+        ],
+        [
+          6.9282032302755105,
+          0
+        ]
+      ]
+    },
+    "thickness": 4,
+    "bores": [
+      {
+        "x": 4.618802153517007,
+        "y": 4,
+        "z": 0,
+        "diameter": 5,
+        "depth": 5
+      }
+    ],
+    "bumps": [
+      {
+        "x": 1.4188021535170066,
+        "y": 0.7999999999999998,
+        "z": 4,
+        "w": 6.4,
+        "h": 6.4,
+        "height": 1,
+        "label": "Nylon locking collar",
+        "colour": "#f4f0dc",
+        "shape": "cylinder"
+      }
+    ]
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.westfieldfasteners.co.uk/Datasheets/Nut_HexNy_M.pdf"
+    }
+  ],
+  "tags": [
+    "nut",
+    "nyloc",
+    "locking",
+    "m5",
+    "гайка",
+    "самоконтрящаяся"
+  ],
+  "family": "nyloc-nut",
+  "variant": "M5",
+  "look": {
+    "finish": "metal",
+    "components": [
+      {
+        "kind": "cylinder",
+        "x": 4.618802153517007,
+        "y": 4,
+        "z": 4,
+        "d": 6.4,
+        "height": 1,
+        "finish": "plastic",
+        "colour": "#eee9d8"
+      }
+    ]
+  }
+}

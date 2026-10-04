@@ -17,6 +17,8 @@ const GEOMETRY_FIELDS: Record<CataloguePart['geometry']['kind'], string[]> = {
     'bossHeight',
     'boltSpacing',
   ],
+  coupling: ['outerDiameter', 'length', 'boreA', 'boreB'],
+  belt: ['length', 'width', 'thickness', 'pitch', 'toothHeight'],
   bearing: ['innerDiameter', 'outerDiameter', 'width'],
   connector: ['bodyWidth', 'bodyHeight', 'bodyDepth'],
 }
@@ -227,6 +229,13 @@ export function partProblems(value: unknown): string[] {
       problems.push('"geometry.depth" has to be a number above zero.')
     if (kind === 'rod' && g.pitch !== undefined && !positive(g.pitch))
       problems.push('"geometry.pitch" has to be a number above zero.')
+    if (kind === 'coupling' && (g.boreA >= g.outerDiameter || g.boreB >= g.outerDiameter))
+      problems.push('Coupling bores must be smaller than the outer diameter.')
+    if (
+      kind === 'belt' &&
+      (!(g.toothHeight < g.thickness) || g.length < g.pitch || g.length > 2000)
+    )
+      problems.push('Belt teeth need a backing and a length between one pitch and 2000 mm.')
     if (kind === 'connector') {
       const cutout = g.cutout
       const rect = cutout?.shape === 'rect' && positive(cutout.w) && positive(cutout.h)

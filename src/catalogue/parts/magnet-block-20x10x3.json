@@ -1,0 +1,36 @@
+{
+  "id": "magnet-block-20x10x3",
+  "name": "Block magnet 20 × 10 × 3 mm",
+  "category": "fastener",
+  "popularity": 65,
+  "summary": "Rectangular magnet envelope with flat mounting faces.",
+  "confidence": "approximate",
+  "source": "Nominal selected rectangular-magnet envelope. This is a configurable layout size, not a claim about a particular supplier's grade or force. Corner chamfers and coating are omitted.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 20,
+      "h": 10
+    },
+    "thickness": 3
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.supermagnete.de/eng/block-magnets-neodymium"
+    }
+  ],
+  "tags": [
+    "magnet",
+    "block",
+    "neodymium",
+    "магнит"
+  ],
+  "family": "block-magnet",
+  "variant": "20 × 10 × 3 mm",
+  "look": {
+    "finish": "metal",
+    "components": []
+  }
+}

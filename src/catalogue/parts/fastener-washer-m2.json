@@ -1,0 +1,33 @@
+{
+  "id": "fastener-washer-m2",
+  "name": "M2 plain washer (DIN 125 A envelope)",
+  "category": "fastener",
+  "popularity": 83,
+  "summary": "2.2 mm bore, 5 mm outside, 0.3 mm thickness.",
+  "confidence": "approximate",
+  "source": "Nominal DIN 125 A / ISO 7089 small metric washer envelope: bore 2.2, outside 5, thickness 0.3 mm. Supplier tolerances and edge chamfers are not modelled; this entry is nominal layout geometry.",
+  "geometry": {
+    "kind": "bearing",
+    "innerDiameter": 2.2,
+    "outerDiameter": 5,
+    "width": 0.3
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.bossard.com/ch-en/eshop/washers/plain-washers/p/666/"
+    }
+  ],
+  "tags": [
+    "washer",
+    "plain",
+    "m2",
+    "шайба"
+  ],
+  "family": "plain-washer",
+  "variant": "M2",
+  "look": {
+    "style": "washer",
+    "finish": "metal"
+  }
+}

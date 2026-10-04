@@ -1,0 +1,77 @@
+{
+  "id": "motion-sk8",
+  "name": "SK8 shaft support (SBC envelope)",
+  "category": "motion",
+  "popularity": 65,
+  "summary": "Ø8 mm shaft, 20 mm shaft height and 32 mm base hole pitch.",
+  "confidence": "datasheet",
+  "source": "SBC SK dimension table: W 42, L 14, H 20, F 32.8, base G 6, clamp P 18, base B 32 and S 5.5 mm. Local shaft axis is X; base footprint 14 × 42 mm. Clamp contour, split and cross screw are simplified. The actual shaft channel is cut through the clamp.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 14,
+      "h": 42
+    },
+    "thickness": 6,
+    "bumps": [
+      {
+        "x": 0,
+        "y": 12,
+        "z": 6,
+        "w": 14,
+        "h": 18,
+        "height": 26.8,
+        "label": "Shaft clamp",
+        "colour": "#a6abb0"
+      }
+    ],
+    "slots": [
+      {
+        "axis": "x",
+        "x": 0,
+        "y": 21,
+        "z": 20,
+        "w": 8,
+        "h": 8,
+        "depth": 14
+      }
+    ]
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.sbclinear.co.jp/products/bush/sk.html"
+    }
+  ],
+  "tags": [
+    "shaft",
+    "support",
+    "sk8",
+    "опора"
+  ],
+  "family": "shaft-support",
+  "variant": "SK8",
+  "manufacturer": "SBC",
+  "look": {
+    "finish": "metal"
+  },
+  "mountingHoles": [
+    {
+      "id": "m1",
+      "x": 7,
+      "y": 5,
+      "diameter": 5.5,
+      "screw": "M5",
+      "label": "Mounting hole"
+    },
+    {
+      "id": "m2",
+      "x": 7,
+      "y": 37,
+      "diameter": 5.5,
+      "screw": "M5",
+      "label": "Mounting hole"
+    }
+  ]
+}

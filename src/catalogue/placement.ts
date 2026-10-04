@@ -6,6 +6,7 @@ import {
   transformDirection,
   transformPoint,
 } from '../doc/model'
+import { adjustableDimensions } from './hardware'
 import { withHeaders } from './headers'
 import { partFootprint, type CataloguePart } from './types'
 
@@ -27,9 +28,44 @@ export function effectivePart(
   source?: { overrides?: Record<string, number>; headers?: boolean },
 ): CataloguePart {
   const fitted = withHeaders(part, source?.headers)
-  const length = source?.overrides?.length
-  if (fitted.geometry.kind !== 'extrusion' || length === undefined) return fitted
-  return { ...fitted, geometry: { ...fitted.geometry, length } }
+  const dimensions = adjustableDimensions(fitted)
+  const values = Object.fromEntries(
+    dimensions.map((field) => {
+      const value = source?.overrides?.[field.key]
+      return [
+        field.key,
+        value !== undefined && Number.isFinite(value) && value >= field.min && value <= field.max
+          ? value
+          : field.value,
+      ]
+    }),
+  )
+  if (!dimensions.length || !source?.overrides) return fitted
+  const g = fitted.geometry
+  if (g.kind === 'extrusion' || g.kind === 'rod' || g.kind === 'belt')
+    return { ...fitted, geometry: { ...g, length: values.length } }
+  if (g.kind === 'board' && g.outline.shape === 'rect')
+    return {
+      ...fitted,
+      geometry: {
+        ...g,
+        outline: { ...g.outline, w: values.width, h: values.length },
+        thickness: values.thickness,
+      },
+      keepouts: [
+        {
+          id: 'lead-exit',
+          label: 'Battery lead exit',
+          x: values.width / 2 - 3,
+          y: values.length,
+          z: 0,
+          w: 6,
+          h: 12,
+          height: values.thickness,
+        },
+      ],
+    }
+  return fitted
 }
 
 export function partBounds(part: CataloguePart): PartBounds {
@@ -39,11 +75,11 @@ export function partBounds(part: CataloguePart): PartBounds {
       const { w, h } = partFootprint(part)
       const bumps = g.bumps ?? []
       return [
-        0,
-        0,
+        Math.min(0, ...bumps.map((bump) => bump.x)),
+        Math.min(0, ...bumps.map((bump) => bump.y)),
         Math.min(0, ...bumps.map((bump) => bump.z)),
-        w,
-        h,
+        Math.max(w, ...bumps.map((bump) => bump.x + bump.w)),
+        Math.max(h, ...bumps.map((bump) => bump.y + bump.h)),
         Math.max(g.thickness, ...bumps.map((bump) => bump.z + bump.height)),
       ]
     }
@@ -59,6 +95,10 @@ export function partBounds(part: CataloguePart): PartBounds {
       return [0, 0, 0, g.acrossFlats, g.acrossFlats, g.length]
     case 'motor':
       return [0, 0, 0, g.frame, g.frame, g.bodyLength + g.bossHeight + g.shaftLength]
+    case 'coupling':
+      return [0, 0, 0, g.outerDiameter, g.outerDiameter, g.length]
+    case 'belt':
+      return [0, 0, 0, g.length, g.width, g.thickness]
     case 'bearing':
       return [0, 0, 0, g.outerDiameter, g.outerDiameter, g.width]
     case 'connector':

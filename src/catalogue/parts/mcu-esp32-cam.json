@@ -1,0 +1,175 @@
+{
+  "id": "mcu-esp32-cam",
+  "name": "Ai-Thinker ESP32-CAM (OV2640)",
+  "category": "mcu",
+  "popularity": 80,
+  "summary": "27 × 40.5 mm camera board, no screw holes; lens and underside need clearance.",
+  "confidence": "approximate",
+  "source": "Ai-Thinker specifies the 27 × 40.5 mm module outline. OV2640 module pose, lens height, header and microSD locations are approximate. Camera modules with different lens barrels need different clearances. The board has no screw holes; use edge clips or a custom frame.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 27,
+      "h": 40.5
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 3,
+        "y": 15,
+        "z": 1.6,
+        "w": 18,
+        "h": 22,
+        "height": 3,
+        "label": "ESP32 radio module",
+        "colour": "#a6abb0"
+      },
+      {
+        "x": 8.5,
+        "y": 3,
+        "z": 1.6,
+        "w": 10,
+        "h": 10,
+        "height": 1.5,
+        "label": "Camera board",
+        "colour": "#a6abb0"
+      },
+      {
+        "x": 9.5,
+        "y": 4,
+        "z": 3.1,
+        "w": 8,
+        "h": 8,
+        "height": 5,
+        "label": "Camera lens",
+        "colour": "#191b1e",
+        "shape": "cylinder"
+      },
+      {
+        "x": 7,
+        "y": 0,
+        "z": -1.8,
+        "w": 13,
+        "h": 15,
+        "height": 1.8,
+        "label": "microSD socket",
+        "colour": "#a6abb0"
+      }
+    ]
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://en.ai-thinker.com/pro_view-24.html"
+    }
+  ],
+  "tags": [
+    "esp32",
+    "cam",
+    "camera",
+    "ov2640",
+    "камера"
+  ],
+  "mountingHoles": [],
+  "look": {
+    "finish": "pcb",
+    "colour": "#202a2d",
+    "components": [
+      {
+        "kind": "module",
+        "x": 3,
+        "y": 15,
+        "w": 18,
+        "h": 22,
+        "height": 3
+      },
+      {
+        "kind": "chip",
+        "x": 8.5,
+        "y": 3,
+        "w": 10,
+        "h": 10,
+        "height": 1.5
+      },
+      {
+        "kind": "cylinder",
+        "x": 13.5,
+        "y": 8,
+        "z": 3.1,
+        "d": 8,
+        "height": 5,
+        "finish": "plastic",
+        "colour": "#191b1e"
+      },
+      {
+        "kind": "port",
+        "port": "microsd",
+        "x": 13.5,
+        "y": 15,
+        "z": 0,
+        "facing": "-y",
+        "w": 13,
+        "h": 1.8,
+        "depth": 15,
+        "flip": true
+      }
+    ]
+  },
+  "manufacturer": "Ai-Thinker",
+  "connectors": [
+    {
+      "id": "sd",
+      "label": "microSD card access",
+      "side": "-y",
+      "x": 13.5,
+      "y": 0,
+      "z": -0.9,
+      "width": 13,
+      "height": 1.8,
+      "protrusion": 0
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "lens",
+      "label": "Lens field clearance",
+      "x": 8.5,
+      "y": 3,
+      "z": 8.1,
+      "w": 10,
+      "h": 10,
+      "height": 8
+    },
+    {
+      "id": "under",
+      "label": "Underside microSD",
+      "x": 7,
+      "y": 0,
+      "z": -1.8,
+      "w": 13,
+      "h": 15,
+      "height": 1.8
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "left",
+      "label": "Left header",
+      "x": 2.54,
+      "y": 12.4,
+      "rows": 8,
+      "cols": 1,
+      "pitch": 2.54
+    },
+    {
+      "id": "right",
+      "label": "Right header",
+      "x": 24.46,
+      "y": 12.4,
+      "rows": 8,
+      "cols": 1,
+      "pitch": 2.54
+    }
+  ]
+}

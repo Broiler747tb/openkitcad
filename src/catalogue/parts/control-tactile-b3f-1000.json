@@ -1,0 +1,73 @@
+{
+  "id": "control-tactile-b3f-1000",
+  "name": "Omron B3F-1000 tactile switch, 6 × 6 × 4.3 mm",
+  "category": "control",
+  "popularity": 65,
+  "summary": "6 × 6 mm body, 4.3 mm actuator height; use a printed button above it.",
+  "confidence": "approximate",
+  "source": "Omron B3F through-hole switch drawing: body 6 × 6 mm, base approximately 3.4 mm and actuator 4.3 mm high, nominal 3.5 mm actuator diameter. Actuator movement is reserved above the part. The bent pins are an underside clearance envelope, not detailed solderable geometry.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 6,
+      "h": 6
+    },
+    "thickness": 3.4,
+    "bumps": [
+      {
+        "x": 1.25,
+        "y": 1.25,
+        "z": 3.4,
+        "w": 3.5,
+        "h": 3.5,
+        "height": 0.8999999999999999,
+        "label": "Actuator",
+        "colour": "#e6e0ce",
+        "shape": "cylinder"
+      }
+    ]
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://omronfs.omron.com/en_US/ecb/products/pdf/en-b3f.pdf"
+    }
+  ],
+  "tags": [
+    "button",
+    "switch",
+    "tactile",
+    "b3f",
+    "кнопка"
+  ],
+  "family": "tactile-switch",
+  "variant": "B3F-1000",
+  "manufacturer": "Omron",
+  "look": {
+    "finish": "plastic",
+    "colour": "#2e3033"
+  },
+  "keepouts": [
+    {
+      "id": "pins",
+      "label": "Solder pins",
+      "x": -0.9,
+      "y": 0,
+      "z": -3.5,
+      "w": 7.8,
+      "h": 6,
+      "height": 3.5
+    },
+    {
+      "id": "press",
+      "label": "Button travel clearance",
+      "x": 1.25,
+      "y": 1.25,
+      "z": 4.3,
+      "w": 3.5,
+      "h": 3.5,
+      "height": 1
+    }
+  ]
+}

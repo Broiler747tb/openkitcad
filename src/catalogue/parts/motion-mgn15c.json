@@ -1,0 +1,106 @@
+{
+  "id": "motion-mgn15c",
+  "name": "MGN15C linear guide, 100 mm",
+  "category": "motion",
+  "popularity": 65,
+  "summary": "15 mm rail with a 41.3 × 32 mm C carriage.",
+  "confidence": "datasheet",
+  "source": "HIWIN MGN-C-0 / MGN-H-0 table: overall height 16, rail height 10, rail width 15, block width 32, block length 41.3 mm. Top M3 bores use transverse 25 mm spacing and longitudinal 20 mm spacing, 4 mm thread engagement represented as 2.5 mm pilot bores. A 100 mm stock rail and centred 40 mm rail-hole pitch are selected layout values; end spacing and clone dimensions require verification. Raceway grooves and head counterbores are omitted.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 100,
+      "h": 15
+    },
+    "thickness": 10,
+    "bumps": [
+      {
+        "x": 29.35,
+        "y": -8.5,
+        "z": 10,
+        "w": 41.3,
+        "h": 32,
+        "height": 6,
+        "label": "MGN15C carriage",
+        "colour": "#a6abb0"
+      }
+    ],
+    "bores": [
+      {
+        "x": 40,
+        "y": -5,
+        "z": 12,
+        "diameter": 2.5,
+        "depth": 4
+      },
+      {
+        "x": 60,
+        "y": -5,
+        "z": 12,
+        "diameter": 2.5,
+        "depth": 4
+      },
+      {
+        "x": 40,
+        "y": 20,
+        "z": 12,
+        "diameter": 2.5,
+        "depth": 4
+      },
+      {
+        "x": 60,
+        "y": 20,
+        "z": 12,
+        "diameter": 2.5,
+        "depth": 4
+      }
+    ]
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.hiwin.com/wp-content/uploads/Linear_Guideway-E-2.pdf"
+    }
+  ],
+  "tags": [
+    "mgn",
+    "linear",
+    "rail",
+    "guide",
+    "направляющая",
+    "каретка"
+  ],
+  "family": "mgn-rail",
+  "variant": "MGN15C carriage, 100 mm",
+  "manufacturer": "HIWIN",
+  "look": {
+    "finish": "metal"
+  },
+  "mountingHoles": [
+    {
+      "id": "r0",
+      "x": 10,
+      "y": 7.5,
+      "diameter": 3.5,
+      "screw": "M3",
+      "label": "Rail mounting hole"
+    },
+    {
+      "id": "r1",
+      "x": 50,
+      "y": 7.5,
+      "diameter": 3.5,
+      "screw": "M3",
+      "label": "Rail mounting hole"
+    },
+    {
+      "id": "r2",
+      "x": 90,
+      "y": 7.5,
+      "diameter": 3.5,
+      "screw": "M3",
+      "label": "Rail mounting hole"
+    }
+  ]
+}

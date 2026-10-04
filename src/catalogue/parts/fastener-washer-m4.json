@@ -1,0 +1,33 @@
+{
+  "id": "fastener-washer-m4",
+  "name": "M4 plain washer (DIN 125 A envelope)",
+  "category": "fastener",
+  "popularity": 83,
+  "summary": "4.3 mm bore, 9 mm outside, 0.8 mm thickness.",
+  "confidence": "approximate",
+  "source": "Nominal DIN 125 A / ISO 7089 small metric washer envelope: bore 4.3, outside 9, thickness 0.8 mm. Supplier tolerances and edge chamfers are not modelled; this entry is nominal layout geometry.",
+  "geometry": {
+    "kind": "bearing",
+    "innerDiameter": 4.3,
+    "outerDiameter": 9,
+    "width": 0.8
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.bossard.com/ch-en/eshop/washers/plain-washers/p/666/"
+    }
+  ],
+  "tags": [
+    "washer",
+    "plain",
+    "m4",
+    "шайба"
+  ],
+  "family": "plain-washer",
+  "variant": "M4",
+  "look": {
+    "style": "washer",
+    "finish": "metal"
+  }
+}

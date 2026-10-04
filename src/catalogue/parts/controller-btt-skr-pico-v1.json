@@ -1,0 +1,216 @@
+{
+  "id": "controller-btt-skr-pico-v1",
+  "name": "BIGTREETECH SKR Pico V1.0",
+  "category": "mcu",
+  "popularity": 79,
+  "summary": "85 × 56 mm printer controller; four holes on a 58 × 49 mm pattern.",
+  "confidence": "approximate",
+  "source": "Official BTT SKR Pico V1.0 size drawing: board 85 × 56 mm; four hole centres x=3.5/61.5 and y=3.5/52.5 mm. Hole diameter 3.2 mm and component/heatsink heights are selected approximate envelopes, since the plan drawing does not dimension them. USB-C centre is 11.83/2+2.89 mm below the top edge. Connector bodies and wiring space are simplified.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 85,
+      "h": 56
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 8,
+        "y": 40,
+        "z": 1.6,
+        "w": 66,
+        "h": 12,
+        "height": 8,
+        "label": "Motor driver heatsink",
+        "colour": "#bd433c"
+      },
+      {
+        "x": 73,
+        "y": 2,
+        "z": 1.6,
+        "w": 12,
+        "h": 11,
+        "height": 10,
+        "label": "Power terminal",
+        "colour": "#3b9560"
+      },
+      {
+        "x": 77.5,
+        "y": 42.7,
+        "z": 1.6,
+        "w": 7.5,
+        "h": 9,
+        "height": 3.3,
+        "label": "USB-C",
+        "colour": "#a6abb0"
+      }
+    ]
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://raw.githubusercontent.com/bigtreetech/SKR-Pico/master/Hardware/BTT%20SKR%20Pico%20V1.0-SIZE.pdf"
+    }
+  ],
+  "tags": [
+    "btt",
+    "skr",
+    "pico",
+    "rp2040",
+    "klipper",
+    "printer",
+    "controller"
+  ],
+  "mountingHoles": [
+    {
+      "id": "m0",
+      "x": 3.5,
+      "y": 3.5,
+      "diameter": 3.2,
+      "screw": "M3",
+      "label": "Mounting hole"
+    },
+    {
+      "id": "m1",
+      "x": 61.5,
+      "y": 3.5,
+      "diameter": 3.2,
+      "screw": "M3",
+      "label": "Mounting hole"
+    },
+    {
+      "id": "m2",
+      "x": 3.5,
+      "y": 52.5,
+      "diameter": 3.2,
+      "screw": "M3",
+      "label": "Mounting hole"
+    },
+    {
+      "id": "m3",
+      "x": 61.5,
+      "y": 52.5,
+      "diameter": 3.2,
+      "screw": "M3",
+      "label": "Mounting hole"
+    }
+  ],
+  "look": {
+    "finish": "pcb",
+    "colour": "#202a2d",
+    "components": [
+      {
+        "kind": "chip",
+        "x": 22,
+        "y": 15,
+        "w": 7,
+        "h": 7,
+        "height": 1
+      },
+      {
+        "kind": "box",
+        "x": 8,
+        "y": 40,
+        "z": 1.6,
+        "w": 66,
+        "h": 12,
+        "height": 8,
+        "finish": "anodised",
+        "colour": "#bd433c"
+      },
+      {
+        "kind": "jst",
+        "x": 8,
+        "y": 50,
+        "z": 1.6,
+        "pins": 4,
+        "pitch": 2,
+        "facing": "+y"
+      },
+      {
+        "kind": "jst",
+        "x": 21,
+        "y": 50,
+        "z": 1.6,
+        "pins": 4,
+        "pitch": 2,
+        "facing": "+y"
+      },
+      {
+        "kind": "jst",
+        "x": 34,
+        "y": 50,
+        "z": 1.6,
+        "pins": 4,
+        "pitch": 2,
+        "facing": "+y"
+      },
+      {
+        "kind": "jst",
+        "x": 47,
+        "y": 50,
+        "z": 1.6,
+        "pins": 4,
+        "pitch": 2,
+        "facing": "+y"
+      },
+      {
+        "kind": "jst",
+        "x": 60,
+        "y": 50,
+        "z": 1.6,
+        "pins": 4,
+        "pitch": 2,
+        "facing": "+y"
+      },
+      {
+        "kind": "port",
+        "port": "usb-c",
+        "x": 85,
+        "y": 47.2,
+        "z": 1.6,
+        "facing": "+x",
+        "w": 9,
+        "h": 3.3,
+        "depth": 7.5
+      },
+      {
+        "kind": "terminal",
+        "x": 75,
+        "y": 4,
+        "z": 1.6,
+        "pins": 2,
+        "pitch": 5.08,
+        "facing": "+x",
+        "colour": "#3b9560"
+      }
+    ]
+  },
+  "manufacturer": "BIGTREETECH",
+  "connectors": [
+    {
+      "id": "usb",
+      "label": "USB-C",
+      "side": "+x",
+      "x": 85,
+      "y": 47.195,
+      "z": 3.25,
+      "width": 9,
+      "height": 3.3,
+      "protrusion": 0
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "wiring",
+      "label": "Terminal wiring access",
+      "x": 73,
+      "y": -12,
+      "z": 0,
+      "w": 12,
+      "h": 14,
+      "height": 14
+    }
+  ]
+}

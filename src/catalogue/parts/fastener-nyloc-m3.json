@@ -1,0 +1,95 @@
+{
+  "id": "fastener-nyloc-m3",
+  "name": "M3 nylon locking nut (DIN 985 envelope)",
+  "category": "fastener",
+  "popularity": 65,
+  "summary": "5.5 mm across flats and 4 mm overall height, including the collar.",
+  "confidence": "approximate",
+  "source": "DIN 985 supplier sheet gives M2.5/M3/M4/M5 maximum heights 3.8/4/5/5 mm and across-flats 5/5.5/7/8 mm. M2 is a generic approximate 2.7 mm-high envelope. The hex-to-collar split and collar diameter are visual approximations; the thread is a nominal circular bore.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "poly",
+      "points": [
+        [
+          6.3508529610858835,
+          2.75
+        ],
+        [
+          4.763139720814413,
+          5.5
+        ],
+        [
+          1.5877132402714715,
+          5.5
+        ],
+        [
+          0,
+          2.7500000000000004
+        ],
+        [
+          1.5877132402714695,
+          4.440892098500626e-16
+        ],
+        [
+          4.763139720814413,
+          0
+        ]
+      ]
+    },
+    "thickness": 2.4,
+    "bores": [
+      {
+        "x": 3.1754264805429417,
+        "y": 2.75,
+        "z": 0,
+        "diameter": 3,
+        "depth": 4
+      }
+    ],
+    "bumps": [
+      {
+        "x": 0.9754264805429416,
+        "y": 0.5499999999999998,
+        "z": 2.4,
+        "w": 4.4,
+        "h": 4.4,
+        "height": 1.6,
+        "label": "Nylon locking collar",
+        "colour": "#f4f0dc",
+        "shape": "cylinder"
+      }
+    ]
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.westfieldfasteners.co.uk/Datasheets/Nut_HexNy_M.pdf"
+    }
+  ],
+  "tags": [
+    "nut",
+    "nyloc",
+    "locking",
+    "m3",
+    "гайка",
+    "самоконтрящаяся"
+  ],
+  "family": "nyloc-nut",
+  "variant": "M3",
+  "look": {
+    "finish": "metal",
+    "components": [
+      {
+        "kind": "cylinder",
+        "x": 3.1754264805429417,
+        "y": 2.75,
+        "z": 2.4,
+        "d": 4.4,
+        "height": 1.6,
+        "finish": "plastic",
+        "colour": "#eee9d8"
+      }
+    ]
+  }
+}

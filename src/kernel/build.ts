@@ -64,7 +64,7 @@ import {
   translationMatrix,
 } from '../doc/model'
 import { datumFrame, midplaneFrame, offsetFrame } from '../doc/planes'
-import { effectivePart, getPart, type CataloguePart } from '../catalogue'
+import { beltProfile, effectivePart, getPart, type CataloguePart } from '../catalogue'
 import {
   box as namedBox,
   chamfer as namedChamfer,
@@ -392,8 +392,29 @@ export function buildPartLocal(part: CataloguePart, overrides?: Record<string, n
       return solid
     }
 
+    case 'coupling': {
+      const r = g.outerDiameter / 2
+      return makeCylinder(r, g.length, [r, r, 0], [0, 0, 1])
+        .cut(makeCylinder(g.boreA / 2, g.length / 2 + 0.01, [r, r, -0.01], [0, 0, 1]))
+        .cut(makeCylinder(g.boreB / 2, g.length / 2 + 0.01, [r, r, g.length / 2], [0, 0, 1]))
+    }
+    case 'belt': {
+      const points = beltProfile(g)
+      const pen = draw(points[0])
+      for (const point of points.slice(1)) pen.lineTo(point)
+      return pen
+        .close()
+        .sketchOnPlane(new Plane([0, g.width, 0], [1, 0, 0], [0, -1, 0]))
+        .extrude(g.width)
+    }
     case 'bearing': {
       const r = g.outerDiameter / 2
+      if (part.look?.style === 'idler') {
+        return makeCylinder(r, 1, [r, r, 0], [0, 0, 1])
+          .fuse(makeCylinder(r - 1.5, g.width - 2, [r, r, 1], [0, 0, 1]))
+          .fuse(makeCylinder(r, 1, [r, r, g.width - 1], [0, 0, 1]))
+          .cut(makeCylinder(g.innerDiameter / 2, g.width + 2, [r, r, -1], [0, 0, 1]))
+      }
       if (part.look?.style === 'pulley') {
         const { flange, belt, radius, hubStart } = pulleyDimensions(part.look.teeth ?? 20, g.width)
         const cylinder = (radius: number, height: number, z: number) =>
@@ -411,6 +432,19 @@ export function buildPartLocal(part: CataloguePart, overrides?: Record<string, n
 
     case 'connector': {
       const { bodyWidth: w, bodyHeight: h, bodyDepth: d, protrusion } = g
+      if (part.look?.style === 'fan' && g.cutout.shape === 'circle') {
+        const cx = w / 2
+        const cz = h / 2
+        let frame: any = makeBox([0, 0, 0], [w, d, h]).cut(
+          makeCylinder(g.cutout.d / 2, d + 2, [cx, -1, cz], [0, 1, 0]),
+        )
+        frame = frame
+          .fuse(makeBox([0, d / 2 - 0.6, cz - 0.8], [w, d / 2 + 0.6, cz + 0.8]))
+          .fuse(makeCylinder(Math.min(w, h) * 0.17, d, [cx, 0, cz], [0, 1, 0]))
+        for (const hole of part.mountingHoles ?? [])
+          frame = frame.cut(makeCylinder(hole.diameter / 2, d + 2, [hole.x, -1, hole.y], [0, 1, 0]))
+        return frame
+      }
       if (
         g.cutout.shape === 'circle' &&
         ['gland', 'fuse-holder', 'pushbutton'].includes(part.look?.style ?? '')

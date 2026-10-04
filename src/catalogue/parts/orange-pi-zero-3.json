@@ -1,0 +1,223 @@
+{
+  "id": "orange-pi-zero-3",
+  "name": "Orange Pi Zero 3",
+  "category": "sbc",
+  "popularity": 82,
+  "summary": "Compact Linux board with Ethernet and USB; port placements are approximate.",
+  "confidence": "approximate",
+  "source": "Orange Pi Zero 3 nominal board outline 50 × 55 mm. Four 3 mm holes at 3 mm from the board edges, connector centres, underside clearance and component heights are approximate layout measurements and must be checked against the board. The ports are presented in a consistent local orientation, not an official assembly drawing.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 50,
+      "h": 55
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 34,
+        "y": 7,
+        "z": 1.6,
+        "w": 16,
+        "h": 21,
+        "height": 13.5,
+        "label": "Ethernet",
+        "colour": "#a6abb0"
+      },
+      {
+        "x": 34,
+        "y": 31,
+        "z": 1.6,
+        "w": 16,
+        "h": 14,
+        "height": 7,
+        "label": "USB-A",
+        "colour": "#a6abb0"
+      },
+      {
+        "x": 0,
+        "y": 35,
+        "z": 1.6,
+        "w": 7.5,
+        "h": 9,
+        "height": 3.3,
+        "label": "USB-C",
+        "colour": "#a6abb0"
+      },
+      {
+        "x": 3.7,
+        "y": 6.7,
+        "z": 1.6,
+        "w": 5.1,
+        "h": 33,
+        "height": 8.5,
+        "label": "GPIO header",
+        "colour": "#222529"
+      }
+    ]
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.orangepi.org/html/hardWare/computerAndMicrocontrollers/details/Orange-Pi-Zero-3.html"
+    }
+  ],
+  "tags": [
+    "orange",
+    "pi",
+    "zero",
+    "3",
+    "linux",
+    "sbc",
+    "klipper"
+  ],
+  "mountingHoles": [
+    {
+      "id": "m0",
+      "x": 3,
+      "y": 3,
+      "diameter": 3,
+      "screw": "M3",
+      "label": "Mounting hole"
+    },
+    {
+      "id": "m1",
+      "x": 47,
+      "y": 3,
+      "diameter": 3,
+      "screw": "M3",
+      "label": "Mounting hole"
+    },
+    {
+      "id": "m2",
+      "x": 3,
+      "y": 52,
+      "diameter": 3,
+      "screw": "M3",
+      "label": "Mounting hole"
+    },
+    {
+      "id": "m3",
+      "x": 47,
+      "y": 52,
+      "diameter": 3,
+      "screw": "M3",
+      "label": "Mounting hole"
+    }
+  ],
+  "look": {
+    "finish": "pcb",
+    "colour": "#202a2d",
+    "components": [
+      {
+        "kind": "chip",
+        "x": 17,
+        "y": 17,
+        "w": 14,
+        "h": 14,
+        "height": 1.4
+      },
+      {
+        "kind": "port",
+        "port": "rj45",
+        "x": 34,
+        "y": 7,
+        "z": 1.6,
+        "facing": "+x",
+        "w": 16,
+        "h": 13.5,
+        "depth": 21
+      },
+      {
+        "kind": "port",
+        "port": "usb-a",
+        "x": 34,
+        "y": 31,
+        "z": 1.6,
+        "facing": "+x",
+        "w": 14,
+        "h": 7,
+        "depth": 16
+      },
+      {
+        "kind": "port",
+        "port": "usb-c",
+        "x": 0,
+        "y": 39,
+        "z": 1.6,
+        "facing": "-x",
+        "w": 8.9,
+        "h": 3.3,
+        "depth": 7.5
+      },
+      {
+        "kind": "header",
+        "x": 5,
+        "y": 8,
+        "rows": 2,
+        "cols": 13,
+        "pitch": 2.54,
+        "height": 8.5
+      }
+    ]
+  },
+  "manufacturer": "Orange Pi",
+  "connectors": [
+    {
+      "id": "lan",
+      "label": "Ethernet",
+      "side": "+x",
+      "x": 50,
+      "y": 17.5,
+      "z": 8.35,
+      "width": 16,
+      "height": 13.5,
+      "protrusion": 0
+    },
+    {
+      "id": "usb",
+      "label": "USB-A",
+      "side": "+x",
+      "x": 50,
+      "y": 38,
+      "z": 5.1,
+      "width": 14,
+      "height": 7,
+      "protrusion": 0
+    },
+    {
+      "id": "power",
+      "label": "USB-C power",
+      "side": "-x",
+      "x": 0,
+      "y": 39.5,
+      "z": 3.25,
+      "width": 9,
+      "height": 3.3,
+      "protrusion": 0
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "under",
+      "label": "Underside components",
+      "x": 0,
+      "y": 0,
+      "z": -3,
+      "w": 50,
+      "h": 55,
+      "height": 3
+    },
+    {
+      "id": "ethernet-cable",
+      "label": "Ethernet plug and bend",
+      "x": 50,
+      "y": 5,
+      "z": 0,
+      "w": 35,
+      "h": 24,
+      "height": 18
+    }
+  ]
+}

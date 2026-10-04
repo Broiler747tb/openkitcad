@@ -1,0 +1,70 @@
+{
+  "id": "fastener-nut-m25",
+  "name": "M2.5 hex nut (DIN 934 envelope)",
+  "category": "fastener",
+  "popularity": 85,
+  "summary": "5 mm across flats, 2 mm high, nominal M2.5 bore.",
+  "confidence": "approximate",
+  "source": "DIN 934 envelope: 5 mm across flats and nominal 2 mm height. Supplier sheet reports minimum heights, whereas this model uses the common nominal envelope. Perfect hex corners, chamfers and the nominal circular bore simplify the real thread. Check the nut before setting a tight printed pocket.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "poly",
+      "points": [
+        [
+          5.773502691896258,
+          2.5
+        ],
+        [
+          4.330127018922194,
+          5
+        ],
+        [
+          1.4433756729740652,
+          5
+        ],
+        [
+          0,
+          2.5000000000000004
+        ],
+        [
+          1.4433756729740632,
+          4.440892098500626e-16
+        ],
+        [
+          4.330127018922194,
+          0
+        ]
+      ]
+    },
+    "thickness": 2,
+    "bores": [
+      {
+        "x": 2.886751345948129,
+        "y": 2.5,
+        "z": 0,
+        "diameter": 2.5,
+        "depth": 2
+      }
+    ]
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.westfieldfasteners.co.uk/Datasheets/Nut_Hex_M.pdf"
+    }
+  ],
+  "tags": [
+    "nut",
+    "hex",
+    "din934",
+    "m2.5",
+    "гайка"
+  ],
+  "family": "hex-nut",
+  "variant": "M2.5",
+  "look": {
+    "finish": "metal",
+    "components": []
+  }
+}

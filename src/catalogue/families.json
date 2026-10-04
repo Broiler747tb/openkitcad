@@ -258,5 +258,75 @@
     "name": "Prototyping sheet",
     "category": "proto",
     "summary": "9 x 15 cm, 1.6 mm; stripboard, 9 x 15 cm."
+  },
+  "hex-nut": {
+    "name": "Metric hex nuts",
+    "category": "fastener",
+    "summary": "Hex nuts for printed nut pockets."
+  },
+  "nyloc-nut": {
+    "name": "Nylon locking nuts",
+    "category": "fastener",
+    "summary": "Hex nuts with a nylon locking collar."
+  },
+  "plain-washer": {
+    "name": "Metric plain washers",
+    "category": "fastener",
+    "summary": "Plain washers for distributing a screw load."
+  },
+  "disc-magnet": {
+    "name": "Disc magnets",
+    "category": "fastener",
+    "summary": "Nickel-plated round magnets for removable lids."
+  },
+  "block-magnet": {
+    "name": "Block magnets",
+    "category": "fastener",
+    "summary": "Rectangular magnets for lid pockets and fixtures."
+  },
+  "axial-fan": {
+    "name": "Small axial fans",
+    "category": "connector",
+    "summary": "Square fans with mounting holes and an air opening."
+  },
+  "shaft-coupling": {
+    "name": "Shaft couplings",
+    "category": "motion",
+    "summary": "Couplings with independent bores at the two shaft ends."
+  },
+  "gt2-idler": {
+    "name": "GT2 idlers",
+    "category": "motion",
+    "summary": "Smooth flanged idlers for a 6 mm timing belt."
+  },
+  "gt2-belt": {
+    "name": "GT2 belt strips",
+    "category": "motion",
+    "summary": "2 mm-pitch timing belt with an editable cut length."
+  },
+  "shaft-support": {
+    "name": "SK shaft supports",
+    "category": "motion",
+    "summary": "T-shaped supports for horizontal guide shafts."
+  },
+  "tactile-switch": {
+    "name": "6 mm tactile switches",
+    "category": "control",
+    "summary": "Small through-hole tactile buttons with two actuator heights."
+  },
+  "micro-limit-switch": {
+    "name": "Miniature limit switches",
+    "category": "control",
+    "summary": "Omron SS-style microswitches with plain, lever or roller actuators."
+  },
+  "panel-pushbutton": {
+    "name": "Panel pushbuttons",
+    "category": "control",
+    "summary": "Round metal buttons for 16 and 19 mm panel holes."
+  },
+  "cylindrical-cell": {
+    "name": "Cylindrical battery cells",
+    "category": "power",
+    "summary": "Unprotected bare cylindrical cells for checking pack space."
   }
 }

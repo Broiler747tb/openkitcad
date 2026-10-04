@@ -1,0 +1,70 @@
+{
+  "id": "fastener-nut-m4",
+  "name": "M4 hex nut (DIN 934 envelope)",
+  "category": "fastener",
+  "popularity": 85,
+  "summary": "7 mm across flats, 3.2 mm high, nominal M4 bore.",
+  "confidence": "approximate",
+  "source": "DIN 934 envelope: 7 mm across flats and nominal 3.2 mm height. Supplier sheet reports minimum heights, whereas this model uses the common nominal envelope. Perfect hex corners, chamfers and the nominal circular bore simplify the real thread. Check the nut before setting a tight printed pocket.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "poly",
+      "points": [
+        [
+          8.082903768654761,
+          3.5
+        ],
+        [
+          6.062177826491071,
+          7
+        ],
+        [
+          2.020725942163691,
+          7
+        ],
+        [
+          0,
+          3.5000000000000004
+        ],
+        [
+          2.0207259421636885,
+          4.440892098500626e-16
+        ],
+        [
+          6.062177826491071,
+          0
+        ]
+      ]
+    },
+    "thickness": 3.2,
+    "bores": [
+      {
+        "x": 4.041451884327381,
+        "y": 3.5,
+        "z": 0,
+        "diameter": 4,
+        "depth": 3.2
+      }
+    ]
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.westfieldfasteners.co.uk/Datasheets/Nut_Hex_M.pdf"
+    }
+  ],
+  "tags": [
+    "nut",
+    "hex",
+    "din934",
+    "m4",
+    "гайка"
+  ],
+  "family": "hex-nut",
+  "variant": "M4",
+  "look": {
+    "finish": "metal",
+    "components": []
+  }
+}

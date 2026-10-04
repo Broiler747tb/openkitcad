@@ -1,0 +1,206 @@
+{
+  "id": "fan-blower-5015",
+  "name": "5015 centrifugal blower, 50 × 50 × 15 mm (generic)",
+  "category": "connector",
+  "popularity": 65,
+  "summary": "Centrifugal fan with a side outlet; verify the outlet and hole locations on your fan.",
+  "confidence": "approximate",
+  "source": "5015 denotes a 50 × 50 × 15 mm nominal frame, as published by blower manufacturers. The curved volute, 20 × 12 mm outlet, inlet and two mounting positions are generic approximations; different 5015 products have incompatible outlines and holes. The impeller cavity is simplified, not an airflow simulation.",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "poly",
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          50,
+          0
+        ],
+        [
+          50,
+          22
+        ],
+        [
+          50,
+          25
+        ],
+        [
+          49.692208514878445,
+          28.910861626005772
+        ],
+        [
+          48.77641290737884,
+          32.72542485937368
+        ],
+        [
+          47.27516310470919,
+          36.34976249348867
+        ],
+        [
+          45.22542485937369,
+          39.69463130731183
+        ],
+        [
+          42.67766952966369,
+          42.67766952966369
+        ],
+        [
+          39.69463130731183,
+          45.22542485937369
+        ],
+        [
+          36.34976249348867,
+          47.27516310470919
+        ],
+        [
+          32.72542485937369,
+          48.77641290737884
+        ],
+        [
+          28.910861626005772,
+          49.692208514878445
+        ],
+        [
+          25,
+          50
+        ],
+        [
+          21.089138373994235,
+          49.692208514878445
+        ],
+        [
+          17.274575140626318,
+          48.77641290737884
+        ],
+        [
+          13.650237506511331,
+          47.27516310470919
+        ],
+        [
+          10.305368692688175,
+          45.22542485937369
+        ],
+        [
+          7.322330470336315,
+          42.67766952966369
+        ],
+        [
+          4.774575140626318,
+          39.69463130731183
+        ],
+        [
+          2.7248368952908066,
+          36.34976249348867
+        ],
+        [
+          1.2235870926211625,
+          32.72542485937369
+        ],
+        [
+          0.30779148512155885,
+          28.910861626005776
+        ],
+        [
+          0,
+          25.000000000000004
+        ]
+      ]
+    },
+    "thickness": 15,
+    "bores": [
+      {
+        "x": 25,
+        "y": 26,
+        "z": 11,
+        "diameter": 27,
+        "depth": 4
+      }
+    ]
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.hdhfan.com/product/5015-50x50x15mm-dc-blower-fan"
+    }
+  ],
+  "tags": [
+    "blower",
+    "5015",
+    "fan",
+    "cooling",
+    "турбина",
+    "вентилятор"
+  ],
+  "look": {
+    "finish": "plastic",
+    "colour": "#222529",
+    "components": [
+      {
+        "kind": "cylinder",
+        "x": 25,
+        "y": 26,
+        "z": 11,
+        "d": 25,
+        "height": 3.7,
+        "finish": "plastic",
+        "colour": "#17191b"
+      },
+      {
+        "kind": "cylinder",
+        "x": 25,
+        "y": 26,
+        "z": 14.7,
+        "d": 10,
+        "height": 0.3,
+        "finish": "plastic",
+        "colour": "#62676b"
+      }
+    ]
+  },
+  "mountingHoles": [
+    {
+      "id": "m1",
+      "x": 5,
+      "y": 5,
+      "diameter": 4.3,
+      "screw": "M4",
+      "label": "Mounting hole"
+    },
+    {
+      "id": "m2",
+      "x": 45,
+      "y": 24,
+      "diameter": 4.3,
+      "screw": "M4",
+      "label": "Mounting hole"
+    }
+  ],
+  "connectors": [
+    {
+      "id": "outlet",
+      "label": "Blower air outlet",
+      "side": "-y",
+      "x": 35,
+      "y": 0,
+      "z": 7.5,
+      "width": 20,
+      "height": 12,
+      "protrusion": 0
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "air-stream",
+      "label": "Outlet duct space",
+      "x": 25,
+      "y": -20,
+      "z": 1.5,
+      "w": 20,
+      "h": 20,
+      "height": 12
+    }
+  ]
+}

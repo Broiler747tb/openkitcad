@@ -1,0 +1,33 @@
+{
+  "id": "fastener-washer-m5",
+  "name": "M5 plain washer (DIN 125 A envelope)",
+  "category": "fastener",
+  "popularity": 83,
+  "summary": "5.3 mm bore, 10 mm outside, 1 mm thickness.",
+  "confidence": "approximate",
+  "source": "Nominal DIN 125 A / ISO 7089 small metric washer envelope: bore 5.3, outside 10, thickness 1 mm. Supplier tolerances and edge chamfers are not modelled; this entry is nominal layout geometry.",
+  "geometry": {
+    "kind": "bearing",
+    "innerDiameter": 5.3,
+    "outerDiameter": 10,
+    "width": 1
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.bossard.com/ch-en/eshop/washers/plain-washers/p/666/"
+    }
+  ],
+  "tags": [
+    "washer",
+    "plain",
+    "m5",
+    "шайба"
+  ],
+  "family": "plain-washer",
+  "variant": "M5",
+  "look": {
+    "style": "washer",
+    "finish": "metal"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "id": "motion-coupling-8x8",
+  "name": "Flexible shaft coupling 8 → 8 mm (generic)",
+  "category": "motion",
+  "popularity": 65,
+  "summary": "19 mm outside, 25 mm long, 8/8 mm shaft bores.",
+  "confidence": "approximate",
+  "source": "Common 19 × 25 mm aluminium coupling envelope. Each shaft bore extends to the middle, allowing unlike shaft diameters. Helical flexure slots, clamp cuts and set-screw threads are not modelled; appearance and grip lengths vary by manufacturer. This is generic approximate geometry.",
+  "geometry": {
+    "kind": "coupling",
+    "outerDiameter": 19,
+    "length": 25,
+    "boreA": 8,
+    "boreB": 8
+  },
+  "links": [
+    {
+      "label": "Dimensions and reference",
+      "url": "https://www.robotdigg.com/product/102/Flexible-Shaft-Coupling"
+    }
+  ],
+  "tags": [
+    "coupling",
+    "shaft",
+    "flexible",
+    "муфта"
+  ],
+  "family": "shaft-coupling",
+  "variant": "8 → 8 mm",
+  "look": {
+    "finish": "metal"
+  }
+}
