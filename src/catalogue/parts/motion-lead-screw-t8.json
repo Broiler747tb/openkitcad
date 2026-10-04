@@ -1,0 +1,39 @@
+{
+  "id": "motion-lead-screw-t8",
+  "name": "T8 lead screw, 300 mm",
+  "category": "motion",
+  "popularity": 66,
+  "variant": "T8, 8 mm, 2 mm lead, 300 mm",
+  "summary": "8 mm trapezoidal screw with a 2 mm single-start lead, 300 mm long: one turn pushes the nut 2 mm.",
+  "description": "A 300 mm T8 lead screw. The solid uses the outside envelope; the visual thread is schematic. Match the nut’s lead and number of starts.",
+  "confidence": "approximate",
+  "source": "8 mm nominal diameter and 2 mm lead are the trade dimensions of the common T8 single-start screw (pitch 2 mm, one start, so one turn advances the nut 2 mm); the same 8 mm shaft is also sold with 4 mm and 8 mm leads for two- and four-start threads, so the lead is a variant, not a fact about the shaft, and this entry models the 2 mm single-start version. 'T8' is a trade designation for an 8 mm trapezoidal (Acme-style) thread rather than a single drawing, and no official sheet for the whole family was consulted, so the entry is marked approximate: the diameter and length of the drawn solid are exact as written, but the thread form, pitch tolerance and end machining are not modelled. 300 mm is a common stock length, not a standard - makers cut any length to order - and the thread shown in the view is decoration only.",
+  "look": {
+    "finish": "metal"
+  },
+  "geometry": {
+    "kind": "rod",
+    "diameter": 8,
+    "length": 300,
+    "spec": "T8 x 2 lead",
+    "pitch": 2
+  },
+  "links": [
+    {
+      "label": "Lead screws (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Lead_screw"
+    }
+  ],
+  "tags": [
+    "t8",
+    "lead screw",
+    "leadscrew",
+    "trapezoidal",
+    "acme",
+    "2mm lead",
+    "8mm",
+    "motion",
+    "cnc",
+    "3d printer"
+  ]
+}

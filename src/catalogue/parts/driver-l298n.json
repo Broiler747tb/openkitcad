@@ -1,0 +1,323 @@
+{
+  "id": "driver-l298n",
+  "name": "L298N dual H-bridge motor driver module (generic)",
+  "category": "motor",
+  "popularity": 79,
+  "family": "dc-motor-driver",
+  "variant": "L298N dual H-bridge",
+  "summary": "The familiar red 43 mm board that drives two brushed DC motors or one stepper, with screw terminals for the motor and supply wires.",
+  "description": "The familiar L298N motor driver board with a heatsink and screw terminals. Check your module before printing a tight-fitting mount.",
+  "confidence": "approximate",
+  "source": "Reichelt ME089 module datasheet: 43 x 43 mm board, 27 mm tall with the heat sink. The layout follows photographs of the common module: two-way OUT1/OUT2 terminal along the bottom edge with the four flyback diodes to its left, the three-way 12V/GND/5V terminal beside it, the OUT3/OUT4 terminal along the top edge, the six logic pins down the right edge with the 5 V enable jumper below them, heat sink upper left, two electrolytic cans in the middle and the 78M05 regulator by the power terminal. Positions inside the outline are indicative, not read from a drawing: clones move components around, and the corner mounting holes visible in photos were not measured, so none are drawn. Check your board before cutting a panel.",
+  "look": {
+    "colour": "#b4342c",
+    "components": [
+      {
+        "kind": "terminal",
+        "x": 11.6,
+        "y": 0,
+        "pins": 2,
+        "pitch": 5.08,
+        "facing": "-y",
+        "label": "OUT1, OUT2 terminal"
+      },
+      {
+        "kind": "terminal",
+        "x": 26.9,
+        "y": 0,
+        "pins": 3,
+        "pitch": 5.08,
+        "facing": "-y",
+        "label": "12V, GND, 5V terminal"
+      },
+      {
+        "kind": "terminal",
+        "x": 32.2,
+        "y": 43,
+        "pins": 2,
+        "pitch": 5.08,
+        "facing": "+y",
+        "label": "OUT3, OUT4 terminal"
+      },
+      {
+        "kind": "box",
+        "x": 2,
+        "y": 12,
+        "w": 17,
+        "h": 25,
+        "height": 24,
+        "finish": "anodised",
+        "colour": "#33373d",
+        "label": "Heat sink"
+      },
+      {
+        "kind": "header",
+        "x": 41.73,
+        "y": 15.24,
+        "rows": 6,
+        "cols": 1,
+        "height": 8.5,
+        "label": "ENA, IN1-IN4, ENB"
+      },
+      {
+        "kind": "header",
+        "x": 41.73,
+        "y": 10.16,
+        "rows": 2,
+        "cols": 1,
+        "height": 8.5,
+        "label": "5V enable jumper"
+      },
+      {
+        "kind": "capacitor",
+        "x": 24,
+        "y": 21,
+        "d": 9,
+        "height": 12,
+        "colour": "#1c2d5a",
+        "label": "Motor supply capacitor"
+      },
+      {
+        "kind": "capacitor",
+        "x": 33,
+        "y": 25,
+        "d": 9,
+        "height": 12,
+        "colour": "#1c2d5a",
+        "label": "5V filter capacitor"
+      },
+      {
+        "kind": "box",
+        "x": 20.5,
+        "y": 9,
+        "w": 6,
+        "h": 4.5,
+        "height": 4.5,
+        "finish": "chip",
+        "colour": "#1b1d20",
+        "label": "78M05 5V regulator"
+      },
+      {
+        "kind": "led",
+        "x": 37.5,
+        "y": 10,
+        "colour": "#e23b3b",
+        "size": 1.6,
+        "label": "Power LED"
+      },
+      {
+        "kind": "box",
+        "x": 0.15,
+        "y": 0.8,
+        "w": 1.5,
+        "h": 3,
+        "height": 0.7,
+        "finish": "chip",
+        "colour": "#1b1d20",
+        "label": "Flyback diode"
+      },
+      {
+        "kind": "box",
+        "x": 1.65,
+        "y": 0.8,
+        "w": 1.5,
+        "h": 3,
+        "height": 0.7,
+        "finish": "chip",
+        "colour": "#1b1d20",
+        "label": "Flyback diode"
+      },
+      {
+        "kind": "box",
+        "x": 3.15,
+        "y": 0.8,
+        "w": 1.5,
+        "h": 3,
+        "height": 0.7,
+        "finish": "chip",
+        "colour": "#1b1d20",
+        "label": "Flyback diode"
+      },
+      {
+        "kind": "box",
+        "x": 4.65,
+        "y": 0.8,
+        "w": 1.5,
+        "h": 3,
+        "height": 0.7,
+        "finish": "chip",
+        "colour": "#1b1d20",
+        "label": "Flyback diode"
+      },
+      {
+        "kind": "box",
+        "x": 19.6,
+        "y": 39.5,
+        "w": 1.6,
+        "h": 3,
+        "height": 0.7,
+        "finish": "chip",
+        "colour": "#1b1d20",
+        "label": "Flyback diode"
+      },
+      {
+        "kind": "box",
+        "x": 21.3,
+        "y": 39.5,
+        "w": 1.6,
+        "h": 3,
+        "height": 0.7,
+        "finish": "chip",
+        "colour": "#1b1d20",
+        "label": "Flyback diode"
+      },
+      {
+        "kind": "box",
+        "x": 23,
+        "y": 39.5,
+        "w": 1.6,
+        "h": 3,
+        "height": 0.7,
+        "finish": "chip",
+        "colour": "#1b1d20",
+        "label": "Flyback diode"
+      },
+      {
+        "kind": "box",
+        "x": 24.7,
+        "y": 39.5,
+        "w": 1.6,
+        "h": 3,
+        "height": 0.7,
+        "finish": "chip",
+        "colour": "#1b1d20",
+        "label": "Flyback diode"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 43,
+      "h": 43
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 6.52,
+        "y": 0,
+        "w": 10.16,
+        "h": 7.6,
+        "z": 1.6,
+        "height": 10,
+        "colour": "#2c6fc9",
+        "label": "OUT1/OUT2 terminal"
+      },
+      {
+        "x": 19.28,
+        "y": 0,
+        "w": 15.24,
+        "h": 7.6,
+        "z": 1.6,
+        "height": 10,
+        "colour": "#2c6fc9",
+        "label": "12V, GND, 5V terminal"
+      },
+      {
+        "x": 27.12,
+        "y": 35.4,
+        "w": 10.16,
+        "h": 7.6,
+        "z": 1.6,
+        "height": 10,
+        "colour": "#2c6fc9",
+        "label": "OUT3/OUT4 terminal"
+      },
+      {
+        "x": 2,
+        "y": 12,
+        "w": 17,
+        "h": 25,
+        "z": 1.6,
+        "height": 24,
+        "colour": "#33373d",
+        "label": "Heat sink"
+      },
+      {
+        "x": 19.5,
+        "y": 16.5,
+        "w": 9,
+        "h": 9,
+        "z": 1.6,
+        "height": 12,
+        "colour": "#1c2d5a",
+        "label": "Motor supply capacitor"
+      },
+      {
+        "x": 28.5,
+        "y": 20.5,
+        "w": 9,
+        "h": 9,
+        "z": 1.6,
+        "height": 12,
+        "colour": "#1c2d5a",
+        "label": "5V filter capacitor"
+      }
+    ]
+  },
+  "pinHeaders": [
+    {
+      "id": "logic",
+      "label": "ENA, IN1-IN4, ENB",
+      "x": 41.73,
+      "y": 15.24,
+      "rows": 6,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "ENA",
+        "IN1",
+        "IN2",
+        "IN3",
+        "IN4",
+        "ENB"
+      ]
+    },
+    {
+      "id": "5v-enable",
+      "label": "5V enable jumper",
+      "x": 41.73,
+      "y": 10.16,
+      "rows": 2,
+      "cols": 1,
+      "pitch": 2.54
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      5,
+      35
+    ],
+    "currentPeak": 2,
+    "note": "Motor supply 5 to 35 V on the 12V input; the 5V pin puts out 5 V from the onboard regulator when the jumper is on. Allow about 1 A per channel: the bipolar H-bridges drop roughly 2 V, so motors run slower than the supply suggests and the chip wants airflow at full load."
+  },
+  "links": [
+    {
+      "label": "Reichelt ME089 module datasheet",
+      "url": "https://cdn-reichelt.de/documents/datenblatt/A300/ME089-N.pdf"
+    }
+  ],
+  "tags": [
+    "l298n",
+    "l298",
+    "motor driver",
+    "h-bridge",
+    "dual h-bridge",
+    "dc motor",
+    "stepper",
+    "arduino",
+    "12v",
+    "heat sink"
+  ]
+}

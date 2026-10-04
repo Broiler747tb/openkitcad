@@ -4,6 +4,7 @@ import type { CataloguePart } from './types'
 const GEOMETRY_FIELDS: Record<CataloguePart['geometry']['kind'], string[]> = {
   board: ['thickness'],
   extrusion: ['size', 'length'],
+  rod: ['diameter', 'length'],
   screw: ['diameter', 'length', 'headDiameter', 'headHeight'],
   insert: ['outerDiameter', 'length', 'pilotDiameter'],
   standoff: ['length', 'acrossFlats'],
@@ -184,11 +185,48 @@ export function partProblems(value: unknown): string[] {
               positive(bump.w) &&
               positive(bump.h) &&
               positive(bump.height) &&
+              (bump.shape === undefined ||
+                bump.shape === 'box' ||
+                (bump.shape === 'cylinder' && bump.w === bump.h)) &&
               (bump.header === undefined || typeof bump.header === 'boolean'),
           ))
       )
         problems.push('"geometry.bumps" need x, y, z and a size above zero.')
+      if (
+        g.bores !== undefined &&
+        (!Array.isArray(g.bores) ||
+          !g.bores.every(
+            (bore: any) =>
+              bore &&
+              finite(bore.x) &&
+              finite(bore.y) &&
+              finite(bore.z) &&
+              positive(bore.diameter) &&
+              positive(bore.depth),
+          ))
+      )
+        problems.push('"geometry.bores" need x, y, z, diameter and depth.')
+      if (
+        g.slots !== undefined &&
+        (!Array.isArray(g.slots) ||
+          !g.slots.every(
+            (slot: any) =>
+              slot &&
+              ['x', 'z'].includes(slot.axis) &&
+              finite(slot.x) &&
+              finite(slot.y) &&
+              finite(slot.z) &&
+              positive(slot.w) &&
+              positive(slot.h) &&
+              positive(slot.depth),
+          ))
+      )
+        problems.push('"geometry.slots" need an axis, x, y, z, width, height and depth.')
     }
+    if (kind === 'extrusion' && g.depth !== undefined && !positive(g.depth))
+      problems.push('"geometry.depth" has to be a number above zero.')
+    if (kind === 'rod' && g.pitch !== undefined && !positive(g.pitch))
+      problems.push('"geometry.pitch" has to be a number above zero.')
     if (kind === 'connector') {
       const cutout = g.cutout
       const rect = cutout?.shape === 'rect' && positive(cutout.w) && positive(cutout.h)

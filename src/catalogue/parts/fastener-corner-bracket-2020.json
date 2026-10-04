@@ -1,0 +1,71 @@
+{
+  "id": "fastener-corner-bracket-2020",
+  "name": "Cast corner bracket for 2020 extrusion",
+  "category": "fastener",
+  "popularity": 68,
+  "summary": "Die-cast 90 degree bracket for 20-series framing: 20 x 20 mm arms, 17 mm wide, 3.8 mm thick, one 6 x 9 mm slot per arm.",
+  "description": "A compact right-angle bracket for 20-series extrusion. The mounting slots and overall shape are included.",
+  "confidence": "approximate",
+  "source": "Bulkman3D's cast corner bracket page (BR02) carries a dimension drawing for the 2020 series: both arms 20 mm, face width 17 mm, slot 6 x 9 mm in each arm and a 3.8 mm plate thickness called out on the edge of the upright arm (the 2028 sheet in the same series calls its plate 3.6 mm, so the casting is a shade thicker on the bigger bracket), with their size table listing the 2020 row at 20 x 20 x 17 mm and 8.2 g; their fitting note specifies M5 T-nuts with 8 mm low-profile screws for the flush direction and 10 mm for the stand-off teeth direction. Modelled as the horizontal arm (20 x 17 x 3.8 mm) with the upright arm standing on its far end (3.8 mm thick, 17 mm wide, rising 16.2 mm above the base, that is 20 - 3.8, so the outside corner reads 20 x 20 mm). Both 6 × 9 mm slots are cut through the arms and centred in each arm’s free area. Their centres are modelling estimates, not published dimensions. Stand-off teeth and cast fillets are omitted.",
+  "look": {
+    "finish": "metal"
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 20,
+      "h": 17
+    },
+    "thickness": 3.8,
+    "bumps": [
+      {
+        "x": 16.2,
+        "y": 0,
+        "w": 3.8,
+        "h": 17,
+        "z": 3.8,
+        "height": 16.2,
+        "colour": "#b9c0c7",
+        "label": "Upright arm"
+      }
+    ],
+    "slots": [
+      {
+        "axis": "z",
+        "x": 8.1,
+        "y": 8.5,
+        "z": -0.01,
+        "w": 9,
+        "h": 6,
+        "depth": 3.82
+      },
+      {
+        "axis": "x",
+        "x": 16.19,
+        "y": 8.5,
+        "z": 11.9,
+        "w": 6,
+        "h": 9,
+        "depth": 3.82
+      }
+    ]
+  },
+  "links": [
+    {
+      "label": "Bulkman3D cast corner bracket (dimension drawing)",
+      "url": "https://bulkman3d.com/product/br0002/"
+    }
+  ],
+  "tags": [
+    "bracket",
+    "corner",
+    "2020",
+    "angle",
+    "90 degree",
+    "cast",
+    "aluminium",
+    "fastener",
+    "frame"
+  ]
+}

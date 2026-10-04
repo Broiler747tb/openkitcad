@@ -1,0 +1,40 @@
+{
+  "id": "extrusion-3030",
+  "name": "3030 aluminum extrusion",
+  "category": "extrusion",
+  "popularity": 79,
+  "family": "alu-profile",
+  "variant": "3030, 4 slots",
+  "summary": "30 x 30 mm profile with 8 mm slots. The heavier metric framing standard.",
+  "description": "A square 30 mm framing profile with four 8 mm slot openings. Internal cavities are simplified; match the supplier’s drawing for end plates.",
+  "confidence": "approximate",
+  "source": "Nominal 30 x 30 mm section and the 30-series 8 mm slot opening, both from suppliers' catalogue figures rather than a mechanical drawing. The 8 mm slot is what separates the 30 series from the 20 series, so 20-series T-nuts will not fit this profile. Approximate for the centre bore: the drawing scales the 2020's 4.2 mm bore with the profile, which renders 6.3 mm here, and no published 3030 bore figure was verified for this entry, so do not rely on it for a screw or a boss. Four slots, one per face, which is the standard 3030 layout. Verify against the maker's drawing before cutting.",
+  "geometry": {
+    "kind": "extrusion",
+    "size": 30,
+    "length": 200,
+    "slots": 4
+  },
+  "keepouts": [
+    {
+      "id": "k-slot",
+      "label": "Slot access for T-nuts",
+      "x": 0,
+      "y": 0,
+      "w": 200,
+      "h": 30,
+      "z": 30,
+      "height": 8
+    }
+  ],
+  "tags": [
+    "3030",
+    "extrusion",
+    "tslot",
+    "profile",
+    "frame",
+    "aluminium",
+    "structural",
+    "30 series"
+  ]
+}

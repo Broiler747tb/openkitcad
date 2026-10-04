@@ -2,7 +2,7 @@
 
 CAD for the stuff on your workbench: enclosures, mounting plates, brackets, and the boards that go inside them.
 
-[![Build](https://github.com/Broiler747tb/openkitcad/actions/workflows/deploy.yml/badge.svg)](https://github.com/Broiler747tb/openkitcad/actions/workflows/deploy.yml) [![Release](https://img.shields.io/github/v/release/Broiler747tb/openkitcad?color=2678c7)](https://github.com/Broiler747tb/openkitcad/releases/latest) [![Licence](https://img.shields.io/badge/licence-AGPL--3.0-blue)](LICENSE) [![Parts](https://img.shields.io/badge/catalogue-174_parts-2f855a)](src/catalogue/parts)
+[![Build](https://github.com/Broiler747tb/openkitcad/actions/workflows/deploy.yml/badge.svg)](https://github.com/Broiler747tb/openkitcad/actions/workflows/deploy.yml) [![Release](https://img.shields.io/github/v/release/Broiler747tb/openkitcad?color=2678c7)](https://github.com/Broiler747tb/openkitcad/releases/latest) [![Licence](https://img.shields.io/badge/licence-AGPL--3.0-blue)](LICENSE) [![Parts](https://img.shields.io/badge/catalogue-206_parts-2f855a)](src/catalogue/parts)
 
 **[Open in your browser](https://broiler747tb.github.io/openkitcad/)** · **[Windows Portable EXE](https://github.com/Broiler747tb/openkitcad/releases/latest)** · [Report a bug](https://github.com/Broiler747tb/openkitcad/issues)
 
@@ -30,7 +30,7 @@ You can also sketch a part from scratch. Give it dimensions, extrude it, then go
 | --- | --- |
 | Sketches | Dimensions, constraints, trim, offsets, patterns, and text. |
 | Modelling | Extrude, revolve, loft, sweep, fillet, shell, booleans, and an editable timeline. |
-| Real parts | 174 boards, connectors, motors, bearings, screws, and inserts. Import your own KiCad board too. |
+| Real parts | 206 boards, connectors, motors, bearings, screws, and inserts. Import your own KiCad board too. |
 | Printed parts | Standoffs, board clips, snap fits, hinges, ribs, and cable entries. |
 | Assemblies | Linked components, joints, limits, and motion studies. |
 | Export | STL, 3MF, OBJ, STEP, DXF, SVG, and printable drill templates. |

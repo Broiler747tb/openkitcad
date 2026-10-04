@@ -1,0 +1,51 @@
+{
+  "id": "proto-breadboard-830",
+  "name": "Solderless breadboard, full size (830 tie points)",
+  "category": "proto",
+  "popularity": 80,
+  "family": "breadboard",
+  "variant": "830 tie points, 165 x 55 mm",
+  "summary": "Full-size solderless breadboard: 830 tie points on a 2.54 mm (0.1 in) square grid, 165 x 55 x 9 mm, with power rails along both long edges.",
+  "description": "Full-size breadboard with 830 contacts: a centre channel, two terminal banks and four power rails. The visible contact layout is schematic; the solid export keeps the body envelope.",
+  "confidence": "approximate",
+  "source": "Sizes checked by opening two product pages and reading retailer listings from web search: the generic listings that publish this size say 6.5 x 2.2 x 0.3 in (165 x 55 x 9 mm), which is the figure used here; BusBoard's own BB830 page gives 165.1 x 54.6 x 8.5 mm and SparkFun's full-size board 165.1 x 54.3 x 9.7 mm. So 165 x 55 x 9 mm is the class figure every listing rounds to, not a measurement - expect about a millimetre of variation between makers, and treat the height especially as approximate. The hole pattern was checked against those same two pages plus a listing found in search: BusBoard describes a 630 tie-point IC area plus four 50-point power rails (two 100-point distribution strips), SparkFun describes 63 rows x 10 columns with two split power buses, and a third listing gives 63 rows, 10 columns and 200 rail points - all of which add to 830. Pitch is 2.54 mm (0.1 in), the one figure every source agrees on. Rail splitting, row numbering and edge margins vary by manufacturer; the preview uses the nominal 830-point arrangement. The preview adds a schematic 2.54 mm contact layout, not a manufacturer-specific drill pattern. The export is the body envelope.",
+  "look": {
+    "finish": "plastic",
+    "colour": "#e9e7de"
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 165,
+      "h": 55
+    },
+    "thickness": 9
+  },
+  "links": [
+    {
+      "label": "BusBoard BB830",
+      "url": "https://busboard.com/BB830T"
+    },
+    {
+      "label": "SparkFun full-size breadboard",
+      "url": "https://www.sparkfun.com/breadboard-full-size-bare.html"
+    },
+    {
+      "label": "Breadboard layout explained (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Breadboard"
+    }
+  ],
+  "tags": [
+    "breadboard",
+    "solderless",
+    "830",
+    "mb-102",
+    "protoboard",
+    "dip",
+    "2.54",
+    "jumper",
+    "proto",
+    "bench"
+  ]
+}

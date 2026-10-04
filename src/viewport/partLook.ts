@@ -1,3 +1,6 @@
+import { extrusionSection } from '../catalogue/extrusion'
+import { prototypingHoles } from '../catalogue/prototyping'
+import { pulleyDimensions } from '../catalogue/pulley'
 import * as THREE from 'three'
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
@@ -60,6 +63,7 @@ export const FINISHES: Record<
 const BOARD_COLOUR: Record<CataloguePart['category'], string> = {
   sbc: '#1f6f4a',
   mcu: '#1c6f8c',
+  proto: '#8a9a5b',
   connector: '#1f6f4a',
   display: '#1b3f8a',
   sensor: '#1f55a0',
@@ -944,7 +948,74 @@ function boardLook(look: Look, part: CataloguePart, g: Geometry<'board'>) {
         )
   for (const hole of part.mountingHoles ?? [])
     shape.holes.push(circle(new THREE.Path(), hole.x, hole.y, hole.diameter / 2))
-  look.extrude(finish, colour, shape, 0, g.thickness)
+  for (const bore of g.bores ?? [])
+    if (
+      bore.z <= 0 &&
+      bore.z + bore.depth >= g.thickness &&
+      !(part.mountingHoles ?? []).some(
+        (hole) => Math.hypot(hole.x - bore.x, hole.y - bore.y) < 0.01,
+      )
+    )
+      shape.holes.push(circle(new THREE.Path(), bore.x, bore.y, bore.diameter / 2))
+  for (const slot of g.slots ?? [])
+    if (slot.axis === 'z' && slot.z <= 0 && slot.z + slot.depth >= g.thickness)
+      shape.holes.push(
+        roundedRect(
+          new THREE.Path(),
+          slot.x - slot.w / 2,
+          slot.y - slot.h / 2,
+          slot.w,
+          slot.h,
+          Math.min(slot.w, slot.h) / 2,
+        ),
+      )
+  const protoHoles = prototypingHoles(part)
+  const breadboard = part.id.startsWith('proto-breadboard')
+  if (breadboard) look.extrude(finish, colour, shape.clone(), 0, 2)
+  for (const [x, y] of protoHoles)
+    shape.holes.push(circle(new THREE.Path(), x, y, breadboard ? 0.6 : 0.5))
+  if (breadboard && g.outline.shape === 'rect') {
+    const { w, h } = g.outline
+    shape.holes.push(
+      polygon(new THREE.Path(), [
+        [2, h / 2 - 1],
+        [w - 2, h / 2 - 1],
+        [w - 2, h / 2 + 1],
+        [2, h / 2 + 1],
+      ]),
+    )
+    for (const [y, railColour] of [
+      [3, '#dc5345'],
+      [10, '#3d74b3'],
+      [h - 10, '#dc5345'],
+      [h - 3, '#3d74b3'],
+    ] as Array<[number, string]>)
+      look.box('plastic', railColour, 3, y, g.thickness, w - 6, 0.45, 0.025)
+  }
+  look.extrude(
+    finish,
+    colour,
+    shape,
+    breadboard ? 2 : 0,
+    g.thickness - (breadboard ? 2 : 0),
+    protoHoles.length ? 6 : 24,
+  )
+  if (part.category === 'proto' && !breadboard) {
+    for (const [x, y] of protoHoles) {
+      const pad = circle(new THREE.Shape(), x, y, 0.9)
+      pad.holes.push(circle(new THREE.Path(), x, y, 0.5))
+      look.plate('gold', '#b78945', pad, -0.01, true)
+    }
+    if (part.id === 'proto-stripboard' && g.outline.shape === 'rect') {
+      const { h } = g.outline
+      for (const x of [...new Set(protoHoles.map(([x]) => x))]) {
+        const strip = roundedRect(new THREE.Shape(), x - 0.9, 2, 1.8, h - 4, 0)
+        for (const [px, y] of protoHoles.filter(([px]) => px === x))
+          strip.holes.push(circle(new THREE.Path(), px, y, 0.5))
+        look.plate('gold', '#b78945', strip, -0.02, true)
+      }
+    }
+  }
   if (finish === 'pcb')
     for (const hole of part.mountingHoles ?? []) {
       const ring = new THREE.Shape()
@@ -954,7 +1025,109 @@ function boardLook(look: Look, part: CataloguePart, g: Geometry<'board'>) {
       look.plate('gold', undefined, ring.clone(), -0.01, true)
     }
   const components = part.look?.components ?? defaultBoardComponents(part, g)
-  for (const component of components) drawComponent(look, component, g.thickness, 0)
+  for (const component of components) {
+    if (component.kind === 'box') {
+      const bores =
+        g.bores?.filter(
+          (bore) =>
+            bore.z <= (component.z ?? g.thickness) &&
+            bore.z + bore.depth >= (component.z ?? g.thickness) + component.height &&
+            bore.x > component.x &&
+            bore.x < component.x + component.w &&
+            bore.y > component.y &&
+            bore.y < component.y + component.h,
+        ) ?? []
+      if (bores.length) {
+        const profile = roundedRect(
+          new THREE.Shape(),
+          component.x,
+          component.y,
+          component.w,
+          component.h,
+          component.radius ?? 0,
+        )
+        for (const bore of bores)
+          profile.holes.push(circle(new THREE.Path(), bore.x, bore.y, bore.diameter / 2))
+        look.extrude(
+          component.finish ?? finish,
+          component.colour,
+          profile,
+          component.z ?? g.thickness,
+          component.height,
+        )
+        continue
+      }
+      const slots =
+        g.slots?.filter(
+          (slot) =>
+            slot.axis === 'x' &&
+            slot.x <= component.x &&
+            slot.x + slot.depth >= component.x + component.w,
+        ) ?? []
+      if (slots.length) {
+        const profile = roundedRect(new THREE.Shape(), 0, 0, component.h, component.height, 0)
+        for (const slot of slots)
+          profile.holes.push(
+            roundedRect(
+              new THREE.Path(),
+              slot.y - component.y - slot.w / 2,
+              slot.z - (component.z ?? g.thickness) - slot.h / 2,
+              slot.w,
+              slot.h,
+              Math.min(slot.w, slot.h) / 2,
+            ),
+          )
+        const geometry = new THREE.ExtrudeGeometry(profile, {
+          depth: component.w,
+          bevelEnabled: false,
+          curveSegments: 16,
+        })
+        geometry.applyMatrix4(
+          new THREE.Matrix4().set(
+            0,
+            0,
+            1,
+            component.x,
+            1,
+            0,
+            0,
+            component.y,
+            0,
+            1,
+            0,
+            component.z ?? g.thickness,
+            0,
+            0,
+            0,
+            1,
+          ),
+        )
+        look.add(component.finish ?? finish, component.colour, geometry)
+        continue
+      }
+    }
+    const bore =
+      component.kind === 'cylinder'
+        ? g.bores?.find(
+            (bore) =>
+              Math.hypot(bore.x - component.x, bore.y - component.y) < 0.01 &&
+              bore.diameter < component.d &&
+              bore.z <= (component.z ?? g.thickness) &&
+              bore.z + bore.depth >= (component.z ?? g.thickness) + component.height,
+          )
+        : null
+    if (component.kind === 'cylinder' && bore) {
+      const ring = circle(new THREE.Shape(), component.x, component.y, component.d / 2)
+      ring.holes.push(circle(new THREE.Path(), bore.x, bore.y, bore.diameter / 2))
+      look.extrude(
+        component.finish ?? 'metal',
+        component.colour,
+        ring,
+        component.z ?? g.thickness,
+        component.height,
+      )
+    } else drawComponent(look, component, g.thickness, 0)
+  }
   const fitted = components.filter((component) => component.kind === 'header')
   drawPads(look, part, g.thickness, (header) =>
     fitted.some(
@@ -1117,6 +1290,82 @@ function connectorLook(look: Look, part: CataloguePart, g: Geometry<'connector'>
           0.5,
         )
         look.box('plastic', '#f2f0ea', -0.35, d + p + 0.01, cz + h * 0.12, 0.7, 0.05, h * 0.2)
+      })
+      return
+    }
+    case 'gland': {
+      const bore = (part.look?.cableDiameter ?? 6) / 2
+      const circleRing = (radius: number) => {
+        const ring = circle(new THREE.Shape(), 0, cz, radius)
+        ring.holes.push(circle(new THREE.Path(), 0, cz, bore))
+        return ring
+      }
+      ahead(() => {
+        look.prismY('plastic', '#20262b', circleRing(cutW / 2), 0, d)
+        const hex = polygon(
+          new THREE.Shape(),
+          Array.from({ length: 6 }, (_, i) => [
+            (Math.cos((i * Math.PI) / 3) * w) / 2,
+            cz + (Math.sin((i * Math.PI) / 3) * w) / 2,
+          ]),
+        )
+        hex.holes.push(circle(new THREE.Path(), 0, cz, bore))
+        look.prismY('plastic', '#30383f', hex, 0, Math.min(2, d))
+        look.prismY('plastic', '#30383f', hex.clone(), d, 3)
+        look.prismY('plastic', '#20262b', circleRing(Math.min(w, h) / 2), d + 3, p - 3)
+        look.prismY('rubber', '#0b0d0f', circleRing(Math.min(w, h) / 2 - 1), d + p - 0.3, 0.3)
+      })
+      return
+    }
+    case 'fuse-holder': {
+      look.cylinderY('plastic', '#191f24', cx, 0, cz, cutW, d, 32)
+      look.cylinderY('plastic', '#30383f', cx, d, cz, Math.min(w, h), p, 48)
+      for (const x of [cx - 3, cx + 3])
+        look.box('metal', '#d3b568', x - 0.4, 0, cz - 1.2, 0.8, 4, 2.4)
+      for (let i = 0; i < 12; i++) {
+        const angle = (i * Math.PI) / 6
+        const radius = Math.min(w, h) / 2 - 0.4
+        look.cylinderY(
+          'plastic',
+          '#192126',
+          cx + Math.cos(angle) * radius,
+          d + 2,
+          cz + Math.sin(angle) * radius,
+          0.6,
+          p - 3,
+          8,
+        )
+      }
+      return
+    }
+    case 'pushbutton': {
+      look.cylinderY(
+        'plastic',
+        '#24292e',
+        cx,
+        Math.min(5.8, d / 3),
+        cz,
+        cutW,
+        d - Math.min(5.8, d / 3),
+        32,
+      )
+      for (const x of [cx - 3, cx + 3])
+        look.box('metal', '#d3b568', x - 0.4, 0, cz - 1, 0.8, Math.min(5.8, d / 3), 2)
+      ahead(() => {
+        const washer = Math.min(1.6, p * 0.2)
+        const nut = Math.min(3.5, p * 0.35)
+        look.cylinderY('metal', undefined, 0, d, cz, cutW + 1, washer, 36)
+        look.cylinderY('metal', '#b9bfc5', 0, d + washer, cz, cutW + 1, nut, 6)
+        look.cylinderY(
+          'plastic',
+          '#c63c34',
+          0,
+          d + washer + nut,
+          cz,
+          Math.min(w, h),
+          Math.max(0.5, p - washer - nut),
+          40,
+        )
       })
       return
     }
@@ -1570,58 +1819,75 @@ function bearingLook(look: Look, part: CataloguePart, g: Geometry<'bearing'>) {
       look.extrude('plastic', '#6b7178', ring(r + 0.02, r - 0.4), z, 0.8, 48)
     return
   }
+  if (part.look?.style === 'pulley') {
+    const {
+      flange,
+      belt,
+      radius: toothed,
+      hubStart,
+    } = pulleyDimensions(part.look.teeth ?? 20, g.width)
+    look.extrude('metal', undefined, ring(r, inner), 0, flange, 48)
+    look.extrude('metal', undefined, ring(r, inner), flange + belt, flange, 48)
+    look.extrude('metal', undefined, ring(toothed, inner), flange, belt, 48)
+    look.extrude(
+      'metal',
+      undefined,
+      ring(Math.min(4.5, toothed), inner),
+      hubStart,
+      g.width - hubStart,
+      36,
+    )
+    return
+  }
   look.extrude('metal', undefined, ring(r, r - wall), 0, g.width, 48)
   look.extrude('metal', undefined, ring(inner + wall, inner), 0, g.width, 48)
   look.extrude('metal', '#9aa1a8', ring(r - wall, inner + wall), 0.25, g.width - 0.5, 48)
 }
 
-function extrusionLook(look: Look, part: CataloguePart, g: Geometry<'extrusion'>) {
-  const s = g.size
-  const slot = (u: [number, number], n: [number, number], m: [number, number]) =>
-    [
-      [-3, 0],
-      [-3, 6],
-      [-5.5, 6],
-      [-5.5, 11],
-      [5.5, 11],
-      [5.5, 6],
-      [3, 6],
-      [3, 0],
-    ].map(([a, b]) => [m[0] + u[0] * a + n[0] * b, m[1] + u[1] * a + n[1] * b] as [number, number])
-  const sides: Array<[[number, number], [number, number], [number, number], [number, number]]> = [
-    [
-      [0, 0],
-      [1, 0],
-      [0, 1],
-      [s / 2, 0],
-    ],
-    [
-      [s, 0],
-      [0, 1],
-      [-1, 0],
-      [s, s / 2],
-    ],
-    [
-      [s, s],
-      [-1, 0],
-      [0, -1],
-      [s / 2, s],
-    ],
-    [
-      [0, s],
-      [0, -1],
-      [1, 0],
-      [0, s / 2],
-    ],
+function rodLook(look: Look, part: CataloguePart, g: Geometry<'rod'>) {
+  const r = g.diameter / 2
+  const finish = part.look?.finish ?? 'metal'
+  const colour = part.look?.colour
+  const chamfer = Math.min(0.4, r * 0.2)
+  const threaded = /lead|thread|t8/i.test(g.spec ?? '')
+  if (!threaded) {
+    look.lathe(
+      finish,
+      colour,
+      r,
+      r,
+      0,
+      [
+        [0, 0],
+        [r - chamfer, 0],
+        [r, chamfer],
+        [r, g.length - chamfer],
+        [r - chamfer, g.length],
+        [0, g.length],
+      ],
+      32,
+    )
+    return
+  }
+  const pitch = g.pitch ?? Math.max(0.35, g.diameter * 0.17)
+  const turns = Math.max(1, Math.floor((g.length - pitch) / pitch))
+  const thread: Array<[number, number]> = [
+    [0, 0],
+    [r - pitch * 0.6, 0],
   ]
-  const slots = g.slots ?? 4
-  const points: Array<[number, number]> = []
-  sides.forEach(([corner, u, n, m], i) => {
-    points.push(corner)
-    if (i < slots) points.push(...slot(u, n, m))
-  })
+  for (let i = 0; i < turns; i++) {
+    thread.push([r, pitch * (i + 0.5)])
+    thread.push([r - pitch * 0.55, pitch * (i + 1)])
+  }
+  thread.push([r, g.length], [0, g.length])
+  look.lathe(finish, colour, r, r, 0, thread, 28)
+}
+
+function extrusionLook(look: Look, part: CataloguePart, g: Geometry<'extrusion'>) {
+  const { points, bores } = extrusionSection(g)
   const profile = polygon(new THREE.Shape(), points)
-  profile.holes.push(circle(new THREE.Path(), s / 2, s / 2, 2.1))
+  for (const bore of bores)
+    profile.holes.push(circle(new THREE.Path(), bore.x, bore.y, bore.radius))
   const geometry = new THREE.ExtrudeGeometry(profile, {
     depth: g.length,
     bevelEnabled: false,
@@ -1660,6 +1926,9 @@ export function lookPrototype(part: CataloguePart): LookPrototype {
     case 'insert':
     case 'standoff':
       fastenerLook(look, part)
+      break
+    case 'rod':
+      rodLook(look, part, g)
       break
     case 'motor':
       motorLook(look, part, g)

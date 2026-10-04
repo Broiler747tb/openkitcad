@@ -1,0 +1,41 @@
+{
+  "id": "motion-gt2-pulley-20t",
+  "name": "GT2 timing pulley, 20 tooth",
+  "category": "motion",
+  "popularity": 74,
+  "family": "gt2-pulley",
+  "variant": "20 tooth, 5 mm bore",
+  "summary": "20-tooth GT2 pulley for a 6 mm belt on a 5 mm shaft: 12.7 mm pitch diameter, 15 mm flanges, 16 mm long.",
+  "description": "A 20-tooth GT2 pulley for a 5 mm shaft and 6 mm belt. It moves 40 mm of belt per turn. Flanges and the mounting hub are included; individual teeth are simplified.",
+  "confidence": "approximate",
+  "source": "Pitch diameter computed from the 2 mm GT2 pitch: teeth x 2 / pi = 20 x 2 / pi = 12.732 mm. The outside (tooth) diameter is the pitch diameter minus 0.508 mm = 12.22 mm, which is the value MISUMI's high-torque metric timing pulley table prints for 20 teeth; the same rule gives 9.68 mm for 16 teeth, and retailer listings agree (12.22-12.23 mm). Flange diameter 15 mm and overall length 16 mm are approximate: they come from retailer drawings and listings for the common 6 mm-belt, 5 mm-bore pulley (a Runice drawing gives a 15.00 mm flange over a 12.22 mm toothed body, a Bulkman 3D listing gives 16 mm across and 16 mm long), and listings vary with the hub - flanges 15-16 mm and lengths 14-20 mm all appear. Bore 5 mm and belt width 6 mm are the chosen variant, not measurements, and the set-screw hole is not modelled. Solid and preview include two 0.8 mm flanges around a 6 mm belt barrel, a simplified 9 mm hub and the 5 mm bore. The barrel diameter follows the published pitch diameter minus 0.508 mm; individual teeth and set-screw holes are not cut.",
+  "look": {
+    "style": "pulley",
+    "teeth": 20
+  },
+  "geometry": {
+    "kind": "bearing",
+    "innerDiameter": 5,
+    "outerDiameter": 15,
+    "width": 16
+  },
+  "links": [
+    {
+      "label": "Timing belts (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Timing_belt"
+    }
+  ],
+  "tags": [
+    "gt2",
+    "2gt",
+    "pulley",
+    "timing",
+    "belt",
+    "20t",
+    "20 tooth",
+    "6mm belt",
+    "5mm bore",
+    "motion",
+    "3d printer"
+  ]
+}

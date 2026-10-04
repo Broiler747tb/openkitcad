@@ -1,0 +1,60 @@
+{
+  "id": "power-fuse-holder-5x20",
+  "name": "Panel fuse holder, 5 x 20 mm",
+  "category": "power",
+  "popularity": 52,
+  "summary": "Screw-cap holder for a 5 x 20 mm cartridge fuse: 15 mm panel hole, 16 mm body, rated 10 A at 250 V.",
+  "description": "A holder for a 5 × 20 mm cartridge fuse. The outline, cover and terminals are shown; check your holder’s mounting dimensions.",
+  "confidence": "approximate",
+  "source": "Filotronix's page for the 435 Panel Mount Fuse Housing 5x20 gives item length 37 mm, item diameter 16 mm with a 15 mm panel hole, screw-off cap, about 6 g, 10 A at 250 V AC (15 A at 125 V AC) and a maximum envelope of 16 x 38 mm. Those are the figures used here: 16 mm body, 15 mm round cutout, 37 mm overall. Approximate for two reasons. First, the listing has no drawing and says nothing about how the 37 mm divides across the panel, so the 12 mm proud of the panel and 25 mm behind it split is read off the product photo - knurled cap and marked collar in front, fuse body behind - and it moves with panel thickness. Second, holders taking the same fuse are sold with different hole sizes, so measure the one you buy rather than trusting 15 mm. The 38 mm maximum is not used; 37 mm is the stated item length.",
+  "look": {
+    "style": "fuse-holder",
+    "finish": "plastic",
+    "colour": "#252c32"
+  },
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 16,
+    "bodyHeight": 16,
+    "bodyDepth": 25,
+    "protrusion": 12,
+    "cutout": {
+      "shape": "circle",
+      "d": 15
+    }
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "Panel hole for the holder",
+      "side": "+y",
+      "shape": "circle",
+      "x": 8,
+      "y": 25,
+      "z": 8,
+      "width": 15,
+      "height": 15,
+      "diameter": 15,
+      "protrusion": 12
+    }
+  ],
+  "electrical": {
+    "note": "Holder rating, not a draw: 10 A at 250 V AC, 15 A at 125 V AC. The fitted 5 x 20 mm fuse sets the real limit."
+  },
+  "links": [
+    {
+      "label": "Filotronix 435 panel mount fuse housing",
+      "url": "https://www.filotronix.com/fuse-holder/435-panel-mount-fuse-housing-5x20mm.html"
+    }
+  ],
+  "tags": [
+    "fuse",
+    "holder",
+    "5x20",
+    "cartridge",
+    "panel",
+    "screw cap",
+    "protection",
+    "mains"
+  ]
+}

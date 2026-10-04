@@ -1,0 +1,41 @@
+{
+  "id": "motion-gt2-pulley-16t",
+  "name": "GT2 timing pulley, 16 tooth",
+  "category": "motion",
+  "popularity": 60,
+  "family": "gt2-pulley",
+  "variant": "16 tooth, 5 mm bore",
+  "summary": "16-tooth GT2 pulley for a 6 mm belt on a 5 mm shaft: 10.2 mm pitch diameter, 13 mm flanges, 14 mm long.",
+  "description": "A 16-tooth GT2 pulley for a 5 mm shaft and 6 mm belt. It moves 32 mm of belt per turn. Flanges and the mounting hub are included; individual teeth are simplified.",
+  "confidence": "approximate",
+  "source": "Pitch diameter computed from the 2 mm GT2 pitch: teeth x 2 / pi = 16 x 2 / pi = 10.186 mm. The outside (tooth) diameter is the pitch diameter minus 0.508 mm = 9.68 mm, the value MISUMI's high-torque metric timing pulley table prints for 16 teeth (retailer listings round it to 9.7 mm). Flange diameter 13 mm and overall length 14 mm are approximate: they come from listings for the common 6 mm-belt, 5 mm-bore version (Caxtool gives 13 mm outside over a 9.7 mm toothed body; an Amazon listing gives 13 x 13 x 14 mm), and other makers ship 14-16 mm flanges and 14-16 mm lengths, so treat both figures as check-before-you-cut. Bore 5 mm and belt width 6 mm are the chosen variant, and the set-screw hole is not modelled. Solid and preview include two 0.8 mm flanges around a 6 mm belt barrel, a simplified 9 mm hub and the 5 mm bore. The barrel diameter follows the published pitch diameter minus 0.508 mm; individual teeth and set-screw holes are not cut.",
+  "look": {
+    "style": "pulley",
+    "teeth": 16
+  },
+  "geometry": {
+    "kind": "bearing",
+    "innerDiameter": 5,
+    "outerDiameter": 13,
+    "width": 14
+  },
+  "links": [
+    {
+      "label": "Timing belts (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Timing_belt"
+    }
+  ],
+  "tags": [
+    "gt2",
+    "2gt",
+    "pulley",
+    "timing",
+    "belt",
+    "16t",
+    "16 tooth",
+    "6mm belt",
+    "5mm bore",
+    "motion",
+    "3d printer"
+  ]
+}

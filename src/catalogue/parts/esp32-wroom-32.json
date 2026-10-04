@@ -1,0 +1,553 @@
+{
+  "id": "esp32-wroom-32",
+  "name": "ESP32-WROOM-32 module (Espressif)",
+  "category": "mcu",
+  "popularity": 80,
+  "manufacturer": "Espressif",
+  "summary": "The bare ESP32-WROOM module itself: 18 x 25.5 mm, 3.1 mm tall, 38 castellated pads, RF shield can, PCB antenna. Solders flat onto a carrier board.",
+  "confidence": "datasheet",
+  "source": "Outline 18.00 x 25.50 mm and the 3.10 mm total height from the Espressif ESP32-WROOM-32E/32UE datasheet drawing; the pad pattern from KiCad's official ESP32-WROOM-32 footprint: 38 castellated pads, two rows of 14 on 1.27 mm pitch whose inner edge sits 1.5 mm from each long edge, 10 across the solder end and a 5 x 5 mm centre land, antenna keep-out marked 6.5 mm at that end. The 0.80 mm PCB and the 15.8 x 17.6 x 2.3 mm shield can are measured off KiCad's official 3D model of the module, where PCB plus can lands exactly on the datasheet's 3.10 mm; the can outline is not dimensioned on the datasheet drawing, so treat it as within about 0.4 mm. The preview shows the 38 peripheral castellated pads; the centre thermal land is omitted.",
+  "look": {
+    "colour": "#1b1e22",
+    "components": [
+      {
+        "kind": "box",
+        "x": 1.1,
+        "y": 0.95,
+        "w": 15.8,
+        "h": 17.6,
+        "z": 0.8,
+        "height": 2.3,
+        "finish": "metal",
+        "colour": "#b9c0c7",
+        "radius": 0.3,
+        "label": "RF shield can"
+      },
+      {
+        "kind": "antenna",
+        "x": 0,
+        "y": 19,
+        "w": 18,
+        "h": 6.5,
+        "label": "PCB antenna"
+      },
+      {
+        "kind": "box",
+        "x": 0,
+        "y": 1.9,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 17.4,
+        "y": 1.9,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 0,
+        "y": 3.17,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 17.4,
+        "y": 3.17,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 0,
+        "y": 4.4399999999999995,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 17.4,
+        "y": 4.4399999999999995,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 0,
+        "y": 5.71,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 17.4,
+        "y": 5.71,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 0,
+        "y": 6.98,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 17.4,
+        "y": 6.98,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 0,
+        "y": 8.25,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 17.4,
+        "y": 8.25,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 0,
+        "y": 9.52,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 17.4,
+        "y": 9.52,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 0,
+        "y": 10.790000000000001,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 17.4,
+        "y": 10.790000000000001,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 0,
+        "y": 12.06,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 17.4,
+        "y": 12.06,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 0,
+        "y": 13.33,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 17.4,
+        "y": 13.33,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 0,
+        "y": 14.6,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 17.4,
+        "y": 14.6,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 0,
+        "y": 15.870000000000001,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 17.4,
+        "y": 15.870000000000001,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 0,
+        "y": 17.14,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 17.4,
+        "y": 17.14,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 0,
+        "y": 18.41,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 17.4,
+        "y": 18.41,
+        "z": -0.01,
+        "w": 0.6,
+        "h": 0.9,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "Castellated pad"
+      },
+      {
+        "kind": "box",
+        "x": 3.285,
+        "y": 0,
+        "z": -0.01,
+        "w": 0.9,
+        "h": 0.6,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "End pad"
+      },
+      {
+        "kind": "box",
+        "x": 4.555,
+        "y": 0,
+        "z": -0.01,
+        "w": 0.9,
+        "h": 0.6,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "End pad"
+      },
+      {
+        "kind": "box",
+        "x": 5.825,
+        "y": 0,
+        "z": -0.01,
+        "w": 0.9,
+        "h": 0.6,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "End pad"
+      },
+      {
+        "kind": "box",
+        "x": 7.095000000000001,
+        "y": 0,
+        "z": -0.01,
+        "w": 0.9,
+        "h": 0.6,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "End pad"
+      },
+      {
+        "kind": "box",
+        "x": 8.365,
+        "y": 0,
+        "z": -0.01,
+        "w": 0.9,
+        "h": 0.6,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "End pad"
+      },
+      {
+        "kind": "box",
+        "x": 9.635,
+        "y": 0,
+        "z": -0.01,
+        "w": 0.9,
+        "h": 0.6,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "End pad"
+      },
+      {
+        "kind": "box",
+        "x": 10.905000000000001,
+        "y": 0,
+        "z": -0.01,
+        "w": 0.9,
+        "h": 0.6,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "End pad"
+      },
+      {
+        "kind": "box",
+        "x": 12.175,
+        "y": 0,
+        "z": -0.01,
+        "w": 0.9,
+        "h": 0.6,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "End pad"
+      },
+      {
+        "kind": "box",
+        "x": 13.445,
+        "y": 0,
+        "z": -0.01,
+        "w": 0.9,
+        "h": 0.6,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "End pad"
+      },
+      {
+        "kind": "box",
+        "x": 14.715,
+        "y": 0,
+        "z": -0.01,
+        "w": 0.9,
+        "h": 0.6,
+        "height": 0.04,
+        "finish": "gold",
+        "colour": "#c8a54e",
+        "label": "End pad"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 18,
+      "h": 25.5
+    },
+    "thickness": 0.8,
+    "bumps": [
+      {
+        "x": 1.1,
+        "y": 0.95,
+        "w": 15.8,
+        "h": 17.6,
+        "z": 0.8,
+        "height": 2.3,
+        "colour": "#b9c0c7",
+        "label": "RF shield can"
+      }
+    ]
+  },
+  "keepouts": [
+    {
+      "id": "k-antenna",
+      "label": "Antenna: keep metal away",
+      "x": 0,
+      "y": 19,
+      "w": 18,
+      "h": 6.5,
+      "z": -5,
+      "height": 15
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      3.3
+    ],
+    "currentTypical": 0.08,
+    "currentPeak": 0.5,
+    "note": "Wi-Fi transmit bursts pull around 500 mA; a weak 3.3 V supply causes brownout reboots."
+  },
+  "links": [
+    {
+      "label": "Datasheet",
+      "url": "https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32e_esp32-wroom-32ue_datasheet_en.pdf"
+    },
+    {
+      "label": "Product page",
+      "url": "https://www.espressif.com/en/products/modules/esp32-wroom-32e/overview"
+    }
+  ],
+  "tags": [
+    "esp32",
+    "wroom",
+    "wifi",
+    "bluetooth",
+    "module",
+    "espressif",
+    "microcontroller"
+  ],
+  "description": "The bare ESP32 module, not a development board. Includes its RF shield and antenna area; castellated pads are shown underneath."
+}

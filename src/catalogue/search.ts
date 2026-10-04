@@ -37,6 +37,7 @@ export interface PartFilters {
 export const CATEGORY_ORDER: readonly PartCategory[] = [
   'sbc',
   'mcu',
+  'proto',
   'connector',
   'display',
   'sensor',

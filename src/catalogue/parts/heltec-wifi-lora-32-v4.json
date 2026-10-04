@@ -1,0 +1,535 @@
+{
+  "id": "heltec-wifi-lora-32-v4",
+  "name": "Heltec WiFi LoRa 32 V4",
+  "category": "mcu",
+  "popularity": 78,
+  "variant": "V4.3 board, V4.2 datasheet",
+  "manufacturer": "Heltec Automation",
+  "summary": "Heltec's ESP32-S3 LoRa board: 51.7 x 25.4 mm, two 18-pin rows 22.9 mm apart, four mounting holes, USB-C, on-board OLED and LiPo/solar charging.",
+  "confidence": "datasheet",
+  "source": "Outline, holes and part positions are measured from Heltec's official STEP model (HTIT-WB32LAF V4.3.1) and cross-checked against the p16 drawing of the V4.2.0 datasheet: 51.69 x 25.40 x 1.56 board, 47.88 to the tab step, 22.86 row spacing, 43.18 first-to-last pin, 14.00 x 29.00 hole grid, 8.94 USB width, 4.20 and 4.33 for the underside connectors (STEP gives 4.30), 2.16 x 45 corner chamfers and 3.81 step chamfers. The 14-vertex outline, USB notch included, follows the STEP. J2/J3 pin lists come from the datasheet tables; J2 sits on the RST side and J3 on the PROG side, resolved from the schematic (S1 = RESET_SW, S2 = USER_SW) and the official pinmap (RST right, PROG left, tab silk 15/16 left, 17/18 right), pin 1 at the USB end. Mounting holes: the datasheet drawing dimensions a 1.90 drill inside an octagonal pad about 2.80 across, while the STEP models only a 2.80 bore with no smaller cylinder - the 1.90 drill is used here; no screw size is claimed. Four extra 2.54 holes on the tab (GPIO15-18, the XTAL and OLED pins) are drawn as bare pads. The USB-C is mid-mount: shell 8.94 x 3.16, 7.60 deep, face 0.97 past the outline. Buttons measure 4.65 x 3.30 x 2.5 in the STEP but the app's button kind is square, so they are drawn 4 x 4. The LEDs measure 1.6 x 0.8 and are labelled from the schematic nets (red on CHRG = LED2, white on LED = LED3). The OLED module is 33.00 x 18.60 centred on the four screw holes, active area 22.00 x 11.40, stack 5.50 above the top face per the p16 side view; the extension lines on that drawing could not be read better than about 0.5 mm, and the white bracket around the module is a touch wider than the module, so the drawn glass may be a little narrow. Chips confirmed against the schematic: U9 SX1262 QFN-24 4 x 4 x 0.95, U6 W25Q128 SOIC-8 (208 mil) 2.28 tall, U7 ESP32-S3 QFN-56 7 x 7 x 0.8 and U4 CN3165 LiPo charger DFN-8 3 x 3, the latter two on the underside; the SOT-23 parts are not drawn. The underside also carries an IPEX socket 3.0 x 1.26 and the SH1.25-2P battery (JP2, VBAT, labelled LiPo on the schematic) and solar connectors 4.20 x 7.65 x 3.40. The vendor STEP parks the GNSS SH1.25-8P, the 40-pin FPC, two SAW filters and a 2520 crystal off the board; the official pinmap shows the GNSS socket mid-underside, but with no measured position it is not drawn. Header pins are drawn 8.5 below the board with 2.5 mm plastic and about 1.4 of tail above the top face, as the STEP models them. Sources: resource.heltec.cn WiFi_LoRa_32_V4.2.0 datasheet (p10 pin tables, p16 drawing), HTIT-WB32LAF_V4.3.1 STEP, V4_pinmap.png and the Heltec wiki. The protective OLED holder is shown with a schematic 0.75 mm border; the display stack remains 5.5 mm above the PCB. The OLED glass outline is a schematic 26 × 15 mm inset within the published 33 × 18.6 mm module; the active area stays 22 × 11.4 mm. The four mounting bores continue through the holder. Underside battery/solar connectors and chips are included in the solid envelope, so their clearance remains when headers are omitted.",
+  "look": {
+    "colour": "#14171a",
+    "components": [
+      {
+        "kind": "header",
+        "x": 3.429,
+        "y": 1.27,
+        "rows": 1,
+        "cols": 18,
+        "height": 8.5,
+        "flip": true,
+        "label": "J2: GND to GPIO19"
+      },
+      {
+        "kind": "header",
+        "x": 3.429,
+        "y": 24.13,
+        "rows": 1,
+        "cols": 18,
+        "height": 8.5,
+        "flip": true,
+        "label": "J3: GND to GPIO7"
+      },
+      {
+        "kind": "port",
+        "port": "usb-c",
+        "x": -0.97,
+        "y": 12.7,
+        "facing": "-x",
+        "w": 8.94,
+        "h": 3.16,
+        "depth": 7.6,
+        "label": "USB-C"
+      },
+      {
+        "kind": "button",
+        "x": 3.425,
+        "y": 4.79,
+        "size": 4,
+        "height": 2.5,
+        "label": "RST"
+      },
+      {
+        "kind": "button",
+        "x": 3.425,
+        "y": 20.61,
+        "size": 4,
+        "height": 2.5,
+        "label": "PROG"
+      },
+      {
+        "kind": "led",
+        "x": 8.62,
+        "y": 5.49,
+        "colour": "#e23b3b",
+        "size": 1.6,
+        "label": "Charge LED (CHRG)"
+      },
+      {
+        "kind": "led",
+        "x": 8.62,
+        "y": 4.1,
+        "colour": "#f5f7fa",
+        "size": 1.6,
+        "label": "Status LED (white)"
+      },
+      {
+        "kind": "box",
+        "x": 14.129,
+        "y": 2.65,
+        "w": 34.5,
+        "h": 20.1,
+        "height": 5,
+        "finish": "plastic",
+        "colour": "#e3e6e8",
+        "radius": 0.6,
+        "label": "OLED protective holder"
+      },
+      {
+        "kind": "screen",
+        "x": 18.379,
+        "y": 5.2,
+        "w": 26,
+        "h": 15,
+        "height": 0.5,
+        "active": [
+          20.379,
+          7,
+          22,
+          11.4
+        ],
+        "colour": "#0e1114",
+        "backlight": "#0b0f12",
+        "label": "OLED display",
+        "z": 6.56
+      },
+      {
+        "kind": "chip",
+        "x": 22.73,
+        "y": 15.09,
+        "w": 4,
+        "h": 4,
+        "height": 0.95,
+        "legs": "none",
+        "label": "SX1262 LoRa radio"
+      },
+      {
+        "kind": "chip",
+        "x": 34.41,
+        "y": 3.79,
+        "w": 5.3,
+        "h": 5.38,
+        "height": 2.28,
+        "legs": "dual",
+        "label": "W25Q128 flash"
+      },
+      {
+        "kind": "chip",
+        "x": 23.03,
+        "y": 4.17,
+        "w": 7,
+        "h": 7,
+        "height": 0.8,
+        "legs": "none",
+        "flip": true,
+        "label": "ESP32-S3"
+      },
+      {
+        "kind": "chip",
+        "x": 6.25,
+        "y": 11.19,
+        "w": 3,
+        "h": 3.02,
+        "height": 1.01,
+        "legs": "none",
+        "flip": true,
+        "label": "CN3165 LiPo charger"
+      },
+      {
+        "kind": "cylinder",
+        "x": 50.28,
+        "y": 12.7,
+        "d": 3,
+        "height": 1.26,
+        "label": "IPEX antenna socket"
+      },
+      {
+        "kind": "cylinder",
+        "x": 16.88,
+        "y": 15.8,
+        "d": 3,
+        "height": 1.26,
+        "flip": true,
+        "label": "IPEX socket (underside)"
+      },
+      {
+        "kind": "box",
+        "x": 1.06,
+        "y": 13.45,
+        "w": 4.2,
+        "h": 7.65,
+        "height": 3.4,
+        "finish": "plastic",
+        "colour": "#ece6d6",
+        "radius": 0.2,
+        "flip": true,
+        "label": "LiPo battery (SH1.25-2P)"
+      },
+      {
+        "kind": "box",
+        "x": 1.06,
+        "y": 4.3,
+        "w": 4.2,
+        "h": 7.65,
+        "height": 3.4,
+        "finish": "plastic",
+        "colour": "#ece6d6",
+        "radius": 0.2,
+        "flip": true,
+        "label": "Solar panel (SH1.25-2P)"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "poly",
+      "points": [
+        [
+          2.159,
+          0
+        ],
+        [
+          47.879,
+          0
+        ],
+        [
+          47.879,
+          3.81
+        ],
+        [
+          51.689,
+          7.62
+        ],
+        [
+          51.689,
+          17.78
+        ],
+        [
+          47.879,
+          21.59
+        ],
+        [
+          47.879,
+          25.4
+        ],
+        [
+          2.159,
+          25.4
+        ],
+        [
+          0,
+          23.241
+        ],
+        [
+          0,
+          17.971
+        ],
+        [
+          1.27,
+          16.7
+        ],
+        [
+          1.27,
+          8.7
+        ],
+        [
+          0,
+          7.429
+        ],
+        [
+          0,
+          2.159
+        ]
+      ]
+    },
+    "thickness": 1.56,
+    "bumps": [
+      {
+        "x": 14.879,
+        "y": 3.4,
+        "w": 33,
+        "h": 18.6,
+        "z": 1.56,
+        "height": 5.5,
+        "colour": "#dfe3e6",
+        "label": "OLED display"
+      },
+      {
+        "x": -0.97,
+        "y": 8.23,
+        "w": 7.6,
+        "h": 8.94,
+        "z": 1.56,
+        "height": 3.16,
+        "colour": "#b9c0c7",
+        "label": "USB-C"
+      },
+      {
+        "w": 7,
+        "colour": "#252c32",
+        "h": 7,
+        "height": 0.8,
+        "label": "ESP32-S3",
+        "z": -0.8,
+        "y": 4.17,
+        "x": 23.03
+      },
+      {
+        "w": 3,
+        "colour": "#252c32",
+        "h": 3.02,
+        "height": 1.01,
+        "label": "CN3165 LiPo charger",
+        "z": -1.01,
+        "y": 11.19,
+        "x": 6.25
+      },
+      {
+        "colour": "#b9c0c7",
+        "shape": "cylinder",
+        "w": 3,
+        "height": 1.26,
+        "label": "IPEX socket (underside)",
+        "y": 14.3,
+        "h": 3,
+        "z": -1.26,
+        "x": 15.379999999999999
+      },
+      {
+        "w": 4.2,
+        "colour": "#ece6d6",
+        "h": 7.65,
+        "height": 3.4,
+        "label": "LiPo battery (SH1.25-2P)",
+        "z": -3.4,
+        "y": 13.45,
+        "x": 1.06
+      },
+      {
+        "w": 4.2,
+        "colour": "#ece6d6",
+        "h": 7.65,
+        "height": 3.4,
+        "label": "Solar panel (SH1.25-2P)",
+        "z": -3.4,
+        "y": 4.3,
+        "x": 1.06
+      }
+    ],
+    "bores": [
+      {
+        "x": 16.879,
+        "depth": 7.06,
+        "diameter": 1.9,
+        "z": 0,
+        "y": 5.7
+      },
+      {
+        "x": 16.879,
+        "depth": 7.06,
+        "diameter": 1.9,
+        "z": 0,
+        "y": 19.7
+      },
+      {
+        "x": 45.879,
+        "depth": 7.06,
+        "diameter": 1.9,
+        "z": 0,
+        "y": 5.7
+      },
+      {
+        "x": 45.879,
+        "depth": 7.06,
+        "diameter": 1.9,
+        "z": 0,
+        "y": 19.7
+      }
+    ]
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 16.879,
+      "y": 5.7,
+      "diameter": 1.9
+    },
+    {
+      "id": "h2",
+      "x": 16.879,
+      "y": 19.7,
+      "diameter": 1.9
+    },
+    {
+      "id": "h3",
+      "x": 45.879,
+      "y": 5.7,
+      "diameter": 1.9
+    },
+    {
+      "id": "h4",
+      "x": 45.879,
+      "y": 19.7,
+      "diameter": 1.9
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "j2",
+      "label": "J2: GND to GPIO19",
+      "x": 3.429,
+      "y": 1.27,
+      "rows": 1,
+      "cols": 18,
+      "pitch": 2.54,
+      "pins": [
+        "GND",
+        "5V",
+        "Ve",
+        "Ve",
+        "RX",
+        "TX",
+        "RST",
+        "0",
+        "36",
+        "35",
+        "34",
+        "33",
+        "47",
+        "48",
+        "26",
+        "21",
+        "20",
+        "19"
+      ]
+    },
+    {
+      "id": "j3",
+      "label": "J3: GND to GPIO7",
+      "x": 3.429,
+      "y": 24.13,
+      "rows": 1,
+      "cols": 18,
+      "pitch": 2.54,
+      "pins": [
+        "GND",
+        "3V3",
+        "3V3",
+        "37",
+        "46",
+        "45",
+        "42",
+        "41",
+        "40",
+        "39",
+        "38",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7"
+      ]
+    },
+    {
+      "id": "tab-j2",
+      "label": "Tab: GPIO18, GPIO17",
+      "x": 49.149,
+      "y": 6.814,
+      "rows": 2,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "18",
+        "17"
+      ]
+    },
+    {
+      "id": "tab-j3",
+      "label": "Tab: GPIO16, GPIO15",
+      "x": 49.149,
+      "y": 16.002,
+      "rows": 2,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "16",
+        "15"
+      ]
+    }
+  ],
+  "connectors": [
+    {
+      "id": "usb",
+      "label": "USB-C",
+      "side": "-x",
+      "x": 0,
+      "y": 12.7,
+      "z": 1.56,
+      "width": 8.94,
+      "height": 3.16,
+      "protrusion": 0.97
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-under",
+      "label": "Header pins below",
+      "x": 0,
+      "y": 0,
+      "w": 51.689,
+      "h": 25.4,
+      "z": -8.5,
+      "height": 8.5,
+      "header": true
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      5,
+      3.7
+    ],
+    "currentTypical": 0.08,
+    "currentPeak": 0.5,
+    "note": "Powered from USB-C 5 V, a 1S LiPo or the solar input; the CN3165 charges at 540 mA (1188/R13 on the schematic). Wi-Fi bursts pull around 500 mA."
+  },
+  "links": [
+    {
+      "label": "Datasheet",
+      "url": "https://resource.heltec.cn/download/WiFi_LoRa_32_V4/datasheet/WiFi_LoRa_32_V4.2.0.pdf"
+    },
+    {
+      "label": "Wiki",
+      "url": "https://wiki.heltec.org/docs/devices/open-source-hardware/esp32-series/lora-32/wifi-lora-32-v4/"
+    },
+    {
+      "label": "3D model (STEP)",
+      "url": "https://resource.heltec.cn/download/WiFi_LoRa_32_V4/3D/HTIT-WB32LAF_V4.3.1%281%29.step"
+    }
+  ],
+  "tags": [
+    "heltec",
+    "esp32",
+    "esp32-s3",
+    "wifi",
+    "bluetooth",
+    "lora",
+    "sx1262",
+    "oled",
+    "microcontroller"
+  ],
+  "description": "Heltec’s ESP32-S3 and LoRa board with an OLED, USB-C and battery/solar connectors. The model includes the shaped PCB, mounting holes, both pin rows and underside components."
+}

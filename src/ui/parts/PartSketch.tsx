@@ -1,3 +1,4 @@
+import { extrusionSection } from '../../catalogue/extrusion'
 import type { ReactNode } from 'react'
 import {
   CATEGORY_COLOUR,
@@ -200,6 +201,36 @@ function drawing(part: CataloguePart): Drawing {
         ),
       }
     }
+    case 'rod': {
+      const r = g.diameter / 2
+      const threaded = /lead|thread|t8/i.test(g.spec ?? '')
+      const threads = threaded
+        ? Math.max(2, Math.round(g.length / (g.pitch ?? Math.max(g.diameter * 0.17, 0.35))))
+        : 0
+      return {
+        box: [0, 0, g.diameter, g.length],
+        content: (
+          <>
+            <rect
+              width={g.diameter}
+              height={g.length}
+              rx={Math.min(1, r * 0.2)}
+              {...line({ fill: STEEL })}
+            />
+            {Array.from({ length: threads }, (_, i) => (
+              <line
+                key={i}
+                x1={0}
+                x2={g.diameter}
+                y1={((i + 0.5) * g.length) / threads}
+                y2={((i + 0.9) * g.length) / threads}
+                {...line({ stroke: STEEL_DARK })}
+              />
+            ))}
+          </>
+        ),
+      }
+    }
     case 'insert': {
       const knurls = Math.max(3, Math.round(g.length / 0.9))
       return {
@@ -276,24 +307,18 @@ function drawing(part: CataloguePart): Drawing {
       }
     }
     case 'extrusion': {
-      const s = g.size
-      const c = s / 2
-      const slot = `M ${c - 3} ${s} L ${c - 3} ${s - 6} L ${c - 5.5} ${s - 6} L ${c - 5.5} ${s - 11} L ${c + 5.5} ${s - 11} L ${c + 5.5} ${s - 6} L ${c + 3} ${s - 6} L ${c + 3} ${s} Z`
+      const { points, bores } = extrusionSection(g)
       return {
-        box: [0, 0, s, s],
+        box: [0, 0, g.depth ?? g.size, g.size],
         content: (
           <>
-            <rect width={s} height={s} rx={s * 0.05} {...line({ fill: '#aab1b8' })} />
-            {Array.from({ length: g.slots ?? 4 }, (_, i) => (
-              <path
-                key={i}
-                d={slot}
-                transform={`rotate(${i * 90} ${c} ${c})`}
-                {...line({})}
-                style={CUT}
-              />
+            <polygon
+              points={points.map((point) => point.join(',')).join(' ')}
+              {...line({ fill: STEEL })}
+            />
+            {bores.map((bore, i) => (
+              <circle key={i} cx={bore.x} cy={bore.y} r={bore.radius} {...line({})} style={CUT} />
             ))}
-            <circle cx={c} cy={c} r={2.1} {...line({})} style={CUT} />
           </>
         ),
       }

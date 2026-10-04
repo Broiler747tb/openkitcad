@@ -48,7 +48,9 @@ export function partBounds(part: CataloguePart): PartBounds {
       ]
     }
     case 'extrusion':
-      return [0, 0, 0, g.length, g.size, g.size]
+      return [0, 0, 0, g.length, g.depth ?? g.size, g.size]
+    case 'rod':
+      return [0, 0, 0, g.diameter, g.diameter, g.length]
     case 'screw':
       return [0, 0, 0, g.headDiameter, g.headDiameter, g.length + g.headHeight]
     case 'insert':

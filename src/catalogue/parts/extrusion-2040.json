@@ -1,0 +1,47 @@
+{
+  "id": "extrusion-2040",
+  "name": "2040 aluminum extrusion",
+  "category": "extrusion",
+  "popularity": 84,
+  "family": "alu-profile",
+  "variant": "2040, 6 slots",
+  "summary": "20 × 40 mm framing profile. Six 6 mm slots, two central bores; length can be edited.",
+  "description": "A wider 2020 profile for printer bases, bed rails and gantries. Two slots run along each wide face and one along each narrow face. Uses 20-series T-nuts.",
+  "confidence": "approximate",
+  "source": "MISUMI HFS5-2040: nominal 20 × 40 mm section, 6 mm openings, two slots on each wide face and one on each narrow face. Internal cavities and the two 4.2 mm bores are simplified; this is an approximate generic profile, not the complete MISUMI die section.",
+  "geometry": {
+    "kind": "extrusion",
+    "size": 20,
+    "depth": 40,
+    "length": 200,
+    "slots": 6
+  },
+  "keepouts": [
+    {
+      "id": "k-slot",
+      "label": "Slot access for T-nuts",
+      "x": 0,
+      "y": 0,
+      "w": 200,
+      "h": 40,
+      "z": 20,
+      "height": 6
+    }
+  ],
+  "tags": [
+    "2040",
+    "extrusion",
+    "tslot",
+    "profile",
+    "frame",
+    "aluminium",
+    "structural",
+    "20 series"
+  ],
+  "links": [
+    {
+      "label": "MISUMI HFS5 profile drawings",
+      "url": "https://us.misumi-ec.com/pdf/fa/2019/2019_US_2686.pdf"
+    }
+  ]
+}

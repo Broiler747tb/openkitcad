@@ -2463,4 +2463,17 @@ export const ru: Readonly<Record<string, string>> = {
   'View: {0}': 'Вид: {0}',
   'Drag to orbit. Click a face, edge or corner to align the view.':
     'Потяни для вращения. Нажми грань, ребро или угол для точного вида.',
+  Prototyping: 'Макетные платы',
+  'Breadboards & prototyping': 'Макетные платы и прототипирование',
+  'Solderless boards and plain sheet to wire a circuit up on before you commit.':
+    'Беспаечные и паяемые макетные платы для проверки схем.',
+  'Solderless breadboard': 'Беспаечная макетная плата',
+  'Prototyping sheet': 'Паяемая макетная плата',
+  'MGN12 linear guide': 'Линейная направляющая MGN12',
+  '5.08 mm screw terminal': 'Винтовая клемма 5.08 мм',
+  'Smooth guide rod': 'Гладкий направляющий вал',
+  'DC motor driver': 'Драйверы двигателей',
+  'Aluminum extrusion': 'Алюминиевый профиль',
+  'GT2 timing pulley': 'Шкив GT2',
+  'PG cable gland': 'Кабельный ввод PG',
 }

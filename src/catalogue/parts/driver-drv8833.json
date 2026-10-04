@@ -1,0 +1,262 @@
+{
+  "id": "driver-drv8833",
+  "name": "DRV8833 dual motor driver breakout (Adafruit)",
+  "category": "motor",
+  "popularity": 67,
+  "family": "dc-motor-driver",
+  "variant": "DRV8833 dual 1.1 A",
+  "manufacturer": "Adafruit",
+  "summary": "Adafruit's 17.8 x 25.4 mm dual H-bridge for one or two small brushed motors, or one stepper, from 2.7 to 10.8 V.",
+  "description": "Small dual motor driver carrier. Use its outline and headers to plan a mount; clone boards can differ.",
+  "confidence": "datasheet",
+  "source": "Adafruit's Eagle board file (Adafruit-DRV8833-Motor-Driver-Breakout-PCB): the clipped-corner outline, the eight-pin control row at x 2.54 from y 3.81, the three two-pin rows at x 15.24 (AOUT at y 6.35 and 8.89, BOUT at 11.43 and 13.97, sense at 16.51 and 19.05), the two-way 3.5 mm power terminal with pins at 9.348, 21.59 sitting on the top edge, and two 2.5 mm mounting holes at 15.24, 2.54 and 15.24, 22.86. Component heights are common package sizes rather than a height drawing, and the LED and small capacitor are placed indicatively.",
+  "look": {
+    "colour": "#1d1f22",
+    "components": [
+      {
+        "kind": "header",
+        "x": 2.54,
+        "y": 3.81,
+        "rows": 8,
+        "cols": 1,
+        "height": 8.5,
+        "flip": true,
+        "label": "Control pins"
+      },
+      {
+        "kind": "header",
+        "x": 15.24,
+        "y": 6.35,
+        "rows": 2,
+        "cols": 1,
+        "height": 8.5,
+        "flip": true,
+        "label": "A motor outputs"
+      },
+      {
+        "kind": "header",
+        "x": 15.24,
+        "y": 11.43,
+        "rows": 2,
+        "cols": 1,
+        "height": 8.5,
+        "flip": true,
+        "label": "B motor outputs"
+      },
+      {
+        "kind": "header",
+        "x": 15.24,
+        "y": 16.51,
+        "rows": 2,
+        "cols": 1,
+        "height": 8.5,
+        "flip": true,
+        "label": "Sense pins"
+      },
+      {
+        "kind": "terminal",
+        "x": 9.348,
+        "y": 25.4,
+        "pins": 2,
+        "pitch": 3.5,
+        "facing": "+y",
+        "label": "Motor power terminal"
+      },
+      {
+        "kind": "chip",
+        "x": 6.5,
+        "y": 8,
+        "w": 4,
+        "h": 4,
+        "height": 0.9,
+        "legs": "quad",
+        "label": "DRV8833"
+      },
+      {
+        "kind": "capacitor",
+        "x": 9.5,
+        "y": 14.5,
+        "d": 3.5,
+        "height": 5,
+        "colour": "#1c2d5a",
+        "label": "Supply capacitor"
+      },
+      {
+        "kind": "led",
+        "x": 5.2,
+        "y": 16,
+        "colour": "#e23b3b",
+        "size": 1.6,
+        "label": "Power LED"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "poly",
+      "points": [
+        [
+          2.54,
+          25.4
+        ],
+        [
+          15.24,
+          25.4
+        ],
+        [
+          17.78,
+          22.86
+        ],
+        [
+          17.78,
+          2.54
+        ],
+        [
+          15.24,
+          0
+        ],
+        [
+          2.54,
+          0
+        ],
+        [
+          0,
+          2.54
+        ],
+        [
+          0,
+          22.86
+        ]
+      ]
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 5.848,
+        "y": 17.8,
+        "w": 7,
+        "h": 7.6,
+        "z": 1.6,
+        "height": 10,
+        "colour": "#2e8b57",
+        "label": "Motor power terminal"
+      }
+    ]
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 15.24,
+      "y": 2.54,
+      "diameter": 2.5
+    },
+    {
+      "id": "h2",
+      "x": 15.24,
+      "y": 22.86,
+      "diameter": 2.5
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "control",
+      "label": "Control pins",
+      "x": 2.54,
+      "y": 3.81,
+      "rows": 8,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "AIN1",
+        "AIN2",
+        "!SLEEP",
+        "BIN2",
+        "BIN1",
+        "NFAULT",
+        "GND",
+        "VMOTOR"
+      ]
+    },
+    {
+      "id": "aout",
+      "label": "A motor outputs",
+      "x": 15.24,
+      "y": 6.35,
+      "rows": 2,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "AOUT1",
+        "AOUT2"
+      ]
+    },
+    {
+      "id": "bout",
+      "label": "B motor outputs",
+      "x": 15.24,
+      "y": 11.43,
+      "rows": 2,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "BOUT2",
+        "BOUT1"
+      ]
+    },
+    {
+      "id": "sense",
+      "label": "Sense pins",
+      "x": 15.24,
+      "y": 16.51,
+      "rows": 2,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "ASEN",
+        "BSEN"
+      ]
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-pins",
+      "label": "Header pins underneath",
+      "x": 0,
+      "y": 0,
+      "w": 17.78,
+      "h": 25.4,
+      "z": -8.5,
+      "height": 8.5,
+      "header": true
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      2.7,
+      10.8
+    ],
+    "currentPeak": 2,
+    "note": "One rail for logic and motors, 2.7 to 10.8 V on VMOTOR. Adafruit set the on-chip current limit to 1 A per channel, about 2 A in total, which it can hold for short bursts. Pull !SLEEP low to shut the outputs off; nFAULT goes low on a fault."
+  },
+  "links": [
+    {
+      "label": "Adafruit DRV8833 PCB on GitHub",
+      "url": "https://github.com/adafruit/Adafruit-DRV8833-Motor-Driver-Breakout-PCB"
+    },
+    {
+      "label": "Adafruit product page",
+      "url": "https://www.adafruit.com/product/3297"
+    }
+  ],
+  "tags": [
+    "drv8833",
+    "adafruit",
+    "motor driver",
+    "dual h-bridge",
+    "dc motor",
+    "h-bridge",
+    "brushed",
+    "pwm"
+  ]
+}

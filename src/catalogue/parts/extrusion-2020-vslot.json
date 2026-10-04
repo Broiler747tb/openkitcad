@@ -13,8 +13,32 @@
     "slots": 4
   },
   "keepouts": [
-    { "id": "k-slot", "label": "Slot access for T-nuts", "x": 0, "y": 0, "w": 200, "h": 20, "z": 20, "height": 6 }
+    {
+      "id": "k-slot",
+      "label": "Slot access for T-nuts",
+      "x": 0,
+      "y": 0,
+      "w": 200,
+      "h": 20,
+      "z": 20,
+      "height": 6
+    }
   ],
-  "links": [{ "label": "About V-slot", "url": "https://openbuilds.com/" }],
-  "tags": ["2020", "extrusion", "vslot", "tslot", "frame", "aluminium", "profile"]
+  "links": [
+    {
+      "label": "About V-slot",
+      "url": "https://openbuilds.com/"
+    }
+  ],
+  "tags": [
+    "2020",
+    "extrusion",
+    "vslot",
+    "tslot",
+    "frame",
+    "aluminium",
+    "profile"
+  ],
+  "family": "alu-profile",
+  "variant": "2020, 4 slots"
 }

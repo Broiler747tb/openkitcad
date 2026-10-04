@@ -1,0 +1,56 @@
+{
+  "id": "port-pushbutton-12mm",
+  "name": "12 mm panel pushbutton (Finglai DS-313)",
+  "category": "connector",
+  "popularity": 63,
+  "manufacturer": "Finglai",
+  "summary": "Round 12 mm pushbutton: 16 mm head, M12 x 0.75 thread, needs a 12 mm hole, cap 5 mm above the head.",
+  "description": "A round panel button for a 12 mm opening. Includes the threaded barrel, retaining nut and button cap.",
+  "confidence": "datasheet",
+  "source": "Finglai's DS-313 drawing for the 12 mm push button: panel hole 12 mm across, head 16.0 mm across, thread M12 x 0.75 at 15.0 mm long, body 17.3 mm below the thread, cap 5.0 mm above the head in the state marked ON and 3.0 mm in the state marked OFF, terminals 5.8 mm, plus an alternative 1/2-28NEF thread shown on the same sheet. Modelled as a 16 mm cap with a 12 mm cutout, 7.0 mm proud of the panel (2.0 mm head plus the 5.0 mm cap) and 32.3 mm behind it (15.0 mm thread plus 17.3 mm body), with the terminals left out. The assumption worth checking is that the head seats on the front face of the panel with the nut behind it: the split is arithmetic from the drawing rather than a dimension on it, so if the cap's 5.0 mm is instead measured from the top of the head the part is 5 mm shorter than drawn. The drawing also shows two cap heights for ON and OFF, which reads as a latching action, so confirm the switching action of the variant you order.",
+  "look": {
+    "style": "pushbutton"
+  },
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 16,
+    "bodyHeight": 16,
+    "bodyDepth": 32.3,
+    "protrusion": 7,
+    "cutout": {
+      "shape": "circle",
+      "d": 12
+    }
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "Panel hole",
+      "side": "+y",
+      "shape": "circle",
+      "x": 8,
+      "y": 32.3,
+      "z": 8,
+      "width": 12,
+      "height": 12,
+      "diameter": 12,
+      "protrusion": 7
+    }
+  ],
+  "links": [
+    {
+      "label": "Finglai DS-313 drawing",
+      "url": "https://www.finglai.com/att/comp/fl-en/switches/push-buttons/DIA12-DS/DS-313-drawing.jpg"
+    }
+  ],
+  "tags": [
+    "pushbutton",
+    "button",
+    "12mm",
+    "panel",
+    "m12",
+    "round",
+    "control",
+    "reset"
+  ]
+}

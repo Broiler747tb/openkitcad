@@ -28,6 +28,7 @@ import './parts.css'
 export const CATEGORY_SHORT: Record<PartCategory, string> = {
   sbc: 'Computers',
   mcu: 'Microcontrollers',
+  proto: 'Prototyping',
   connector: 'Connectors',
   display: 'Displays',
   sensor: 'Sensors',
@@ -35,7 +36,7 @@ export const CATEGORY_SHORT: Record<PartCategory, string> = {
   fastener: 'Fasteners',
   extrusion: 'Extrusion',
   motor: 'Motors',
-  motion: 'Bearings',
+  motion: 'Motion',
   control: 'Controls',
 }
 
