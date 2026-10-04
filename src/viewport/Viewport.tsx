@@ -9,6 +9,7 @@ import {
   type SubPick,
 } from './engine'
 import { resolveHandles, type ActiveHandle } from './handles'
+import { moveAngles, moveRotation } from './rotation'
 import { ViewCube } from './ViewCube'
 import { MarkingRing, recentCommand, rememberCommand, type MarkingItem } from '../ui/MarkingMenu'
 import { sameRect, type MenuRect } from '../ui/ContextMenu'
@@ -475,6 +476,7 @@ export function Viewport() {
         const base = gizmoBase.current
         if (!move || !base) return
         const local = transformPoint(base.inverse, pose.position)
+        const rotation = moveAngles(multiplyMatrices(base.inverse, pose.matrix))
         store.beginTransient()
         store.updateFeature(
           move.id,
@@ -484,11 +486,7 @@ export function Viewport() {
               round(base.offset[1] + local[1] - base.anchor[1]),
               round(base.offset[2] + local[2] - base.anchor[2]),
             ],
-            rotation: [
-              tidy(pose.rotationXyz[0]),
-              tidy(pose.rotationXyz[1]),
-              tidy(pose.rotationXyz[2]),
-            ],
+            rotation: [tidy(rotation[0]), tidy(rotation[1]), tidy(rotation[2])],
           } as Partial<Feature>,
           { transient: true },
         )
@@ -658,10 +656,12 @@ export function Viewport() {
             inverse: invertRigidMatrix(instance.matrix),
           }
         }
-        engine.setGizmo(
-          { position: transformPoint(instance.matrix, centre), rotationXyz: move.rotation },
-          gizmoMode,
-        )
+        const position = transformPoint(instance.matrix, centre)
+        const matrix = multiplyMatrices(instance.matrix, moveRotation(move.rotation))
+        matrix[12] = position[0]
+        matrix[13] = position[1]
+        matrix[14] = position[2]
+        engine.setGizmo({ position, matrix }, gizmoMode)
         return
       }
     }
