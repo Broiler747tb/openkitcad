@@ -1,10 +1,12 @@
 import { chromium } from 'playwright'
-import { copyFileSync, statSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { root, output, browserOptions } from './runtime.mjs'
 
-copyFileSync(resolve(output, 'printer-home-trace.png'), resolve(root, 'docs/images/printer.png'))
+mkdirSync(output, { recursive: true })
+const render = resolve(output, 'printer-home-trace.png')
+if (existsSync(render)) copyFileSync(render, resolve(root, 'docs/images/printer.png'))
 const browser = await chromium.launch(browserOptions)
 try {
   const page = await browser.newPage({

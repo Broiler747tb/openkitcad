@@ -28,6 +28,10 @@ node scripts/showcase/cover.mjs
 node scripts/showcase/pack-viewer.mjs
 ```
 
+The cover can also be rebuilt without the optional renderer, using the checked-in
+printer image: `node scripts/showcase/cover.mjs`. To refresh the README's actual
+editor screenshots in both themes, run `node scripts/showcase/screenshots.mjs`.
+
 The standalone HTML viewer works offline. Drag to rotate, scroll to zoom;
 the buttons jump to the toolhead and bed. `CHROMIUM_EXECUTABLE_PATH` can select
 an existing Chromium installation. `SHOWCASE_DEPENDENCIES` can point to a
