@@ -30,6 +30,7 @@ import type { Vec2 } from '../core/math'
 export type PartCategory =
   | 'sbc'
   | 'mcu'
+  | 'proto'
   | 'connector'
   | 'display'
   | 'sensor'
@@ -123,6 +124,7 @@ export interface PinHeader {
 
 /** A raised block drawn on a generated board so it reads as the real thing. */
 export interface Bump {
+  shape?: 'box' | 'cylinder'
   x: number
   y: number
   w: number
@@ -148,14 +150,31 @@ export type PartGeometry =
         | { shape: 'poly'; points: Vec2[] }
       thickness: number
       bumps?: Bump[]
+      bores?: Array<{ x: number; y: number; z: number; diameter: number; depth: number }>
+      slots?: Array<{
+        axis: 'x' | 'z'
+        x: number
+        y: number
+        z: number
+        w: number
+        h: number
+        depth: number
+      }>
     }
   | {
       kind: 'extrusion'
-      /** Slot profile, e.g. 20 for 2020. */
       size: number
+      depth?: number
       length: number
       /** Number of slots; 4 for standard, 3 for corner profiles. */
       slots?: number
+    }
+  | {
+      kind: 'rod'
+      diameter: number
+      length: number
+      spec?: string
+      pitch?: number
     }
   | {
       kind: 'screw'
@@ -436,6 +455,8 @@ export type LookComponent =
     }
 
 export interface PartLook {
+  cableDiameter?: number
+  teeth?: number
   colour?: string
   finish?: Finish
   style?: string
@@ -489,6 +510,7 @@ export const CONFIDENCE_LABEL: Record<CataloguePart['confidence'], string> = {
 export const CATEGORY_COLOUR: Record<PartCategory, string> = {
   sbc: '#1f6f4a',
   mcu: '#1c7a6b',
+  proto: '#4a6b2f',
   connector: '#8b9096',
   display: '#20262c',
   sensor: '#2b5f86',
@@ -503,6 +525,7 @@ export const CATEGORY_COLOUR: Record<PartCategory, string> = {
 export const CATEGORY_LABEL: Record<PartCategory, string> = {
   sbc: 'Single-board computers',
   mcu: 'Microcontroller boards',
+  proto: 'Breadboards & prototyping',
   connector: 'Ports & connectors',
   display: 'Screens & displays',
   sensor: 'Sensors & modules',
@@ -518,6 +541,7 @@ export const CATEGORY_LABEL: Record<PartCategory, string> = {
 export const CATEGORY_BLURB: Record<PartCategory, string> = {
   sbc: 'Runs a full operating system. Raspberry Pi and friends.',
   mcu: 'Runs one program. Arduino, Pico, ESP32.',
+  proto: 'Solderless boards and plain sheet to wire a circuit up on before you commit.',
   connector: 'Sockets and plugs, with the panel cutout each one needs.',
   display: 'Screens you can mount in a panel.',
   sensor: 'Things that measure the world.',
@@ -542,7 +566,9 @@ export function partFootprint(part: CataloguePart): { w: number; h: number; z: n
             z: g.thickness,
           }
     case 'extrusion':
-      return { w: g.length, h: g.size, z: g.size }
+      return { w: g.length, h: g.depth ?? g.size, z: g.size }
+    case 'rod':
+      return { w: g.diameter, h: g.diameter, z: g.length }
     case 'screw':
       return { w: g.headDiameter, h: g.headDiameter, z: g.length + g.headHeight }
     case 'insert':

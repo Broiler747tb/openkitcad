@@ -1,0 +1,36 @@
+{
+  "id": "motion-smooth-rod-8mm",
+  "name": "Smooth Rod 8 mm",
+  "category": "motion",
+  "popularity": 80,
+  "family": "smooth-rod",
+  "variant": "8 mm diameter, 300 mm",
+  "summary": "8 mm hardened linear shaft, 300 mm long",
+  "description": "A straight 8 mm guide rod, 300 mm long, with lightly chamfered ends.",
+  "confidence": "datasheet",
+  "source": "8 mm is the standard nominal outside diameter for LM8UU linear bearing shafting and is confirmed by the bore sizes of the LM8UU and LM8LUU bearings listed on their datasheets; the 300 mm length is a common retail cut length and is set as a modelling default rather than a fixed product dimension.",
+  "look": {
+    "finish": "metal"
+  },
+  "geometry": {
+    "kind": "rod",
+    "diameter": 8,
+    "length": 300,
+    "spec": "hardened linear shaft 8 mm"
+  },
+  "links": [
+    {
+      "label": "Linear bearing (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Linear_bearing"
+    }
+  ],
+  "tags": [
+    "rod",
+    "smooth rod",
+    "linear shaft",
+    "8mm",
+    "lm8uu",
+    "motion",
+    "shaft"
+  ]
+}

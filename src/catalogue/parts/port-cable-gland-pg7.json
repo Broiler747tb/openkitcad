@@ -1,0 +1,65 @@
+{
+  "id": "port-cable-gland-pg7",
+  "name": "PG7 cable gland",
+  "category": "connector",
+  "popularity": 61,
+  "family": "cable-gland",
+  "variant": "PG7",
+  "summary": "Nylon PG7 gland for 3 to 6.5 mm cable: 12.5 mm thread, 15 mm across the hex, 21 mm long overall.",
+  "description": "A PG7 cable gland with its barrel and clamping nuts. Use the panel cutout from the part details; cable range depends on the gland.",
+  "confidence": "approximate",
+  "source": "Thread size from the PG standard as published by DIFVAN's PG chart (PG7 = 12.5 mm thread OD, 3.0 to 6.5 mm cable range, panel hole 12.7 mm, standard DIN 40430) and Wikipedia's Panzergewinde table (12.5 mm, 20 TPI); this entry uses the 12.5 mm nominal thread diameter as the cutout. Body figures from Beisit's nylon PG gland table, row PG7 / 3-6.5: overall length H 21 mm, thread length GL 8 mm, wrench size 15 mm, which is the hex across flats used as the body width here; Bulk-Fittings' PG chart independently gives PG7 a 12.5 mm clearance hole, an 8 mm thread and a 15 mm hex. Approximate because the 21 mm length is split into 8 mm through and behind the panel against 13 mm proud of it (21 minus the thread) rather than published that way, because the dome, seal and locknut are simplified, and because PG threads were withdrawn in 2003 in favour of EN 50262, so glands from different makers differ by a millimetre or two. DIFVAN's slightly larger 12.7 mm panel hole is worth knowing about if the gland is a tight fit. Check the hole against the gland you actually buy. The width includes the hex corners, not just its wrench size. The model has an open cable bore; the bore uses the variant’s maximum cable size.",
+  "look": {
+    "style": "gland",
+    "cableDiameter": 6.5,
+    "finish": "plastic",
+    "colour": "#252c32"
+  },
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 17.3205,
+    "bodyHeight": 15,
+    "bodyDepth": 8,
+    "protrusion": 13,
+    "cutout": {
+      "shape": "circle",
+      "d": 12.5
+    }
+  },
+  "connectors": [
+    {
+      "id": "opening",
+      "label": "Panel hole for the thread",
+      "side": "+y",
+      "shape": "circle",
+      "x": 8.66025,
+      "y": 8,
+      "z": 7.5,
+      "width": 12.5,
+      "height": 12.5,
+      "diameter": 12.5,
+      "protrusion": 13
+    }
+  ],
+  "links": [
+    {
+      "label": "Beisit nylon PG gland dimension table",
+      "url": "https://www.beisitelectric.com/nylon-cable-glands-pg-type-product/"
+    },
+    {
+      "label": "PG cable gland chart (thread, hole, cable range)",
+      "url": "https://www.difvan.com/pg-cable-gland-dimensions-complete-size-chart-metric-conversion-guide/"
+    }
+  ],
+  "tags": [
+    "cable gland",
+    "gland",
+    "pg7",
+    "pg",
+    "panel",
+    "cable",
+    "strain relief",
+    "nylon",
+    "waterproof"
+  ]
+}

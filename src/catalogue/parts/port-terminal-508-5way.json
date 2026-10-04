@@ -1,0 +1,108 @@
+{
+  "id": "port-terminal-508-5way",
+  "name": "Screw terminal, 5 way, 5.08 mm (Phoenix MKDS 1,5/5-5,08)",
+  "category": "connector",
+  "popularity": 59,
+  "family": "terminal-block",
+  "variant": "5 way, 5.08 mm",
+  "manufacturer": "Phoenix Contact",
+  "summary": "Green 5-way screw terminal for a board. Wires go in from the front; the block runs 25.4 mm along the edge and stands 13.8 mm tall.",
+  "description": "Five screw terminals on a 5.08 mm pitch. The body and wire openings are included.",
+  "confidence": "datasheet",
+  "source": "Phoenix Contact catalog extract for MKDS 1,5/ 5-5,08 (order no. 1715750): Dimension a = 20.32 mm and Width w = 25.4 mm for five positions, so 25.4 mm wide (the drawing gives the body as a + 5.08), 9.8 mm deep and 13.8 mm tall on the board with 17.3 mm over the pins, pins 3.5 mm below, the first pin 2.54 mm in from the end on 5.08 mm pitch, 0.9 x 0.9 mm pins in 1.3 mm holes, M3 screws at 0.5 to 0.6 Nm, wires up to 2.5 mm2 solid or 1.5 mm2 stranded stripped 7 mm, 17.5 A nominal with cULus at 10 A and 300 V. The 26.44 x 6 mm slot in front and the opening for each way are our suggestion for bringing wires through a wall, not Phoenix figures. KF301 and DG128 lookalikes share the pitch but not always the height.",
+  "look": {
+    "style": "terminal",
+    "accent": "#2e8b57",
+    "pins": 5
+  },
+  "geometry": {
+    "kind": "connector",
+    "bodyWidth": 25.4,
+    "bodyHeight": 13.8,
+    "bodyDepth": 9.8,
+    "protrusion": 0,
+    "cutout": {
+      "shape": "rect",
+      "w": 26.44,
+      "h": 6,
+      "cornerRadius": 0.5
+    }
+  },
+  "connectors": [
+    {
+      "id": "opening-1",
+      "label": "Wire entry",
+      "side": "+y",
+      "shape": "rect",
+      "x": 2.54,
+      "y": 9.8,
+      "z": 3,
+      "width": 6.12,
+      "height": 6,
+      "protrusion": 0
+    },
+    {
+      "id": "opening-2",
+      "label": "Wire entry",
+      "side": "+y",
+      "shape": "rect",
+      "x": 7.62,
+      "y": 9.8,
+      "z": 3,
+      "width": 6.12,
+      "height": 6,
+      "protrusion": 0
+    },
+    {
+      "id": "opening-3",
+      "label": "Wire entry",
+      "side": "+y",
+      "shape": "rect",
+      "x": 12.7,
+      "y": 9.8,
+      "z": 3,
+      "width": 6.12,
+      "height": 6,
+      "protrusion": 0
+    },
+    {
+      "id": "opening-4",
+      "label": "Wire entry",
+      "side": "+y",
+      "shape": "rect",
+      "x": 17.78,
+      "y": 9.8,
+      "z": 3,
+      "width": 6.12,
+      "height": 6,
+      "protrusion": 0
+    },
+    {
+      "id": "opening-5",
+      "label": "Wire entry",
+      "side": "+y",
+      "shape": "rect",
+      "x": 22.86,
+      "y": 9.8,
+      "z": 3,
+      "width": 6.12,
+      "height": 6,
+      "protrusion": 0
+    }
+  ],
+  "electrical": {
+    "note": "17.5 A at 250 V to IEC; UL lists 10 A at 300 V. KF301 and DG128 lookalikes are usually rated nearer 10 A. This is a contact rating, not current drawn from the project supply."
+  },
+  "tags": [
+    "terminal",
+    "screw",
+    "block",
+    "phoenix",
+    "mkds",
+    "5.08",
+    "wire",
+    "connector",
+    "5 way",
+    "kf301"
+  ]
+}

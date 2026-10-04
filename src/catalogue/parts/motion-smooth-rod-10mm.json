@@ -1,0 +1,36 @@
+{
+  "id": "motion-smooth-rod-10mm",
+  "name": "Smooth Rod 10 mm",
+  "category": "motion",
+  "popularity": 72,
+  "family": "smooth-rod",
+  "variant": "10 mm diameter, 300 mm",
+  "summary": "10 mm hardened linear shaft, 300 mm long",
+  "description": "A straight 10 mm guide rod, 300 mm long, with lightly chamfered ends.",
+  "confidence": "datasheet",
+  "source": "10 mm is the standard nominal outside diameter for LM10UU linear bearing shafting and is confirmed by the bore sizes of the LM10UU and LM10LUU bearings listed on their datasheets; the 300 mm length is a common retail cut length and is set as a modelling default rather than a fixed product dimension.",
+  "look": {
+    "finish": "metal"
+  },
+  "geometry": {
+    "kind": "rod",
+    "diameter": 10,
+    "length": 300,
+    "spec": "hardened linear shaft 10 mm"
+  },
+  "links": [
+    {
+      "label": "Linear bearing (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Linear_bearing"
+    }
+  ],
+  "tags": [
+    "rod",
+    "smooth rod",
+    "linear shaft",
+    "10mm",
+    "lm10uu",
+    "motion",
+    "shaft"
+  ]
+}

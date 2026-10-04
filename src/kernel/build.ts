@@ -1,3 +1,5 @@
+import { extrusionSection } from '../catalogue/extrusion'
+import { pulleyDimensions } from '../catalogue/pulley'
 import {
   cast,
   downcast,
@@ -268,30 +270,66 @@ export function buildPartLocal(part: CataloguePart, overrides?: Record<string, n
         )
       }
       for (const bump of g.bumps ?? []) {
-        const box = drawRectangle(bump.w, bump.h)
-          .translate(bump.x + bump.w / 2, bump.y + bump.h / 2)
-          .sketchOnPlane('XY', bump.z)
-          .extrude(bump.height)
+        const box =
+          bump.shape === 'cylinder'
+            ? makeCylinder(
+                bump.w / 2,
+                bump.height,
+                [bump.x + bump.w / 2, bump.y + bump.h / 2, bump.z],
+                [0, 0, 1],
+              )
+            : drawRectangle(bump.w, bump.h)
+                .translate(bump.x + bump.w / 2, bump.y + bump.h / 2)
+                .sketchOnPlane('XY', bump.z)
+                .extrude(bump.height)
         solid = solid.fuse(box)
+      }
+      for (const bore of g.bores ?? [])
+        solid = solid.cut(
+          makeCylinder(
+            bore.diameter / 2,
+            bore.depth + 0.02,
+            [bore.x, bore.y, bore.z - 0.01],
+            [0, 0, 1],
+          ),
+        )
+      for (const slot of g.slots ?? []) {
+        const plane = new Plane(
+          [slot.x, slot.y, slot.z],
+          slot.axis === 'x' ? [0, 1, 0] : [1, 0, 0],
+          slot.axis === 'x' ? [1, 0, 0] : [0, 0, 1],
+        )
+        const radius = Math.min(slot.w, slot.h) / 2
+        const span = Math.abs(slot.w - slot.h) / 2
+        const dx = slot.w > slot.h ? span : 0
+        const dy = slot.h > slot.w ? span : 0
+        const capsule =
+          span === 0
+            ? drawCircle(radius)
+            : drawRectangle(
+                slot.w > slot.h ? slot.w - slot.h : slot.w,
+                slot.h > slot.w ? slot.h - slot.w : slot.h,
+              )
+                .fuse(drawCircle(radius).translate(dx, dy))
+                .fuse(drawCircle(radius).translate(-dx, -dy))
+        solid = solid.cut(capsule.sketchOnPlane(plane).extrude(slot.depth))
       }
       return solid
     }
 
     case 'extrusion': {
-      const s = g.size
-      const length = overrides?.length ?? g.length
-      const slot = 6
-      const inner = 11
-      let profile: Drawing = drawRectangle(s, s).translate(s / 2, s / 2)
-      for (let i = 0; i < (g.slots ?? 4); i++) {
-        const mouth = drawRectangle(slot, 6).translate(s / 2, s - 3)
-        const throat = drawRectangle(inner, 5).translate(s / 2, s - 8.5)
-        let cutter = mouth.fuse(throat)
-        cutter = cutter.rotate(i * 90, [s / 2, s / 2])
-        profile = profile.cut(cutter)
-      }
-      profile = profile.cut(drawCircle(2.1).translate(s / 2, s / 2))
-      return profile.sketchOnPlane('YZ').extrude(length)
+      const { points, bores } = extrusionSection(g)
+      const pen = draw(points[0])
+      for (const point of points.slice(1)) pen.lineTo(point)
+      let profile = pen.close()
+      for (const bore of bores)
+        profile = profile.cut(drawCircle(bore.radius).translate(bore.x, bore.y))
+      return profile.sketchOnPlane('YZ').extrude(overrides?.length ?? g.length)
+    }
+
+    case 'rod': {
+      const r = g.diameter / 2
+      return makeCylinder(r, g.length, [r, r, 0], [0, 0, 1])
     }
 
     case 'screw': {
@@ -356,6 +394,16 @@ export function buildPartLocal(part: CataloguePart, overrides?: Record<string, n
 
     case 'bearing': {
       const r = g.outerDiameter / 2
+      if (part.look?.style === 'pulley') {
+        const { flange, belt, radius, hubStart } = pulleyDimensions(part.look.teeth ?? 20, g.width)
+        const cylinder = (radius: number, height: number, z: number) =>
+          makeCylinder(radius, height, [r, r, z], [0, 0, 1])
+        return cylinder(r, flange, 0)
+          .fuse(cylinder(radius, belt, flange))
+          .fuse(cylinder(r, flange, flange + belt))
+          .fuse(cylinder(Math.min(4.5, radius), g.width - hubStart, hubStart))
+          .cut(cylinder(g.innerDiameter / 2, g.width + 2, -1))
+      }
       return makeCylinder(r, g.width, [r, r, 0], [0, 0, 1]).cut(
         makeCylinder(g.innerDiameter / 2, g.width + 2, [r, r, -1], [0, 0, 1]),
       )
@@ -363,6 +411,31 @@ export function buildPartLocal(part: CataloguePart, overrides?: Record<string, n
 
     case 'connector': {
       const { bodyWidth: w, bodyHeight: h, bodyDepth: d, protrusion } = g
+      if (
+        g.cutout.shape === 'circle' &&
+        ['gland', 'fuse-holder', 'pushbutton'].includes(part.look?.style ?? '')
+      ) {
+        const centre: [number, number, number] = [w / 2, 0, h / 2]
+        let round: any = makeCylinder(g.cutout.d / 2, d, centre, [0, 1, 0]).fuse(
+          makeCylinder(Math.min(w, h) / 2, protrusion, [w / 2, d, h / 2], [0, 1, 0]),
+        )
+        if (part.look?.style === 'gland') {
+          const hex = drawPolysides(w / 2, 6)
+            .sketchOnPlane(new Plane([w / 2, d, h / 2], [1, 0, 0], [0, 1, 0]))
+            .extrude(3)
+          round = round
+            .fuse(hex)
+            .cut(
+              makeCylinder(
+                (part.look.cableDiameter ?? 6) / 2,
+                d + protrusion + 2,
+                [w / 2, -1, h / 2],
+                [0, 1, 0],
+              ),
+            )
+        }
+        return round
+      }
       let solid: any = makeBox([0, 0, 0], [w, d, h])
       if (protrusion > 0) {
         if (g.cutout.shape === 'rect') {

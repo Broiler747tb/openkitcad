@@ -1,0 +1,160 @@
+{
+  "id": "motion-lead-screw-nut-t8",
+  "name": "T8 flanged lead screw nut",
+  "category": "motion",
+  "popularity": 52,
+  "variant": "T8 brass, 8 mm",
+  "summary": "Brass nut for a T8 screw: 8 mm bore, 22 x 12 mm flange with two M3 holes 16 mm apart, 13.5 mm tall.",
+  "description": "A brass T8 nut with a flattened flange and two mounting holes. The central bore is open; the internal thread is simplified. Clone dimensions vary.",
+  "confidence": "approximate",
+  "source": "Clone-standard figures, not a branded drawing: flange 22 mm across the curves with two flats 12 mm flat to flat (abra-electronics' T8 brass nut listing gives 'bottom diameter 22 mm curved edge - 12 mm flat side to flat side', and 'double flat side' brass flange nuts are listed the same way), two mounting holes on a 16 mm spacing (hta3d gives a 16 mm diameter hole spacing, uxcell 16 mm centre pitch, Zyltech 16 mm), body 10.2 mm diameter x 10 mm long from a 3.5 mm thick flange with an 8 mm bore (hta3d's nominal dimensions). Overall height therefore comes to 13.5 mm here; listings quote 11, 13.5 and 15 mm depending on the maker, so the height and the flange thickness are approximate - check your nut with calipers before cutting a recess. Hole diameter 3.5 mm is M3 clearance sized for the screws these flanges are sold with; the flange shape is drawn as a 14-sided approximation of the curved edges. The cylindrical body and the 8 mm bore are modelled as real solid geometry; the internal thread is represented by its nominal bore.",
+  "look": {
+    "finish": "brass",
+    "components": [
+      {
+        "kind": "cylinder",
+        "x": 11,
+        "y": 6,
+        "z": 3.5,
+        "d": 10.2,
+        "height": 10,
+        "finish": "brass"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "poly",
+      "points": [
+        [
+          1.78,
+          0
+        ],
+        [
+          20.22,
+          0
+        ],
+        [
+          21.2,
+          1.88
+        ],
+        [
+          21.8,
+          3.9
+        ],
+        [
+          22,
+          6
+        ],
+        [
+          21.8,
+          8.1
+        ],
+        [
+          21.2,
+          10.12
+        ],
+        [
+          20.22,
+          12
+        ],
+        [
+          1.78,
+          12
+        ],
+        [
+          0.8,
+          10.12
+        ],
+        [
+          0.2,
+          8.1
+        ],
+        [
+          0,
+          6
+        ],
+        [
+          0.2,
+          3.9
+        ],
+        [
+          0.8,
+          1.88
+        ]
+      ]
+    },
+    "thickness": 3.5,
+    "bumps": [
+      {
+        "x": 5.9,
+        "y": 0.9,
+        "z": 3.5,
+        "w": 10.2,
+        "h": 10.2,
+        "height": 10,
+        "colour": "#c9a24a",
+        "label": "Nut body",
+        "shape": "cylinder"
+      }
+    ],
+    "bores": [
+      {
+        "diameter": 8,
+        "y": 6,
+        "z": 0,
+        "depth": 13.5,
+        "x": 11
+      }
+    ]
+  },
+  "mountingHoles": [
+    {
+      "id": "fh1",
+      "x": 3,
+      "y": 6,
+      "diameter": 3.5,
+      "screw": "M3",
+      "label": "Flange hole"
+    },
+    {
+      "id": "fh2",
+      "x": 19,
+      "y": 6,
+      "diameter": 3.5,
+      "screw": "M3",
+      "label": "Flange hole"
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-screw",
+      "label": "Lead screw passes through",
+      "x": 7,
+      "y": 2,
+      "w": 8,
+      "h": 8,
+      "z": -50,
+      "height": 100
+    }
+  ],
+  "links": [
+    {
+      "label": "Lead screws (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Lead_screw"
+    }
+  ],
+  "tags": [
+    "t8",
+    "lead screw nut",
+    "nut",
+    "brass",
+    "flange",
+    "trapezoidal",
+    "8mm",
+    "motion",
+    "cnc",
+    "3d printer"
+  ]
+}

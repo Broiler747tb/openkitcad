@@ -1,0 +1,161 @@
+{
+  "id": "driver-tb6612fng",
+  "name": "TB6612FNG dual motor driver breakout (SparkFun)",
+  "category": "motor",
+  "popularity": 71,
+  "family": "dc-motor-driver",
+  "variant": "TB6612FNG dual 1.2 A",
+  "manufacturer": "SparkFun",
+  "summary": "Tiny red 20 mm board with two H-bridges for two small brushed motors at 1.2 A each, no heat sink needed.",
+  "description": "Dual motor driver carrier with two pin rows. The board outline, pins and chip are included.",
+  "confidence": "datasheet",
+  "source": "SparkFun's Eagle board file for ROB-14450: 0.8 x 0.8 inch (20.32 x 20.32 mm) outline, two eight-pin rows on the 0.1 inch grid at x 2.54 and x 17.78 from y 1.27 to 19.05, and the SSOP-24 chip centred at 10.16, 8.89, with no mounting holes. Pin names read off the silkscreen photo of the board's back: GND, B01, B02, A02, A01, GND, VCC, VM down one side and GND, PWMB, BIN2, BIN1, STBY, AIN1, AIN2, PWMA down the other, both bottom to top. The two small surface-mount parts are placed to suggest the real board rather than read from the file.",
+  "look": {
+    "colour": "#b3202a",
+    "components": [
+      {
+        "kind": "header",
+        "x": 2.54,
+        "y": 1.27,
+        "rows": 8,
+        "cols": 1,
+        "height": 8.5,
+        "flip": true,
+        "label": "Motor and power pins"
+      },
+      {
+        "kind": "header",
+        "x": 17.78,
+        "y": 1.27,
+        "rows": 8,
+        "cols": 1,
+        "height": 8.5,
+        "flip": true,
+        "label": "Control pins"
+      },
+      {
+        "kind": "chip",
+        "x": 6.36,
+        "y": 6.39,
+        "w": 7.6,
+        "h": 5,
+        "height": 0.9,
+        "legs": "dual",
+        "label": "TB6612FNG"
+      },
+      {
+        "kind": "box",
+        "x": 5,
+        "y": 16.5,
+        "w": 2,
+        "h": 1.2,
+        "height": 0.8,
+        "finish": "chip",
+        "colour": "#c9c0a8",
+        "label": "Decoupling capacitor"
+      },
+      {
+        "kind": "box",
+        "x": 13.4,
+        "y": 16.5,
+        "w": 2.5,
+        "h": 1.3,
+        "height": 0.7,
+        "finish": "chip",
+        "colour": "#1b1d20",
+        "label": "SMD resistor"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 20.32,
+      "h": 20.32
+    },
+    "thickness": 1.6
+  },
+  "pinHeaders": [
+    {
+      "id": "jp1",
+      "label": "Motor and power pins",
+      "x": 2.54,
+      "y": 1.27,
+      "rows": 8,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "GND",
+        "B01",
+        "B02",
+        "A02",
+        "A01",
+        "GND",
+        "VCC",
+        "VM"
+      ]
+    },
+    {
+      "id": "jp2",
+      "label": "Control pins",
+      "x": 17.78,
+      "y": 1.27,
+      "rows": 8,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "GND",
+        "PWMB",
+        "BIN2",
+        "BIN1",
+        "STBY",
+        "AIN1",
+        "AIN2",
+        "PWMA"
+      ]
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-pins",
+      "label": "Header pins underneath",
+      "x": 0,
+      "y": 0,
+      "w": 20.32,
+      "h": 20.32,
+      "z": -8.5,
+      "height": 8.5,
+      "header": true
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      2.5,
+      13.5
+    ],
+    "currentPeak": 2.4,
+    "note": "Motor supply 2.5 to 13.5 V on VM, logic 2.7 to 5.5 V on VCC. Each channel takes 1.2 A continuous and 3.2 A peak for a moment, so budget up to 2.4 A with both motors running. STBY must be pulled high or the outputs stay off."
+  },
+  "links": [
+    {
+      "label": "SparkFun hookup guide",
+      "url": "https://learn.sparkfun.com/tutorials/tb6612fng-hookup-guide"
+    },
+    {
+      "label": "SparkFun Eagle files on GitHub",
+      "url": "https://github.com/sparkfun/Motor_Driver-Dual_TB6612FNG"
+    }
+  ],
+  "tags": [
+    "tb6612fng",
+    "tb6612",
+    "motor driver",
+    "dual h-bridge",
+    "dc motor",
+    "h-bridge",
+    "sparkfun",
+    "brushed",
+    "robot"
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "id": "proto-perfboard",
+  "name": "Universal perfboard sheet, 9 x 15 cm",
+  "category": "proto",
+  "popularity": 66,
+  "family": "perfboard",
+  "variant": "9 x 15 cm, 1.6 mm",
+  "summary": "Plain 90 x 150 x 1.6 mm prototyping sheet: a 2.54 mm grid of holes, each ringed by its own isolated solder pad.",
+  "description": "A generic 90 × 150 mm perfboard sheet with isolated copper pads. Hole placement is schematic; the solid export keeps the sheet envelope.",
+  "confidence": "approximate",
+  "source": "Checked by web search plus the Wikipedia perfboard article: sheets sold as 9 x 15 cm perfboard are listed at exactly 90 x 150 mm with a 2.54 mm (0.1 in) hole grid, and Wikipedia gives 2.54 mm as the standard perfboard grid with holes ringed by round or square copper pads. Retailer listings for this size quote a 1.00 mm drill, so 1.0 mm is a typical hole, not a pad - listings I found do not publish one pad diameter, and pad shape, single- or double-sided copper, laminate (FR-2 phenolic or FR-4) and hole count all vary by maker. Thickness is not part of the 9 x 15 cm standard either: a listing for this exact sheet gives 1.5 mm, while this entry uses the 1.6 mm named in its variant, so check your own sheet with calipers before cutting a recess. The preview shows holes and isolated copper pads; the exported solid is a plain 90 x 150 x 1.6 mm sheet with the 90 mm side along X. The preview adds a schematic 2.54 mm contact layout, not a manufacturer-specific drill pattern. The export is the body envelope.",
+  "look": {
+    "finish": "pcb"
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 90,
+      "h": 150
+    },
+    "thickness": 1.6
+  },
+  "links": [
+    {
+      "label": "Perfboard explained (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Perfboard"
+    }
+  ],
+  "tags": [
+    "perfboard",
+    "prototyping",
+    "perforated",
+    "universal",
+    "90x150",
+    "2.54",
+    "solder",
+    "fr4",
+    "proto"
+  ]
+}

@@ -25,6 +25,7 @@ const REPO = 'https://github.com/Broiler747tb/openkitcad'
 const CATEGORIES: PartCategory[] = [
   'sbc',
   'mcu',
+  'proto',
   'connector',
   'display',
   'sensor',

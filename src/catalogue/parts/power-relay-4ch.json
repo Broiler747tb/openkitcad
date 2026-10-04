@@ -1,0 +1,358 @@
+{
+  "id": "power-relay-4ch",
+  "name": "Relay module, 4 channel (ELEGOO)",
+  "category": "power",
+  "popularity": 72,
+  "variant": "4 channel",
+  "manufacturer": "ELEGOO",
+  "summary": "Four relays on one 72 x 51.7 mm board, each switching 10 A at 250 V AC from a logic pin, with screw terminals along one edge.",
+  "description": "Four relays, their screw terminals and control header on one board. Component placement is approximate; the model is for enclosure planning.",
+  "confidence": "approximate",
+  "source": "ELEGOO's 4-channel relay wiki: PCB 72 x 51.7 mm, EL817 optocouplers, 5 V relays rated 10 A at 250 V AC and 10 A at 30 V DC, control pins VCC, JD-VCC, GND and IN1 to IN4, NC, COM and NO per channel, and jumper caps for trigger level and JD-VCC isolation. Only the board size and the parts list come from the wiki: the relay, terminal, optocoupler, LED and jumper positions inside the outline are indicative, no mounting holes are published for this board so none are drawn, and other sellers ship 73 x 52 and 75 x 50 mm versions with different layouts. Measure yours before cutting a panel.",
+  "look": {
+    "colour": "#1d4f91",
+    "components": [
+      {
+        "kind": "box",
+        "x": 1.75,
+        "y": 24,
+        "w": 15.5,
+        "h": 19,
+        "height": 15.3,
+        "finish": "plastic",
+        "colour": "#2f62b8",
+        "radius": 0.4,
+        "label": "Relay, channel 1"
+      },
+      {
+        "kind": "box",
+        "x": 18.75,
+        "y": 24,
+        "w": 15.5,
+        "h": 19,
+        "height": 15.3,
+        "finish": "plastic",
+        "colour": "#2f62b8",
+        "radius": 0.4,
+        "label": "Relay, channel 2"
+      },
+      {
+        "kind": "box",
+        "x": 35.75,
+        "y": 24,
+        "w": 15.5,
+        "h": 19,
+        "height": 15.3,
+        "finish": "plastic",
+        "colour": "#2f62b8",
+        "radius": 0.4,
+        "label": "Relay, channel 3"
+      },
+      {
+        "kind": "box",
+        "x": 52.75,
+        "y": 24,
+        "w": 15.5,
+        "h": 19,
+        "height": 15.3,
+        "finish": "plastic",
+        "colour": "#2f62b8",
+        "radius": 0.4,
+        "label": "Relay, channel 4"
+      },
+      {
+        "kind": "terminal",
+        "x": 9.5,
+        "y": 51.7,
+        "pins": 3,
+        "pitch": 5.08,
+        "facing": "+y",
+        "label": "NC, COM, NO, channel 1"
+      },
+      {
+        "kind": "terminal",
+        "x": 26.5,
+        "y": 51.7,
+        "pins": 3,
+        "pitch": 5.08,
+        "facing": "+y",
+        "label": "NC, COM, NO, channel 2"
+      },
+      {
+        "kind": "terminal",
+        "x": 43.5,
+        "y": 51.7,
+        "pins": 3,
+        "pitch": 5.08,
+        "facing": "+y",
+        "label": "NC, COM, NO, channel 3"
+      },
+      {
+        "kind": "terminal",
+        "x": 60.5,
+        "y": 51.7,
+        "pins": 3,
+        "pitch": 5.08,
+        "facing": "+y",
+        "label": "NC, COM, NO, channel 4"
+      },
+      {
+        "kind": "header",
+        "x": 6,
+        "y": 4,
+        "rows": 1,
+        "cols": 7,
+        "height": 8.5,
+        "label": "VCC, JD-VCC, GND, IN1-IN4"
+      },
+      {
+        "kind": "chip",
+        "x": 6.25,
+        "y": 16,
+        "w": 6.5,
+        "h": 7,
+        "height": 2.3,
+        "label": "EL817 optocoupler"
+      },
+      {
+        "kind": "chip",
+        "x": 23.25,
+        "y": 16,
+        "w": 6.5,
+        "h": 7,
+        "height": 2.3,
+        "label": "EL817 optocoupler"
+      },
+      {
+        "kind": "chip",
+        "x": 40.25,
+        "y": 16,
+        "w": 6.5,
+        "h": 7,
+        "height": 2.3,
+        "label": "EL817 optocoupler"
+      },
+      {
+        "kind": "chip",
+        "x": 57.25,
+        "y": 16,
+        "w": 6.5,
+        "h": 7,
+        "height": 2.3,
+        "label": "EL817 optocoupler"
+      },
+      {
+        "kind": "led",
+        "x": 9.5,
+        "y": 14,
+        "colour": "#e23b3b",
+        "size": 1.6,
+        "label": "Channel 1 LED"
+      },
+      {
+        "kind": "led",
+        "x": 26.5,
+        "y": 14,
+        "colour": "#e23b3b",
+        "size": 1.6,
+        "label": "Channel 2 LED"
+      },
+      {
+        "kind": "led",
+        "x": 43.5,
+        "y": 14,
+        "colour": "#e23b3b",
+        "size": 1.6,
+        "label": "Channel 3 LED"
+      },
+      {
+        "kind": "led",
+        "x": 60.5,
+        "y": 14,
+        "colour": "#e23b3b",
+        "size": 1.6,
+        "label": "Channel 4 LED"
+      },
+      {
+        "kind": "box",
+        "x": 5.3,
+        "y": 7.2,
+        "w": 2.4,
+        "h": 2.6,
+        "height": 3.5,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "label": "Trigger jumper, channel 1"
+      },
+      {
+        "kind": "box",
+        "x": 7.84,
+        "y": 7.2,
+        "w": 2.4,
+        "h": 2.6,
+        "height": 3.5,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "label": "Trigger jumper, channel 2"
+      },
+      {
+        "kind": "box",
+        "x": 10.38,
+        "y": 7.2,
+        "w": 2.4,
+        "h": 2.6,
+        "height": 3.5,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "label": "Trigger jumper, channel 3"
+      },
+      {
+        "kind": "box",
+        "x": 12.92,
+        "y": 7.2,
+        "w": 2.4,
+        "h": 2.6,
+        "height": 3.5,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "label": "Trigger jumper, channel 4"
+      },
+      {
+        "kind": "box",
+        "x": 18.3,
+        "y": 7.2,
+        "w": 2.4,
+        "h": 2.6,
+        "height": 3.5,
+        "finish": "plastic",
+        "colour": "#1b1d20",
+        "label": "JD-VCC jumper"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 72,
+      "h": 51.7
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 1.88,
+        "y": 44.1,
+        "w": 15.24,
+        "h": 7.6,
+        "z": 1.6,
+        "height": 10,
+        "colour": "#2c6fc9",
+        "label": "Channel 1 terminal"
+      },
+      {
+        "x": 18.88,
+        "y": 44.1,
+        "w": 15.24,
+        "h": 7.6,
+        "z": 1.6,
+        "height": 10,
+        "colour": "#2c6fc9",
+        "label": "Channel 2 terminal"
+      },
+      {
+        "x": 35.88,
+        "y": 44.1,
+        "w": 15.24,
+        "h": 7.6,
+        "z": 1.6,
+        "height": 10,
+        "colour": "#2c6fc9",
+        "label": "Channel 3 terminal"
+      },
+      {
+        "x": 52.88,
+        "y": 44.1,
+        "w": 15.24,
+        "h": 7.6,
+        "z": 1.6,
+        "height": 10,
+        "colour": "#2c6fc9",
+        "label": "Channel 4 terminal"
+      },
+      {
+        "x": 1.75,
+        "y": 24,
+        "w": 15.5,
+        "h": 19,
+        "z": 1.6,
+        "height": 15.3,
+        "colour": "#2f62b8",
+        "label": "Relay, channel 1"
+      },
+      {
+        "x": 18.75,
+        "y": 24,
+        "w": 15.5,
+        "h": 19,
+        "z": 1.6,
+        "height": 15.3,
+        "colour": "#2f62b8",
+        "label": "Relay, channel 2"
+      },
+      {
+        "x": 35.75,
+        "y": 24,
+        "w": 15.5,
+        "h": 19,
+        "z": 1.6,
+        "height": 15.3,
+        "colour": "#2f62b8",
+        "label": "Relay, channel 3"
+      },
+      {
+        "x": 52.75,
+        "y": 24,
+        "w": 15.5,
+        "h": 19,
+        "z": 1.6,
+        "height": 15.3,
+        "colour": "#2f62b8",
+        "label": "Relay, channel 4"
+      }
+    ]
+  },
+  "pinHeaders": [
+    {
+      "id": "control",
+      "label": "VCC, JD-VCC, GND, IN1-IN4",
+      "x": 6,
+      "y": 4,
+      "rows": 1,
+      "cols": 7,
+      "pitch": 2.54
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      5
+    ],
+    "currentPeak": 0.5,
+    "note": "The board wants a regulated 5 V: a few hundred mA with all four coils and LEDs on. The 10 A at 250 V AC or 30 V DC is what each relay's contacts switch on the terminal side, not what the 5 V rail carries, and switching mains means keeping that edge clear of everything else."
+  },
+  "links": [
+    {
+      "label": "ELEGOO 4-channel relay wiki",
+      "url": "https://wiki.elegoo.com/oshw-parts-&-accessories/4-CHANNEL"
+    }
+  ],
+  "tags": [
+    "relay",
+    "relay module",
+    "4 channel",
+    "optocoupler",
+    "switch",
+    "mains",
+    "5v",
+    "arduino"
+  ]
+}

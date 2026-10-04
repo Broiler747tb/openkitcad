@@ -1,0 +1,411 @@
+{
+  "id": "driver-pca9685",
+  "name": "16-channel PWM servo driver (Adafruit PCA9685)",
+  "category": "motor",
+  "popularity": 75,
+  "manufacturer": "Adafruit",
+  "summary": "Sixteen 12-bit PWM outputs on one I2C address: a 62.2 x 25.4 mm board with four blocks of four servo plugs.",
+  "description": "A 16-channel PWM carrier, often used for servos. The model includes the header banks and power terminal.",
+  "confidence": "datasheet",
+  "source": "Adafruit's Eagle board file Adafruit PCA9685 rev C: outline 62.23 x 25.4 mm with 3.175 mm corner chamfers, four 2.5 mm mounting holes 3.175 mm in from the edges, four 12-pin servo blocks on the 2.54 mm grid with GND, 5V and PWM rows, a six-pin row (5V, VCC, SDA, SCL, OE, GND) on each end of the board, the 3.5 mm two-way V+ terminal centred on the top edge with pins at 31.115, 21.59, and the six address jumpers along the top right. Component heights are common package sizes rather than a height drawing; the two capacitors and the LED are placed indicatively.",
+  "look": {
+    "colour": "#1d1f22",
+    "components": [
+      {
+        "kind": "header",
+        "x": 6.985,
+        "y": 1.397,
+        "rows": 3,
+        "cols": 4,
+        "height": 8.5,
+        "label": "Servos 1-4"
+      },
+      {
+        "kind": "header",
+        "x": 19.685,
+        "y": 1.397,
+        "rows": 3,
+        "cols": 4,
+        "height": 8.5,
+        "label": "Servos 5-8"
+      },
+      {
+        "kind": "header",
+        "x": 34.925,
+        "y": 1.397,
+        "rows": 3,
+        "cols": 4,
+        "height": 8.5,
+        "label": "Servos 9-12"
+      },
+      {
+        "kind": "header",
+        "x": 47.625,
+        "y": 1.397,
+        "rows": 3,
+        "cols": 4,
+        "height": 8.5,
+        "label": "Servos 13-16"
+      },
+      {
+        "kind": "header",
+        "x": 1.905,
+        "y": 6.477,
+        "rows": 6,
+        "cols": 1,
+        "height": 8.5,
+        "label": "5V, VCC, SDA, SCL, OE, GND"
+      },
+      {
+        "kind": "header",
+        "x": 60.325,
+        "y": 6.477,
+        "rows": 6,
+        "cols": 1,
+        "height": 8.5,
+        "label": "5V, VCC, SDA, SCL, OE, GND"
+      },
+      {
+        "kind": "terminal",
+        "x": 31.115,
+        "y": 25.4,
+        "pins": 2,
+        "pitch": 3.5,
+        "facing": "+y",
+        "label": "V+ servo power terminal"
+      },
+      {
+        "kind": "chip",
+        "x": 26.265,
+        "y": 10.754,
+        "w": 9.7,
+        "h": 4.4,
+        "height": 1.1,
+        "legs": "dual",
+        "label": "PCA9685"
+      },
+      {
+        "kind": "capacitor",
+        "x": 20.5,
+        "y": 12,
+        "d": 3.5,
+        "height": 5,
+        "colour": "#1c2d5a",
+        "label": "Decoupling capacitor"
+      },
+      {
+        "kind": "capacitor",
+        "x": 41,
+        "y": 12,
+        "d": 3.5,
+        "height": 5,
+        "colour": "#1c2d5a",
+        "label": "Decoupling capacitor"
+      },
+      {
+        "kind": "box",
+        "x": 39.625,
+        "y": 21.812,
+        "w": 2.54,
+        "h": 2.54,
+        "height": 3,
+        "finish": "plastic",
+        "colour": "#f2f0ea",
+        "label": "Address jumper A0"
+      },
+      {
+        "kind": "box",
+        "x": 42.165,
+        "y": 21.812,
+        "w": 2.54,
+        "h": 2.54,
+        "height": 3,
+        "finish": "plastic",
+        "colour": "#f2f0ea",
+        "label": "Address jumper A1"
+      },
+      {
+        "kind": "box",
+        "x": 44.705,
+        "y": 21.812,
+        "w": 2.54,
+        "h": 2.54,
+        "height": 3,
+        "finish": "plastic",
+        "colour": "#f2f0ea",
+        "label": "Address jumper A2"
+      },
+      {
+        "kind": "box",
+        "x": 47.245,
+        "y": 21.812,
+        "w": 2.54,
+        "h": 2.54,
+        "height": 3,
+        "finish": "plastic",
+        "colour": "#f2f0ea",
+        "label": "Address jumper A3"
+      },
+      {
+        "kind": "box",
+        "x": 49.785,
+        "y": 21.812,
+        "w": 2.54,
+        "h": 2.54,
+        "height": 3,
+        "finish": "plastic",
+        "colour": "#f2f0ea",
+        "label": "Address jumper A4"
+      },
+      {
+        "kind": "box",
+        "x": 52.325,
+        "y": 21.812,
+        "w": 2.54,
+        "h": 2.54,
+        "height": 3,
+        "finish": "plastic",
+        "colour": "#f2f0ea",
+        "label": "Address jumper A5"
+      },
+      {
+        "kind": "led",
+        "x": 8.5,
+        "y": 20,
+        "colour": "#e23b3b",
+        "size": 1.6,
+        "label": "Power LED"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "poly",
+      "points": [
+        [
+          0,
+          3.175
+        ],
+        [
+          3.175,
+          0
+        ],
+        [
+          59.055,
+          0
+        ],
+        [
+          62.23,
+          3.175
+        ],
+        [
+          62.23,
+          22.225
+        ],
+        [
+          59.055,
+          25.4
+        ],
+        [
+          3.175,
+          25.4
+        ],
+        [
+          0,
+          22.225
+        ]
+      ]
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 27.615,
+        "y": 17.8,
+        "w": 7,
+        "h": 7.6,
+        "z": 1.6,
+        "height": 10,
+        "colour": "#2e8b57",
+        "label": "V+ terminal"
+      }
+    ]
+  },
+  "mountingHoles": [
+    {
+      "id": "h1",
+      "x": 3.175,
+      "y": 3.175,
+      "diameter": 2.5
+    },
+    {
+      "id": "h2",
+      "x": 59.055,
+      "y": 3.175,
+      "diameter": 2.5
+    },
+    {
+      "id": "h3",
+      "x": 3.175,
+      "y": 22.225,
+      "diameter": 2.5
+    },
+    {
+      "id": "h4",
+      "x": 59.055,
+      "y": 22.225,
+      "diameter": 2.5
+    }
+  ],
+  "pinHeaders": [
+    {
+      "id": "servo-1",
+      "label": "Servos 1-4",
+      "x": 6.985,
+      "y": 1.397,
+      "rows": 3,
+      "cols": 4,
+      "pitch": 2.54,
+      "pins": [
+        "GND",
+        "GND",
+        "GND",
+        "GND",
+        "5V",
+        "5V",
+        "5V",
+        "5V",
+        "PWM",
+        "PWM",
+        "PWM",
+        "PWM"
+      ]
+    },
+    {
+      "id": "servo-2",
+      "label": "Servos 5-8",
+      "x": 19.685,
+      "y": 1.397,
+      "rows": 3,
+      "cols": 4,
+      "pitch": 2.54,
+      "pins": [
+        "GND",
+        "GND",
+        "GND",
+        "GND",
+        "5V",
+        "5V",
+        "5V",
+        "5V",
+        "PWM",
+        "PWM",
+        "PWM",
+        "PWM"
+      ]
+    },
+    {
+      "id": "servo-3",
+      "label": "Servos 9-12",
+      "x": 34.925,
+      "y": 1.397,
+      "rows": 3,
+      "cols": 4,
+      "pitch": 2.54,
+      "pins": [
+        "GND",
+        "GND",
+        "GND",
+        "GND",
+        "5V",
+        "5V",
+        "5V",
+        "5V",
+        "PWM",
+        "PWM",
+        "PWM",
+        "PWM"
+      ]
+    },
+    {
+      "id": "servo-4",
+      "label": "Servos 13-16",
+      "x": 47.625,
+      "y": 1.397,
+      "rows": 3,
+      "cols": 4,
+      "pitch": 2.54,
+      "pins": [
+        "GND",
+        "GND",
+        "GND",
+        "GND",
+        "5V",
+        "5V",
+        "5V",
+        "5V",
+        "PWM",
+        "PWM",
+        "PWM",
+        "PWM"
+      ]
+    },
+    {
+      "id": "left-io",
+      "label": "5V, VCC, SDA, SCL, OE, GND",
+      "x": 1.905,
+      "y": 6.477,
+      "rows": 6,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "5V",
+        "VCC",
+        "SDA",
+        "SCL",
+        "OE",
+        "GND"
+      ]
+    },
+    {
+      "id": "right-io",
+      "label": "5V, VCC, SDA, SCL, OE, GND",
+      "x": 60.325,
+      "y": 6.477,
+      "rows": 6,
+      "cols": 1,
+      "pitch": 2.54,
+      "pins": [
+        "5V",
+        "VCC",
+        "SDA",
+        "SCL",
+        "OE",
+        "GND"
+      ]
+    }
+  ],
+  "electrical": {
+    "note": "Logic on VCC at 3.3 or 5 V over I2C; servo power is separate on V+ at 5 to 6 V. The board itself takes only a few tens of mA, but the V+ terminal feeds every servo at once, so size that supply for all of them stalling together."
+  },
+  "links": [
+    {
+      "label": "Adafruit PCA9685 PCB on GitHub",
+      "url": "https://github.com/adafruit/Adafruit-16-Channel-PWM-Servo-Driver-PCB"
+    },
+    {
+      "label": "Adafruit product page",
+      "url": "https://www.adafruit.com/product/815"
+    }
+  ],
+  "tags": [
+    "pca9685",
+    "pwm",
+    "servo",
+    "servo driver",
+    "i2c",
+    "16 channel",
+    "led",
+    "adafruit"
+  ]
+}

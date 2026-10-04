@@ -1,0 +1,48 @@
+{
+  "id": "fastener-t-nut-m5",
+  "name": "Drop-in T-nut, M5 (20 series)",
+  "category": "fastener",
+  "popularity": 73,
+  "summary": "Drop-in slot nut for 2020 extrusion: 10.5 x 6 x 4.3 mm, M5 thread, takes a 6 mm slot anywhere along its length.",
+  "description": "A drop-in M5 T-nut for a 6 mm profile slot. Includes the body and a simplified nominal 5 mm bore; the internal thread and locking ridges are not modelled.",
+  "confidence": "approximate",
+  "source": "Adam's Bits (endmill.com.au) drop-in T-nut listing gives the 20 series (2020) nut as 10.5 x 6 x 4.3 mm for a 6 mm slot with M3, M4 and M5 thread options, and gives the 30 series (3030) nut as 16 x 8 x 6.5 mm for an 8 mm slot; the 20-series figures are the ones used here, and the 6 mm across the nut matches the 20-series slot opening. Approximate because the size comes from a retailer's listing rather than a mechanical drawing, and because only the envelope is published: this entry draws a 10.5 x 6 x 4.3 mm body with a nominal 5 mm bore, but no helical thread, raised boss or knurl, so treat it as a space claim rather than a picture of the real nut. The M5 thread is what this variant stands for; the same body exists in M3 and M4.",
+  "look": {
+    "finish": "metal"
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 10.5,
+      "h": 6,
+      "cornerRadius": 0.8
+    },
+    "thickness": 4.3,
+    "bores": [
+      {
+        "x": 5.25,
+        "y": 3,
+        "z": 0,
+        "diameter": 5,
+        "depth": 4.3
+      }
+    ]
+  },
+  "links": [
+    {
+      "label": "Drop-in T-nut sizes",
+      "url": "https://www.endmill.com.au/t-slot-nut-post-assembly-drop-in/"
+    }
+  ],
+  "tags": [
+    "t-nut",
+    "slot nut",
+    "m5",
+    "2020",
+    "drop-in",
+    "fastener",
+    "frame",
+    "extrusion"
+  ]
+}

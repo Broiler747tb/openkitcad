@@ -1,0 +1,304 @@
+{
+  "id": "mcu-esp32-s3-devkitc-1",
+  "name": "Espressif ESP32-S3-DevKitC-1",
+  "category": "mcu",
+  "popularity": 78,
+  "family": "esp32-devkit",
+  "variant": "S3-DevKitC-1 v1.1, WROOM-1",
+  "summary": "ESP32-S3 board with two 22-pin headers and two Micro-USB ports. 62.865 × 25.4 mm; no mounting holes.",
+  "description": "Espressif’s ESP32-S3 carrier with a WROOM-1 module. One Micro-USB port talks to the UART bridge; the other connects directly to the S3. Male headers point down, so the board can sit on sockets or a breadboard.",
+  "tags": [
+    "esp32",
+    "esp32-s3",
+    "wifi",
+    "bluetooth",
+    "bluetooth-le",
+    "dual-core",
+    "usb",
+    "micro-usb",
+    "uart",
+    "development board",
+    "iot",
+    "espressif"
+  ],
+  "confidence": "approximate",
+  "source": "Espressif ESP32-S3-DevKitC-1 v1.1 nominal dimensions in this model: 62.865 × 25.4 mm outline, 22 pins per row on 2.54 mm pitch, rows 22.86 mm apart; first pin 7.96 mm from the USB end. The user guide supplies J1/J3 pin order and identifies the WROOM-1 module, UART and native USB ports. Component positions and heights are simplified: 1.6 mm carrier, 25.5 × 18 × 3.1 mm WROOM module, 7.5 × 2.8 mm USB shells and 8.5 mm header pins below the board. Verify component heights for a close-fitting enclosure. The original draft drawing coordinates have not been independently remeasured; use the verified-size filter to exclude this entry.",
+  "links": [
+    {
+      "label": "Espressif v1.1 user guide",
+      "url": "https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32s3/esp32-s3-devkitc-1/user_guide_v1.1.html"
+    },
+    {
+      "label": "Official PCB layout",
+      "url": "https://dl.espressif.com/dl/PCB_ESP32-S3-DevKitC-1_V1_20210312CB.pdf"
+    }
+  ],
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 62.865,
+      "h": 25.4,
+      "cornerRadius": 0.5
+    },
+    "thickness": 1.6,
+    "bumps": [
+      {
+        "x": 0,
+        "y": 2.25,
+        "z": 1.6,
+        "w": 6.3,
+        "h": 7.5,
+        "height": 2.8,
+        "colour": "#b9c0c7",
+        "label": "USB UART"
+      },
+      {
+        "x": 0,
+        "y": 15.65,
+        "z": 1.6,
+        "w": 6.3,
+        "h": 7.5,
+        "height": 2.8,
+        "colour": "#b9c0c7",
+        "label": "USB native"
+      },
+      {
+        "x": 37.34,
+        "y": 3.7,
+        "z": 1.6,
+        "w": 25.5,
+        "h": 18,
+        "height": 3.1,
+        "colour": "#a7adb2",
+        "label": "ESP32-S3-WROOM-1"
+      }
+    ]
+  },
+  "look": {
+    "colour": "#20272b",
+    "components": [
+      {
+        "kind": "header",
+        "x": 7.96,
+        "y": 1.27,
+        "rows": 1,
+        "cols": 22,
+        "height": 8.5,
+        "flip": true,
+        "label": "J1: GND to 3V3"
+      },
+      {
+        "kind": "header",
+        "x": 7.96,
+        "y": 24.13,
+        "rows": 1,
+        "cols": 22,
+        "height": 8.5,
+        "flip": true,
+        "label": "J3: GND to GND"
+      },
+      {
+        "kind": "port",
+        "port": "micro-usb",
+        "x": -1.3,
+        "y": 6,
+        "facing": "-x",
+        "w": 7.5,
+        "h": 2.8,
+        "depth": 7.6,
+        "label": "USB UART"
+      },
+      {
+        "kind": "port",
+        "port": "micro-usb",
+        "x": -1.3,
+        "y": 19.4,
+        "facing": "-x",
+        "w": 7.5,
+        "h": 2.8,
+        "depth": 7.6,
+        "label": "USB native"
+      },
+      {
+        "kind": "module",
+        "x": 37.34,
+        "y": 3.7,
+        "w": 25.5,
+        "h": 18,
+        "height": 3.1,
+        "antenna": "+x",
+        "antennaLength": 6.5,
+        "label": "ESP32-S3-WROOM-1"
+      },
+      {
+        "kind": "chip",
+        "x": 12,
+        "y": 15,
+        "w": 4,
+        "h": 4,
+        "height": 1,
+        "legs": "quad",
+        "label": "USB-to-UART"
+      },
+      {
+        "kind": "chip",
+        "x": 15,
+        "y": 7,
+        "w": 4,
+        "h": 6,
+        "height": 1.5,
+        "legs": "dual",
+        "label": "3.3 V regulator"
+      },
+      {
+        "kind": "button",
+        "x": 31.5,
+        "y": 9,
+        "size": 3.6,
+        "height": 1.5,
+        "label": "BOOT"
+      },
+      {
+        "kind": "button",
+        "x": 31.5,
+        "y": 15,
+        "size": 3.6,
+        "height": 1.5,
+        "label": "RESET"
+      },
+      {
+        "kind": "led",
+        "x": 23,
+        "y": 15,
+        "w": 2,
+        "h": 2,
+        "colour": "#63b4f3",
+        "label": "RGB"
+      }
+    ]
+  },
+  "manufacturer": "Espressif",
+  "pinHeaders": [
+    {
+      "id": "j1",
+      "label": "J1: GND to 3V3",
+      "x": 7.96,
+      "y": 1.27,
+      "rows": 1,
+      "cols": 22,
+      "pitch": 2.54,
+      "pins": [
+        "GND",
+        "5V",
+        "14",
+        "13",
+        "12",
+        "11",
+        "10",
+        "9",
+        "46",
+        "3",
+        "8",
+        "18",
+        "17",
+        "16",
+        "15",
+        "7",
+        "6",
+        "5",
+        "4",
+        "RST",
+        "3V3",
+        "3V3"
+      ]
+    },
+    {
+      "id": "j3",
+      "label": "J3: GND to GND",
+      "x": 7.96,
+      "y": 24.13,
+      "rows": 1,
+      "cols": 22,
+      "pitch": 2.54,
+      "pins": [
+        "GND",
+        "GND",
+        "19",
+        "20",
+        "21",
+        "47",
+        "48",
+        "45",
+        "0",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "2",
+        "1",
+        "RX",
+        "TX",
+        "GND"
+      ]
+    }
+  ],
+  "connectors": [
+    {
+      "id": "usb-uart",
+      "label": "USB UART",
+      "side": "-x",
+      "x": 0,
+      "y": 6,
+      "z": 3,
+      "width": 7.5,
+      "height": 2.8,
+      "protrusion": 1.3
+    },
+    {
+      "id": "usb-native",
+      "label": "USB native",
+      "side": "-x",
+      "x": 0,
+      "y": 19.4,
+      "z": 3,
+      "width": 7.5,
+      "height": 2.8,
+      "protrusion": 1.3
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-header",
+      "label": "Header pins below",
+      "x": 6.69,
+      "y": 0,
+      "w": 55.88,
+      "h": 25.4,
+      "z": -8.5,
+      "height": 8.5,
+      "header": true
+    },
+    {
+      "id": "k-antenna",
+      "label": "Antenna: keep metal away",
+      "x": 56.34,
+      "y": 3.7,
+      "w": 6.5,
+      "h": 18,
+      "z": -5,
+      "height": 15
+    }
+  ],
+  "electrical": {
+    "voltage": [
+      5,
+      3.3
+    ],
+    "note": "Power from either Micro-USB port or the 5V/3V3 header. Do not connect conflicting supplies."
+  }
+}

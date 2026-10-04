@@ -213,5 +213,50 @@
     "name": "XT power connector",
     "category": "connector",
     "summary": "Amass XT battery and power connectors."
+  },
+  "dc-motor-driver": {
+    "name": "DC motor driver",
+    "category": "motor",
+    "summary": "DRV8833 dual 1.1 A; L298N dual H-bridge; TB6612FNG dual 1.2 A."
+  },
+  "alu-profile": {
+    "name": "Aluminum extrusion",
+    "category": "extrusion",
+    "summary": "2020, 2040 and 3030 framing profiles with editable length."
+  },
+  "gt2-pulley": {
+    "name": "GT2 timing pulley",
+    "category": "motion",
+    "summary": "16 tooth, 5 mm bore; 20 tooth, 5 mm bore."
+  },
+  "mgn-rail": {
+    "name": "MGN12 linear guide",
+    "category": "motion",
+    "summary": "MGN12C carriage, 100 mm; MGN12H carriage, 100 mm."
+  },
+  "smooth-rod": {
+    "name": "Smooth guide rod",
+    "category": "motion",
+    "summary": "10 mm diameter, 300 mm; 8 mm diameter, 300 mm."
+  },
+  "cable-gland": {
+    "name": "PG cable gland",
+    "category": "connector",
+    "summary": "PG7; PG9."
+  },
+  "terminal-block": {
+    "name": "5.08 mm screw terminal",
+    "category": "connector",
+    "summary": "3 way, 5.08 mm; 4 way, 5.08 mm; 5 way, 5.08 mm."
+  },
+  "breadboard": {
+    "name": "Solderless breadboard",
+    "category": "proto",
+    "summary": "400 tie points, 82 x 55 mm; 830 tie points, 165 x 55 mm."
+  },
+  "perfboard": {
+    "name": "Prototyping sheet",
+    "category": "proto",
+    "summary": "9 x 15 cm, 1.6 mm; stripboard, 9 x 15 cm."
   }
 }

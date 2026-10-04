@@ -1,0 +1,185 @@
+{
+  "id": "motion-mgn12c",
+  "name": "MGN12C linear guide, 100 mm",
+  "category": "motion",
+  "popularity": 70,
+  "family": "mgn-rail",
+  "variant": "MGN12C carriage, 100 mm",
+  "summary": "Same 100 mm MGN12 rail with the short C carriage: 34.7 x 27 x 13 mm block, four M3 holes on a 20 x 15 mm rectangle.",
+  "description": "A 100 mm MGN12 rail with the short C carriage. Rail mounting holes and carriage size are included. Ball tracks and seals are simplified.",
+  "confidence": "datasheet",
+  "source": "Block and rail figures from the HIWIN MGN dimension table for size 12 (as reproduced by distributor dks-bearing.com and in HIWIN's Linear Guideway technical information): overall height H 13 mm, block width W 27 mm, block length L 34.7 mm (body L1 21.7 mm), block bolt pattern B x C = 20 x 15 mm with M3 x 3.5 tapped holes, rail width WR 12 mm, rail height HR 8 mm, rail hole diameter d 3.5 mm for M3 x 8 screws, hole pitch P 25 mm, first hole E 10 mm from the rail end. Seller listings round the block to 34.5 or 35 mm long and some quote the bolt pattern with the two numbers swapped; the table says 34.7 mm and 20 x 15 mm. Rail holes are modelled at 10, 35, 60 and 85 mm from the left end (E, then P), while HIWIN centres the pattern on each standard length, so that end distance is an assumption. The raceway profile, ball tracks, end seals and the D 6 / h 4.5 rail-hole recess are not modelled. The 100 mm length is a stock size, not a figure from the table. Carriage screw holes are cut 3.5 mm deep in the solid with a 2.5 mm M3 pilot diameter; the thread is not modelled.",
+  "look": {
+    "finish": "metal",
+    "components": [
+      {
+        "kind": "box",
+        "x": 32.65,
+        "y": -7.5,
+        "z": 8,
+        "w": 34.7,
+        "h": 27,
+        "height": 5,
+        "radius": 0.6,
+        "finish": "metal",
+        "colour": "#a8adb3"
+      },
+      {
+        "kind": "cylinder",
+        "x": 42.5,
+        "y": -4,
+        "z": 13,
+        "d": 3,
+        "height": 0.08,
+        "finish": "plastic",
+        "colour": "#0c0d0f"
+      },
+      {
+        "kind": "cylinder",
+        "x": 57.5,
+        "y": -4,
+        "z": 13,
+        "d": 3,
+        "height": 0.08,
+        "finish": "plastic",
+        "colour": "#0c0d0f"
+      },
+      {
+        "kind": "cylinder",
+        "x": 42.5,
+        "y": 16,
+        "z": 13,
+        "d": 3,
+        "height": 0.08,
+        "finish": "plastic",
+        "colour": "#0c0d0f"
+      },
+      {
+        "kind": "cylinder",
+        "x": 57.5,
+        "y": 16,
+        "z": 13,
+        "d": 3,
+        "height": 0.08,
+        "finish": "plastic",
+        "colour": "#0c0d0f"
+      }
+    ]
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 100,
+      "h": 12
+    },
+    "thickness": 8,
+    "bumps": [
+      {
+        "x": 32.65,
+        "y": -7.5,
+        "z": 8,
+        "w": 34.7,
+        "h": 27,
+        "height": 5,
+        "colour": "#a8adb3",
+        "label": "MGN12C carriage"
+      }
+    ],
+    "bores": [
+      {
+        "diameter": 2.5,
+        "y": -4,
+        "z": 9.5,
+        "depth": 3.5,
+        "x": 42.5
+      },
+      {
+        "diameter": 2.5,
+        "y": -4,
+        "z": 9.5,
+        "depth": 3.5,
+        "x": 57.5
+      },
+      {
+        "diameter": 2.5,
+        "y": 16,
+        "z": 9.5,
+        "depth": 3.5,
+        "x": 42.5
+      },
+      {
+        "diameter": 2.5,
+        "y": 16,
+        "z": 9.5,
+        "depth": 3.5,
+        "x": 57.5
+      }
+    ]
+  },
+  "mountingHoles": [
+    {
+      "id": "rh1",
+      "x": 10,
+      "y": 6,
+      "diameter": 3.5,
+      "screw": "M3",
+      "label": "Rail mounting hole"
+    },
+    {
+      "id": "rh2",
+      "x": 35,
+      "y": 6,
+      "diameter": 3.5,
+      "screw": "M3",
+      "label": "Rail mounting hole"
+    },
+    {
+      "id": "rh3",
+      "x": 60,
+      "y": 6,
+      "diameter": 3.5,
+      "screw": "M3",
+      "label": "Rail mounting hole"
+    },
+    {
+      "id": "rh4",
+      "x": 85,
+      "y": 6,
+      "diameter": 3.5,
+      "screw": "M3",
+      "label": "Rail mounting hole"
+    }
+  ],
+  "keepouts": [
+    {
+      "id": "k-carriage",
+      "label": "Carriage travels the full rail",
+      "x": 0,
+      "y": -7.5,
+      "w": 100,
+      "h": 27,
+      "z": 8,
+      "height": 5
+    }
+  ],
+  "links": [
+    {
+      "label": "HIWIN miniature guide dimensions",
+      "url": "https://www.hiwin.com/wp-content/uploads/Linear_Guideway-E.pdf"
+    }
+  ],
+  "tags": [
+    "mgn12",
+    "mgn12c",
+    "mgn",
+    "linear guide",
+    "linear rail",
+    "carriage",
+    "hiwin",
+    "12mm",
+    "motion",
+    "cnc",
+    "3d printer"
+  ]
+}

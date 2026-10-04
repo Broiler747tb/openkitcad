@@ -35,6 +35,8 @@ import { poseOf, withPose } from '../doc/placement'
 import { RECENT_LIMIT, useShelf } from '../ui/parts/shelf'
 import { renderPart } from '../ui/parts/render'
 import { lookPrototype } from '../viewport/partLook'
+import { prototypingHoles } from '../catalogue/prototyping'
+import { extrusionSection } from '../catalogue/extrusion'
 import type { TestResult } from './selftest'
 
 export function runPartsTest(): TestResult[] {
@@ -76,6 +78,49 @@ export function runPartsTest(): TestResult[] {
     !invalid.length,
     invalid.slice(0, 3).join(' | ') || 'ok',
   )
+  check(
+    'breadboards show the stated contact counts',
+    prototypingHoles(part('proto-breadboard-400')).length === 400 &&
+      prototypingHoles(part('proto-breadboard-830')).length === 830,
+  )
+  const rectangular = part('extrusion-2040').geometry
+  check(
+    '2040 has two bore centres and six slot openings',
+    rectangular.kind === 'extrusion' &&
+      rectangular.slots === 6 &&
+      extrusionSection(rectangular).bores.length === 2 &&
+      near(partBounds(part('extrusion-2040')), [0, 0, 0, 200, 40, 20]),
+  )
+  const s3 = part('mcu-esp32-s3-devkitc-1')
+  check(
+    'S3 headers fit the outline and keep the documented pin order',
+    s3.pinHeaders?.length === 2 &&
+      s3.pinHeaders.every(
+        (header) =>
+          header.cols === 22 &&
+          header.pins?.length === 22 &&
+          header.x + (header.cols - 1) * header.pitch < 62.865,
+      ) &&
+      s3.pinHeaders[0].pins?.at(-1) === '3V3',
+  )
+  const heltec = part('heltec-wifi-lora-32-v4')
+  const withoutHeaders = withHeaders(heltec, false)
+  check(
+    'Heltec underside connector clearance survives removing headers',
+    partBounds(withoutHeaders)[2] <= -3.4 &&
+      withoutHeaders.geometry.kind === 'board' &&
+      withoutHeaders.geometry.bores?.length === 4,
+  )
+  const noRatingsAsDraw = [
+    'power-fuse-holder-5x20',
+    'port-terminal-508-3way',
+    'port-terminal-508-4way',
+    'port-terminal-508-5way',
+  ].every(
+    (id) =>
+      part(id).electrical?.currentPeak === undefined && part(id).electrical?.voltage === undefined,
+  )
+  check('passive contact ratings are not treated as supply draw', noRatingsAsDraw)
 
   const familyProblems: string[] = []
   for (const p of CATALOGUE) {

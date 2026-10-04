@@ -1,0 +1,50 @@
+{
+  "id": "proto-breadboard-400",
+  "name": "Solderless breadboard, half size (400 tie points)",
+  "category": "proto",
+  "popularity": 74,
+  "family": "breadboard",
+  "variant": "400 tie points, 82 x 55 mm",
+  "summary": "Half-size solderless breadboard: 400 tie points on the same 2.54 mm (0.1 in) grid, 82 x 55 x 9 mm, with power rails along both long edges.",
+  "description": "Half-size breadboard with 400 contacts: a centre channel, two terminal banks and four power rails. The visible contact layout is schematic; the solid export keeps the body envelope.",
+  "confidence": "approximate",
+  "source": "Sizes checked by reading product pages and retailer listings from web search: the generic listings that publish this size say 3.2 x 2.1 x 0.3 in (82 x 55 x 9 mm), and that 82 x 55 x 9 mm is the figure used here (the 9.5 mm height some people quote was not confirmed by any listing I found). Named makers disagree: BusBoard's own BB400 page gives 84 x 54.3 x 8.5 mm, Adafruit lists its half-size board as 3.25 x 2.2 in (83 x 55 mm), and DigiKey lists the BB400 body as 83.8 x 53.3 mm. So half-size boards land somewhere between 82 and 84 mm long and 53 and 55 mm wide, and 82 x 55 x 9 mm is one common published size rather than a measured one - verify before cutting a panel. Layout checked against BusBoard (300 tie-point IC area plus four 25-point power rails) and generic listings (300 terminal points plus 100 rail points), which both add to 400; pitch is the standard 2.54 mm (0.1 in). Manufacturer-specific rail splits and legends are omitted. The preview adds a schematic 2.54 mm contact layout, not a manufacturer-specific drill pattern. The export is the body envelope.",
+  "look": {
+    "finish": "plastic",
+    "colour": "#e9e7de"
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 82,
+      "h": 55
+    },
+    "thickness": 9
+  },
+  "links": [
+    {
+      "label": "BusBoard BB400",
+      "url": "https://busboard.com/BB400T"
+    },
+    {
+      "label": "Adafruit half-size breadboard",
+      "url": "https://www.adafruit.com/product/64"
+    },
+    {
+      "label": "Breadboard layout explained (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Breadboard"
+    }
+  ],
+  "tags": [
+    "breadboard",
+    "solderless",
+    "400",
+    "half size",
+    "protoboard",
+    "dip",
+    "2.54",
+    "jumper",
+    "proto"
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "id": "proto-stripboard",
+  "name": "Stripboard sheet, 9 x 15 cm",
+  "category": "proto",
+  "popularity": 58,
+  "family": "perfboard",
+  "variant": "stripboard, 9 x 15 cm",
+  "summary": "90 x 150 x 1.6 mm stripboard (Veroboard style): 2.54 mm hole grid with copper strips running along the long axis.",
+  "description": "A generic 90 × 150 mm stripboard sheet with copper tracks underneath. Hole and track placement is schematic; the solid export keeps the sheet envelope.",
+  "confidence": "approximate",
+  "source": "Checked by web search plus the Wikipedia stripboard article: stripboard is defined by a 0.1 inch (2.54 mm) grid of holes with wide copper strips running the length of one side, tracks are cut around holes to break a strip into nodes, the original Veroboard was punched through 1.6 mm copper-clad SRBP (FR-2) and some makers now use FR-4, and 1.6 mm is the thickness this entry uses. Retailer listings found in search sell stripboard in the same 9 x 15 cm (90 x 150 mm) sheets as perfboard, so the outline here is deliberately identical to the perfboard entry; I did not find a stripboard listing that gives a different size for this class. Not verified and therefore not claimed: which edge the strips run along on a given 9 x 15 cm sheet, strip width, and the hole count - 2.54 mm does not divide 90 or 150 evenly, so makers leave a margin. The preview shows holes and underside copper strips; the exported solid is a plain 90 x 150 x 1.6 mm sheet with the 90 mm side along X. The preview adds a schematic 2.54 mm contact layout, not a manufacturer-specific drill pattern. The export is the body envelope.",
+  "look": {
+    "finish": "pcb"
+  },
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 90,
+      "h": 150
+    },
+    "thickness": 1.6
+  },
+  "links": [
+    {
+      "label": "Stripboard explained (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Stripboard"
+    }
+  ],
+  "tags": [
+    "stripboard",
+    "veroboard",
+    "perfboard",
+    "90x150",
+    "2.54",
+    "solder",
+    "tracks",
+    "prototyping",
+    "proto"
+  ]
+}

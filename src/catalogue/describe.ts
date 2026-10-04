@@ -95,8 +95,13 @@ function geometryFacts(part: CataloguePart, units: LengthUnit): PartFact[] {
       return [
         {
           label: 'Profile',
-          value: t('{0}, {1} slots', sizes([g.size, g.size], units), g.slots ?? 4),
+          value: t('{0}, {1} slots', sizes([g.size, g.depth ?? g.size], units), g.slots ?? 4),
         },
+      ]
+    case 'rod':
+      return [
+        { label: 'Shaft', value: `⌀ ${mm(g.diameter)} × ${mm(g.length)}` },
+        ...(g.spec ? [{ label: 'Type', value: g.spec }] : []),
       ]
     case 'board':
       return []
