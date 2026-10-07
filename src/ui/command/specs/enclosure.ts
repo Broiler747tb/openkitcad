@@ -166,6 +166,14 @@ export const enclosureCommand = defineCommand({
       display: 'check',
       all: 'All connectors',
       empty: 'None of these parts has connectors.',
+      visible: (values: LooseCommandValues) => !values.protrudingConnectors,
+    },
+    {
+      id: 'protrudingConnectors',
+      kind: 'toggle',
+      label: 'Allow connectors to protrude',
+      hint: 'Size the walls around the board outline. Connector openings are included automatically.',
+      default: false,
     },
     {
       id: 'tolerance',
@@ -175,6 +183,7 @@ export const enclosureCommand = defineCommand({
       default: 0.6,
       min: 0,
       visible: (values: LooseCommandValues) =>
+        !!values.protrudingConnectors ||
         Object.values((values.ports ?? {}) as ListValue).includes('on'),
     },
     {
@@ -254,7 +263,10 @@ export const enclosureCommand = defineCommand({
           ? ((values.mounting[key] ?? usualMount(picked.part)) as MountKind)
           : 'none',
         connectorIds: (picked.part.connectors ?? [])
-          .filter((connector) => values.ports[`${key}/${connector.id}`] === 'on')
+          .filter(
+            (connector) =>
+              values.protrudingConnectors || values.ports[`${key}/${connector.id}`] === 'on',
+          )
           .map((connector) => connector.id),
       }
     })
@@ -266,6 +278,7 @@ export const enclosureCommand = defineCommand({
       componentId: context.componentId,
       contextPath: componentInstance(context.doc, context.componentId)?.path ?? [],
       mounts,
+      protrudingConnectors: values.protrudingConnectors,
       clearance: values.clearance,
       under: values.under,
       wall: values.wall,
@@ -311,6 +324,7 @@ export function enclosureValues(doc: OkcDocument, feature: EnclosureFeature) {
     screw: String(feature.screw),
     mounting,
     ports,
+    protrudingConnectors: feature.protrudingConnectors ?? false,
     tolerance: feature.tolerance,
     clearance: feature.clearance,
     under: feature.under,

@@ -867,6 +867,25 @@ button.workspace-tab {
   border-color: var(--okc-accent);
   color: var(--okc-accent);
 }
+.view-cube .view-isometric {
+  position: absolute;
+  left: 62px;
+  top: 0;
+  width: 32px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--okc-text-muted);
+  font-size: 10px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.view-cube .view-isometric[aria-pressed='true'] {
+  border-color: var(--okc-accent);
+  color: var(--okc-accent);
+}
 .view-cube .view-cube-roll button:disabled {
   opacity: 0.3;
   cursor: default;

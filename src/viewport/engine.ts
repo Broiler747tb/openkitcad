@@ -163,7 +163,7 @@ function matchesKey(instance: Instance, key: string | null): boolean {
 
 export class ViewportEngine {
   readonly scene = new THREE.Scene()
-  readonly camera: THREE.PerspectiveCamera
+  camera: THREE.PerspectiveCamera | THREE.OrthographicCamera
   private renderer: THREE.WebGLRenderer
   private controls: OrbitControls
   private raycaster = new THREE.Raycaster()
@@ -2207,6 +2207,13 @@ export class ViewportEngine {
 
   /** Millimetres per screen pixel at a point, for size-independent snapping. */
   pixelSize(at: Vec3): number {
+    if (this.camera instanceof THREE.OrthographicCamera) {
+      return (
+        (this.camera.top - this.camera.bottom) /
+        this.camera.zoom /
+        this.renderer.domElement.clientHeight
+      )
+    }
     const distance = this.camera.position.distanceTo(new THREE.Vector3(...at))
     const height = 2 * Math.tan((this.camera.fov * Math.PI) / 360) * distance
     return height / this.renderer.domElement.clientHeight
@@ -2236,6 +2243,15 @@ export class ViewportEngine {
     this.camera.position.copy(centre).addScaledVector(direction, radius * 3.1)
     this.camera.near = Math.max(radius / 500, 0.05)
     this.camera.far = radius * 200
+    if (this.camera instanceof THREE.OrthographicCamera) {
+      const aspect = this.container.clientWidth / this.container.clientHeight
+      const height = (radius * 2.4) / Math.min(aspect, 1)
+      this.camera.top = height / 2
+      this.camera.bottom = -height / 2
+      this.camera.left = (-height * aspect) / 2
+      this.camera.right = (height * aspect) / 2
+      this.camera.zoom = 1
+    }
     this.camera.updateProjectionMatrix()
     // Orient now rather than waiting for the controls to catch up on the next
     // frame, so a click straight after a fit hits what the user is looking at.
@@ -2281,7 +2297,7 @@ export class ViewportEngine {
         [0, 0, 1],
       ],
       iso: [
-        [0.72, -0.6, 0.55],
+        [1, -1, 1],
         [0, 0, 1],
       ],
     }
@@ -2317,6 +2333,39 @@ export class ViewportEngine {
     return () => {
       this.viewListeners.delete(listener)
     }
+  }
+
+  setOrthographic(enabled: boolean) {
+    if (enabled === this.camera instanceof THREE.OrthographicCamera) return
+    const previous = this.camera
+    const height =
+      this.pixelSize(this.controls.target.toArray() as Vec3) * this.renderer.domElement.clientHeight
+    const aspect = this.container.clientWidth / this.container.clientHeight
+    const next = enabled
+      ? new THREE.OrthographicCamera(
+          (-height * aspect) / 2,
+          (height * aspect) / 2,
+          height / 2,
+          -height / 2,
+          previous.near,
+          previous.far,
+        )
+      : new THREE.PerspectiveCamera(38, aspect, previous.near, previous.far)
+    next.position.copy(previous.position)
+    next.quaternion.copy(previous.quaternion)
+    next.up.copy(previous.up)
+    if (!enabled)
+      next.position
+        .copy(this.controls.target)
+        .addScaledVector(
+          previous.position.clone().sub(this.controls.target).normalize(),
+          height / (2 * Math.tan(19 * THREE.MathUtils.DEG2RAD)),
+        )
+    this.camera = next
+    this.controls.object = next
+    if (this.transform) this.transform.camera = next
+    this.camera.updateMatrixWorld()
+    this.resize()
   }
 
   orbitView(dx: number, dy: number) {
@@ -2427,9 +2476,7 @@ export class ViewportEngine {
    * far away the model is.
    */
   private panByPixels(dx: number, dy: number) {
-    const height = this.renderer.domElement.clientHeight || 1
-    const reach = this.camera.position.distanceTo(this.controls.target)
-    const scale = (2 * reach * Math.tan((this.camera.fov / 2) * THREE.MathUtils.DEG2RAD)) / height
+    const scale = this.pixelSize(this.controls.target.toArray() as Vec3)
     const right = new THREE.Vector3().setFromMatrixColumn(this.camera.matrix, 0)
     const up = new THREE.Vector3().setFromMatrixColumn(this.camera.matrix, 1)
     const move = right.multiplyScalar(dx * scale).add(up.multiplyScalar(-dy * scale))
@@ -2474,7 +2521,13 @@ export class ViewportEngine {
     // computed against a viewport twice the real one and picking lands nowhere
     // near the cursor.
     this.renderer.setSize(clientWidth, clientHeight)
-    this.camera.aspect = clientWidth / clientHeight
+    if (this.camera instanceof THREE.PerspectiveCamera)
+      this.camera.aspect = clientWidth / clientHeight
+    else {
+      const halfHeight = (this.camera.top - this.camera.bottom) / 2
+      this.camera.left = (-halfHeight * clientWidth) / clientHeight
+      this.camera.right = (halfHeight * clientWidth) / clientHeight
+    }
     this.camera.updateProjectionMatrix()
   }
 

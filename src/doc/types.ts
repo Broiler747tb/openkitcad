@@ -492,6 +492,7 @@ export interface EnclosureFeature extends FeatureBase {
   kind: 'enclosure'
   contextPath: string[]
   mounts: EnclosureMount[]
+  protrudingConnectors?: boolean
   clearance: number
   under: number
   wall: number
