@@ -130,6 +130,7 @@ export function Inspector({
     return (
       <div className="panel-right">
         <div className="panel-caption">{t('SKETCH PALETTE')}</div>
+        <MeasurePanel />
         <SketchOptions />
         <SketchDiagnostics />
         <details className="sketch-panel-group">

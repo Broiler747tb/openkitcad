@@ -27,6 +27,7 @@ export const DEFAULT_PREFERENCES = {
   fitLoose: 0.45,
   touchpadSpeed: 1,
   horizonLock: true,
+  orthographic: false,
 }
 export type Preferences = typeof DEFAULT_PREFERENCES
 const bounds: Partial<Record<keyof Preferences, [number, number]>> = {

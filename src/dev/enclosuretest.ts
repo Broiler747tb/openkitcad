@@ -189,6 +189,47 @@ export async function runEnclosureTest(): Promise<TestResult[]> {
       )
     })
 
+    await check('protruding connectors and lid access', async () => {
+      const closed = meshOf(await evaluate(enclosureDoc({ lid: 'snap' })), 'box')
+      for (const lidStyle of ['screws', 'snap', 'slide']) {
+        const doc = enclosureDoc({ lid: lidStyle, protrudingConnectors: true, clearance: 0 })
+        const before = await evaluate(doc)
+        const box = meshOf(before, 'box')
+        const lid = meshOf(before, 'lid')
+        add(
+          `${lidStyle} allows protruding connectors`,
+          before.errors.length === 0 && !!box && !!lid,
+          said(before),
+        )
+        if (lidStyle === 'snap')
+          add(
+            'protruding mode fits the board instead of connector overhangs',
+            (box?.bounds[3] ?? Infinity) < (closed?.bounds[3] ?? 0) - 1,
+            `${box?.bounds[3]} against ${closed?.bounds[3]}`,
+          )
+        for (const bodyId of ['box', 'lid'])
+          doc.timeline.push({
+            id: `access-${bodyId}`,
+            name: 'Check access',
+            componentId: 'root',
+            kind: 'portCutout',
+            bodyId,
+            occurrencePath: ['pi'],
+            contextPath: [],
+            connectorIds: [],
+            tolerance: 0.6,
+          } as Feature)
+        const after = await evaluate(doc)
+        add(
+          `${lidStyle} has clear ports through the box, mounts and lid`,
+          after.errors.length === 0 &&
+            Math.abs((meshOf(after, 'box')?.volume ?? 0) - (box?.volume ?? 0)) < 0.01 &&
+            Math.abs((meshOf(after, 'lid')?.volume ?? 0) - (lid?.volume ?? 0)) < 0.01,
+          said(after),
+        )
+      }
+    })
+
     await check('following the parts', async () => {
       const before = meshOf(await evaluate(enclosureDoc()), 'box')
       const moved = enclosureDoc()

@@ -88,7 +88,9 @@ export interface Connector {
   y: number
   z: number
   /** Rectangular by default. */
-  shape?: 'rect' | 'circle'
+  shape?: 'rect' | 'circle' | 'roundedRect' | 'trapezoid'
+  cornerRadius?: number
+  chamfer?: number
   /** Size of a rectangular opening, before tolerance. */
   width: number
   height: number

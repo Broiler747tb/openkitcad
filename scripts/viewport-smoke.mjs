@@ -3,6 +3,7 @@ import { createServer } from 'vite'
 import { chromium } from 'playwright'
 import { checkNavigation } from './navigation-checks.mjs'
 import { checkRotation } from './rotation-checks.mjs'
+import { checkPrecision } from './precision-checks.mjs'
 
 const server = await createServer({
   server: { host: '127.0.0.1', port: 4283, strictPort: true, open: false },
@@ -274,6 +275,7 @@ try {
   await page.waitForFunction(() => !window.__okcEngine.viewTween)
   await checkNavigation(page)
   await checkRotation(page)
+  await checkPrecision(page)
   if (process.env.OKC_VIEWPORT_SCREENSHOT)
     await page.screenshot({ path: process.env.OKC_VIEWPORT_SCREENSHOT })
   if (process.env.OKC_VIEWPORT_SCREENSHOT)

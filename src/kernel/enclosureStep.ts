@@ -1,6 +1,7 @@
 import { downcast, getOC, makeBox, makeCylinder, sketchCircle } from 'replicad'
 import type { Vec3 } from '../core/math'
 import { partBounds } from '../catalogue/placement'
+import { partFootprint } from '../catalogue/types'
 import { findOccurrence, transformPoint } from '../doc/model'
 import type { EnclosureFeature, EnclosureMount, Feature, OkcDocument } from '../doc/types'
 import {
@@ -56,10 +57,18 @@ function flat(placed: PlacedPart): boolean {
   return placed.matrix[10] > FLAT
 }
 
-function worldBox(placed: PlacedPart, ticked: readonly string[]): [Vec3, Vec3] {
+function worldBox(placed: PlacedPart, ticked: readonly string[], protruding = false): [Vec3, Vec3] {
   const part = placed.part!
   let [x0, y0, z0, x1, y1, z1] = partBounds(part)
+  if (protruding && part.geometry.kind === 'board') {
+    const footprint = partFootprint(part)
+    x0 = 0
+    y0 = 0
+    x1 = footprint.w
+    y1 = footprint.h
+  }
   for (const connector of part.connectors ?? []) {
+    if (protruding && part.geometry.kind === 'board') continue
     if (ticked.includes(connector.id)) continue
     if (connector.side === '+x') x1 = Math.max(x1, connector.x + connector.protrusion)
     if (connector.side === '-x') x0 = Math.min(x0, connector.x - connector.protrusion)
@@ -154,6 +163,7 @@ function screwLid(
   additions: Solid[],
   cuts: Solid[],
   spent: Set<Solid>,
+  portCuts: readonly Solid[],
 ): Solid {
   const { wall, lidThickness: t, gap: g, screw } = feature
   const radius = Math.max(screw * 1.2, 2.4)
@@ -161,12 +171,51 @@ function screwLid(
   const depth = Math.min(room.z1 - bottom - 1, screw * 4 + 2)
   const hole = screw + 0.5
   const head = Math.min(screw * 2, hole + 2 * (t - 0.6))
-  const corners: Array<[number, number]> = [
+  const originalCorners: Array<[number, number]> = [
     [room.x0 - radius, room.y0 - radius],
     [room.x1 + radius, room.y0 - radius],
     [room.x0 - radius, room.y1 + radius],
     [room.x1 + radius, room.y1 + radius],
   ]
+  const blocked = portCuts.map(
+    (cut) => (cut as unknown as { boundingBox: { bounds: [Vec3, Vec3] } }).boundingBox.bounds,
+  )
+  const free = ([x, y]: [number, number]) =>
+    blocked.every(
+      ([lo, hi]) =>
+        x + radius + 0.5 < lo[0] ||
+        x - radius - 0.5 > hi[0] ||
+        y + radius + 0.5 < lo[1] ||
+        y - radius - 0.5 > hi[1] ||
+        room.z1 < lo[2] ||
+        bottom > hi[2],
+    )
+  const corners: Array<[number, number]> = []
+  for (const corner of originalCorners) {
+    const candidates: Array<[number, number]> = [corner]
+    for (let i = 1; i < 40; i++) {
+      const fraction = i / 40
+      candidates.push([corner[0], room.y0 + radius + fraction * (room.y1 - room.y0 - 2 * radius)])
+      candidates.push([room.x0 + radius + fraction * (room.x1 - room.x0 - 2 * radius), corner[1]])
+    }
+    candidates.sort(
+      (a, b) =>
+        Math.hypot(a[0] - corner[0], a[1] - corner[1]) -
+        Math.hypot(b[0] - corner[0], b[1] - corner[1]),
+    )
+    const chosen = candidates.find(
+      (point) =>
+        free(point) &&
+        corners.every(
+          (other) => Math.hypot(point[0] - other[0], point[1] - other[1]) >= 2 * radius + 1,
+        ),
+    )
+    if (!chosen)
+      throw new Error(
+        'There is no room for the lid screws beside the connectors. Choose a snap or sliding lid, or increase the room round the parts.',
+      )
+    corners.push(chosen)
+  }
   const pieces: Solid[] = []
   const holes: Solid[] = []
   for (const [x, y] of corners) {
@@ -335,8 +384,44 @@ function mounts(
     }
     const size: ClipSize = { ...CLIP, gap: feature.gap }
     const longSide = board.width >= board.depth
-    for (const along of clipPositions(board, CLIPS_PER_EDGE, CLIP.width)) {
-      for (const side of [1, -1] as const) {
+    const length = longSide ? board.width : board.depth
+    for (const side of [1, -1] as const) {
+      const edge = longSide ? (side > 0 ? '+y' : '-y') : side > 0 ? '+x' : '-x'
+      const ports = (placed.part!.connectors ?? []).filter(
+        (connector) =>
+          mount.connectorIds.includes(connector.id) &&
+          connector.side === edge &&
+          connector.z < clipTop(board, feature.gap) &&
+          connector.z + connector.height > room.z0 - base,
+      )
+      const chosen: number[] = []
+      for (const preferred of clipPositions(board, CLIPS_PER_EDGE, CLIP.width)) {
+        const candidates = [
+          preferred,
+          ...Array.from(
+            { length: 41 },
+            (_, i) => CLIP.width / 2 + 0.5 + (i * Math.max(0, length - CLIP.width - 1)) / 40,
+          ),
+        ]
+        candidates.sort((a, b) => Math.abs(a - preferred) - Math.abs(b - preferred))
+        const along = candidates.find(
+          (value) =>
+            chosen.every((other) => Math.abs(value - other) >= CLIP.width + 0.5) &&
+            ports.every(
+              (connector) =>
+                Math.abs(value - (longSide ? connector.x : connector.y)) >
+                (CLIP.width + connector.width) / 2 + feature.tolerance + 0.5,
+            ),
+        )
+        if (along === undefined) {
+          stage.report(
+            'warning',
+            `${name} has no room for all its clips beside the connectors.`,
+            'Use standoffs or increase the board space.',
+          )
+          continue
+        }
+        chosen.push(along)
         const clip = edgeClip(size, board, room.z0 - base - EMBED, along, side, longSide)
         additions.push(transformShape(clip, placed.matrix) as Solid)
         quietly(clip as never)
@@ -388,13 +473,16 @@ export function runEnclosureStep(feature: Feature, stage: SolidStage, doc: OkcDo
       )
       return true
     }
-    const [low, high] = worldBox(placed, mount.connectorIds)
+    const selectedMount = enclosure.protrudingConnectors
+      ? { ...mount, connectorIds: placed.part.connectors?.map((connector) => connector.id) ?? [] }
+      : mount
+    const [low, high] = worldBox(placed, selectedMount.connectorIds, enclosure.protrudingConnectors)
     const board = boardBox(placed.part)
     if (mount.kind === 'clips' && board && flat(placed)) {
       const base = transformPoint(placed.matrix, [0, 0, 0])[2]
       high[2] = Math.max(high[2], base + clipTop(board, gap))
     }
-    parts.push({ name, mount, placed, low, high })
+    parts.push({ name, mount: selectedMount, placed, low, high })
   }
   const low: Vec3 = [0, 1, 2].map((i) => Math.min(...parts.map((part) => part.low[i]))) as Vec3
   const high: Vec3 = [0, 1, 2].map((i) => Math.max(...parts.map((part) => part.high[i]))) as Vec3
@@ -408,20 +496,30 @@ export function runEnclosureStep(feature: Feature, stage: SolidStage, doc: OkcDo
   try {
     const additions: Solid[] = []
     const cuts: Solid[] = []
-    const lid =
+    const portCuts: Solid[] = []
+    for (const { mount, placed } of parts) {
+      for (const id of mount.connectorIds) {
+        const cutter = buildPortCutters(placed, [id], enclosure.tolerance)
+        if (cutter) {
+          cuts.push(cutter)
+          portCuts.push(cutter)
+          spent.add(cutter)
+        }
+      }
+    }
+    let lid =
       enclosure.lid === 'screws'
-        ? screwLid(enclosure, room, additions, cuts, spent)
+        ? screwLid(enclosure, room, additions, cuts, spent, portCuts)
         : enclosure.lid === 'snap'
           ? snapLid(enclosure, room, cuts, spent)
           : slideLid(enclosure, room, slot, cuts, spent)
     spent.add(lid)
     mounts(enclosure, parts, room, additions, cuts, stage)
-    for (const { mount, placed } of parts) {
-      if (!mount.connectorIds.length) continue
-      const cutter = buildPortCutters(placed, mount.connectorIds, enclosure.tolerance)
-      if (cutter) cuts.push(cutter)
-    }
     for (const solid of [...additions, ...cuts]) spent.add(solid)
+    if (portCuts.length) {
+      lid = rawBoolean<Solid>('cut', lid, portCuts, FAILED)
+      spent.add(lid)
+    }
     const outer = block(
       room.x0 - wall,
       room.y0 - wall,

@@ -637,10 +637,43 @@ export function buildPortCutters(
             ? [0, 1, 0]
             : [0, -1, 0]
     let piece: any
-    if (c.shape === 'circle') {
+    const shape =
+      c.shape ??
+      (/USB[ -]?C|type[ -]?c/i.test(c.label)
+        ? 'roundedRect'
+        : /HDMI|micro[ -]?USB|mini[ -]?USB/i.test(c.label)
+          ? 'trapezoid'
+          : /audio|barrel|SMA|3\.5\s*mm/i.test(c.label)
+            ? 'circle'
+            : 'rect')
+    if (shape === 'circle') {
       const radius = (c.diameter ?? c.width) / 2 + tolerance
-      const start: Vec3 = [c.x - dir[0] * 2, c.y - dir[1] * 2, c.z]
+      const start: Vec3 = [
+        c.x - dir[0] * 2,
+        c.y - dir[1] * 2,
+        c.z + (c.shape === 'circle' ? 0 : c.height / 2),
+      ]
       piece = makeCylinder(radius, along + 2, start, dir)
+    } else if (shape === 'roundedRect' || shape === 'trapezoid') {
+      let profile: Drawing
+      if (shape === 'roundedRect') {
+        const radius = Math.min(c.cornerRadius ?? c.height / 2, c.width / 2, c.height / 2)
+        profile = drawRoundedRectangle(c.width, c.height, radius)
+      } else {
+        const bevel = Math.min(c.chamfer ?? c.height * 0.3, c.width / 4, c.height / 2)
+        const w = c.width / 2
+        const h = c.height / 2
+        profile = draw([-w + bevel, -h])
+          .lineTo([w - bevel, -h])
+          .lineTo([w, -h + bevel])
+          .lineTo([w, h])
+          .lineTo([-w, h])
+          .lineTo([-w, -h + bevel])
+          .close()
+      }
+      if (tolerance > 0) profile = profile.offset(tolerance)
+      const frame = makeFrame([c.x - dir[0] * 2, c.y - dir[1] * 2, c.z + c.height / 2], dir)
+      piece = sketchOn(profile, frame).extrude(along + 2)
     } else {
       const halfW = c.width / 2 + tolerance
       const zLo = c.z - tolerance

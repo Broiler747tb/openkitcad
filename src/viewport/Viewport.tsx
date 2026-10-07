@@ -948,6 +948,10 @@ export function Viewport() {
     engineRef.current?.setHorizonLock(preferences.horizonLock, !!activeSketch)
   }, [preferences.horizonLock, !!activeSketch])
 
+  useEffect(() => {
+    engineRef.current?.setOrthographic(preferences.orthographic)
+  }, [preferences.orthographic])
+
   const measure = useStore((s) => s.measure)
   const units = useStore((s) => s.doc.units)
   useEffect(() => {
@@ -1238,6 +1242,20 @@ export function Viewport() {
       const sketch = activeSketchFeature(store)?.sketch
       if (!cursor || !sketch) return
 
+      if (tool === 'measure') {
+        const snap = findSnap(sketch, cursor, {
+          tolerance: toleranceAt(),
+          gridStep: 0,
+          alignment: false,
+        })
+        setCursorHint({
+          x: e.clientX,
+          y: e.clientY,
+          text: snap.hint ?? 'Pick a sketch point or edge',
+        })
+        return
+      }
+
       if (draggingRef.current) {
         const down = downRef.current
         // Pressing on a corner might be the start of a drag or might just be a
@@ -1443,6 +1461,18 @@ export function Viewport() {
       const cursor = pointerToSketch(e)
       const sketch = activeSketchFeature(store)?.sketch
       if (!cursor || !sketch) return
+
+      if (tool === 'measure') {
+        const snap = findSnap(sketch, cursor, {
+          tolerance: toleranceAt(),
+          gridStep: 0,
+          alignment: false,
+        })
+        if (snap.snapToPointId || snap.onEntityId)
+          store.addMeasurePoint(frameToWorld(frame, snap.point))
+        else store.setStatus('Pick a sketch point or edge')
+        return
+      }
 
       if (tool === 'select') {
         // Grab a point to drag it.

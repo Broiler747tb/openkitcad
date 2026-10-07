@@ -12,6 +12,7 @@ export function ViewCube({
 }) {
   const [view, setView] = useState([1, 0, 0, 0, 1, 0, 0, 0, 1])
   const horizonLock = usePreferences((s) => s.values.horizonLock)
+  const orthographic = usePreferences((s) => s.values.orthographic)
   const drag = useRef<{
     x: number
     y: number
@@ -51,6 +52,18 @@ export function ViewCube({
             strokeLinejoin="round"
           />
         </svg>
+      </button>
+      <button
+        className="view-isometric"
+        aria-label={t('Isometric mode')}
+        aria-pressed={orthographic}
+        title={t('Isometric mode')}
+        onClick={() => {
+          usePreferences.getState().set({ orthographic: !orthographic })
+          if (!orthographic) go('iso')
+        }}
+      >
+        ISO
       </button>
       <div className="view-cube-roll">
         <button

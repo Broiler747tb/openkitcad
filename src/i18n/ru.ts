@@ -1,4 +1,9 @@
 export const ru: Readonly<Record<string, string>> = {
+  'Isometric mode': 'Изометрический режим',
+  'Allow connectors to protrude': 'Разъёмы могут выступать за корпус',
+  'Size the walls around the board outline. Connector openings are included automatically.':
+    'Корпус вокруг самой платы. Вырезы для разъёмов добавляются автоматически.',
+  'Pick a sketch point or edge': 'Выберите точку или линию скетча',
   'Horizon lock': 'Горизонт',
   'Keep the camera upright while orbiting': 'Не заваливать камеру при вращении',
   'Interface language': 'Язык интерфейса',

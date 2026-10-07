@@ -880,6 +880,19 @@ the other or a part.
 nothing; a board without holes defaults to clips, and a tilted one gets no mounts and a warning.
 Openings reuse the Port Cutouts cutters for the connectors ticked.
 
+Allow connectors to protrude sizes a board's enclosure from its PCB outline in X and Y,
+while keeping the full component height. It opens every connector automatically. The optional
+`EnclosureFeature.protrudingConnectors` flag defaults to false in existing documents.
+Connector cutters also cut the lid and its skirt. Screw towers and board clips move away from
+connector access corridors; impossible screw layouts are refused instead of producing blocked
+ports. USB-C openings are rounded, HDMI and small USB openings have bevels, and audio/barrel
+openings are circular. Explicit connector shapes override the label-based defaults.
+
+The cube's ISO button enables a true orthographic camera and aligns equal X/Y/Z directions.
+Orbit, pan, zoom, fit and picking share the active camera, and projection is saved in preferences.
+Measure in a sketch snaps to existing points and curves without modifying the sketch or snapping
+to the construction grid. The measurement panel stays available in the sketch palette.
+
 **A list input.** The command panel gained a `list` input: rows worked out from the other values,
 as buttons per row or as tick boxes, with an All line that sets every row at once. Mounting and
 Openings are both lists. The panel itself is now capped to the canvas height and only its body
