@@ -610,6 +610,79 @@ export async function runKernelTest(): Promise<TestResult[]> {
       )
     }
 
+    for (const [shape, clearance] of [
+      ['round', 0],
+      ['hex', 4],
+      ['gyroid', 4],
+    ] as const) {
+      const panel = body('vp', 'Vent panel')
+      const mask = body('vm', 'Keepout')
+      const doc = makeDocument(
+        'Vent clearance',
+        [panel, mask],
+        [
+          boxFeature('vp-box', 'vp', [-24, -24], [48, 48, 3]),
+          {
+            id: 'existing-hole',
+            name: 'Hole',
+            componentId: 'root',
+            kind: 'hole',
+            bodyId: 'vp',
+            plane: { kind: 'named', name: 'XY', offset: 3 },
+            source: { kind: 'explicit', positions: [[0, 0]] },
+            style: 'simple',
+            diameter: 12,
+            depth: 'through',
+          },
+          {
+            id: 'vents',
+            name: 'Vent',
+            componentId: 'root',
+            kind: 'vent',
+            bodyId: 'vp',
+            plane: { kind: 'named', name: 'XY', offset: 3 },
+            shape,
+            size: 8,
+            spacing: 2,
+            margin: 3,
+            holeClearance: clearance,
+            depth: 'through',
+          },
+          {
+            id: 'mask',
+            name: 'Keepout',
+            componentId: 'root',
+            kind: 'cylinder',
+            plane: XY,
+            centre: [0, 0],
+            radius: 6 + clearance,
+            height: 3,
+            result: { kind: 'newBody', bodyId: 'vm' },
+          },
+          {
+            id: 'keepout-check',
+            name: 'Check',
+            componentId: 'root',
+            kind: 'combine',
+            bodyId: 'vm',
+            toolBodyIds: ['vp'],
+            operation: 'intersect',
+            keepTools: true,
+          },
+        ],
+      )
+      const result = await evaluate(doc)
+      const volume = meshFor(result, 'root|vm')?.volume ?? 0
+      const expected = Math.PI * ((6 + clearance) ** 2 - 36) * 3
+      add(
+        `vent ${shape} preserves ${clearance} mm around existing hole`,
+        !result.errors.some((error) => error.severity === 'error') &&
+          (meshFor(result, 'root|vp')?.volume ?? Infinity) < 48 * 48 * 3 - Math.PI * 36 * 3 - 1 &&
+          Math.abs(volume - expected) < 0.02,
+        `protected ring ${volume.toFixed(4)} vs ${expected.toFixed(4)}; ${result.errors.map((error) => error.message).join('; ')}`,
+      )
+    }
+
     {
       const W = 50
       const D = 40

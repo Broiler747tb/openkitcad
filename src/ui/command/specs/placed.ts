@@ -219,6 +219,14 @@ export const ventCommand = defineCommand({
     },
     { id: 'spacing', kind: 'length', label: 'Gap Between', default: 2, min: 0.2, field: 'spacing' },
     { id: 'margin', kind: 'length', label: 'Border', default: 3, min: 0, field: 'margin' },
+    {
+      id: 'holeClearance',
+      kind: 'length',
+      label: 'Distance from existing holes',
+      default: 2,
+      min: 0,
+      field: 'holeClearance',
+    },
     ...EXTENT_INPUTS,
   ],
   build(values, context) {
@@ -231,6 +239,7 @@ export const ventCommand = defineCommand({
       size: values.size,
       spacing: values.spacing,
       margin: values.margin,
+      holeClearance: values.holeClearance,
       depth: values.extent === 'through' ? 'through' : values.depth,
     }
     return [feature]

@@ -7,14 +7,7 @@ import {
   useStore,
   type Selection,
 } from '../doc/store'
-import type {
-  ElementRef,
-  ExtrudeFeature,
-  Feature,
-  MoveFeature,
-  OkcDocument,
-  VentShape,
-} from '../doc/types'
+import type { ElementRef, ExtrudeFeature, Feature, MoveFeature, OkcDocument } from '../doc/types'
 import {
   activeFeatures,
   bodyCreator,
@@ -101,21 +94,7 @@ const OBJECT_GROUPS: Array<[string, string[]]> = [
       'bevel',
     ],
   ],
-  [
-    'Cut',
-    [
-      'vent-hex',
-      'vent-round',
-      'vent-square',
-      'vent-triangle',
-      'vent-diamond',
-      'vent-slot',
-      'vent-cross',
-      'vent-gyroid',
-      'cut-ball',
-      'cut-box',
-    ],
-  ],
+  ['Cut', ['vent', 'cut-ball', 'cut-box']],
   ['Move', ['move', 'turn', 'flip']],
   ['Hardware', ['holes', 'standoffs', 'ports']],
   ['Body', ['negative', 'hide', 'delete']],
@@ -194,8 +173,8 @@ export function objectActions(
     : picked
       ? ['press-pull', 'sketch-on-face', 'hole', 'hollow']
       : selection.kind === 'occurrence'
-        ? ['move', 'joint', 'enclosure', 'holes']
-        : ['size', 'move', 'edit-sketch', 'hollow']
+        ? ['move', 'turn', 'joint', 'enclosure', 'holes']
+        : ['size', 'move', 'turn', 'edit-sketch', 'hollow']
   return buildObjectActions(selection, picked, targetBodyId).map((a) => ({
     ...a,
     recommended: preferred.includes(a.id),
@@ -415,37 +394,12 @@ function buildObjectActions(
     }
 
     if (picked && onThis) {
-      const ventOn = (shape: VentShape, label: string, hint: string) => ({
-        id: `vent-${shape}`,
-        label,
-        hint,
-        sub: 'Vent it',
-        run: () => startCommand('vent', { face: facePicks(), shape }),
+      out.push({
+        id: 'vent',
+        label: 'Vent',
+        hint: 'A pattern with a border and clearance around existing holes.',
+        run: () => startCommand('vent', { face: facePicks() }),
       })
-      out.push(
-        ventOn('hex', 'Hexagons', 'The classic honeycomb. Webs the same width in every direction'),
-      )
-      out.push(ventOn('round', 'Round holes', 'Plain and quiet. Prints cleanly at any size'))
-      out.push(ventOn('square', 'Square holes', 'A grille. Reads as deliberate on a flat panel'))
-      out.push(ventOn('triangle', 'Triangles', 'Alternating rows, so the webs stay even'))
-      out.push(ventOn('diamond', 'Diamonds', 'Squares on their corner. No flat overhang to sag'))
-      out.push(
-        ventOn(
-          'slot',
-          'Slots',
-          'Louvre bars with rounded ends, which is where a printed panel splits first',
-        ),
-      )
-      out.push(
-        ventOn('cross', 'Crosses', 'Decorative. Arms a third of the span, so the webs stay even'),
-      )
-      out.push(
-        ventOn(
-          'gyroid',
-          'Gyroid weave',
-          'One winding channel rather than separate holes. Slower to work out',
-        ),
-      )
     }
 
     out.push({

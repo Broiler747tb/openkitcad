@@ -689,3 +689,30 @@ select {
   font-weight: 600;
   border-top: 1px solid var(--border, var(--okc-line-strong));
 }
+
+.object-action-shortcuts {
+  display: flex;
+  gap: 5px;
+  padding: 6px 0;
+}
+.object-action-shortcuts:empty {
+  display: none;
+}
+.object-action-shortcuts button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 7px 4px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--panel);
+  color: inherit;
+  cursor: pointer;
+  font-size: 11px;
+}
+.object-action-shortcuts .okc-icon {
+  width: 30px;
+  height: 30px;
+}

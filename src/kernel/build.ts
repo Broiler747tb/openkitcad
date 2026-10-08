@@ -9,6 +9,10 @@ import {
   drawRectangle,
   drawRoundedRectangle,
   Face,
+  makeFace,
+  measureArea,
+  basicFaceExtrusion,
+  Vector,
   getOC,
   makeBox,
   makeCylinder,
@@ -49,6 +53,7 @@ import { runCouponStep } from './couponStep'
 import { runCableStep } from './cableSteps'
 import { runClipStep } from './clipSteps'
 import { runScrewStep } from './screwStep'
+import { lidAppearance } from './lidAppearance'
 import { runEnclosureStep } from './enclosureStep'
 import {
   featureDependencies,
@@ -709,6 +714,7 @@ export function buildPortCutters(
 }
 function buildVentCutter(feature: VentFeature, frame: Frame, target: any): any | null {
   const [min, max] = target.boundingBox.bounds
+  let normalMin = Infinity
   let uMin = Infinity
   let uMax = -Infinity
   let vMin = Infinity
@@ -717,6 +723,7 @@ function buildVentCutter(feature: VentFeature, frame: Frame, target: any): any |
     for (const y of [min[1], max[1]]) {
       for (const z of [min[2], max[2]]) {
         const [u, v] = frameToLocal(frame, [x, y, z])
+        normalMin = Math.min(normalMin, v3.dot(v3.sub([x, y, z], frame.origin), frame.normal))
         uMin = Math.min(uMin, u)
         uMax = Math.max(uMax, u)
         vMin = Math.min(vMin, v)
@@ -735,7 +742,44 @@ function buildVentCutter(feature: VentFeature, frame: Frame, target: any): any |
   const v1 = vMax - inset
   if (u1 < u0 || v1 < v0) return null
 
-  const depth = feature.depth === 'through' ? THROUGH_LENGTH : feature.depth
+  const surface = target.faces.find(
+    (face: any) =>
+      face.geomType === 'PLANE' &&
+      Math.abs(v3.dot(face.normalAt().toTuple(), frame.normal)) > 0.999 &&
+      Math.abs(v3.dot(v3.sub(face.center.toTuple(), frame.origin), frame.normal)) < 0.001,
+  )
+  if (!surface) throw new Error('Ventilation needs a flat face on the target body.')
+  const outer = surface.clone().outerWire()
+  const borderWire = feature.margin > 0 ? outer.offset2D(-feature.margin) : outer
+  const borderFace = makeFace(borderWire)
+  const holes = surface
+    .clone()
+    .innerWires()
+    .map((wire: any) => makeFace(wire))
+  const circularHoles = holes.map((hole: any) => {
+    const wire = hole.clone().outerWire()
+    const edges = wire.edges
+    const radius = edges.reduce((sum: number, edge: any) => sum + edge.length, 0) / (2 * Math.PI)
+    const circular =
+      edges.every((edge: any) => edge.geomType === 'CIRCLE') &&
+      Math.abs(measureArea(hole) - Math.PI * radius ** 2) < 0.0001
+    const centre = frameToLocal(frame, hole.center.toTuple())
+    for (const edge of edges) edge.delete()
+    wire.delete()
+    return circular ? { centre, radius } : null
+  })
+  const holeBounds = holes.map((hole: any) => {
+    const [low, high] = hole.boundingBox.bounds
+    const points: Vec2[] = []
+    for (const x of [low[0], high[0]])
+      for (const y of [low[1], high[1]])
+        for (const z of [low[2], high[2]]) points.push(frameToLocal(frame, [x, y, z]))
+    return [
+      [Math.min(...points.map((point) => point[0])), Math.min(...points.map((point) => point[1]))],
+      [Math.max(...points.map((point) => point[0])), Math.max(...points.map((point) => point[1]))],
+    ] as [Vec2, Vec2]
+  })
+  const depth = feature.depth === 'through' ? Math.max(CUT_MARGIN, -normalMin) : feature.depth
   const centres: Vec2[] = []
   const midU = (u0 + u1) / 2
   const midV = (v0 + v1) / 2
@@ -773,16 +817,65 @@ function buildVentCutter(feature: VentFeature, frame: Frame, target: any): any |
 
   let merged: Drawing | null = null
   if (feature.shape === 'gyroid') {
-    merged = gyroidHoles(u0, u1, v0, v1, size, Math.max(feature.spacing, 0.2))
+    merged = gyroidHoles(
+      u0,
+      u1,
+      v0,
+      v1,
+      size,
+      Math.max(feature.spacing, 0.2),
+      holeBounds,
+      feature.holeClearance ?? 2,
+    )
   } else {
     for (const [u, v] of centres) {
       const row = Math.round((v - midV) / rowStep)
       const piece = outline(((row % 2) + 2) % 2).translate(u, v)
-      merged = merged ? merged.fuse(piece) : piece
+      const [low, high] = piece.boundingBox.bounds
+      const blocked = holeBounds.some(([a, b]: [Vec2, Vec2], index: number) => {
+        const circle = circularHoles[index]
+        if (circle && feature.shape === 'round')
+          return (
+            Math.hypot(u - circle.centre[0], v - circle.centre[1]) <=
+            circle.radius + size / 2 + (feature.holeClearance ?? 2) + 1e-7
+          )
+        const gap = circle
+          ? Math.hypot(
+              Math.max(low[0] - circle.centre[0], circle.centre[0] - high[0], 0),
+              Math.max(low[1] - circle.centre[1], circle.centre[1] - high[1], 0),
+            ) - circle.radius
+          : Math.hypot(
+              Math.max(a[0] - high[0], low[0] - b[0], 0),
+              Math.max(a[1] - high[1], low[1] - b[1], 0),
+            )
+        return gap <= (feature.holeClearance ?? 2) + 1e-7
+      })
+      if (!blocked) merged = merged ? merged.fuse(piece) : piece
     }
   }
-  if (!merged) return null
-  return sketchOn(merged, frame, CUT_MARGIN).extrude(-(depth + CUT_MARGIN))
+  if (!merged) {
+    for (const hole of holes) hole.delete()
+    borderFace.delete()
+    borderWire.delete()
+    surface.delete()
+    return null
+  }
+  const span = depth + CUT_MARGIN * 2
+  const extrudeRegion = (face: any) =>
+    basicFaceExtrusion(
+      face.clone().translate(v3.scale(frame.normal, CUT_MARGIN)),
+      new Vector(v3.scale(frame.normal, -span)),
+    )
+  const border = extrudeRegion(borderFace)
+  let cutter = sketchOn(merged, frame, CUT_MARGIN)
+    .extrude(-(depth + CUT_MARGIN))
+    .intersect(border)
+  for (const hole of holes) hole.delete()
+  border.delete()
+  borderFace.delete()
+  borderWire.delete()
+  surface.delete()
+  return cutter
 }
 
 function gyroidHoles(
@@ -792,6 +885,8 @@ function gyroidHoles(
   v1: number,
   cell: number,
   web: number,
+  holes: [Vec2, Vec2][] = [],
+  clearance = 0,
 ): Drawing | null {
   const k = (2 * Math.PI) / Math.max(cell, 1)
   const s = Math.SQRT1_2
@@ -827,7 +922,14 @@ function gyroidHoles(
     grid[i] = []
     for (let j = 0; j < nv; j++) {
       const edge = i === 0 || j === 0 || i === nu - 1 || j === nv - 1
-      grid[i][j] = edge ? -1 : f(u0 + i * du, v0 + j * dv) - threshold
+      const u = u0 + i * du
+      const v = v0 + j * dv
+      const blocked = holes.some(
+        ([a, b]) =>
+          Math.hypot(Math.max(a[0] - u, u - b[0], 0), Math.max(a[1] - v, v - b[1], 0)) <=
+          clearance + 2 * Math.hypot(du, dv),
+      )
+      grid[i][j] = edge || blocked ? -1 : f(u, v) - threshold
     }
   }
 
@@ -1183,6 +1285,7 @@ function buildLid(lid: LidFeature, source: PreShell, wall: number, walls: any | 
   let cap = insetSolid(source.shape, plugInset, source.frame).intersect(
     frameSlab(source.frame, -t, 0),
   )
+  cap = lidAppearance(cap, source.frame.normal, t, lid)
   if (fit === 'snap') {
     const outer = insetSolid(source.shape, wall + c, source.frame)
     const inner = insetSolid(source.shape, wall + c + prop.skirt, source.frame)

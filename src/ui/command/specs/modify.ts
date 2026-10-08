@@ -74,7 +74,7 @@ export const filletCommand = defineCommand({
   id: 'fillet',
   label: 'Fillet',
   hint: 'Round off edges with a constant radius.',
-  icon: '◜',
+  icon: 'в—њ',
   inputs: [
     EDGES_INPUT,
     {
@@ -110,7 +110,7 @@ export const chamferCommand = defineCommand({
   id: 'chamfer',
   label: 'Chamfer',
   hint: 'Cut a flat bevel along edges.',
-  icon: '◸',
+  icon: 'в—ё',
   inputs: [
     EDGES_INPUT,
     {
@@ -238,10 +238,48 @@ const SEAT_NAMES: Record<Exclude<LidFit, 'friction'>, string> = {
   hinge: 'Hinge for the lid',
 }
 
+export const LID_APPEARANCE_INPUTS = [
+  {
+    id: 'cornerStyle',
+    kind: 'choice',
+    label: 'Lid corners',
+    default: 'sharp',
+    options: [
+      { value: 'sharp', label: 'Sharp' },
+      { value: 'round', label: 'Rounded' },
+      { value: 'bevel', label: 'Beveled' },
+    ],
+  },
+  {
+    id: 'cornerSize',
+    kind: 'length',
+    label: 'Corner size',
+    default: 2,
+    min: 0.1,
+    visible: (values: LooseCommandValues) => values.cornerStyle !== 'sharp',
+  },
+  {
+    id: 'surfaceStyle',
+    kind: 'choice',
+    label: 'Lid surface',
+    default: 'flat',
+    options: [
+      { value: 'flat', label: 'Flat' },
+      { value: 'raised', label: 'Raised panel' },
+      { value: 'recessed', label: 'Recessed panel' },
+    ],
+  },
+] as const
+
 function lidInputs(shown: (values: LooseCommandValues) => boolean) {
   const hooks = (values: LooseCommandValues) => shown(values) && values.fit === 'hooks'
   const hinge = (values: LooseCommandValues) => shown(values) && values.fit === 'hinge'
   return [
+    ...LID_APPEARANCE_INPUTS.map((input) => ({
+      ...input,
+      visible: (values: LooseCommandValues) =>
+        shown(values) && (!('visible' in input) || input.visible(values)),
+    })),
     {
       id: 'fit',
       kind: 'choice',
@@ -378,6 +416,9 @@ function lidInputs(shown: (values: LooseCommandValues) => boolean) {
 function lidDetails(values: LooseCommandValues) {
   const fit = values.fit as LidFit
   return {
+    cornerStyle: values.cornerStyle as LidFeature['cornerStyle'],
+    cornerSize: values.cornerSize as number,
+    surfaceStyle: values.surfaceStyle as LidFeature['surfaceStyle'],
     clearance: values.clearance as number,
     fit,
     ...(isFitClass(values.fitClass) ? { fitClass: values.fitClass } : {}),
@@ -464,7 +505,7 @@ export const shellCommand = defineCommand({
   id: 'shell',
   label: 'Shell',
   hint: 'Hollow a body out, leaving walls of an even thickness and openings where faces were.',
-  icon: '▢',
+  icon: 'в–ў',
   inputs: [
     FACES_INPUT,
     THICKNESS_INPUT,
@@ -508,7 +549,7 @@ export const lidEditCommand = defineCommand({
   id: 'lid',
   label: 'Lid',
   hint: 'The lid made when hollowing out, and how it holds on.',
-  icon: '▭',
+  icon: 'в–­',
   inputs: [
     {
       id: 'thickness',
@@ -559,7 +600,7 @@ export const combineCommand = defineCommand({
   id: 'combine',
   label: 'Combine',
   hint: 'Join, cut or intersect bodies with each other.',
-  icon: '⊕',
+  icon: 'вЉ•',
   inputs: [
     {
       id: 'target',
@@ -626,7 +667,7 @@ export const moveCommand = defineCommand({
   id: 'move',
   label: 'Move/Copy',
   hint: 'Move bodies by an exact distance and turn them about their centre.',
-  icon: '✥',
+  icon: 'вњҐ',
   inputs: [
     {
       id: 'bodies',
@@ -710,7 +751,7 @@ export const offsetFaceCommand = defineCommand({
   id: 'offsetFace',
   label: 'Offset Face',
   hint: 'Moves flat faces in or out, stretching the faces around them.',
-  icon: '⇱',
+  icon: 'в‡±',
   inputs: [MOVED_FACES_INPUT, { id: 'distance', kind: 'length', label: 'Distance', default: 1 }],
   validate(values, context) {
     if (!values.distance) return { distance: 'This cannot be zero.' }
@@ -755,7 +796,7 @@ export const draftCommand = defineCommand({
   id: 'draft',
   label: 'Draft',
   hint: 'Tilts faces by an angle so a moulded or cast part slides out cleanly.',
-  icon: '◿',
+  icon: 'в—ї',
   inputs: [
     {
       id: 'plane',

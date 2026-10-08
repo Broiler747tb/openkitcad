@@ -1,3 +1,4 @@
+import { lidAppearance } from './lidAppearance'
 import { downcast, getOC, makeBox, makeCylinder, sketchCircle } from 'replicad'
 import type { Vec3 } from '../core/math'
 import { partBounds } from '../catalogue/placement'
@@ -144,7 +145,11 @@ export function enclosureRoom(
   const prop = lidProportions(wall, t)
   const reach =
     feature.lid === 'snap' ? g + prop.skirt + prop.bead : feature.lid === 'screws' ? g + SKIRT : 0
-  const side = Math.max(clearance, reach + 0.3, clipped ? g + CLIP.post + reach + 0.5 : 0)
+  const side = Math.max(
+    clearance,
+    reach + 0.3,
+    clipped ? g + (feature.clipThickness ?? CLIP.post) + reach + 0.5 : 0,
+  )
   const top = high[2] + clearance
   return {
     x0: low[0] - side,
@@ -225,7 +230,7 @@ function screwLid(
     holes.push(post(hole / 2, x, y, room.z1 - 1, room.z1 + t + 1))
     if (head - hole > 0.1) holes.push(countersink(x, y, room.z1 + t, hole, head))
   }
-  const plate = block(
+  let plate = block(
     room.x0 - wall,
     room.y0 - wall,
     room.z1,
@@ -233,6 +238,8 @@ function screwLid(
     room.y1 + wall,
     room.z1 + t,
   )
+  spent.add(plate)
+  plate = lidAppearance(plate, [0, 0, 1], t, feature) as Solid
   const lip = Math.min(2, feature.clearance)
   if (lip > 0.3) {
     pieces.push(
@@ -257,7 +264,9 @@ function screwLid(
 function snapLid(feature: EnclosureFeature, room: Room, cuts: Solid[], spent: Set<Solid>): Solid {
   const { wall, lidThickness: t, gap: g } = feature
   const prop = lidProportions(wall, t)
-  const plug = block(room.x0 + g, room.y0 + g, room.z1 - t, room.x1 - g, room.y1 - g, room.z1)
+  let plug = block(room.x0 + g, room.y0 + g, room.z1 - t, room.x1 - g, room.y1 - g, room.z1)
+  spent.add(plug)
+  plug = lidAppearance(plug, [0, 0, 1], t, feature) as Solid
   const skirt = ring(
     room.x0 + g,
     room.y0 + g,
@@ -311,17 +320,15 @@ function slideLid(
   spent: Set<Solid>,
 ): Solid {
   const { wall, lidThickness: t, gap: g } = feature
+  const z0 = room.top - g
+  const z1 = room.top + t + g
+  cuts.push(block(room.x0 - slot, room.y0 - slot, z0, room.x1 + wall + 1, room.y0 + 0.2, z1))
+  cuts.push(block(room.x0 - slot, room.y1 - 0.2, z0, room.x1 + wall + 1, room.y1 + slot, z1))
   cuts.push(
-    block(
-      room.x0 - slot,
-      room.y0 - slot,
-      room.top - g,
-      room.x1 + wall + 1,
-      room.y1 + slot,
-      room.top + t + g,
-    ),
+    block(room.x1 - 0.2, room.y0 - slot, z0, room.x1 + wall + 1, room.y1 + slot, room.z1 + 1),
   )
-  const plate = block(
+  cuts.push(block(room.x0 - slot, room.y0, z0, room.x0 + 0.2, room.y1, z1))
+  let plate = block(
     room.x0 - slot + g,
     room.y0 - slot + g,
     room.top,
@@ -329,12 +336,14 @@ function slideLid(
     room.y1 + slot - g,
     room.top + t,
   )
+  spent.add(plate)
+  plate = lidAppearance(plate, [0, 0, 1], t, feature) as Solid
   const pull = block(
     room.x1 + wall + 0.5,
-    room.y0,
+    (room.y0 + room.y1) / 2 - Math.min(6, (room.y1 - room.y0) / 4),
     room.top + t - EMBED,
     room.x1 + wall + 2,
-    room.y1,
+    (room.y0 + room.y1) / 2 + Math.min(6, (room.y1 - room.y0) / 4),
     room.top + t + 1.5,
   )
   spent.add(plate)
@@ -372,8 +381,18 @@ function mounts(
       for (const hole of holes) {
         const [x, y] = transformPoint(placed.matrix, [hole.x, hole.y, 0])
         const depth = Math.max(height - 1, 2)
-        additions.push(post((hole.diameter + 3) / 2, x, y, room.z0 - EMBED, base))
-        cuts.push(post(Math.max(hole.diameter - 0.6, 1.2) / 2, x, y, base - depth, base + 1))
+        additions.push(
+          post(((feature.mountScrew ?? hole.diameter) + 3) / 2, x, y, room.z0 - EMBED, base),
+        )
+        cuts.push(
+          post(
+            Math.max((feature.mountScrew ?? hole.diameter - 0.2) - 0.4, 1.2) / 2,
+            x,
+            y,
+            base - depth,
+            base + 1,
+          ),
+        )
       }
       continue
     }
@@ -382,7 +401,13 @@ function mounts(
       stage.report('warning', `${name} is not a board, so it cannot be clipped.`)
       continue
     }
-    const size: ClipSize = { ...CLIP, gap: feature.gap }
+    const size: ClipSize = {
+      ...CLIP,
+      width: feature.clipWidth ?? CLIP.width,
+      post: feature.clipThickness ?? CLIP.post,
+      hook: feature.clipHook ?? CLIP.hook,
+      gap: feature.gap,
+    }
     const longSide = board.width >= board.depth
     const length = longSide ? board.width : board.depth
     for (const side of [1, -1] as const) {
@@ -391,26 +416,31 @@ function mounts(
         (connector) =>
           mount.connectorIds.includes(connector.id) &&
           connector.side === edge &&
-          connector.z < clipTop(board, feature.gap) &&
+          connector.z <
+            clipTop(board, feature.gap) +
+              (feature.clipHook ?? CLIP.hook) -
+              CLIP.hook +
+              (feature.clipThickness ?? CLIP.post) -
+              CLIP.post &&
           connector.z + connector.height > room.z0 - base,
       )
       const chosen: number[] = []
-      for (const preferred of clipPositions(board, CLIPS_PER_EDGE, CLIP.width)) {
+      for (const preferred of clipPositions(board, CLIPS_PER_EDGE, size.width)) {
         const candidates = [
           preferred,
           ...Array.from(
             { length: 41 },
-            (_, i) => CLIP.width / 2 + 0.5 + (i * Math.max(0, length - CLIP.width - 1)) / 40,
+            (_, i) => size.width / 2 + 0.5 + (i * Math.max(0, length - size.width - 1)) / 40,
           ),
         ]
         candidates.sort((a, b) => Math.abs(a - preferred) - Math.abs(b - preferred))
         const along = candidates.find(
           (value) =>
-            chosen.every((other) => Math.abs(value - other) >= CLIP.width + 0.5) &&
+            chosen.every((other) => Math.abs(value - other) >= size.width + 0.5) &&
             ports.every(
               (connector) =>
                 Math.abs(value - (longSide ? connector.x : connector.y)) >
-                (CLIP.width + connector.width) / 2 + feature.tolerance + 0.5,
+                (size.width + connector.width) / 2 + feature.tolerance + 0.5,
             ),
         )
         if (along === undefined) {
@@ -460,6 +490,10 @@ export function runEnclosureStep(feature: Feature, stage: SolidStage, doc: OkcDo
     )
     return true
   }
+  if (enclosure.lid === 'slide' && gap >= slot) {
+    stage.report('error', 'The lid gap must be smaller than the depth of its guide rails.')
+    return true
+  }
   const parts: Part[] = []
   for (const mount of enclosure.mounts) {
     const placed = placedPart(doc, mount.occurrencePath, enclosure.contextPath)
@@ -480,7 +514,15 @@ export function runEnclosureStep(feature: Feature, stage: SolidStage, doc: OkcDo
     const board = boardBox(placed.part)
     if (mount.kind === 'clips' && board && flat(placed)) {
       const base = transformPoint(placed.matrix, [0, 0, 0])[2]
-      high[2] = Math.max(high[2], base + clipTop(board, gap))
+      high[2] = Math.max(
+        high[2],
+        base +
+          clipTop(board, gap) +
+          (enclosure.clipHook ?? CLIP.hook) -
+          CLIP.hook +
+          (enclosure.clipThickness ?? CLIP.post) -
+          CLIP.post,
+      )
     }
     parts.push({ name, mount: selectedMount, placed, low, high })
   }

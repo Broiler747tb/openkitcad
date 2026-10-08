@@ -3,6 +3,8 @@ import { useStore } from '../doc/store'
 import { selectedObjectActions, extrusionAction } from './workflow'
 import { chooseAction } from './ActionDialog'
 import { FlyoutMenu } from './FlyoutMenu'
+import { MoveCopyIcon } from './icons/modify'
+import { HoleIcon, RevolveIcon } from './icons/solid'
 
 export function SelectionActions({ compact = false }: { compact?: boolean }) {
   const state = useStore()
@@ -13,6 +15,24 @@ export function SelectionActions({ compact = false }: { compact?: boolean }) {
   return (
     <div className="selection-actions section">
       <span className="eyebrow">{t('ACTIONS FOR SELECTION')}</span>
+      <div className="object-action-shortcuts">
+        {actions
+          .filter((action) => ['move', 'turn', 'negative'].includes(action.id))
+          .map((action) => {
+            const Icon =
+              action.id === 'move' ? MoveCopyIcon : action.id === 'turn' ? RevolveIcon : HoleIcon
+            return (
+              <button
+                key={action.id}
+                title={t(action.hint ?? action.label)}
+                onClick={() => chooseAction(action)}
+              >
+                <Icon className="okc-icon" />
+                <span>{t(action.label)}</span>
+              </button>
+            )
+          })}
+      </div>
       {extrude && (
         <button
           className="primary-button"
@@ -29,7 +49,9 @@ export function SelectionActions({ compact = false }: { compact?: boolean }) {
       )}
       {compact ? (
         actions
-          .filter((action) => action.recommended)
+          .filter(
+            (action) => action.recommended && !['move', 'turn', 'negative'].includes(action.id),
+          )
           .map((action) => (
             <button
               className="tb"
@@ -41,7 +63,10 @@ export function SelectionActions({ compact = false }: { compact?: boolean }) {
             </button>
           ))
       ) : (
-        <FlyoutMenu actions={actions} onPick={chooseAction} />
+        <FlyoutMenu
+          actions={actions.filter((action) => !['move', 'turn', 'negative'].includes(action.id))}
+          onPick={chooseAction}
+        />
       )}
     </div>
   )

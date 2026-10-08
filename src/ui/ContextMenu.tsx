@@ -1,6 +1,8 @@
 import { t } from '../i18n'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { FlyoutMenu } from './FlyoutMenu'
+import { MoveCopyIcon } from './icons/modify'
+import { HoleIcon, RevolveIcon } from './icons/solid'
 
 export interface MenuRect {
   left: number
@@ -136,7 +138,29 @@ export function ContextMenu<T extends Item>({
           ×
         </button>
       </div>
-      <FlyoutMenu actions={actions} order={order} onPick={onPick} />
+      <div className="object-action-shortcuts">
+        {actions
+          .filter((action) => ['move', 'turn', 'negative'].includes(action.id))
+          .map((action) => {
+            const Icon =
+              action.id === 'move' ? MoveCopyIcon : action.id === 'turn' ? RevolveIcon : HoleIcon
+            return (
+              <button
+                key={action.id}
+                title={t(action.hint ?? action.label)}
+                onClick={() => onPick(action)}
+              >
+                <Icon className="okc-icon" />
+                <span>{t(action.label)}</span>
+              </button>
+            )
+          })}
+      </div>
+      <FlyoutMenu
+        actions={actions.filter((action) => !['move', 'turn', 'negative'].includes(action.id))}
+        order={order}
+        onPick={onPick}
+      />
     </div>
   )
 }

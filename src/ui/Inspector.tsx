@@ -685,8 +685,8 @@ function BodyInspector({ id, instanceId }: { id: string; instanceId?: string }) 
         {objectActions({ kind: 'body', id })
           .filter((a) =>
             (mesh?.kind === 'surface'
-              ? ['size', 'sketch-on-top']
-              : ['size', 'round', 'bevel', 'sketch-on-top']
+              ? ['size', 'move', 'turn', 'sketch-on-top']
+              : ['size', 'move', 'turn', 'round', 'bevel', 'sketch-on-top']
             ).includes(a.id),
           )
           .map((action) => (

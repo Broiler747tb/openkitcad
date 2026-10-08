@@ -766,6 +766,9 @@ export function editOptions(
         {
           initial: {
             thickness: feature.thickness,
+            cornerStyle: feature.cornerStyle ?? 'sharp',
+            cornerSize: feature.cornerSize ?? 2,
+            surfaceStyle: feature.surfaceStyle ?? 'flat',
             fit: feature.fit,
             fitClass: feature.fitClass ?? 'custom',
             clearance: feature.clearance,
@@ -1062,6 +1065,7 @@ export function editOptions(
             size: feature.size,
             spacing: feature.spacing,
             margin: feature.margin,
+            holeClearance: feature.holeClearance ?? 2,
             extent: feature.depth === 'through' ? 'through' : 'distance',
             ...(feature.depth === 'through' ? {} : { depth: feature.depth }),
           },
