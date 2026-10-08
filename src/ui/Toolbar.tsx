@@ -1162,7 +1162,7 @@ export function Toolbar({
                   'move',
                   'appearance',
                 ].map((id) => ({ ...cmd(id), group: 'Modify' })),
-                ...selected,
+                ...selected.filter((action) => action.id !== 'vent'),
               ],
               <>
                 {tool(

@@ -221,6 +221,7 @@ export type VentShape =
 
 export interface VentFeature extends FeatureBase {
   kind: 'vent'
+  holeClearance?: number
   bodyId: string
   plane: PlaneRef
   shape: VentShape
@@ -253,6 +254,9 @@ export interface LidHinge {
 
 export interface LidFeature extends FeatureBase {
   kind: 'lid'
+  cornerStyle?: 'sharp' | 'round' | 'bevel'
+  cornerSize?: number
+  surfaceStyle?: 'flat' | 'raised' | 'recessed'
   sourceBodyId: string
   shellFeatureId: string
   thickness: number
@@ -490,6 +494,13 @@ export interface EnclosureMount {
 
 export interface EnclosureFeature extends FeatureBase {
   kind: 'enclosure'
+  mountScrew?: number
+  clipWidth?: number
+  clipThickness?: number
+  clipHook?: number
+  cornerStyle?: 'sharp' | 'round' | 'bevel'
+  cornerSize?: number
+  surfaceStyle?: 'flat' | 'raised' | 'recessed'
   contextPath: string[]
   mounts: EnclosureMount[]
   protrudingConnectors?: boolean

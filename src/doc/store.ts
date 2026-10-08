@@ -607,7 +607,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   section: { enabled: false, axis: 'z', position: 0, flipped: false },
   showPlacements: true,
-  showFasteners: true,
+  showFasteners: false,
   statusMessage: null,
 
   setDoc(doc, resetHistory = true) {

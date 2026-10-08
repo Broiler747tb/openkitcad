@@ -1,3 +1,4 @@
+import { LID_APPEARANCE_INPUTS } from './modify'
 import { getPart } from '../../../catalogue'
 import { effectivePart } from '../../../catalogue/placement'
 import type { CataloguePart } from '../../../catalogue/types'
@@ -43,6 +44,8 @@ export const LID_STYLES = [
 ] as const
 
 const SCREW_SIZES = [
+  { value: '4', label: 'M4' },
+  { value: '5', label: 'M5' },
   { value: '2', label: 'M2' },
   { value: '2.5', label: 'M2.5' },
   { value: '3', label: 'M3' },
@@ -120,7 +123,7 @@ export const enclosureCommand = defineCommand({
   id: 'enclosure',
   label: 'Enclosure',
   hint: 'A box sized round the parts you pick, with a lid, mounts for each board and openings for the connectors you tick.',
-  icon: '▤',
+  icon: 'в–¤',
   inputs: [
     {
       id: 'parts',
@@ -157,6 +160,43 @@ export const enclosureCommand = defineCommand({
       all: 'All boards',
       empty: 'None of these parts is a board.',
     },
+    {
+      id: 'mountScrew',
+      kind: 'choice',
+      label: 'Standoff screw',
+      options: SCREW_SIZES,
+      default: '3',
+      visible: (values: LooseCommandValues) =>
+        Object.values(values.mounting ?? {}).includes('standoffs'),
+    },
+    {
+      id: 'clipWidth',
+      kind: 'length',
+      label: 'Clip width',
+      default: 8,
+      min: 1,
+      visible: (values: LooseCommandValues) =>
+        Object.values(values.mounting ?? {}).includes('clips'),
+    },
+    {
+      id: 'clipThickness',
+      kind: 'length',
+      label: 'Clip thickness',
+      default: 2.4,
+      min: 0.6,
+      visible: (values: LooseCommandValues) =>
+        Object.values(values.mounting ?? {}).includes('clips'),
+    },
+    {
+      id: 'clipHook',
+      kind: 'length',
+      label: 'Clip hook',
+      default: 1.2,
+      min: 0.2,
+      visible: (values: LooseCommandValues) =>
+        Object.values(values.mounting ?? {}).includes('clips'),
+    },
+    ...LID_APPEARANCE_INPUTS,
     {
       id: 'ports',
       kind: 'list',
@@ -246,6 +286,8 @@ export const enclosureCommand = defineCommand({
     if (values.lid === 'slide' && values.wall < 1.2) {
       return { wall: 'A sliding lid needs walls at least 1.2 mm thick for its grooves.' }
     }
+    if (values.lid === 'slide' && values.gap >= Math.min(1.2, values.wall - 0.8))
+      return { gap: 'The lid gap must be smaller than the depth of its guide rails.' }
     return null
   },
   derive(values, changed, context) {
@@ -278,6 +320,13 @@ export const enclosureCommand = defineCommand({
       componentId: context.componentId,
       contextPath: componentInstance(context.doc, context.componentId)?.path ?? [],
       mounts,
+      mountScrew: Number(values.mountScrew),
+      clipWidth: values.clipWidth,
+      clipThickness: values.clipThickness,
+      clipHook: values.clipHook,
+      cornerStyle: values.cornerStyle as EnclosureFeature['cornerStyle'],
+      cornerSize: values.cornerSize,
+      surfaceStyle: values.surfaceStyle as EnclosureFeature['surfaceStyle'],
       protrudingConnectors: values.protrudingConnectors,
       clearance: values.clearance,
       under: values.under,
@@ -322,6 +371,13 @@ export function enclosureValues(doc: OkcDocument, feature: EnclosureFeature) {
     ),
     lid: feature.lid,
     screw: String(feature.screw),
+    mountScrew: String(feature.mountScrew ?? 3),
+    clipWidth: feature.clipWidth ?? 8,
+    clipThickness: feature.clipThickness ?? 2.4,
+    clipHook: feature.clipHook ?? 1.2,
+    cornerStyle: feature.cornerStyle ?? 'sharp',
+    cornerSize: feature.cornerSize ?? 2,
+    surfaceStyle: feature.surfaceStyle ?? 'flat',
     mounting,
     ports,
     protrudingConnectors: feature.protrudingConnectors ?? false,

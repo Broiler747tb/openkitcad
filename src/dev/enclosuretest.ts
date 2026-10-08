@@ -143,6 +143,31 @@ export async function runEnclosureTest(): Promise<TestResult[]> {
       )
     })
 
+    await check('lid appearance and mounts', async () => {
+      for (const patch of [
+        { lid: 'slide', cornerStyle: 'round', cornerSize: 1, surfaceStyle: 'flat' },
+        { lid: 'screws', cornerStyle: 'bevel', cornerSize: 1, surfaceStyle: 'raised' },
+        { lid: 'snap', cornerStyle: 'sharp', surfaceStyle: 'recessed' },
+        { lid: 'screws', cornerStyle: 'round', cornerSize: 2, surfaceStyle: 'flat' },
+        { lid: 'slide', cornerStyle: 'bevel', cornerSize: 1, surfaceStyle: 'raised' },
+        { mountScrew: 2 },
+        { mountScrew: 4 },
+        { clipWidth: 5, clipThickness: 1.6, clipHook: 0.8 },
+      ]) {
+        const result = await evaluate(
+          enclosureDoc(patch, 'clipWidth' in patch ? { kind: 'clips' } : {}),
+        )
+        const lid = meshOf(result, 'lid')
+        add(
+          `lid and mounts ${JSON.stringify(patch)}`,
+          !result.errors.some((error) => error.severity === 'error') &&
+            (lid?.volume ?? 0) > 0 &&
+            lid?.pieces === 1,
+          said(result),
+        )
+      }
+    })
+
     await check('sliding lid', async () => {
       const result = await evaluate(enclosureDoc({ lid: 'slide' }))
       const box = meshOf(result, 'box')
@@ -159,6 +184,23 @@ export async function runEnclosureTest(): Promise<TestResult[]> {
         'the sliding lid clears its grooves',
         shared.volume < 0.01,
         `${shared.said}; overlap ${shared.volume.toFixed(4)}`,
+      )
+      const moved = enclosureDoc({ lid: 'slide' })
+      moved.timeline.push({
+        id: 'slide-open',
+        name: 'Slide open',
+        componentId: 'root',
+        kind: 'move',
+        bodyIds: ['lid'],
+        offset: [20, 0, 0],
+        rotation: [0, 0, 0],
+      })
+      const open = await evaluate(withClash(moved))
+      add(
+        'sliding lid can actually travel out along the rails',
+        !open.errors.some((error) => error.severity === 'error') &&
+          (meshOf(open, 'lid')?.volume ?? 0) < 0.01,
+        said(open),
       )
       const thin = await evaluate(enclosureDoc({ lid: 'slide', wall: 1 }))
       add(
