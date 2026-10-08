@@ -91,7 +91,7 @@ npm run dist:portable   # Windows x64
 
 React, TypeScript, three.js, and [replicad](https://github.com/sgenoud/replicad) / OpenCascade in a worker. Tests cover geometry, the solver, saving, editing, sharing, and browser interactions. [Run the checks in your browser](https://broiler747tb.github.io/openkitcad/?selftest).
 
-[Architecture](docs/FOUNDATIONS.md) · [Sketch solver](src/sketch) · [Catalogue](src/catalogue) · [Android / S Pen](docs/ANDROID.md)
+[Architecture](docs/FOUNDATIONS.md) · [Sketch solver](src/sketch) · [Catalogue](src/catalogue) · [Agent API](docs/AGENT_API.md) · [Android / S Pen](docs/ANDROID.md)
 
 </details>
 

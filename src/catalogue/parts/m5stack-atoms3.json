@@ -1,0 +1,171 @@
+{
+  "id": "m5stack-atoms3",
+  "name": "M5Stack AtomS3",
+  "category": "mcu",
+  "popularity": 70,
+  "family": "m5stack-atom",
+  "variant": "AtomS3",
+  "manufacturer": "M5Stack",
+  "summary": "ESP32-S3 controller with a 128 × 128 colour screen.",
+  "confidence": "approximate",
+  "source": "M5Stack official AtomS3 specifications and Model Size drawing. Outline 24 × 24 mm; assembled housing height 12.9 mm. This is the complete cased device, not its internal PCB. Connector positions and mouth sizes, corner radii and visible details are schematic estimates from the drawing and photographs; verify on your revision before cutting. Rear mounting bores are blind, represented with an approximate 3 mm depth. They are not through PCB mounting holes, so automatic standoffs are deliberately omitted.  ",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 24,
+      "h": 24,
+      "cornerRadius": 3
+    },
+    "thickness": 12.9,
+    "bumps": [],
+    "bores": [
+      {
+        "x": 12,
+        "y": 12,
+        "z": 0,
+        "diameter": 2,
+        "depth": 3
+      }
+    ]
+  },
+  "mountingHoles": [],
+  "connectors": [
+    {
+      "id": "usb-c",
+      "label": "USB-C",
+      "side": "-y",
+      "x": 12,
+      "y": 0,
+      "z": 6.1,
+      "width": 9,
+      "height": 3.2,
+      "shape": "roundedRect",
+      "protrusion": 0,
+      "cornerRadius": 1.6
+    },
+    {
+      "id": "grove",
+      "label": "Grove HY2.0-4P",
+      "side": "-y",
+      "x": 12,
+      "y": 0,
+      "z": 1,
+      "width": 10,
+      "height": 5,
+      "shape": "rect",
+      "protrusion": 0
+    }
+  ],
+  "look": {
+    "colour": "#eceff1",
+    "finish": "plastic",
+    "components": [
+      {
+        "kind": "screen",
+        "x": 3,
+        "y": 3,
+        "z": 12.92,
+        "w": 18,
+        "h": 18,
+        "height": 0.12,
+        "active": [
+          4,
+          4,
+          16,
+          16
+        ],
+        "colour": "#101820",
+        "backlight": "#153348",
+        "label": "Display"
+      },
+      {
+        "kind": "port",
+        "port": "usb-c",
+        "x": 12,
+        "y": -0.02,
+        "z": 6.1,
+        "facing": "-y",
+        "w": 9,
+        "h": 3.2,
+        "depth": 7,
+        "label": "USB-C"
+      },
+      {
+        "kind": "box",
+        "x": 7.9,
+        "y": -0.025,
+        "z": 6.5,
+        "w": 8.2,
+        "h": 0.01,
+        "height": 2.4000000000000004,
+        "colour": "#11161c",
+        "finish": "plastic",
+        "label": "USB interior"
+      },
+      {
+        "kind": "box",
+        "x": 9.1,
+        "y": -0.035,
+        "z": 7.449999999999999,
+        "w": 5.8,
+        "h": 0.01,
+        "height": 0.5,
+        "colour": "#3a414b",
+        "finish": "plastic",
+        "label": "USB tongue"
+      },
+      {
+        "kind": "box",
+        "x": 7,
+        "y": -0.04,
+        "z": 1,
+        "w": 10,
+        "h": 0.01,
+        "height": 5,
+        "colour": "#dedbd3",
+        "finish": "plastic",
+        "label": "Grove rim"
+      },
+      {
+        "kind": "box",
+        "x": 7.6,
+        "y": -0.055,
+        "z": 1.6,
+        "w": 8.8,
+        "h": 0.01,
+        "height": 3.8,
+        "colour": "#161b20",
+        "finish": "plastic",
+        "label": "Grove opening"
+      }
+    ]
+  },
+  "electrical": {
+    "voltage": [
+      5
+    ],
+    "note": "5 V via USB-C. See the official pin map before connecting GPIO."
+  },
+  "links": [
+    {
+      "label": "Official documentation and mechanical drawing",
+      "url": "https://docs.m5stack.com/en/core/AtomS3"
+    },
+    {
+      "label": "Official hardware files",
+      "url": "https://github.com/m5stack/M5_Hardware"
+    }
+  ],
+  "tags": [
+    "m5stack",
+    "m5 stack",
+    "м5стак",
+    "м5 стак",
+    "esp32",
+    "atoms3",
+    "usb-c",
+    "grove",
+    "cased device"
+  ]
+}

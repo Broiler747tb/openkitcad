@@ -23,6 +23,7 @@ import { isSharedView } from './doc/share'
 import { SharedModelView } from './ui/SharedModelView'
 import { ShareDialog } from './ui/ShareDialog'
 import './ui/share.css'
+import { installAgentApi } from './agent/api'
 
 export function App() {
   useLanguage()
@@ -40,6 +41,7 @@ export function App() {
 }
 
 function EditorApp() {
+  useEffect(installAgentApi, [])
   const [showExport, setShowExport] = useState(false)
   const [showShare, setShowShare] = useState(false)
   const [leftTab, setLeftTab] = useState<'design' | 'catalogue'>('design')

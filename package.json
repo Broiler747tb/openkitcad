@@ -11,7 +11,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "node scripts/share-codec-test.mjs && npm run build && node scripts/selftest.mjs && node scripts/persistence-smoke.mjs && node scripts/editing-smoke.mjs && node scripts/share-smoke.mjs && node scripts/language-smoke.mjs && node scripts/workbench-smoke.mjs && node scripts/viewport-smoke.mjs && node scripts/catalogue-smoke.mjs",
+    "test": "node scripts/share-codec-test.mjs && npm run build && node scripts/selftest.mjs && node scripts/persistence-smoke.mjs && node scripts/editing-smoke.mjs && node scripts/share-smoke.mjs && node scripts/language-smoke.mjs && node scripts/workbench-smoke.mjs && node scripts/viewport-smoke.mjs && node scripts/catalogue-smoke.mjs && node scripts/agent-smoke.mjs",
     "benchmark": "node scripts/workbench-benchmark.mjs",
     "format": "prettier --write src electron scripts vite.config.ts",
     "format:check": "prettier --check src electron scripts vite.config.ts",

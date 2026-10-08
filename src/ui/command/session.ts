@@ -54,7 +54,33 @@ interface CommandStore {
 let ticket = 0
 let serial = 0
 
-function parameterResolver(doc: OkcDocument): ((name: string) => number) | undefined {
+export function applyBuiltCommand(
+  doc: OkcDocument,
+  spec: AnyCommandSpec,
+  features: Feature[],
+  context: CommandContext,
+  values: LooseCommandValues,
+  keptFields: ReadonlySet<string> = new Set(),
+) {
+  const editing = context.editingFeatureId
+  if (editing) {
+    replaceFeatureInDocument(doc, editing, features)
+    doc.bindings = doc.bindings.filter(
+      (link) => link.featureId !== editing || keptFields.has(link.field),
+    )
+  } else {
+    insertFeatures(doc, features)
+    for (const feature of features) {
+      if (!['extrude', 'revolve', 'emboss', 'rib', 'web'].includes(feature.kind)) continue
+      if (!('sketchId' in feature)) continue
+      const sketch = findFeature(doc, feature.sketchId)
+      if (sketch?.kind === 'sketch') sketch.visible = false
+    }
+  }
+  spec.adjust?.(doc, features, context, values as never)
+}
+
+export function parameterResolver(doc: OkcDocument): ((name: string) => number) | undefined {
   if (!doc.parameters.length) return undefined
   let values: Map<string, number>
   try {
@@ -178,7 +204,6 @@ export const useCommand = create<CommandStore>((set, get) => ({
     cancelPreview()
     set({ session: null, preview: null })
     useStore.getState().setCommandOpen(false)
-    const editing = session.context.editingFeatureId
     const kept = new Set(
       session.spec.inputs.flatMap((input) => {
         if ((input.kind !== 'length' && input.kind !== 'angle') || !input.field) return []
@@ -189,36 +214,11 @@ export const useCommand = create<CommandStore>((set, get) => ({
           : []
       }),
     )
-    useStore.getState().commit((doc) => {
-      const adjust = () => {
-        try {
-          session.spec.adjust?.(doc, features, session.context, values as never)
-        } catch {
-          return
-        }
-      }
-      if (!editing) {
-        insertFeatures(doc, features)
-        adjust()
-        for (const feature of features) {
-          const consumes =
-            feature.kind === 'extrude' ||
-            feature.kind === 'revolve' ||
-            feature.kind === 'emboss' ||
-            feature.kind === 'rib' ||
-            feature.kind === 'web'
-          if (!consumes) continue
-          const sketch = findFeature(doc, feature.sketchId)
-          if (sketch?.kind === 'sketch') sketch.visible = false
-        }
-        return
-      }
-      replaceFeatureInDocument(doc, editing, features)
-      doc.bindings = doc.bindings.filter(
-        (link) => link.featureId !== editing || kept.has(link.field),
+    useStore
+      .getState()
+      .commit((doc) =>
+        applyBuiltCommand(doc, session.spec, features, session.context, values, kept),
       )
-      adjust()
-    })
   },
 
   cancel() {

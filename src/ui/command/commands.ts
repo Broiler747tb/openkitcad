@@ -370,7 +370,10 @@ export function startCommand(id: string, initial?: CommandStart['initial']): boo
   return true
 }
 
-function editOptions(doc: OkcDocument, feature: Feature): [AnyCommandSpec, CommandStart] | null {
+export function editOptions(
+  doc: OkcDocument,
+  feature: Feature,
+): [AnyCommandSpec, CommandStart] | null {
   const bodyPicks = (ids: readonly string[]) => ids.flatMap((id) => bodyPick(doc, id) ?? [])
   const fit = fitEditOptions(doc, feature)
   if (fit) return fit

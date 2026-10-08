@@ -328,5 +328,15 @@
     "name": "Cylindrical battery cells",
     "category": "power",
     "summary": "Unprotected bare cylindrical cells for checking pack space."
+  },
+  "m5stack-atom": {
+    "name": "M5Stack Atom",
+    "category": "mcu",
+    "summary": "M5Stack ESP32 devices with their assembled housings."
+  },
+  "m5stack-core": {
+    "name": "M5Stack Core",
+    "category": "mcu",
+    "summary": "M5Stack ESP32 devices with their assembled housings."
   }
 }
