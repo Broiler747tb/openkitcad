@@ -6,6 +6,14 @@ import { chromium } from 'playwright'
 
 const root = path.resolve(import.meta.dirname, '..')
 const ids = [
+  'm5stack-atom-lite',
+  'm5stack-atoms3-lite',
+  'm5stack-atoms3',
+  'm5stack-stickc-plus2',
+  'm5stack-core2',
+  'm5stack-cores3',
+  'm5stack-stamp-s3',
+  'm5stack-cardputer',
   'fastener-nut-m2',
   'fastener-nut-m25',
   'fastener-nut-m3',
@@ -253,6 +261,14 @@ try {
   for (const [q, matches] of Object.entries(report.search)) assert.ok(matches.length, q)
   assert.ok(report.resizedStepBytes > 10000)
   const galleryIds = [
+    'm5stack-atom-lite',
+    'm5stack-atoms3-lite',
+    'm5stack-atoms3',
+    'm5stack-stickc-plus2',
+    'm5stack-core2',
+    'm5stack-cores3',
+    'm5stack-stamp-s3',
+    'm5stack-cardputer',
     'fastener-nut-m3',
     'fastener-nyloc-m3',
     'fastener-washer-m3',
@@ -314,7 +330,7 @@ try {
     JSON.stringify(report, null, 2),
   )
   console.log(
-    '51 hardware parts passed schema, solid geometry, STEP export, shaft channels, parametric dimensions, persistence and previews.',
+    `${ids.length} hardware parts passed schema, solid geometry, STEP export, shaft channels, parametric dimensions, persistence and previews.`,
   )
 } finally {
   if (browser) await browser.close()

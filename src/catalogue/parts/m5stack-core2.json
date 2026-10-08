@@ -1,0 +1,243 @@
+{
+  "id": "m5stack-core2",
+  "name": "M5Stack Core2",
+  "category": "mcu",
+  "popularity": 70,
+  "family": "m5stack-core",
+  "variant": "Core2",
+  "manufacturer": "M5Stack",
+  "summary": "Touchscreen ESP32 controller with battery. Original K010 housing.",
+  "confidence": "approximate",
+  "source": "M5Stack official Core2 specifications and Model Size drawing. Outline 54 × 54 mm; assembled housing height 16.5 mm. This is the complete cased device, not its internal PCB. Connector positions and mouth sizes, corner radii and visible details are schematic estimates from the drawing and photographs; verify on your revision before cutting. Rear mounting bores are blind, represented with an approximate 3 mm depth. They are not through PCB mounting holes, so automatic standoffs are deliberately omitted.  ",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 54,
+      "h": 54,
+      "cornerRadius": 4
+    },
+    "thickness": 16.5,
+    "bumps": [],
+    "bores": [
+      {
+        "x": 5,
+        "y": 5,
+        "z": 0,
+        "diameter": 3.2,
+        "depth": 3
+      },
+      {
+        "x": 49,
+        "y": 5,
+        "z": 0,
+        "diameter": 3.2,
+        "depth": 3
+      },
+      {
+        "x": 5,
+        "y": 49,
+        "z": 0,
+        "diameter": 3.2,
+        "depth": 3
+      },
+      {
+        "x": 49,
+        "y": 49,
+        "z": 0,
+        "diameter": 3.2,
+        "depth": 3
+      }
+    ]
+  },
+  "mountingHoles": [],
+  "connectors": [
+    {
+      "id": "usb-c",
+      "label": "USB-C",
+      "side": "+x",
+      "x": 54,
+      "y": 27,
+      "z": 6.6,
+      "width": 9,
+      "height": 3.2,
+      "shape": "roundedRect",
+      "protrusion": 0,
+      "cornerRadius": 1.6
+    },
+    {
+      "id": "grove",
+      "label": "Grove HY2.0-4P",
+      "side": "+x",
+      "x": 54,
+      "y": 13,
+      "z": 5,
+      "width": 10,
+      "height": 5,
+      "shape": "rect",
+      "protrusion": 0
+    },
+    {
+      "id": "micro-sd",
+      "label": "microSD",
+      "side": "-y",
+      "x": 21,
+      "y": 0,
+      "z": 4.1,
+      "width": 12,
+      "height": 2,
+      "shape": "rect",
+      "protrusion": 0
+    }
+  ],
+  "look": {
+    "colour": "#e3e6e9",
+    "finish": "plastic",
+    "components": [
+      {
+        "kind": "screen",
+        "x": 5,
+        "y": 11,
+        "z": 16.52,
+        "w": 44,
+        "h": 37,
+        "height": 0.12,
+        "active": [
+          6,
+          12,
+          42,
+          35
+        ],
+        "colour": "#101820",
+        "backlight": "#153348",
+        "label": "Display"
+      },
+      {
+        "kind": "led",
+        "x": 14,
+        "y": 8,
+        "z": 16.52,
+        "colour": "#3c434a",
+        "size": 1.7,
+        "label": "Touch button"
+      },
+      {
+        "kind": "led",
+        "x": 27,
+        "y": 8,
+        "z": 16.52,
+        "colour": "#3c434a",
+        "size": 1.7,
+        "label": "Touch button"
+      },
+      {
+        "kind": "led",
+        "x": 40,
+        "y": 8,
+        "z": 16.52,
+        "colour": "#3c434a",
+        "size": 1.7,
+        "label": "Touch button"
+      },
+      {
+        "kind": "port",
+        "port": "usb-c",
+        "x": 54.02,
+        "y": 27,
+        "z": 6.6,
+        "facing": "+x",
+        "w": 9,
+        "h": 3.2,
+        "depth": 7,
+        "label": "USB-C"
+      },
+      {
+        "kind": "port",
+        "port": "microsd",
+        "x": 21,
+        "y": -0.02,
+        "z": 4.1,
+        "facing": "-y",
+        "w": 12,
+        "h": 2,
+        "depth": 10,
+        "label": "microSD"
+      },
+      {
+        "kind": "box",
+        "x": 54.015,
+        "y": 22.9,
+        "z": 7,
+        "w": 0.01,
+        "h": 8.2,
+        "height": 2.4000000000000004,
+        "colour": "#11161c",
+        "finish": "plastic",
+        "label": "USB interior"
+      },
+      {
+        "kind": "box",
+        "x": 54.025,
+        "y": 24.1,
+        "z": 7.949999999999999,
+        "w": 0.01,
+        "h": 5.8,
+        "height": 0.5,
+        "colour": "#3a414b",
+        "finish": "plastic",
+        "label": "USB tongue"
+      },
+      {
+        "kind": "box",
+        "x": 54.03,
+        "y": 8,
+        "z": 5,
+        "w": 0.01,
+        "h": 10,
+        "height": 5,
+        "colour": "#dedbd3",
+        "finish": "plastic",
+        "label": "Grove rim"
+      },
+      {
+        "kind": "box",
+        "x": 54.045,
+        "y": 8.6,
+        "z": 5.6,
+        "w": 0.01,
+        "h": 8.8,
+        "height": 3.8,
+        "colour": "#161b20",
+        "finish": "plastic",
+        "label": "Grove opening"
+      }
+    ]
+  },
+  "electrical": {
+    "voltage": [
+      5
+    ],
+    "note": "5 V via USB-C. See the official pin map before connecting GPIO."
+  },
+  "links": [
+    {
+      "label": "Official documentation and mechanical drawing",
+      "url": "https://docs.m5stack.com/en/core/Core2"
+    },
+    {
+      "label": "Official hardware files",
+      "url": "https://github.com/m5stack/M5_Hardware"
+    }
+  ],
+  "tags": [
+    "m5stack",
+    "m5 stack",
+    "м5стак",
+    "м5 стак",
+    "esp32",
+    "core2",
+    "usb-c",
+    "grove",
+    "cased device"
+  ]
+}

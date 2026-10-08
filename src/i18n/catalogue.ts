@@ -1,4 +1,13 @@
 export const partSummaries: Readonly<Record<string, string>> = {
+  'm5stack-atom-lite': 'Компактный ESP32 с RGB-кнопкой и Grove, в родном корпусе.',
+  'm5stack-atoms3-lite': 'ESP32-S3 с RGB-кнопкой, USB-C и Grove, в родном корпусе.',
+  'm5stack-atoms3': 'ESP32-S3 с цветным экраном 128 × 128, корпус 24 × 24 мм.',
+  'm5stack-stickc-plus2': 'Карманный ESP32 с экраном, аккумулятором и Grove.',
+  'm5stack-core2': 'ESP32 с сенсорным экраном и аккумулятором. Исходный корпус K010.',
+  'm5stack-cores3': 'ESP32-S3 с сенсорным экраном и камерой. Без основания DinBase.',
+  'm5stack-stamp-s3': 'Модуль ESP32-S3 24 × 18 мм. USB выступает за край платы на 1.96 мм.',
+  'm5stack-cardputer':
+    'Карманный ESP32-S3 с клавиатурой, экраном и аккумуляторным основанием. K132.',
   'fastener-nut-m2': 'Гайка M2: под ключ 4 мм, высота 1.6 мм.',
   'fastener-nyloc-m2': 'Самоконтрящаяся гайка M2: под ключ 4 мм, общая высота 2.7 мм.',
   'fastener-washer-m2': 'Шайба M2: отверстие 2.2 мм, наружный диаметр 5 мм, толщина 0.3 мм.',
@@ -372,6 +381,11 @@ export const partSummaries: Readonly<Record<string, string>> = {
 }
 
 export const familySummaries: Readonly<Record<string, string>> = {
+  'm5stack-atom': 'Компактные ESP32 M5Stack, в родных корпусах.',
+  'm5stack-core': 'Контроллеры M5Stack с сенсорным экраном, в родных корпусах.',
+  'm5stack-stick': 'Карманные ESP32 M5Stack с экраном и аккумулятором.',
+  'm5stack-stamp': 'Маленькие модули ESP32 для встраивания в проект.',
+  'm5stack-cardputer': 'Карманные M5Stack с клавиатурой и экраном.',
   'hex-nut': 'Шестигранные гайки для карманов в печатных деталях.',
   'nyloc-nut': 'Самоконтрящиеся гайки с нейлоновым кольцом.',
   'plain-washer': 'Плоские шайбы для распределения усилия крепежа.',

@@ -1,0 +1,210 @@
+{
+  "id": "m5stack-cores3",
+  "name": "M5Stack CoreS3 (main unit)",
+  "category": "mcu",
+  "popularity": 70,
+  "family": "m5stack-core",
+  "variant": "CoreS3 (main unit)",
+  "manufacturer": "M5Stack",
+  "summary": "ESP32-S3 touch controller with camera. DinBase is not included.",
+  "confidence": "approximate",
+  "source": "M5Stack official CoreS3 specifications and Model Size drawing. Outline 54 × 54 mm; assembled housing height 15.5 mm. This is the complete cased device, not its internal PCB. Connector positions and mouth sizes, corner radii and visible details are schematic estimates from the drawing and photographs; verify on your revision before cutting. No through mounting holes are claimed. Dimensions exclude DinBase; the supplied complete set is larger. ",
+  "geometry": {
+    "kind": "board",
+    "outline": {
+      "shape": "rect",
+      "w": 54,
+      "h": 54,
+      "cornerRadius": 4
+    },
+    "thickness": 15.5,
+    "bumps": []
+  },
+  "mountingHoles": [],
+  "connectors": [
+    {
+      "id": "usb-c",
+      "label": "USB-C",
+      "side": "+x",
+      "x": 54,
+      "y": 27,
+      "z": 6,
+      "width": 9,
+      "height": 3.2,
+      "shape": "roundedRect",
+      "protrusion": 0,
+      "cornerRadius": 1.6
+    },
+    {
+      "id": "grove",
+      "label": "Grove HY2.0-4P",
+      "side": "+x",
+      "x": 54,
+      "y": 12,
+      "z": 3.5,
+      "width": 10,
+      "height": 5,
+      "shape": "rect",
+      "protrusion": 0
+    },
+    {
+      "id": "micro-sd",
+      "label": "microSD",
+      "side": "-y",
+      "x": 27,
+      "y": 0,
+      "z": 3.5,
+      "width": 12,
+      "height": 2,
+      "shape": "rect",
+      "protrusion": 0
+    }
+  ],
+  "look": {
+    "colour": "#dfe4e8",
+    "finish": "plastic",
+    "components": [
+      {
+        "kind": "screen",
+        "x": 5,
+        "y": 11,
+        "z": 15.52,
+        "w": 44,
+        "h": 37,
+        "height": 0.12,
+        "active": [
+          6,
+          12,
+          42,
+          35
+        ],
+        "colour": "#101820",
+        "backlight": "#153348",
+        "label": "Display"
+      },
+      {
+        "kind": "box",
+        "x": 8,
+        "y": 3,
+        "z": 15.52,
+        "w": 38,
+        "h": 6,
+        "height": 0.16,
+        "colour": "#29313a",
+        "label": "Camera and sensor bar",
+        "radius": 0.5,
+        "finish": "plastic"
+      },
+      {
+        "kind": "cylinder",
+        "x": 19,
+        "y": 6,
+        "z": 15.7,
+        "d": 4,
+        "height": 0.08,
+        "colour": "#111820",
+        "finish": "glass",
+        "label": "Camera"
+      },
+      {
+        "kind": "port",
+        "port": "usb-c",
+        "x": 54.02,
+        "y": 27,
+        "z": 6,
+        "facing": "+x",
+        "w": 9,
+        "h": 3.2,
+        "depth": 7,
+        "label": "USB-C"
+      },
+      {
+        "kind": "port",
+        "port": "microsd",
+        "x": 27,
+        "y": -0.02,
+        "z": 3.5,
+        "facing": "-y",
+        "w": 12,
+        "h": 2,
+        "depth": 10,
+        "label": "microSD"
+      },
+      {
+        "kind": "box",
+        "x": 54.015,
+        "y": 22.9,
+        "z": 6.4,
+        "w": 0.01,
+        "h": 8.2,
+        "height": 2.4000000000000004,
+        "colour": "#11161c",
+        "finish": "plastic",
+        "label": "USB interior"
+      },
+      {
+        "kind": "box",
+        "x": 54.025,
+        "y": 24.1,
+        "z": 7.35,
+        "w": 0.01,
+        "h": 5.8,
+        "height": 0.5,
+        "colour": "#3a414b",
+        "finish": "plastic",
+        "label": "USB tongue"
+      },
+      {
+        "kind": "box",
+        "x": 54.03,
+        "y": 7,
+        "z": 3.5,
+        "w": 0.01,
+        "h": 10,
+        "height": 5,
+        "colour": "#dedbd3",
+        "finish": "plastic",
+        "label": "Grove rim"
+      },
+      {
+        "kind": "box",
+        "x": 54.045,
+        "y": 7.6,
+        "z": 4.1,
+        "w": 0.01,
+        "h": 8.8,
+        "height": 3.8,
+        "colour": "#161b20",
+        "finish": "plastic",
+        "label": "Grove opening"
+      }
+    ]
+  },
+  "electrical": {
+    "voltage": [
+      5
+    ],
+    "note": "5 V via USB-C. See the official pin map before connecting GPIO."
+  },
+  "links": [
+    {
+      "label": "Official documentation and mechanical drawing",
+      "url": "https://docs.m5stack.com/en/core/CoreS3"
+    },
+    {
+      "label": "Official hardware files",
+      "url": "https://github.com/m5stack/M5_Hardware"
+    }
+  ],
+  "tags": [
+    "m5stack",
+    "m5 stack",
+    "м5стак",
+    "м5 стак",
+    "esp32",
+    "cores3",
+    "usb-c",
+    "grove",
+    "cased device"
+  ]
+}
