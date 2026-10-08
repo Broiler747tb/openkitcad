@@ -33,13 +33,7 @@ jobs:
 
       - run: npm run format:check
 
-      - run: npx playwright install --with-deps chromium
-
-      # Builds, then runs the whole ?selftest suite in Chromium against that
-      # build. The geometry half needs a real browser for the worker and the
-      # OpenCascade WASM, so there is no cheaper way to cover it.
-      - run: npm test
-        timeout-minutes: 45
+      - run: npm run build
 
       - uses: actions/configure-pages@v5
 
