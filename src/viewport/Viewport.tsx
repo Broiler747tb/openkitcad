@@ -393,6 +393,8 @@ export function Viewport() {
   const [, forceRender] = useState(0)
 
   const committedInstances = useStore((s) => s.instances)
+  const rebuilding = useStore((s) => s.building)
+  const transient = useStore((s) => !!s.transientBase)
   const committedMeshes = useStore((s) => s.meshes)
   const commandPreview = useCommand((s) => s.preview)
   const commandSession = useCommand((s) => s.session)
@@ -488,7 +490,7 @@ export function Viewport() {
             ],
             rotation: [tidy(rotation[0]), tidy(rotation[1]), tidy(rotation[2])],
           } as Partial<Feature>,
-          { transient: true },
+          { transient: true, deferBuild: true },
         )
         return
       }
@@ -529,10 +531,14 @@ export function Viewport() {
               })
             : withPose(localMatrix, { position }),
         },
-        { transient: true },
+        { transient: true, deferBuild: true },
       )
     }
-    engine.onGizmoRelease = () => useStore.getState().endTransient()
+    engine.onGizmoRelease = () => {
+      const store = useStore.getState()
+      store.endTransient()
+      store.rebuild()
+    }
     const observer = new ResizeObserver(() => engine.resize())
     observer.observe(mountRef.current)
 
@@ -565,6 +571,7 @@ export function Viewport() {
   useEffect(() => {
     const engine = engineRef.current
     if (!engine) return
+    if (!engine.isGizmoDragging() && !rebuilding && !transient) engine.finishGizmoPreview()
     const colourOf = (instance: Instance) => {
       if (instance.previewTool) return PREVIEW_CUT_COLOUR
       if (instance.negative) return NEGATIVE_COLOUR
@@ -584,7 +591,7 @@ export function Viewport() {
       return part ? lookPrototype(effectivePart(part, component.source)) : null
     }
     engine.setScene(instances, meshes, colourOf, showPlacements, lookOf)
-  }, [instances, meshes, showPlacements, doc])
+  }, [instances, meshes, showPlacements, doc, rebuilding, transient])
 
   useEffect(() => {
     engineRef.current?.setOriginPlanes(planesWanted)
@@ -672,7 +679,14 @@ export function Viewport() {
       const parent = path ? pathMatrix(doc, path.slice(0, -1)) : null
       if (world && parent) {
         if (!engine.isGizmoDragging()) gizmoParent.current = parent
-        engine.setGizmo({ position: [world[12], world[13], world[14]], matrix: world }, gizmoMode)
+        engine.setGizmo(
+          {
+            position: [world[12], world[13], world[14]],
+            matrix: world,
+            live: !jointedPaths(doc).has(pathKey(path!)),
+          },
+          gizmoMode,
+        )
         return
       }
     }

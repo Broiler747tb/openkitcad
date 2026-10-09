@@ -496,6 +496,7 @@ export class ViewportEngine {
     showPlacements: boolean,
     lookOf?: (instance: Instance) => LookPrototype | null,
   ) {
+    if (this.gizmoPreview.size) return
     const seen = new Set<string>()
     for (const instance of instances) {
       if (!instance.visible) continue
@@ -1595,6 +1596,13 @@ export class ViewportEngine {
 
   private transform: TransformControls | null = null
   private gizmoProxy = new THREE.Object3D()
+  private gizmoPreview = new Map<InstanceObject, THREE.Matrix4>()
+  private gizmoStart = new THREE.Matrix4()
+  private gizmoLive = true
+
+  finishGizmoPreview() {
+    this.gizmoPreview.clear()
+  }
   onGizmoChange: ((pose: GizmoPose) => void) | null = null
   onGizmoRelease: (() => void) | null = null
 
@@ -1611,11 +1619,32 @@ export class ViewportEngine {
     tc.addEventListener('dragging-changed', (event) => {
       const dragging = (event as unknown as { value: boolean }).value
       this.controls.enabled = !dragging
+      if (dragging && this.gizmoLive) {
+        this.gizmoProxy.updateMatrix()
+        this.gizmoStart.copy(this.gizmoProxy.matrix).invert()
+        this.gizmoPreview.clear()
+        for (const entry of this.objects.values()) {
+          if (matchesKey(entry.instance, this.highlightKeys.selected))
+            this.gizmoPreview.set(entry, entry.mesh.matrix.clone())
+        }
+      }
       if (!dragging) this.onGizmoRelease?.()
     })
     tc.addEventListener('objectChange', () => {
       const proxy = this.gizmoProxy
       proxy.updateMatrix()
+      const delta = new THREE.Matrix4().multiplyMatrices(proxy.matrix, this.gizmoStart)
+      for (const [entry, initial] of this.gizmoPreview) {
+        entry.mesh.matrix.multiplyMatrices(delta, initial)
+        entry.outline.matrix.copy(entry.mesh.matrix)
+        entry.mesh.matrixWorldNeedsUpdate = true
+        entry.outline.matrixWorldNeedsUpdate = true
+        if (entry.look) {
+          entry.look.group.matrix.copy(entry.mesh.matrix)
+          entry.look.group.matrixWorldNeedsUpdate = true
+        }
+      }
+      this.solidGroup.updateMatrixWorld(true)
       const deg = (a: number) => THREE.MathUtils.radToDeg(a)
       this.onGizmoChange?.({
         position: [proxy.position.x, proxy.position.y, proxy.position.z],
@@ -1648,6 +1677,7 @@ export class ViewportEngine {
       position: Vec3
       rotationXyz?: Vec3
       matrix?: Matrix4
+      live?: boolean
     } | null,
     mode: 'translate' | 'rotate',
   ) {
@@ -1656,6 +1686,8 @@ export class ViewportEngine {
       return
     }
     const tc = this.ensureTransform()
+    if (this.gizmoPreview.size && !tc.dragging) return
+    this.gizmoLive = target.live !== false
     if (!this.gizmoProxy.parent) this.scene.add(this.gizmoProxy)
     const rad = THREE.MathUtils.degToRad
     const xyz = target.rotationXyz

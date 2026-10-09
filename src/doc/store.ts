@@ -138,7 +138,7 @@ interface AppState {
   setDoc: (doc: OkcDocument, resetHistory?: boolean) => void
   commit: (
     fn: (draft: OkcDocument) => void,
-    opts?: { transient?: boolean; mergeKey?: string; sketchOnly?: boolean },
+    opts?: { transient?: boolean; mergeKey?: string; sketchOnly?: boolean; deferBuild?: boolean },
   ) => void
   undo: () => void
   redo: () => void
@@ -164,7 +164,7 @@ interface AppState {
   updateOccurrence: (
     id: string,
     patch: Partial<Omit<Occurrence, 'id'>>,
-    opts?: { transient?: boolean },
+    opts?: { transient?: boolean; deferBuild?: boolean },
   ) => void
   removeOccurrence: (id: string) => void
   updateComponent: (id: string, patch: Partial<Pick<Component, 'name' | 'source'>>) => void
@@ -176,7 +176,7 @@ interface AppState {
   updateFeature: (
     featureId: string,
     patch: Partial<Feature>,
-    opts?: { transient?: boolean },
+    opts?: { transient?: boolean; deferBuild?: boolean },
   ) => void
   replaceFeature: (featureId: string, features: Feature[]) => void
   removeFeature: (featureId: string, opts?: { withDependents?: boolean }) => boolean
@@ -667,6 +667,7 @@ export const useStore = create<AppState>((set, get) => ({
         ...fixes,
       })
     }
+    if (opts?.deferBuild) return
     if (opts?.sketchOnly && get().activeSketch) {
       sketchDirty = true
       return
@@ -1045,6 +1046,7 @@ export const useStore = create<AppState>((set, get) => ({
       },
       {
         transient: opts?.transient,
+        deferBuild: opts?.deferBuild,
         mergeKey: `feature:${featureId}:${Object.keys(patch).join(',')}`,
       },
     )
