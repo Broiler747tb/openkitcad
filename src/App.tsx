@@ -2,6 +2,7 @@ import { t, useLanguage, counted } from './i18n'
 import { useEffect, useState } from 'react'
 import { Viewport } from './viewport/Viewport'
 import { BuildProgress } from './ui/BuildProgress'
+import { StartupScreen } from './ui/StartupScreen'
 import { Toolbar } from './ui/Toolbar'
 import { LeftPanel } from './ui/LeftPanel'
 import { Inspector } from './ui/Inspector'
@@ -167,22 +168,7 @@ function EditorApp() {
       <ConfirmHost />
       <StatusBar />
 
-      {!kernelReady && (
-        <div className="overlay-centre">
-          <div>
-            <div style={{ fontSize: 18, marginBottom: 6 }}>
-              Open<span style={{ color: 'var(--accent)' }}>Kit</span>CAD
-            </div>
-            <div style={{ color: 'var(--text-dim)', fontSize: 12.5 }}>
-              {t(kernelError ?? 'Starting the geometry engine…')}
-              <br />
-              <span style={{ color: 'var(--text-faint)' }}>
-                {t('About 11 MB, and only the first time.')}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
+      <StartupScreen ready={kernelReady} error={kernelError} />
 
       {activeSketch && <SketchBanner />}
       {showTutorial && <Tutorial onClose={() => setShowTutorial(false)} />}

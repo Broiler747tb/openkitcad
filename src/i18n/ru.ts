@@ -1,4 +1,7 @@
 export const ru: Readonly<Record<string, string>> = {
+  'Try again': 'Попробовать снова',
+  'Could not start CAD': 'Не удалось запустить CAD',
+  'First launch can take a little longer.': 'Первый запуск может занять чуть больше времени.',
   'This fit goes on a round face.': 'Это соединение создаётся на круглой грани.',
   'Pick the curved side of a round post or a round hole.':
     'Выбери боковую поверхность круглого штифта или отверстия.',
