@@ -168,6 +168,74 @@ export async function runEnclosureTest(): Promise<TestResult[]> {
       }
     })
 
+    await check('matching box corners', async () => {
+      for (const lid of ['screws', 'snap', 'slide']) {
+        for (const cornerStyle of ['round', 'bevel']) {
+          const doc = enclosureDoc(
+            { lid, cornerStyle, cornerSize: 10, protrudingConnectors: true },
+            { kind: 'none' },
+          )
+          const built = await evaluate(doc)
+          add(
+            `${lid} ${cornerStyle} corners keep one connected box and lid`,
+            !built.errors.some((error) => error.severity === 'error') &&
+              meshOf(built, 'box')?.pieces === 1 &&
+              meshOf(built, 'lid')?.pieces === 1,
+            said(built),
+          )
+          const fit = await evaluate(
+            withClash(
+              enclosureDoc(
+                { lid, cornerStyle, cornerSize: 10, protrudingConnectors: true },
+                { kind: 'none' },
+              ),
+            ),
+          )
+          add(
+            `${lid} ${cornerStyle} lid clears the matching box`,
+            !fit.errors.some((error) => error.severity === 'error') &&
+              (meshOf(fit, 'lid')?.volume ?? 0) < 0.01,
+            `${said(fit)}; overlap ${meshOf(fit, 'lid')?.volume ?? 0}`,
+          )
+          doc.components[0].bodies.push({
+            id: 'board-room',
+            name: 'Board clearance',
+            visible: true,
+            colour: '#cccccc',
+          })
+          doc.timeline.push({
+            id: 'board-room',
+            name: 'Board clearance',
+            componentId: 'root',
+            kind: 'box',
+            plane: { kind: 'named', name: 'XY', offset: 6.05 },
+            origin: [-44.5, -30],
+            width: 89,
+            depth: 60,
+            height: 1.3,
+            result: { kind: 'newBody', bodyId: 'board-room' },
+          } as Feature)
+          doc.timeline.push({
+            id: 'corner-clash',
+            name: 'Corner clash',
+            componentId: 'root',
+            kind: 'combine',
+            bodyId: 'board-room',
+            toolBodyIds: ['box'],
+            operation: 'intersect',
+            keepTools: true,
+          } as Feature)
+          const clearance = await evaluate(doc)
+          add(
+            `${lid} ${cornerStyle} corners leave 2 mm round the board`,
+            !clearance.errors.some((error) => error.severity === 'error') &&
+              (meshOf(clearance, 'board-room')?.volume ?? 0) < 0.01,
+            `${said(clearance)}; bounds ${JSON.stringify(meshOf(clearance, 'board-room')?.bounds)}; overlap ${meshOf(clearance, 'board-room')?.volume ?? 0}`,
+          )
+        }
+      }
+    })
+
     await check('sliding lid', async () => {
       const result = await evaluate(enclosureDoc({ lid: 'slide' }))
       const box = meshOf(result, 'box')

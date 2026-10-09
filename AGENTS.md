@@ -1,5 +1,8 @@
 # Working on OpenKitCAD
 
+Write public release titles, release notes and repository descriptions in English.
+Keep the CAD interface available in both English and Russian.
+
 Read `docs/FOUNDATIONS.md`, especially section 24, before editing. Do not launch
 other agents or start GitHub workflows by hand. Keep new code free of comments.
 Use the existing command specs and document helpers; do not build a second CAD
