@@ -1,8 +1,7 @@
 import { t } from '../i18n'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { FlyoutMenu } from './FlyoutMenu'
-import { MoveCopyIcon } from './icons/modify'
-import { HoleIcon, RevolveIcon } from './icons/solid'
+import { MoveObjectIcon, RotateObjectIcon, HoleObjectIcon } from './icons/ObjectActions'
 
 export interface MenuRect {
   left: number
@@ -143,7 +142,11 @@ export function ContextMenu<T extends Item>({
           .filter((action) => ['move', 'turn', 'negative'].includes(action.id))
           .map((action) => {
             const Icon =
-              action.id === 'move' ? MoveCopyIcon : action.id === 'turn' ? RevolveIcon : HoleIcon
+              action.id === 'move'
+                ? MoveObjectIcon
+                : action.id === 'turn'
+                  ? RotateObjectIcon
+                  : HoleObjectIcon
             return (
               <button
                 key={action.id}

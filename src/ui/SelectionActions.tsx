@@ -3,8 +3,7 @@ import { useStore } from '../doc/store'
 import { selectedObjectActions, extrusionAction } from './workflow'
 import { chooseAction } from './ActionDialog'
 import { FlyoutMenu } from './FlyoutMenu'
-import { MoveCopyIcon } from './icons/modify'
-import { HoleIcon, RevolveIcon } from './icons/solid'
+import { MoveObjectIcon, RotateObjectIcon, HoleObjectIcon } from './icons/ObjectActions'
 
 export function SelectionActions({ compact = false }: { compact?: boolean }) {
   const state = useStore()
@@ -20,7 +19,11 @@ export function SelectionActions({ compact = false }: { compact?: boolean }) {
           .filter((action) => ['move', 'turn', 'negative'].includes(action.id))
           .map((action) => {
             const Icon =
-              action.id === 'move' ? MoveCopyIcon : action.id === 'turn' ? RevolveIcon : HoleIcon
+              action.id === 'move'
+                ? MoveObjectIcon
+                : action.id === 'turn'
+                  ? RotateObjectIcon
+                  : HoleObjectIcon
             return (
               <button
                 key={action.id}
