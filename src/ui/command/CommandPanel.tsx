@@ -528,12 +528,15 @@ export function CommandPanel(props: CommandPanelProps) {
 
   useEffect(() => {
     if (!callbacks.current.onPreview) return
-    const timer = setTimeout(() => {
-      timerRef.current = null
-      const result = evaluateCommand(spec, stateRef.current, contextRef.current, { build: true })
-      setBuildError(result.buildError)
-      callbacks.current.onPreview?.(previewOf(result))
-    }, previewDelay)
+    const timer = setTimeout(
+      () => {
+        timerRef.current = null
+        const result = evaluateCommand(spec, stateRef.current, contextRef.current, { build: true })
+        setBuildError(result.buildError)
+        callbacks.current.onPreview?.(previewOf(result))
+      },
+      spec.id === 'move' ? 16 : previewDelay,
+    )
     timerRef.current = timer
     return () => {
       clearTimeout(timer)

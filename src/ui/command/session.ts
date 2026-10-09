@@ -1,6 +1,12 @@
 import { create } from 'zustand'
 import { userParts } from '../../catalogue'
-import { featureIndex, findFeature, markerIndex } from '../../doc/model'
+import {
+  featureIndex,
+  findFeature,
+  markerIndex,
+  multiplyMatrices,
+  translationMatrix,
+} from '../../doc/model'
 import { parameterValues } from '../../doc/parameters'
 import {
   activeComponentOf,
@@ -155,6 +161,32 @@ export const useCommand = create<CommandStore>((set, get) => ({
     if (!session || !features) {
       cancelPreview()
       set({ preview: null })
+      return
+    }
+    const source = useStore.getState()
+    const move = features[0]
+    if (
+      session.spec.id === 'move' &&
+      !session.context.editingFeatureId &&
+      features.length === 1 &&
+      move.kind === 'move' &&
+      move.rotation.every((angle) => angle === 0) &&
+      markerIndex(source.doc) === source.doc.timeline.length &&
+      move.bodyIds.every((id) => source.instances.some((instance) => instance.bodyId === id))
+    ) {
+      cancelPreview()
+      const shift = translationMatrix(move.offset)
+      set({
+        preview: {
+          instances: source.instances.map((instance) =>
+            move.bodyIds.includes(instance.bodyId) && instance.componentId === move.componentId
+              ? { ...instance, matrix: multiplyMatrices(instance.matrix, shift) }
+              : instance,
+          ),
+          meshes: source.meshes,
+          errors: source.errors,
+        },
+      })
       return
     }
     const doc = structuredClone(useStore.getState().doc)
