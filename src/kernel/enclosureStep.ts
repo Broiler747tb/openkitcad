@@ -104,6 +104,30 @@ function post(radius: number, x: number, y: number, z0: number, z1: number): Sol
   return makeCylinder(radius, z1 - z0, [x, y, z0], [0, 0, 1]) as unknown as Solid
 }
 
+function insetCorner(feature: EnclosureFeature, inset: number): number {
+  const size = feature.cornerSize ?? 2
+  return Math.max(0, size - inset * (feature.cornerStyle === 'bevel' ? 2 - Math.SQRT2 : 1))
+}
+
+function cornerBlock(
+  feature: EnclosureFeature,
+  x0: number,
+  y0: number,
+  z0: number,
+  x1: number,
+  y1: number,
+  z1: number,
+  size = feature.cornerSize ?? 2,
+): Solid {
+  const shape = block(x0, y0, z0, x1, y1, z1)
+  if (!size || !feature.cornerStyle || feature.cornerStyle === 'sharp') return shape
+  return lidAppearance(shape, [0, 0, 1], z1 - z0, {
+    cornerStyle: feature.cornerStyle,
+    cornerSize: size,
+    surfaceStyle: 'flat',
+  }) as Solid
+}
+
 function ring(
   x0: number,
   y0: number,
@@ -113,16 +137,24 @@ function ring(
   z0: number,
   z1: number,
   spent: Set<Solid>,
+  feature?: EnclosureFeature,
+  radius = 0,
 ): Solid {
-  const outer = block(x0, y0, z0, x1, y1, z1)
-  const inner = block(
-    x0 + thickness,
-    y0 + thickness,
-    z0 - 1,
-    x1 - thickness,
-    y1 - thickness,
-    z1 + 1,
-  )
+  const outer = feature
+    ? cornerBlock(feature, x0, y0, z0, x1, y1, z1, radius)
+    : block(x0, y0, z0, x1, y1, z1)
+  const inner = feature
+    ? cornerBlock(
+        feature,
+        x0 + thickness,
+        y0 + thickness,
+        z0 - 1,
+        x1 - thickness,
+        y1 - thickness,
+        z1 + 1,
+        Math.max(0, radius - thickness * (feature.cornerStyle === 'bevel' ? 2 - Math.SQRT2 : 1)),
+      )
+    : block(x0 + thickness, y0 + thickness, z0 - 1, x1 - thickness, y1 - thickness, z1 + 1)
   spent.add(outer)
   spent.add(inner)
   return rawBoolean<Solid>('cut', outer, [inner], FAILED)
@@ -145,11 +177,19 @@ export function enclosureRoom(
   const prop = lidProportions(wall, t)
   const reach =
     feature.lid === 'snap' ? g + prop.skirt + prop.bead : feature.lid === 'screws' ? g + SKIRT : 0
-  const side = Math.max(
+  let side = Math.max(
     clearance,
     reach + 0.3,
     clipped ? g + (feature.clipThickness ?? CLIP.post) + reach + 0.5 : 0,
   )
+  if (feature.cornerStyle && feature.cornerStyle !== 'sharp') {
+    const size = feature.cornerSize ?? 2
+    if (!(size > 0) || !Number.isFinite(size))
+      throw new Error('Corner size must be a positive finite length.')
+    const inner = insetCorner(feature, wall)
+    side += inner * (feature.cornerStyle === 'round' ? 1 - Math.SQRT1_2 : 0.5)
+    side = Math.max(side, size - wall - Math.min(high[0] - low[0], high[1] - low[1]) / 2 + 0.1)
+  }
   const top = high[2] + clearance
   return {
     x0: low[0] - side,
@@ -182,10 +222,25 @@ function screwLid(
     [room.x0 - radius, room.y1 + radius],
     [room.x1 + radius, room.y1 + radius],
   ]
+  if (feature.cornerStyle && feature.cornerStyle !== 'sharp') {
+    const along = Math.max(radius + 0.5, insetCorner(feature, wall))
+    originalCorners.splice(
+      0,
+      4,
+      [room.x0 - radius, room.y0 + along],
+      [room.x1 + radius, room.y0 + along],
+      [room.x0 - radius, room.y1 - along],
+      [room.x1 + radius, room.y1 - along],
+    )
+  }
   const blocked = portCuts.map(
     (cut) => (cut as unknown as { boundingBox: { bounds: [Vec3, Vec3] } }).boundingBox.bounds,
   )
   const free = ([x, y]: [number, number]) =>
+    (x + radius <= room.x0 + 0.001 ||
+      x - radius >= room.x1 - 0.001 ||
+      y + radius <= room.y0 + 0.001 ||
+      y - radius >= room.y1 - 0.001) &&
     blocked.every(
       ([lo, hi]) =>
         x + radius + 0.5 < lo[0] ||
@@ -201,7 +256,14 @@ function screwLid(
     for (let i = 1; i < 40; i++) {
       const fraction = i / 40
       candidates.push([corner[0], room.y0 + radius + fraction * (room.y1 - room.y0 - 2 * radius)])
-      candidates.push([room.x0 + radius + fraction * (room.x1 - room.x0 - 2 * radius), corner[1]])
+      candidates.push([
+        room.x0 + radius + fraction * (room.x1 - room.x0 - 2 * radius),
+        feature.cornerStyle && feature.cornerStyle !== 'sharp'
+          ? corner[1] < (room.y0 + room.y1) / 2
+            ? room.y0 - radius
+            : room.y1 + radius
+          : corner[1],
+      ])
     }
     candidates.sort(
       (a, b) =>
@@ -252,6 +314,8 @@ function screwLid(
         room.z1 - lip,
         room.z1 + EMBED,
         spent,
+        feature,
+        insetCorner(feature, wall + g),
       ),
     )
   }
@@ -266,7 +330,11 @@ function snapLid(feature: EnclosureFeature, room: Room, cuts: Solid[], spent: Se
   const prop = lidProportions(wall, t)
   let plug = block(room.x0 + g, room.y0 + g, room.z1 - t, room.x1 - g, room.y1 - g, room.z1)
   spent.add(plug)
-  plug = lidAppearance(plug, [0, 0, 1], t, feature) as Solid
+  plug = lidAppearance(plug, [0, 0, 1], t, {
+    ...feature,
+    cornerSize: insetCorner(feature, wall + g),
+    cornerStyle: insetCorner(feature, wall + g) > 0 ? feature.cornerStyle : 'sharp',
+  }) as Solid
   const skirt = ring(
     room.x0 + g,
     room.y0 + g,
@@ -276,6 +344,8 @@ function snapLid(feature: EnclosureFeature, room: Room, cuts: Solid[], spent: Se
     room.z1 - t - prop.depth,
     room.z1 - t + EMBED,
     spent,
+    feature,
+    insetCorner(feature, wall + g),
   )
   const bead = ring(
     room.x0 + g - prop.bead,
@@ -286,16 +356,20 @@ function snapLid(feature: EnclosureFeature, room: Room, cuts: Solid[], spent: Se
     room.z1 - prop.bandLo,
     room.z1 - prop.bandHi,
     spent,
+    feature,
+    insetCorner(feature, wall + g - prop.bead),
   )
   for (const solid of [plug, skirt, bead]) spent.add(solid)
   cuts.push(
-    block(
+    cornerBlock(
+      feature,
       room.x0 - prop.bead,
       room.y0 - prop.bead,
       room.z1 - prop.bandLo - g,
       room.x1 + prop.bead,
       room.y1 + prop.bead,
       room.z1 - prop.bandHi + g,
+      insetCorner(feature, wall - prop.bead),
     ),
   )
   const middle = (room.y0 + room.y1) / 2
@@ -322,8 +396,7 @@ function slideLid(
   const { wall, lidThickness: t, gap: g } = feature
   const z0 = room.top - g
   const z1 = room.top + t + g
-  cuts.push(block(room.x0 - slot, room.y0 - slot, z0, room.x1 + wall + 1, room.y0 + 0.2, z1))
-  cuts.push(block(room.x0 - slot, room.y1 - 0.2, z0, room.x1 + wall + 1, room.y1 + slot, z1))
+  cuts.push(block(room.x0 - slot, room.y0 - slot, z0, room.x1 + wall + 1, room.y1 + slot, z1))
   cuts.push(
     block(room.x1 - 0.2, room.y0 - slot, z0, room.x1 + wall + 1, room.y1 + slot, room.z1 + 1),
   )
@@ -562,7 +635,8 @@ export function runEnclosureStep(feature: Feature, stage: SolidStage, doc: OkcDo
       lid = rawBoolean<Solid>('cut', lid, portCuts, FAILED)
       spent.add(lid)
     }
-    const outer = block(
+    const outer = cornerBlock(
+      enclosure,
       room.x0 - wall,
       room.y0 - wall,
       room.z0 - floor,
@@ -570,7 +644,16 @@ export function runEnclosureStep(feature: Feature, stage: SolidStage, doc: OkcDo
       room.y1 + wall,
       room.z1,
     )
-    const hollow = block(room.x0, room.y0, room.z0, room.x1, room.y1, room.z1 + 1)
+    const hollow = cornerBlock(
+      enclosure,
+      room.x0,
+      room.y0,
+      room.z0,
+      room.x1,
+      room.y1,
+      room.z1 + 1,
+      insetCorner(enclosure, wall),
+    )
     spent.add(outer)
     spent.add(hollow)
     let shell = rawBoolean<Solid>('cut', outer, [hollow], FAILED)

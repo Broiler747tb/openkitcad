@@ -1,4 +1,291 @@
 export const ru: Readonly<Record<string, string>> = {
+  'This fit goes on a round face.': 'Это соединение создаётся на круглой грани.',
+  'Pick the curved side of a round post or a round hole.':
+    'Выбери боковую поверхность круглого штифта или отверстия.',
+  'This round face has no length to fit anything on.':
+    'Круглая грань слишком короткая для соединения.',
+  'The gap has to be between 0 and 5 mm.': 'Зазор должен быть от 0 до 5 мм.',
+  'The arm is too short for a hook this deep.': 'Рычаг слишком короткий для зацепа такой глубины.',
+  'Put the arm against a wall of the other part, with the hook pointing into the wall.':
+    'Размести рычаг у стенки другой детали, направив зацеп внутрь стенки.',
+  'There are no pins to place.': 'Не указаны места для штифтов.',
+  'Click the face where each pin goes.': 'Нажми на грань в месте каждого штифта.',
+  'The other part has to sit right against this face where the pins are.':
+    'Другая деталь должна прилегать к этой грани в местах штифтов.',
+  'Make the pins shorter, or the other part thicker there.':
+    'Укороти штифты или увеличь толщину другой детали в этом месте.',
+  'The inset cannot be negative.': 'Отступ не может быть отрицательным.',
+  'A lip runs round a face.': 'Бортик идёт по контуру грани.',
+  'Pick the face where the two parts meet.': 'Выбери грань, где соединяются две детали.',
+  'The lip does not fit inside this face.': 'Бортик не помещается на этой грани.',
+  'Make it narrower, or bring it in less with Inset.':
+    'Уменьши ширину бортика или его отступ внутрь.',
+  'The lip is wider than the edge it stands on, so part of it hangs in the air.':
+    'Бортик шире стенки под ним. Часть бортика висит в воздухе.',
+  'Make it narrower, or move it in with Inset so it stays on the wall.':
+    'Уменьши ширину или смести бортик внутрь, чтобы он оставался на стенке.',
+  'The other part has to sit on this face.': 'Другая деталь должна прилегать к этой грани.',
+  'The flank angle has to be between 0° and 40°.': 'Угол боковых стенок должен быть от 0° до 40°.',
+  'The other part has to sit on this face over the rail.':
+    'Другая деталь должна прилегать к этой грани над направляющей.',
+  'The distance from the end cannot be negative.':
+    'Расстояние от края не может быть отрицательным.',
+  'The bead runs past the end of the round face.': 'Выступ выходит за конец круглой грани.',
+  'The bead is deeper than the hole is wide.': 'Глубина выступа больше ширины отверстия.',
+  'Slots only work on a round post, so none were cut.':
+    'Прорези можно сделать только на круглом штифте. Они не созданы.',
+  'Put the bead on the post instead of in the hole if it needs to flex.':
+    'Для упругого соединения размести выступ на штифте, а не в отверстии.',
+  'The other part has to fit round this post.': 'Другая деталь должна надеваться на этот штифт.',
+  'The other part has to fit inside this hole.': 'Другая деталь должна входить в это отверстие.',
+  'Use between 1 and 8 lugs.': 'Укажи от 1 до 8 выступов.',
+  'The lugs run past the end of the round face.': 'Выступы выходят за конец круглой грани.',
+  'The lugs stick out further than the hole is wide.': 'Выступы выступают дальше ширины отверстия.',
+  'The lugs and their twist do not fit round the face.':
+    'Выступы с заданным поворотом не помещаются по окружности грани.',
+  'Use fewer or narrower lugs, or a smaller twist angle.':
+    'Уменьши количество или ширину выступов либо угол поворота.',
+  'The twist is too short for a click stop, so none was added.':
+    'Поворот слишком мал для фиксатора. Фиксатор не добавлен.',
+  'Use between 2 and 15 knuckles.': 'Укажи от 2 до 15 секций петли.',
+  'The knuckles are too short for this diameter and gap.':
+    'Секции петли слишком короткие для заданного диаметра и зазора.',
+  'Use fewer knuckles, a longer hinge, or a smaller gap.':
+    'Уменьши количество секций, увеличь длину петли или уменьши зазор.',
+  'Put the hinge line on the edge where the two parts meet.':
+    'Размести ось петли на краю соединения двух деталей.',
+  'Put the other part right next to this one along the hinge line.':
+    'Размести другую деталь рядом с этой вдоль оси петли.',
+  'The fit and its other half are on the same body.':
+    'Обе половины соединения находятся на одном теле.',
+  'Pick the other part as the mating body.': 'Выбери другую деталь ответным телом.',
+  'Pick a mesh body, or make one from a solid with Tessellate.':
+    'Выбери сеточное тело или создай сетку из твёрдого тела.',
+  'Use a longer edge length or a smaller proportion.':
+    'Увеличь длину ребра или уменьши долю треугольников.',
+  'The file this mesh was read from is not in the design any more.':
+    'Исходного файла этой сетки больше нет в модели.',
+  'Insert the mesh file again and delete this step.':
+    'Вставь файл сетки заново и удали эту операцию.',
+  'Nothing was left after removing the broken triangles.':
+    'После удаления повреждённых треугольников ничего не осталось.',
+  'Plane Cut with Fill closes a large opening cleanly.':
+    'Для большого отверстия используй сечение плоскостью с заполнением.',
+  'That edge length would make far too many triangles for this body.':
+    'При такой длине ребра получится слишком много треугольников.',
+  'Use a longer edge length.': 'Увеличь длину ребра.',
+  'Move the plane so it passes through the mesh.':
+    'Передвинь плоскость так, чтобы она пересекала сетку.',
+  'Edit this step to give every piece its own body.':
+    'Открой операцию и назначь каждой части отдельное тело.',
+  'A profile this step used is gone from the sketch.': 'Профиль этой операции удалён из эскиза.',
+  'No profile is picked.': 'Профиль не выбран.',
+  'That sketch does not enclose an area yet.': 'В эскизе пока нет замкнутой области.',
+  'Edit this step and click the areas of the sketch to use.':
+    'Открой операцию и выбери нужные области эскиза.',
+  'Draw a closed shape - a rectangle or circle - before extruding.':
+    'Перед выдавливанием нарисуй замкнутый контур — например, прямоугольник или круг.',
+  'Flip it, or give it a depth of its own.': 'Измени направление или укажи собственную глубину.',
+  'The thickness has to be more than zero.': 'Толщина должна быть больше нуля.',
+  'They have to be plain sketch curves, not construction lines.':
+    'Используй обычные линии эскиза, а не вспомогательные.',
+  'A rib follows one run of lines.': 'Ребро жёсткости строится по одной цепочке линий.',
+  'Join the lines end to end, or use Web for a set of walls.':
+    'Соедини концы линий или используй сетку рёбер для нескольких стенок.',
+  'The lid could not be built.': 'Не удалось построить крышку.',
+  'A screw lid goes on a round opening.': 'Резьбовая крышка создаётся на круглом отверстии.',
+  'Pick the round side of a tube or a jar, near its open end.':
+    'Выбери круглую боковую поверхность трубы или банки рядом с открытым краем.',
+  'That round face has no length to put a thread on.': 'Круглая грань слишком короткая для резьбы.',
+  'A screw lid needs a pitch and some turns.':
+    'Для резьбовой крышки нужны шаг и количество витков.',
+  'The thread is longer than the round face it sits on.': 'Резьба длиннее круглой грани под ней.',
+  'Use fewer turns, or a smaller pitch.': 'Уменьши количество витков или шаг резьбы.',
+  'A sketch this step uses is missing.': 'Эскиз этой операции отсутствует.',
+  'Pick a single closed area of the sketch.': 'Выбери одну замкнутую область эскиза.',
+  'The path sketch is missing.': 'Эскиз траектории отсутствует.',
+  'Pick another sketch for the path.': 'Выбери другой эскиз траектории.',
+  'The path sketch has no curves in it.': 'В эскизе траектории нет линий.',
+  'Delete the extra curves, or join their ends together.':
+    'Удали лишние линии или соедини их концы.',
+  'Loft needs at least two profiles.': 'Для перехода нужны хотя бы два профиля.',
+  'Pick another profile.': 'Выбери ещё один профиль.',
+  'Diameter, revolutions and height all have to be above zero.':
+    'Диаметр, количество витков и высота должны быть больше нуля.',
+  'The section is as wide as the coil, so the turns would cut through the middle.':
+    'Сечение слишком широкое: витки пересекут середину спирали.',
+  'Use a smaller section or a larger diameter.': 'Уменьши сечение или увеличь диаметр.',
+  'The section is taller than the gap between turns, so the turns touch each other.':
+    'Сечение выше расстояния между витками. Витки касаются друг друга.',
+  'The section size has to be above zero.': 'Размер сечения должен быть больше нуля.',
+  'The wall is as thick as the pipe, so there is no hole left.':
+    'Стенка слишком толстая: в трубе не остаётся отверстия.',
+  'Thicken works on surface bodies.': 'Утолщение работает только с поверхностными телами.',
+  'The sketch this patch fills is missing.': 'Эскиз этой заплатки отсутствует.',
+  'The pattern has more copies than when it was made.': 'Количество копий массива увеличилось.',
+  'Edit the pattern and OK it again.': 'Открой массив и снова подтверди его.',
+  'Edit the mirror and OK it again.': 'Открой отражение и снова подтверди его.',
+  'Move the plane so it passes through the body.':
+    'Передвинь плоскость так, чтобы она пересекала тело.',
+  'The scale has to be above zero.': 'Масштаб должен быть больше нуля.',
+  'The surfaces joined, but they do not close all the way round, so the result is still a surface.':
+    'Поверхности сшиты, но не образуют замкнутую оболочку. Результат остаётся поверхностью.',
+  'Edit this step to give every face its own body.':
+    'Открой операцию и назначь каждой грани отдельное тело.',
+  'No faces were picked.': 'Грани не выбраны.',
+  'Edit this step and pick faces to move.': 'Открой операцию и выбери грани для перемещения.',
+  'A face picked for this step belongs to a different body.':
+    'Выбранная грань принадлежит другому телу.',
+  'Edit this step and pick faces on the body it changes.':
+    'Открой операцию и выбери грани изменяемого тела.',
+  'Mesh bodies cannot be used here. Convert the mesh to a solid first.':
+    'Здесь нельзя использовать сеточные тела. Сначала преобразуй сетку в твёрдое тело.',
+  'Nothing to export.': 'Нет объектов для экспорта.',
+  'Mesh bodies cannot be written to STEP. Export them as STL, OBJ or 3MF, or convert them to solids first.':
+    'Сеточные тела нельзя сохранить в STEP. Экспортируй в STL, OBJ или 3MF либо сначала преобразуй в твёрдые тела.',
+  'Split it into pieces, or set a larger bed size.':
+    'Раздели на части или укажи больший размер стола.',
+  'Only fits if you rotate it 90 degrees on the bed.':
+    'Помещается только при повороте на столе на 90°.',
+  'Turning the part over, or adding a chamfer instead of an overhang, often removes the need entirely.':
+    'Переверни деталь или замени нависание фаской — поддержка может больше не понадобиться.',
+  'Nothing flat is touching the bed.': 'Ни одна плоская грань не касается стола.',
+  'Parts print far better with a flat face down. Try a different orientation.':
+    'Детали лучше печатаются плоской гранью вниз. Попробуй другое положение.',
+  'Box and lid corners': 'Углы корпуса и крышки',
+  'The box and lid share a corner style. Extra space keeps the corners clear of the boards.':
+    'Одинаковый стиль углов корпуса и крышки. Дополнительное место сохраняет зазор до плат.',
+  'A pattern with a border and clearance around existing holes.':
+    'Вентиляция с рамкой и отступом от готовых отверстий.',
+  'The geometry kernel stopped responding.': 'Геометрическое ядро перестало отвечать.',
+  'Ventilation needs a flat face on the target body.':
+    'Для вентиляции нужна плоская грань выбранного тела.',
+  'This lid has no hooks set up.': 'У этой крышки не настроены зацепы.',
+  'Edit the lid and choose its hooks again.': 'Открой настройки крышки и заново выбери зацепы.',
+  'The hooks are longer than the box is deep.': 'Зацепы длиннее глубины корпуса.',
+  'The hooks are wider than a wall of the box.': 'Зацепы шире стенки корпуса.',
+  'Make them narrower.': 'Уменьши их ширину.',
+  'The hooks barely reach past the gap round the lid, so it may not stay shut.':
+    'Зацепы почти не перекрывают зазор крышки. Она может не держаться.',
+  'This lid has no hinge set up.': 'У этой крышки не настроена петля.',
+  'Edit the lid and choose its hinge again.': 'Открой настройки крышки и заново выбери петлю.',
+  'The hinge is too thin to hold onto the lid.': 'Петля слишком тонкая для крепления к крышке.',
+  'Fix that step first and this one will build again.':
+    'Сначала исправь ту операцию, затем эта построится заново.',
+  'This step could not be built.': 'Не удалось построить эту операцию.',
+  'Edit this step and pick the geometry again.': 'Открой операцию и заново выбери геометрию.',
+  'Use Convert Mesh to turn it into a solid first.': 'Сначала преобразуй сетку в твёрдое тело.',
+  'The step that creates it may be suppressed, rolled back or deleted.':
+    'Создающая её операция могла быть отключена, отменена или удалена.',
+  'Pick a mesh body to convert.': 'Выбери сеточное тело для преобразования.',
+  'Reduce the mesh first.': 'Сначала упрости сетку.',
+  'Midplane needs two planes or faces.': 'Для средней плоскости нужны две плоскости или грани.',
+  'Edit this step and pick a second one.': 'Открой операцию и выбери вторую.',
+  'Those two planes are the same plane.': 'Эти две плоскости совпадают.',
+  'Pick two different planes or faces.': 'Выбери две разные плоскости или грани.',
+  'The sketch this was built from is missing.': 'Исходный эскиз этой операции отсутствует.',
+  'It may have been deleted, suppressed or rolled back. Delete this step or point it at another sketch.':
+    'Эскиз мог быть удалён, отключён или отменён. Удали операцию или выбери другой эскиз.',
+  'A surface is always a new body.': 'Поверхность всегда создаётся отдельным телом.',
+  'Set the operation to New Body.': 'Выбери операцию «Новое тело».',
+  'The line this revolves around is gone from the sketch.': 'Линия оси вращения удалена из эскиза.',
+  'Edit this step and pick another axis.': 'Открой операцию и выбери другую ось.',
+  'The sketch has no curves to make a surface from.':
+    'В эскизе нет линий для построения поверхности.',
+  'Draw lines, arcs or splines in the sketch first.':
+    'Сначала нарисуй в эскизе линии, дуги или сплайны.',
+  'An edge picked for this step belongs to a different body.':
+    'Выбранное ребро принадлежит другому телу.',
+  'Edit this step and pick edges on the body it changes.':
+    'Открой операцию и выбери рёбра изменяемого тела.',
+  'No face was chosen to leave open.': 'Не выбрана грань для отверстия.',
+  'Right-click the face you want the opening on and hollow it out from there.':
+    'Нажми правой кнопкой на грань для отверстия и создай оболочку.',
+  'OpenCascade cannot hollow through a face that a rounded edge blends into.':
+    'Не удалось создать оболочку через грань, переходящую в скругление.',
+  'Hollow the part out before rounding the edges around the opening.':
+    'Создай оболочку до скругления рёбер отверстия.',
+  'The part these holes were placed from is gone.':
+    'Деталь, по которой созданы отверстия, отсутствует.',
+  'Delete this step, or place the part again.': 'Удали операцию или вставь деталь заново.',
+  'The part these standoffs were placed from is gone.':
+    'Деталь, по которой созданы стойки, отсутствует.',
+  'No holes fitted inside the border you asked for.':
+    'Отверстия не помещаются внутри заданной рамки.',
+  'Try a smaller hole, tighter spacing, or a thinner edge border.':
+    'Уменьши отверстия, шаг или ширину рамки.',
+  'The hollowing this lid belongs to is gone.': 'Операция оболочки для этой крышки отсутствует.',
+  'It may have been deleted or turned off. Delete this lid, or hollow the part out again.':
+    'Оболочка могла быть удалена или отключена. Удали крышку или создай оболочку заново.',
+  'The lid this seat was cut for is gone.': 'Крышка для этого посадочного места отсутствует.',
+  'Delete this step, or make the lid again.': 'Удали операцию или создай крышку заново.',
+  'The part these openings were made for is gone.':
+    'Деталь, для которой сделаны вырезы, отсутствует.',
+  'The cable has to have a size.': 'Укажи размер кабеля.',
+  'The wall under this entry could not be measured.': 'Не удалось измерить стенку под вводом.',
+  'Put it on a face with material behind it.': 'Размести на грани, за которой есть материал.',
+  'Pick the gland that matches the cable.': 'Выбери кабельный ввод подходящего размера.',
+  'The board these clips were made for is gone.': 'Плата для этих защёлок отсутствует.',
+  'Delete this step, or place the board again.': 'Удали операцию или вставь плату заново.',
+  'A clip needs a width, a post and a grip.': 'Укажи ширину защёлки, размер стойки и захвата.',
+  'Put the board over the floor of the part, or move the part under it.':
+    'Размести плату над дном корпуса или передвинь корпус под неё.',
+  'The coupon needs a pin size, a plate thickness and a pin height.':
+    'Укажи размер штифта, толщину основания и высоту штифта.',
+  'A coupon has between 2 and 12 rungs.': 'Образец должен содержать от 2 до 12 ступеней.',
+  'The step between rungs has to be more than zero.':
+    'Шаг между ступенями должен быть больше нуля.',
+  'The rungs run into gaps below zero.': 'Зазор некоторых ступеней получается отрицательным.',
+  'Raise the first gap.': 'Увеличь начальный зазор.',
+  'The last rung is looser than the pin is wide.': 'Зазор последней ступени больше ширины штифта.',
+  'Use a smaller step, or fewer rungs.': 'Уменьши шаг или количество ступеней.',
+  'The sketch is not parallel to the face.': 'Эскиз не параллелен грани.',
+  'Sketch on the face itself, or on a plane offset from it.':
+    'Создай эскиз на грани или на параллельной ей плоскости.',
+  'The sketch has to run along the round face.': 'Эскиз должен идти вдоль круглой грани.',
+  'Put the sketch on a plane parallel to the axis of the round face.':
+    'Создай эскиз на плоскости, параллельной оси круглой грани.',
+  'The depth is deeper than the round face is wide.': 'Глубина больше ширины круглой грани.',
+  'Use a smaller depth.': 'Уменьши глубину.',
+  'The shape is longer than the way round the face.': 'Контур длиннее окружности грани.',
+  'Make the text smaller, or emboss it on a bigger round face.':
+    'Уменьши текст или выбери круглую грань большего размера.',
+  'The depth has to be more than zero.': 'Глубина должна быть больше нуля.',
+  'The sketch this emboss uses is missing.': 'Эскиз для тиснения отсутствует.',
+  'It may have been deleted, suppressed or rolled back.':
+    'Он мог быть удалён, отключён или отменён.',
+  'Emboss works on flat faces and round faces.': 'Тиснение работает на плоских и круглых гранях.',
+  'Pick a flat face, or the curved side of a cylinder.':
+    'Выбери плоскую грань или боковую поверхность цилиндра.',
+  'The enclosure could not be built.': 'Не удалось построить корпус.',
+  'Corner size must be a positive finite length.':
+    'Размер углов должен быть положительным конечным числом.',
+  'There is no room for the lid screws beside the connectors. Choose a snap or sliding lid, or increase the room round the parts.':
+    'Рядом с разъёмами нет места для винтов крышки. Выбери защёлки, сдвижную крышку или увеличь зазор вокруг деталей.',
+  'Lay it flat, or choose no mounts for it.':
+    'Положи деталь горизонтально или отключи её крепление.',
+  'Choose clips for it instead.': 'Выбери защёлки вместо стоек.',
+  'Use standoffs or increase the board space.': 'Выбери стойки или увеличь место вокруг платы.',
+  'An enclosure needs at least one part to go round.':
+    'Для корпуса нужна хотя бы одна деталь внутри.',
+  'Edit it and pick the parts.': 'Открой настройки и выбери детали.',
+  'The walls, the floor and the lid all need some thickness.':
+    'Толщина стенок, дна и крышки должна быть больше нуля.',
+  'The room round the parts and the gap cannot be negative.':
+    'Место вокруг деталей и зазор не могут быть отрицательными.',
+  'The walls are too thin to hold a sliding lid.': 'Стенки слишком тонкие для сдвижной крышки.',
+  'Make them at least 1.2 mm thick.': 'Увеличь толщину хотя бы до 1,2 мм.',
+  'Edit the enclosure and pick its parts again.':
+    'Открой настройки корпуса и заново выбери детали.',
+  'The lid needs a flat top for this surface style.':
+    'Для этого стиля поверхности нужна плоская верхняя грань крышки.',
+  '{0} is tilted, so it gets no mounts.': 'Деталь {0} наклонена, поэтому крепления не созданы.',
+  '{0} has no mounting holes.': 'У детали {0} нет крепёжных отверстий.',
+  '{0} is not a board, so it cannot be clipped.':
+    'Деталь {0} не является платой, поэтому защёлки не созданы.',
+  '{0} has no room for all its clips beside the connectors.':
+    'У детали {0} не хватает места для всех защёлок рядом с разъёмами.',
+  '{0} is no longer in the design.': 'Детали {0} больше нет в модели.',
   'Isometric mode': 'Изометрический режим',
   'Allow connectors to protrude': 'Разъёмы могут выступать за корпус',
   'Size the walls around the board outline. Connector openings are included automatically.':
@@ -2256,10 +2543,6 @@ export const ru: Readonly<Record<string, string>> = {
   'Could not put the clips on {0}.': 'Не удалось создать защёлки на {0}.',
   'Could not raise the shape on {0}.': 'Не удалось создать выступ на {0}.',
   'Could not sink the shape into {0}.': 'Не удалось создать углубление в {0}.',
-  '{0} is tilted, so it gets no mounts.': '{0} наклонено, крепления не создаются.',
-  '{0} has no mounting holes.': 'У {0} нет крепёжных отверстий.',
-  '{0} is not a board, so it cannot be clipped.': '{0} — не плата, крепление защёлками недоступно.',
-  '{0} is no longer in the design.': 'В модели больше нет {0}.',
   '{0} {1} to be above zero.': 'Значение {0} должно быть больше нуля.',
   'Make it at least {0} mm long, or the hook shallower.':
     'Увеличь длину до {0} мм или уменьши глубину крючка.',

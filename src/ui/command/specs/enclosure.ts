@@ -196,7 +196,15 @@ export const enclosureCommand = defineCommand({
       visible: (values: LooseCommandValues) =>
         Object.values(values.mounting ?? {}).includes('clips'),
     },
-    ...LID_APPEARANCE_INPUTS,
+    ...LID_APPEARANCE_INPUTS.map((input) =>
+      input.id === 'cornerStyle'
+        ? {
+            ...input,
+            label: 'Box and lid corners',
+            hint: 'The box and lid share a corner style. Extra space keeps the corners clear of the boards.',
+          }
+        : input,
+    ),
     {
       id: 'ports',
       kind: 'list',
