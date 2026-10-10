@@ -2,6 +2,7 @@ import { extrusionSection } from '../catalogue/extrusion'
 import { pulleyDimensions } from '../catalogue/pulley'
 import {
   cast,
+  deserializeShape,
   downcast,
   draw,
   drawCircle,
@@ -1673,6 +1674,32 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
   }
 
   switch (feature.kind) {
+    case 'bakedBody': {
+      if (feature.shape) {
+        const solid = deserializeShape(feature.shape)
+        try {
+          set(feature.bodyId, tool(solid, 'baked'))
+        } finally {
+          solid.delete()
+        }
+      }
+      const target = need(feature.bodyId)
+      if (!target || !feature.cutters.length) return
+      const solids: ReturnType<typeof deserializeShape>[] = []
+      const tools: NamedShape[] = []
+      try {
+        for (const [i, data] of feature.cutters.entries()) {
+          const solid = deserializeShape(data)
+          solids.push(solid)
+          tools.push(tool(solid, `hole-${i}`))
+        }
+        combineInto(feature.bodyId, target, 'cut', tools)
+      } finally {
+        releaseNamed(tools)
+        for (const solid of solids) solid.delete()
+      }
+      return
+    }
     case 'tessellate': {
       const source = need(feature.sourceBodyId)
       if (!source) return

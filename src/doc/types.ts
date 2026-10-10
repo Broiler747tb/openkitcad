@@ -810,7 +810,15 @@ export interface MotionLinkFeature extends FeatureBase {
   offset: number
 }
 
+export interface BakedBodyFeature extends FeatureBase {
+  kind: 'bakedBody'
+  bodyId: string
+  shape?: string
+  cutters: string[]
+}
+
 export type Feature =
+  | BakedBodyFeature
   | SketchFeature
   | ExtrudeFeature
   | RevolveFeature
@@ -949,6 +957,7 @@ export function emptyDocument(name = 'Untitled'): OkcDocument {
 }
 
 export const FEATURE_LABEL: Record<FeatureKind, string> = {
+  bakedBody: 'Applied holes',
   sketch: 'Sketch',
   extrude: 'Extrude',
   revolve: 'Revolve',
@@ -1018,6 +1027,7 @@ export const FEATURE_LABEL: Record<FeatureKind, string> = {
 }
 
 export const FEATURE_HINT: Record<FeatureKind, string> = {
+  bakedBody: 'Solid geometry with the hole cuts made permanent.',
   sketch: 'A flat drawing on a plane that solids are built from.',
   extrude: 'Pushes a closed sketch profile into a solid.',
   revolve: 'Spins a sketch profile around an axis.',
@@ -1087,6 +1097,7 @@ export const FEATURE_HINT: Record<FeatureKind, string> = {
 }
 
 export const FEATURE_ICON: Record<FeatureKind, string> = {
+  bakedBody: '◩',
   sketch: '✎',
   extrude: '⬛',
   revolve: '◑',

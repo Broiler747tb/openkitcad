@@ -67,6 +67,7 @@ function operationOf(feature: Feature): BodyOperation | null {
 
 export function featureCreatesBodies(feature: Feature): string[] {
   switch (feature.kind) {
+    case 'bakedBody':
     case 'meshInsert':
     case 'tessellate':
     case 'meshConvert':
@@ -98,6 +99,7 @@ export function featureCreatesBodies(feature: Feature): string[] {
 
 export function featureModifiesBodies(feature: Feature): string[] {
   switch (feature.kind) {
+    case 'bakedBody':
     case 'fillet':
     case 'chamfer':
     case 'shell':
