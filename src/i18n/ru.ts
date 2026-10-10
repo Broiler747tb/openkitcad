@@ -1,5 +1,7 @@
 export const ru: Readonly<Record<string, string>> = {
   'Chamfer angle': 'Угол фаски',
+  'Adjust angle': 'Настроить угол',
+  'Set the chamfer size.': 'Задай размер фаски.',
   'Cuts a sketch corner with an adjustable angle.': 'Срезает угол эскиза под заданным углом.',
   'Chamfer: pick a corner where two lines meet.': 'Фаска: выбери угол, где соединяются две линии.',
   'Set the distance along the first edge and the angle of the chamfer to it.':

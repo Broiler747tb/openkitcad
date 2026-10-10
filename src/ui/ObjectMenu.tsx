@@ -35,6 +35,7 @@ interface PromptField {
   unit: string
   min?: number
   max?: number
+  collapsedLabel?: string
 }
 
 export interface ObjectAction {
