@@ -449,6 +449,9 @@ export function shell(oc: OC, options: ShellOptions): NamedShape {
       progress,
     )
     if (!builder.IsDone()) throw new Error('Shell failed')
+    const result = scratch.track(builder.Shape())
+    const check = scratch.track(new oc.BRepCheck_Analyzer(result, true, false))
+    if (!check.IsValid_2()) throw new Error('Shell produced an invalid solid')
     return finish(oc, options.featureId, builder.Shape(), {
       inputs: [options.body.map],
       history: thickSolidHistory(oc, builder, scratch),
