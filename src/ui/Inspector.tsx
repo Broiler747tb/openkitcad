@@ -5,7 +5,7 @@ import { SelectionActions } from './SelectionActions'
 import { PrecisionSketchTools } from './PrecisionTools'
 import { SketchPowerTools, SceneTools } from './PowerTools'
 import { chooseAction, chooseSketchAction } from './ActionDialog'
-import { mountFeature, objectActions } from './ObjectMenu'
+import { mountFeature, objectActions, portOpeningsFor, setPortOpenings } from './ObjectMenu'
 import { FlyoutMenu } from './FlyoutMenu'
 import { activeSketchFeature, bodyBounds, newId, targetBodies, useStore } from '../doc/store'
 import { usePreferences } from '../doc/preferences'
@@ -357,6 +357,9 @@ function OccurrenceInspector({ id, instanceId }: { id: string; instanceId?: stri
   const targetTopZ = top ?? pose.position[2]
   const suggestedStandoff = Math.max(Math.round((pose.position[2] - targetTopZ) * 10) / 10, 5)
   const pillarHeight = standoffHeight ?? suggestedStandoff
+  const portsEnabled = portOpeningsFor(doc, id, body, instanceId).some(
+    (feature) => !feature.suppressed,
+  )
 
   const generate = (kind: 'holes' | 'standoffs' | 'ports') => {
     if (!body) {
@@ -554,25 +557,15 @@ function OccurrenceInspector({ id, instanceId }: { id: string; instanceId?: stri
             </small>
           </button>
 
-          <button
-            className="btn"
-            disabled={!part.connectors?.length}
-            onClick={() => generate('ports')}
-          >
+          <label className="sketch-option">
+            <input
+              type="checkbox"
+              checked={portsEnabled}
+              disabled={!body || !part.connectors?.length}
+              onChange={(e) => setPortOpenings(id, body, e.target.checked, instanceId)}
+            />
             {t('Port openings')}
-            <small>
-              {part.connectors?.length
-                ? t(
-                    'Cuts openings for {0}{1}',
-                    part.connectors
-                      .map((c) => c.label)
-                      .slice(0, 3)
-                      .join(', '),
-                    part.connectors.length > 3 ? '…' : '',
-                  )
-                : t('This part has no connectors listed')}
-            </small>
-          </button>
+          </label>
         </div>
       )}
 
@@ -682,6 +675,18 @@ function BodyInspector({ id, instanceId }: { id: string; instanceId?: string }) 
 
       <div className="section" hidden={mesh?.kind === 'mesh'}>
         <h3>{t('Quick actions')}</h3>
+        {doc.timeline
+          .filter((feature) => feature.kind === 'portCutout' && feature.bodyId === id)
+          .map((feature) => (
+            <label key={feature.id} className="sketch-option">
+              <input
+                type="checkbox"
+                checked={!feature.suppressed}
+                onChange={(e) => store.updateFeature(feature.id, { suppressed: !e.target.checked })}
+              />
+              {t('Port openings')}: {feature.name}
+            </label>
+          ))}
         {objectActions({ kind: 'body', id })
           .filter((a) =>
             (mesh?.kind === 'surface'
@@ -1052,6 +1057,14 @@ function FeatureInspector({ featureId }: { featureId: string }) {
 
       {feature.kind === 'portCutout' && (
         <>
+          <label className="sketch-option">
+            <input
+              type="checkbox"
+              checked={!feature.suppressed}
+              onChange={(e) => patch({ suppressed: !e.target.checked })}
+            />
+            {t('Port openings')}
+          </label>
           <Num
             label={t('Extra room')}
             value={feature.tolerance}

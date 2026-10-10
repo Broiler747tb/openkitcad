@@ -1219,6 +1219,8 @@ export const ru: Readonly<Record<string, string>> = {
   'Mounting holes': 'Крепёжные отверстия',
   'Pillar height': 'Высота стойки',
   'Port openings': 'Вырезы под разъёмы',
+  'Turn off port openings': 'Выключить вырезы под разъёмы',
+  'Turn on port openings': 'Включить вырезы под разъёмы',
   'About this part': 'О детали',
   'Runs on': 'Питание',
   'V.': 'В.',
