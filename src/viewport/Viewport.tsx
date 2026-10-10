@@ -927,6 +927,7 @@ export function Viewport() {
     if (activeSketch && frame) engineRef.current?.lookAtFrame(frame)
     if (!activeSketch) {
       engineRef.current?.clearSketch()
+      engineRef.current?.setLabels([])
       engineRef.current?.setDimensionSource(null)
       dimensionPreviewRef.current = null
       resetTool()
@@ -2371,9 +2372,9 @@ export function Viewport() {
       {labels
         .filter((label) =>
           label.kind === 'dimension'
-            ? preferences.sketchShowDimensions
+            ? !!activeSketch && preferences.sketchShowDimensions
             : label.kind === 'constraint'
-              ? preferences.sketchShowConstraints
+              ? !!activeSketch && preferences.sketchShowConstraints
               : true,
         )
         .map((label) => (
