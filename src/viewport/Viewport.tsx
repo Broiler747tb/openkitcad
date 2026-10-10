@@ -98,7 +98,7 @@ import type { ConstraintToolId } from '../sketch/constraintTools'
 import { sketchActions } from '../sketch/actions'
 import { isAndroidApp, usePenMode } from '../platform/android'
 import { SketchMenu } from '../ui/SketchMenu'
-import { chooseAction } from '../ui/ActionDialog'
+import { chooseAction, chooseSketchAction } from '../ui/ActionDialog'
 import { ObjectMenu, objectActions, trailingMove, type PickedFace } from '../ui/ObjectMenu'
 import { fastenerGhosts } from './ghosts'
 import { saveDocument } from '../doc/persist'
@@ -1543,6 +1543,17 @@ export function Viewport() {
             `Projected ${polylines.length} curve${polylines.length === 1 ? '' : 's'}.`,
           )
         }
+        return
+      }
+
+      if (tool === 'sketchChamfer') {
+        const hit = hitTestSketch(sketch, cursor, toleranceAt())
+        const action =
+          hit?.kind === 'point'
+            ? sketchActions(sketch, [hit]).find((item) => item.id === 'chamfer-corner')
+            : undefined
+        if (action) chooseSketchAction(action)
+        else store.setStatus('Chamfer: pick a corner where two lines meet.')
         return
       }
 

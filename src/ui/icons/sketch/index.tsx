@@ -124,6 +124,16 @@ export const SketchFilletIcon = frame(
   </>,
 )
 
+export const SketchChamferIcon = frame(
+  <>
+    <path d="M6 26V16M16 6H26" {...line} />
+    <path d="M6 16 16 6" stroke={ORANGE} strokeWidth={2} fill="none" />
+    <path d="M6 6H16M6 6V16" {...thin} strokeDasharray="2 2" />
+    {dot(6, 16)}
+    {dot(16, 6)}
+  </>,
+)
+
 export const TrimIcon = frame(
   <>
     <path d="M16 5V27" {...line} />

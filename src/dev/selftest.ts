@@ -385,6 +385,57 @@ export function runSelfTest(): TestResult[] {
     near(len, Math.SQRT2 * 8, 'chamfer edge length', 1e-3)
   })
 
+  test('chamfer angle is adjustable and survives solving', () => {
+    for (const angle of [30, 45, 60]) {
+      const b = builder()
+      const corner = b.point(0, 0)
+      const a = b.point(40, 0)
+      const c = b.point(0, 30)
+      b.con({ kind: 'fix', p: corner, x: 0, y: 0 })
+      b.con({ kind: 'fix', p: a, x: 40, y: 0 })
+      b.con({ kind: 'fix', p: c, x: 0, y: 30 })
+      const first = b.line(corner, a)
+      b.line(corner, c)
+      check(chamferCorner(b.sketch, corner, 6, nid, angle).ok, `chamfer ${angle}`)
+      applySolve(b.sketch, solveSketch(b.sketch))
+      const edge = b.sketch.entities.at(-1) as any
+      const point = (id: string) => b.sketch.points.find((p) => p.id === id)!
+      const p = point(edge.p1),
+        q = point(edge.p2)
+      near(
+        Math.abs((Math.atan2(q.y - p.y, q.x - p.x) * 180) / Math.PI),
+        angle,
+        'angle after solve',
+        1e-3,
+      )
+      const constraint = b.sketch.constraints.find((item) => item.kind === 'angle')!
+      near((constraint as any).value, angle, 'editable angle', 1e-3)
+      ;(constraint as any).value = 40
+      applySolve(b.sketch, solveSketch(b.sketch))
+      near(
+        Math.abs(
+          (Math.atan2(point(edge.p2).y - point(edge.p1).y, point(edge.p2).x - point(edge.p1).x) *
+            180) /
+            Math.PI,
+        ),
+        40,
+        'edited angle',
+        1e-3,
+      )
+      check(
+        b.sketch.entities.some((item) => item.id === first),
+        'first edge retained',
+      )
+    }
+    const b = builder()
+    const p = b.point(0, 0)
+    b.line(p, b.point(20, 0))
+    b.line(p, b.point(0, 20))
+    const before = JSON.stringify(b.sketch)
+    check(!chamferCorner(b.sketch, p, 4, nid, 90).ok, 'invalid angle rejected')
+    check(JSON.stringify(b.sketch) === before, 'invalid angle leaves sketch intact')
+  })
+
   test('a corner counts even when its two ends were never fused', () => {
     // Two lines drawn to the same spot without the snap joining them. The
     // profile builder already welds these by position when it extrudes, so

@@ -71,6 +71,7 @@ export type ToolId =
   | 'extend'
   | 'break'
   | 'sketchFillet'
+  | 'sketchChamfer'
   | 'mirror'
   | 'circularPattern'
   | 'project'
@@ -1339,7 +1340,7 @@ export const useStore = create<AppState>((set, get) => ({
               outcome = filletCorner(sketch, result.pointId, result.radius, newId)
               break
             case 'chamferCorner':
-              outcome = chamferCorner(sketch, result.pointId, result.distance, newId)
+              outcome = chamferCorner(sketch, result.pointId, result.distance, newId, result.angle)
               break
             case 'filletBetween':
               outcome = filletBetween(
