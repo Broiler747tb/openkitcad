@@ -85,6 +85,7 @@ export interface PromptField {
   label: string
   initial: number
   unit: string
+  collapsedLabel?: string
 }
 
 export interface SketchAction {
@@ -538,7 +539,7 @@ export function sketchActions(
         id: 'chamfer-corner',
         label: 'Chamfer',
         hint: corner.legs.every((leg) => !leg.arc)
-          ? 'Set the distance along the first edge and the angle of the chamfer to it.'
+          ? 'Set the chamfer size.'
           : 'Replaces the sharp corner with a flat',
         prompt: {
           label: 'Size',
@@ -548,8 +549,12 @@ export function sketchActions(
         prompt2: corner.legs.every((leg) => !leg.arc)
           ? {
               label: 'Chamfer angle',
-              initial: (180 - (corner.angle * 180) / Math.PI) / 2,
+              initial:
+                (corner.angle * 180) / Math.PI < 135
+                  ? 45
+                  : (180 - (corner.angle * 180) / Math.PI) / 2,
               unit: '°',
+              collapsedLabel: 'Adjust angle',
             }
           : undefined,
         build: (distance, angle) => ({ kind: 'chamferCorner', pointId: id, distance, angle }),

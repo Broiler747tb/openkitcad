@@ -460,6 +460,11 @@ select {
   display: block;
   margin: 18px 0;
 }
+.action-advanced > summary {
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 12px;
+}
 .action-field > span {
   display: block;
   font-size: 12px;

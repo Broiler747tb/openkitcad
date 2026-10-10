@@ -40,6 +40,7 @@ function ActionDialog({ action, onClose }: { action: ObjectAction; onClose: () =
   const units = useStore((s) => s.doc.units)
   const [choice, setChoice] = useState(action.choice?.initial ?? '')
   const [error, setError] = useState('')
+  const [shownValues, setShownValues] = useState<Record<number, string>>({})
   const fields = [action.prompt, action.prompt2, action.prompt3].filter((p) => p != null)
   const unitOf = (unit: string) => (unit === 'mm' ? units : unit)
   const shown = (value: number, unit: string) =>
@@ -107,22 +108,40 @@ function ActionDialog({ action, onClose }: { action: ObjectAction; onClose: () =
             <small>{t(action.choice.options.find((o) => o.value === choice)?.hint)}</small>
           </label>
         )}
-        {fields.map((field, i) => (
-          <label className="action-field" key={i}>
-            <span>{t(field.label)}</span>
-            <div className="unit-input">
-              <input
-                required
-                autoFocus={i === 0}
-                name={`value-${i}`}
-                type="text"
-                defaultValue={shown(field.initial, field.unit)}
-                onFocus={(e) => e.currentTarget.select()}
-              />
-              <span>{unitOf(field.unit)}</span>
-            </div>
-          </label>
-        ))}
+        {fields.map((field, i) => {
+          const input = (
+            <label className="action-field" key={i}>
+              <span>{t(field.label)}</span>
+              <div className="unit-input">
+                <input
+                  required
+                  autoFocus={i === 0}
+                  name={`value-${i}`}
+                  type="text"
+                  defaultValue={shown(field.initial, field.unit)}
+                  onChange={(e) => setShownValues((values) => ({ ...values, [i]: e.target.value }))}
+                  onFocus={(e) => e.currentTarget.select()}
+                  onInvalid={(e) => {
+                    const details = e.currentTarget.closest('details')
+                    if (details) details.open = true
+                  }}
+                />
+                <span>{unitOf(field.unit)}</span>
+              </div>
+            </label>
+          )
+          return field.collapsedLabel ? (
+            <details className="action-advanced" key={i}>
+              <summary>
+                {shownValues[i] ?? shown(field.initial, field.unit)}
+                {unitOf(field.unit)} · {t(field.collapsedLabel)}
+              </summary>
+              {input}
+            </details>
+          ) : (
+            input
+          )
+        })}
         {!!fields.length && (
           <p className="hint">
             {t(
