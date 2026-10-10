@@ -95,7 +95,7 @@ import {
 } from '../sketch/dimensions'
 import type { LabelAt } from '../sketch/types'
 import type { ConstraintToolId } from '../sketch/constraintTools'
-import { sketchActions } from '../sketch/actions'
+import { sketchActions, type SketchAction } from '../sketch/actions'
 import { isAndroidApp, usePenMode } from '../platform/android'
 import { SketchMenu } from '../ui/SketchMenu'
 import { chooseAction, chooseSketchAction } from '../ui/ActionDialog'
@@ -457,6 +457,21 @@ export function Viewport() {
         : null,
     [sketchFeature, planeKey],
   )
+
+  function chooseSketchCornerAction(action: SketchAction) {
+    if (action.id === 'chamfer-corner' && sketchFeature && frame) {
+      const result = action.build(action.prompt?.initial ?? 0, action.prompt2?.initial)
+      if (result.kind === 'chamferCorner') {
+        const point = sketchFeature.sketch.points.find((p) => p.id === result.pointId)
+        const screen = point && engineRef.current?.toScreen(frameToWorld(frame, [point.x, point.y]))
+        if (screen) {
+          chooseSketchAction(action, { x: screen[0], y: screen[1] })
+          return
+        }
+      }
+    }
+    chooseSketchAction(action)
+  }
 
   // --- engine lifecycle ----------------------------------------------------
   useEffect(() => {
@@ -1552,7 +1567,7 @@ export function Viewport() {
           hit?.kind === 'point'
             ? sketchActions(sketch, [hit]).find((item) => item.id === 'chamfer-corner')
             : undefined
-        if (action) chooseSketchAction(action)
+        if (action) chooseSketchCornerAction(action)
         else store.setStatus('Chamfer: pick a corner where two lines meet.')
         return
       }
@@ -2512,6 +2527,7 @@ export function Viewport() {
             y={menu.y + 96}
             cursor={menu.cursor}
             avoid={ringBounds}
+            onPick={chooseSketchCornerAction}
             onClose={() => setMenu(null)}
           />
         </>

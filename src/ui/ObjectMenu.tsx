@@ -40,6 +40,7 @@ interface PromptField {
 
 export interface ObjectAction {
   id: string
+  anchor?: { x: number; y: number }
   recommended?: boolean
   label: string
   /** Heading this sits under. Derived from the id, see objectGroupOf. */
