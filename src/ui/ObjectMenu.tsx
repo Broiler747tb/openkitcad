@@ -7,7 +7,14 @@ import {
   useStore,
   type Selection,
 } from '../doc/store'
-import type { ElementRef, ExtrudeFeature, Feature, MoveFeature, OkcDocument } from '../doc/types'
+import type {
+  ElementRef,
+  ExtrudeFeature,
+  Feature,
+  MoveFeature,
+  OkcDocument,
+  PortCutoutFeature,
+} from '../doc/types'
 import {
   activeFeatures,
   bodyCreator,
@@ -205,6 +212,46 @@ export function objectActions(
         }
       : {}),
   }))
+}
+
+export function portOpeningsFor(
+  doc: OkcDocument,
+  occurrenceId: string,
+  bodyId: string,
+  instanceId?: string,
+): PortCutoutFeature[] {
+  const path = occurrencePathOf(doc, occurrenceId, instanceId)
+  const target = findBody(doc, bodyId)
+  if (!path || !target) return []
+  const context = componentInstance(doc, target.component.id)?.path ?? []
+  return doc.timeline.filter(
+    (feature): feature is PortCutoutFeature =>
+      feature.kind === 'portCutout' &&
+      feature.bodyId === bodyId &&
+      feature.occurrencePath.join('/') === path.join('/') &&
+      feature.contextPath.join('/') === context.join('/'),
+  )
+}
+
+export function setPortOpenings(
+  occurrenceId: string,
+  bodyId: string,
+  enabled: boolean,
+  instanceId?: string,
+): void {
+  const store = useStore.getState()
+  const features = portOpeningsFor(store.doc, occurrenceId, bodyId, instanceId)
+  if (features.length) {
+    const ids = new Set(features.map((feature) => feature.id))
+    store.commit((draft) => {
+      for (const feature of draft.timeline) {
+        if (ids.has(feature.id)) feature.suppressed = !enabled
+      }
+    })
+  } else if (enabled) {
+    const feature = mountFeature('ports', occurrenceId, bodyId, { instanceId })
+    if (feature) store.addFeature(feature)
+  }
 }
 
 export function mountFeature(
@@ -708,14 +755,17 @@ function buildObjectActions(
       })
     }
     if (targetBody && part?.connectors?.length) {
+      const enabled = portOpeningsFor(doc, id, targetBody, selection.instanceId).some(
+        (feature) => !feature.suppressed,
+      )
       out.push({
         id: 'ports',
-        label: 'Port Cutouts',
+        label: enabled ? 'Turn off port openings' : 'Turn on port openings',
         hint: part.connectors
           .map((c) => c.label)
           .slice(0, 3)
           .join(', '),
-        run: () => add('ports'),
+        run: () => setPortOpenings(id, targetBody, !enabled, selection.instanceId),
       })
     }
 
