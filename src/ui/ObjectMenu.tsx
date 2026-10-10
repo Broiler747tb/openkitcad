@@ -28,6 +28,7 @@ import { animateJoint } from './jointAnimation'
 import { motionDofs } from '../assembly/motion'
 import { bodyPick, elementPick, occurrencePick } from './command/picks'
 import { counted } from '../i18n'
+import { applyAllHoles } from './applyHoles'
 
 interface PromptField {
   label: string
@@ -96,7 +97,7 @@ const OBJECT_GROUPS: Array<[string, string[]]> = [
       'bevel',
     ],
   ],
-  ['Cut', ['vent', 'cut-ball', 'cut-box']],
+  ['Cut', ['vent', 'cut-ball', 'cut-box', 'apply-holes']],
   ['Move', ['move', 'turn', 'flip']],
   ['Hardware', ['holes', 'standoffs', 'ports']],
   ['Body', ['negative', 'hide', 'delete']],
@@ -277,6 +278,15 @@ function buildObjectActions(
   const store = useStore.getState()
   const doc = store.doc
   const raw: ObjectAction[] = []
+  if (store.instances.some((instance) => instance.negative))
+    raw.push({
+      id: 'apply-holes',
+      label: 'Apply all Holes',
+      hint: 'Make the cuts permanent and remove all hole objects.',
+      run: () => {
+        void applyAllHoles()
+      },
+    })
   const out = raw
 
   if (selection.kind === 'body' && selection.id) {

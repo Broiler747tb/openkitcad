@@ -201,6 +201,8 @@ interface LiveInstance {
   map?: ElementMap<OcShape>
   references?: ReferenceNames
   mesh?: TriMesh
+  holeCut?: boolean
+  holeCutFailed?: boolean
 }
 
 const snapshots = new Lru<Snapshot>(SNAPSHOT_CAP)
@@ -759,6 +761,8 @@ function run(
       target.world = entry.world
       target.map = entry.map
       target.references = entry.references
+      target.holeCut = true
+      target.holeCutFailed = entry.failures.length > 0
     }
   }
 
@@ -1022,6 +1026,63 @@ function projectedPaths(shape: any, plane: ProjectionPlane): string[] {
 }
 
 const api: KernelApi = {
+  async bakeHoles() {
+    await ensureOC()
+    const cutters = [...live.values()].filter(
+      (entry) => entry.instance.negative && entry.ancestorsVisible && !entry.mesh,
+    )
+    if (!cutters.length) throw new Error('There are no hole objects to apply.')
+    const affected = new Set<string>()
+    for (const entry of live.values()) {
+      if (entry.instance.negative || entry.instance.kind !== 'body' || entry.mesh) continue
+      if (!entry.holeCut) continue
+      if (entry.holeCutFailed)
+        throw new Error('Some holes could not be cut. Fix the build errors first.')
+      affected.add(entry.instance.bodyId)
+    }
+    if (!affected.size) throw new Error('The hole objects do not overlap any solid bodies.')
+    const targets = [...live.values()].filter(
+      (entry) => affected.has(entry.instance.bodyId) && !entry.instance.negative && !entry.mesh,
+    )
+    return targets.map((entry) => {
+      const source = liveSnapshot!.bodies.get(entry.instance.bodyId)!
+      const box = worldBounds(source.shape, entry.instance.matrix)
+      let shape: string | undefined
+      const independent =
+        entry.instance.path.length > 0 &&
+        targets.filter((target) => target.instance.bodyId === entry.instance.bodyId).length > 1
+      if (independent) {
+        const placed = transformShape(source.shape, entry.instance.matrix)
+        try {
+          shape = placed.serialize()
+        } finally {
+          placed.delete()
+        }
+      }
+      return {
+        instanceId: entry.instance.id,
+        bodyId: entry.instance.bodyId,
+        componentId: entry.instance.componentId,
+        name: entry.label,
+        colour: entry.colour,
+        visible: entry.instance.visible,
+        path: entry.instance.path,
+        shape,
+        cutters: cutters
+          .filter((cutter) => boundsOverlap(box, worldBounds(cutter.local, cutter.instance.matrix)))
+          .map((cutter) => {
+            const world = requireWorld(cutter.instance.id)
+            if (independent) return world.serialize()
+            const local = transformShape(world, invertRigidMatrix(entry.instance.matrix))
+            try {
+              return local.serialize()
+            } finally {
+              local.delete()
+            }
+          }),
+      }
+    })
+  },
   async ready(): Promise<boolean> {
     await ensureOC()
     return true

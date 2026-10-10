@@ -344,6 +344,9 @@ export function Toolbar({
     : [
         createSketchAction(),
         ...creations,
+        ...(state.selection.kind === 'none'
+          ? selected.filter((action) => action.id === 'apply-holes')
+          : []),
         ...(state.selection.kind === 'none' ? [] : selected),
         ...DESIGN_COMMANDS.map(cmd),
       ]
@@ -1186,6 +1189,10 @@ export function Toolbar({
                 {tool('Fillet', <FilletIcon className="okc-icon" />, () => invoke('fillet'), 'F')}
                 {tool('Shell', <ShellIcon className="okc-icon" />, () => invoke('hollow'))}
                 {tool('Move', <SolidMoveIcon className="okc-icon" />, () => invoke('move'), 'M')}
+                {selected.find((action) => action.id === 'apply-holes') &&
+                  tool('Apply all Holes', <HoleIcon className="okc-icon" />, () =>
+                    chooseAction(selected.find((action) => action.id === 'apply-holes')!),
+                  )}
               </>,
             )}
             {group(

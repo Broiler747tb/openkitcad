@@ -112,7 +112,20 @@ export interface PrintOptions {
   bed: [number, number, number]
 }
 
+export interface HoleBakeEntry {
+  instanceId: string
+  bodyId: string
+  componentId: string
+  name: string
+  colour: string
+  visible: boolean
+  path: string[]
+  shape?: string
+  cutters: string[]
+}
+
 export interface KernelApi {
+  bakeHoles(): Promise<HoleBakeEntry[]>
   ready(): Promise<boolean>
   evaluate(doc: OkcDocument, knownMeshKeys: string[]): Promise<EvaluateResult>
   preview(request: PreviewRequest, knownMeshKeys: string[]): Promise<EvaluateResult>

@@ -1,5 +1,26 @@
 export const ru: Readonly<Record<string, string>> = {
   'Chamfer angle': 'Угол фаски',
+  'Apply all Holes': 'Применить все отверстия',
+  'Applied holes': 'Применённые отверстия',
+  'Solid geometry with the hole cuts made permanent.': 'Тело с закреплёнными вырезами.',
+  'Make the cuts permanent and remove all hole objects.':
+    'Закрепить вырезы и убрать все объекты-резаки.',
+  'Applying holes…': 'Применяю вырезы…',
+  'All holes applied. Undo restores the hole objects.':
+    'Все вырезы применены. Отмена вернёт объекты-резаки.',
+  'There are no hole objects to apply.': 'Нет объектов-резаков для применения.',
+  'The hole objects do not overlap any solid bodies.':
+    'Объекты-резаки не пересекают ни одного твёрдого тела.',
+  'Some holes could not be cut. Fix the build errors first.':
+    'Часть отверстий не удалось вырезать. Сначала исправь ошибки модели.',
+  'Finish the current action and wait for the model to build first.':
+    'Заверши текущее действие и дождись построения модели.',
+  'Move the timeline to the end before applying holes.':
+    'Перед применением вырезов перемести историю в конец.',
+  'Fix the build errors before applying holes.': 'Перед применением вырезов исправь ошибки модели.',
+  'The model changed. Apply holes again.': 'Модель изменилась. Примени вырезы ещё раз.',
+  'The permanent cut failed. The original hole objects were kept.':
+    'Не удалось закрепить вырезы. Исходные объекты-резаки сохранены.',
   'Adjust angle': 'Настроить угол',
   'Set the chamfer size.': 'Задай размер фаски.',
   'Cuts a sketch corner with an adjustable angle.': 'Срезает угол эскиза под заданным углом.',
