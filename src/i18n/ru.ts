@@ -1,4 +1,13 @@
 export const ru: Readonly<Record<string, string>> = {
+  'Chamfer angle': 'Угол фаски',
+  'Cuts a sketch corner with an adjustable angle.': 'Срезает угол эскиза под заданным углом.',
+  'Chamfer: pick a corner where two lines meet.': 'Фаска: выбери угол, где соединяются две линии.',
+  'Set the distance along the first edge and the angle of the chamfer to it.':
+    'Задай отступ вдоль первого ребра и угол фаски к нему.',
+  'An angled chamfer needs two straight lines.':
+    'Для фаски с заданным углом нужны две прямые линии.',
+  'The chamfer angle must be between 0° and {0}° for this corner.':
+    'Угол фаски для этого угла должен быть больше 0° и меньше {0}°.',
   'Try again': 'Попробовать снова',
   'Could not start CAD': 'Не удалось запустить CAD',
   'First launch can take a little longer.': 'Первый запуск может занять чуть больше времени.',

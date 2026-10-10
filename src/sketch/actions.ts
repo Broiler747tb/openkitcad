@@ -32,7 +32,7 @@ export type ActionResult =
   | { kind: 'editText'; entityId: string }
   | { kind: 'deleteConstraint'; constraintId: string }
   | { kind: 'filletCorner'; pointId: string; radius: number }
-  | { kind: 'chamferCorner'; pointId: string; distance: number }
+  | { kind: 'chamferCorner'; pointId: string; distance: number; angle?: number }
   | { kind: 'trim'; entityId: string; at: Vec2 }
   | {
       kind: 'filletBetween'
@@ -537,13 +537,22 @@ export function sketchActions(
       push({
         id: 'chamfer-corner',
         label: 'Chamfer',
-        hint: 'Replaces the sharp corner with a flat',
+        hint: corner.legs.every((leg) => !leg.arc)
+          ? 'Set the distance along the first edge and the angle of the chamfer to it.'
+          : 'Replaces the sharp corner with a flat',
         prompt: {
           label: 'Size',
           initial: Math.max(0.5, Math.round(Math.min(roomChamfer * 0.35, 5) * 10) / 10),
           unit: 'mm',
         },
-        build: (distance) => ({ kind: 'chamferCorner', pointId: id, distance }),
+        prompt2: corner.legs.every((leg) => !leg.arc)
+          ? {
+              label: 'Chamfer angle',
+              initial: (180 - (corner.angle * 180) / Math.PI) / 2,
+              unit: '°',
+            }
+          : undefined,
+        build: (distance, angle) => ({ kind: 'chamferCorner', pointId: id, distance, angle }),
       })
     }
 

@@ -370,12 +370,27 @@ export function chamferCorner(
   pointId: string,
   distance: number,
   nextId: (prefix: string) => string,
+  angle?: number,
 ): CornerResult {
   const corner = findCorner(sketch, pointId)
   if (!corner) return { ok: false, message: describeRefusal(sketch, pointId) }
   if (!(distance > 0)) return { ok: false, message: 'The size has to be more than zero.' }
 
-  const limit = maxChamferDistance(corner)
+  const [legA, legB] = corner.legs
+  let ratio = 1
+  if (angle !== undefined) {
+    if (legA.arc || legB.arc)
+      return { ok: false, message: 'An angled chamfer needs two straight lines.' }
+    const maximum = Math.min(90, 180 - (corner.angle * 180) / Math.PI)
+    if (!Number.isFinite(angle) || !(angle > 0 && angle < maximum))
+      return {
+        ok: false,
+        message: `The chamfer angle must be between 0° and ${maximum.toFixed(1)}° for this corner.`,
+      }
+    const radians = (angle * Math.PI) / 180
+    ratio = Math.sin(radians) / Math.sin(corner.angle + radians)
+  }
+  const limit = Math.min(legA.length, legB.length / ratio) * MAX_CONSUMED
   if (distance > limit) {
     return {
       ok: false,
@@ -383,21 +398,20 @@ export function chamferCorner(
     }
   }
 
-  const [legA, legB] = corner.legs
   // Along a straight edge this is a plain step back; along an arc it follows
   // the curve, so the setback is measured as arc length.
-  const along = (leg: CornerLeg): Vec2 => {
-    if (!leg.arc) return v2.add(corner.corner, v2.scale(leg.dir, distance))
+  const along = (leg: CornerLeg, setback: number): Vec2 => {
+    if (!leg.arc) return v2.add(corner.corner, v2.scale(leg.dir, setback))
     const { centre, radius } = leg.arc
     const start = Math.atan2(corner.corner[1] - centre[1], corner.corner[0] - centre[0])
     const forward = perp(v2.norm(v2.sub(corner.corner, centre)))
     const sign = v2.dot(forward, leg.dir) >= 0 ? 1 : -1
-    const a = start + (sign * distance) / radius
+    const a = start + (sign * setback) / radius
     return [centre[0] + radius * Math.cos(a), centre[1] + radius * Math.sin(a)]
   }
 
-  const t1 = along(legA)
-  const t2 = along(legB)
+  const t1 = along(legA, distance)
+  const t2 = along(legB, distance * ratio)
   const t1Id = nextId('p')
   const t2Id = nextId('p')
   sketch.points.push({ id: t1Id, x: t1[0], y: t1[1] })
@@ -405,19 +419,40 @@ export function chamferCorner(
 
   retarget(legA.entity, legA.pointId, t1Id)
   retarget(legB.entity, legB.pointId, t2Id)
-  sketch.entities.push({
-    id: nextId('e'),
+  const edgeId = nextId('e')
+  const edge: LineEntity = {
+    id: edgeId,
     kind: 'line',
     p1: t1Id,
     p2: t2Id,
     construction: false,
-  })
+  }
+  sketch.entities.push(edge)
 
   const add = (c: NewConstraint) => sketch.constraints.push({ ...c, id: nextId('c') } as never)
   pinVirtualSharp(legA, pointId, add)
   pinVirtualSharp(legB, pointId, add)
   add({ kind: 'distance', a: pointId, b: t1Id, value: v2.dist(corner.corner, t1) })
-  add({ kind: 'distance', a: pointId, b: t2Id, value: v2.dist(corner.corner, t2) })
+  if (angle === undefined)
+    add({ kind: 'distance', a: pointId, b: t2Id, value: v2.dist(corner.corner, t2) })
+  else {
+    const line = legA.entity as LineEntity
+    const forward = v2.scale(legA.dir, line.p1 === t1Id ? 1 : -1)
+    let direction = v2.sub(t2, t1)
+    if (v2.dot(forward, direction) < 0) {
+      edge.p1 = t2Id
+      edge.p2 = t1Id
+      direction = v2.scale(direction, -1)
+    }
+    const value =
+      (Math.atan2(v2.cross(forward, direction), v2.dot(forward, direction)) * 180) / Math.PI
+    add({
+      kind: 'angle',
+      a: value >= 0 ? line.id : edgeId,
+      b: value >= 0 ? edgeId : line.id,
+      value: angle,
+    })
+  }
 
   pruneDuplicates(sketch, corner.duplicates)
   return { ok: true }

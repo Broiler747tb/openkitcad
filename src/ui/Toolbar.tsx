@@ -67,6 +67,7 @@ import {
   SKETCH_MENU_ICONS,
   SketchDimensionIcon,
   SketchFilletIcon,
+  SketchChamferIcon,
   TrimIcon,
 } from './icons/sketch'
 
@@ -317,6 +318,12 @@ export function Toolbar({
     ),
     moveCopyAction(),
     scaleAction(),
+    modifyTool(
+      'sketchChamfer',
+      'Chamfer',
+      'Cuts a sketch corner with an adjustable angle.',
+      'Chamfer: pick a corner where two lines meet.',
+    ),
   ]
   const commands = state.activeSketch
     ? [
@@ -894,6 +901,11 @@ export function Toolbar({
               <>
                 {tool('Fillet', <SketchFilletIcon className="okc-icon okc-icon-2d" />, () =>
                   chooseAction(sketchModifyActions[0]),
+                )}
+                {tool('Chamfer', <SketchChamferIcon className="okc-icon okc-icon-2d" />, () =>
+                  chooseAction(
+                    sketchModifyActions.find((action) => action.id === 'tool-sketchChamfer')!,
+                  ),
                 )}
                 {tool(
                   'Trim',
