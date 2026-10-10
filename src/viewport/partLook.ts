@@ -2047,7 +2047,7 @@ export function createLook(
   const lines = new THREE.LineBasicMaterial({
     color: options.edgeColour ?? 0x1d2126,
     transparent: true,
-    opacity: 0.3,
+    opacity: 0.6,
     clippingPlanes: options.clippingPlanes ?? [],
   })
   const materials = prototype.meshes.map((entry) => {

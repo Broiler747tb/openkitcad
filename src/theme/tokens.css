@@ -95,7 +95,7 @@
   --okc-success-soft: rgba(43, 127, 61, 0.12);
 
   --okc-sketch-constrained: #151d25;
-  --okc-sketch-free: #1676c5;
+  --okc-sketch-free: #0864b4;
   --okc-sketch-construction: #cf7520;
   --okc-sketch-overconstrained: #c7372c;
   --okc-sketch-dimension: #3a4650;
@@ -174,7 +174,7 @@
   --okc-success-soft: rgba(98, 189, 116, 0.16);
 
   --okc-sketch-constrained: #eef2f5;
-  --okc-sketch-free: #5aacef;
+  --okc-sketch-free: #73bfff;
   --okc-sketch-construction: #eb9a4a;
   --okc-sketch-overconstrained: #f07266;
   --okc-sketch-dimension: #c3ccd4;
@@ -254,7 +254,7 @@
     --okc-success-soft: rgba(98, 189, 116, 0.16);
 
     --okc-sketch-constrained: #eef2f5;
-    --okc-sketch-free: #5aacef;
+    --okc-sketch-free: #73bfff;
     --okc-sketch-construction: #eb9a4a;
     --okc-sketch-overconstrained: #f07266;
     --okc-sketch-dimension: #c3ccd4;

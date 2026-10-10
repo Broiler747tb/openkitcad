@@ -6,6 +6,9 @@
  * end up dropping frames while orbiting.
  */
 import * as THREE from 'three'
+import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
+import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
 import { ViewportTransformControls } from './TransformControls'
@@ -135,12 +138,14 @@ interface ShapeGroups {
 interface GeometryEntry {
   surface: THREE.BufferGeometry
   edges: THREE.BufferGeometry
+  visibleEdges: LineSegmentsGeometry
   data: ShapeGroups
 }
 
 interface InstanceObject {
   mesh: THREE.Mesh
   outline: THREE.LineSegments
+  edgeStroke: LineSegments2
   instance: Instance
   look?: LookInstance
 }
@@ -386,10 +391,11 @@ export class ViewportEngine {
       this.hemisphere.color.setHex(palette.hemisphereSky)
       this.hemisphere.groundColor.setHex(palette.hemisphereGround)
     }
-    for (const { outline, instance, look } of this.objects.values()) {
+    for (const { outline, edgeStroke, instance, look } of this.objects.values()) {
       ;(outline.material as THREE.LineBasicMaterial).color.setHex(
         instance.previewTool ? palette.previewCut : palette.bodyEdge,
       )
+      edgeStroke.material.color.setHex(instance.previewTool ? palette.previewCut : palette.bodyEdge)
       look?.lines.color.setHex(palette.bodyEdge)
     }
     if (this.lastGrid) this.setGridPreferences(this.lastGrid.preferences, this.lastGrid.frame)
@@ -477,6 +483,7 @@ export class ViewportEngine {
     const entry: GeometryEntry = {
       surface,
       edges,
+      visibleEdges: new LineSegmentsGeometry().setPositions(source.edges.lines),
       data: {
         vertices: source.mesh.vertices,
         triangles: source.mesh.triangles,
@@ -528,21 +535,36 @@ export class ViewportEngine {
         const outline = new THREE.LineSegments(
           geometry.edges,
           new THREE.LineBasicMaterial({
+            visible: false,
             color: tool ? this.palette.previewCut : this.palette.bodyEdge,
             transparent: true,
             opacity: tool ? 0.6 : 0.85,
             clippingPlanes: this.sectionPlanes,
           }),
         )
+        const edgeStroke = new LineSegments2(
+          geometry.visibleEdges,
+          new LineMaterial({
+            color: tool ? this.palette.previewCut : this.palette.bodyEdge,
+            linewidth: 1.8,
+            toneMapped: false,
+            transparent: true,
+            opacity: tool ? 0.7 : 1,
+            depthWrite: false,
+            clippingPlanes: this.sectionPlanes,
+          }),
+        )
+        outline.add(edgeStroke)
         outline.matrixAutoUpdate = false
         this.solidGroup.add(mesh, outline)
-        entry = { mesh, outline, instance }
+        entry = { mesh, outline, edgeStroke, instance }
         this.objects.set(instance.id, entry)
       }
 
       entry.instance = instance
       entry.mesh.geometry = geometry.surface
       entry.outline.geometry = geometry.edges
+      entry.edgeStroke.geometry = geometry.visibleEdges
       entry.mesh.userData = { instanceId: instance.id }
       entry.outline.userData = { instanceId: instance.id }
       entry.mesh.matrix.fromArray(instance.matrix)
@@ -578,12 +600,14 @@ export class ViewportEngine {
       this.solidGroup.remove(entry.mesh, entry.outline)
       ;(entry.mesh.material as THREE.Material).dispose()
       ;(entry.outline.material as THREE.Material).dispose()
+      entry.edgeStroke.material.dispose()
       this.objects.delete(id)
     }
     for (const [key, geometry] of [...this.geometries]) {
       if (meshes.has(key)) continue
       geometry.surface.dispose()
       geometry.edges.dispose()
+      geometry.visibleEdges.dispose()
       this.geometries.delete(key)
     }
 
@@ -655,7 +679,7 @@ export class ViewportEngine {
       if (instance.previewTool) continue
       this.applyOpacity(mesh.material as THREE.MeshStandardMaterial)
       for (const material of look?.materials ?? []) this.applyLookOpacity(material)
-      if (look) look.lines.opacity = this.dimmed ? 0.1 : 0.3
+      if (look) look.lines.opacity = this.dimmed ? 0.2 : 0.6
     }
   }
 
@@ -687,9 +711,10 @@ export class ViewportEngine {
       ...(this.sectionEnabled ? [this.clipPlane] : []),
       ...(this.slicePlane ? [this.slicePlane] : []),
     ]
-    for (const { mesh, outline, look } of this.objects.values()) {
+    for (const { mesh, outline, edgeStroke, look } of this.objects.values()) {
       ;(mesh.material as THREE.Material).clippingPlanes = this.sectionPlanes
       ;(outline.material as THREE.Material).clippingPlanes = this.sectionPlanes
+      edgeStroke.material.clippingPlanes = this.sectionPlanes
       for (const material of look?.materials ?? []) material.clippingPlanes = this.sectionPlanes
       if (look) look.lines.clippingPlanes = this.sectionPlanes
     }
@@ -798,22 +823,29 @@ export class ViewportEngine {
       }
     }
 
-    const addLines = (points: THREE.Vector3[], colour: number, dashed = false) => {
+    const addLines = (points: THREE.Vector3[], colour: number, dashed = false, width = 2.2) => {
       if (points.length === 0) return
-      const geometry = new THREE.BufferGeometry().setFromPoints(points)
-      const material = dashed
-        ? new THREE.LineDashedMaterial({ color: colour, dashSize: 1.6, gapSize: 1.2 })
-        : new THREE.LineBasicMaterial({ color: colour })
-      const line = new THREE.LineSegments(geometry, material)
+      const geometry = new LineSegmentsGeometry().setPositions(points.flatMap((p) => p.toArray()))
+      const material = new LineMaterial({
+        color: colour,
+        linewidth: dashed ? 1.6 : width,
+        toneMapped: false,
+        transparent: true,
+        dashed,
+        dashSize: 1.6,
+        gapSize: 1.2,
+        depthTest: false,
+        depthWrite: false,
+      })
+      const line = new LineSegments2(geometry, material)
       if (dashed) line.computeLineDistances()
       line.renderOrder = 10
-      ;(material as THREE.Material).depthTest = false
       this.sketchGroup.add(line)
     }
 
     addLines(solid, this.palette.sketchLine)
     addLines(undefined3, this.palette.sketchFree)
-    addLines(accent, this.palette.selection)
+    addLines(accent, this.palette.selection, false, 3)
     addLines(construction, this.palette.sketchConstruction, true)
 
     if (preview) {
@@ -824,7 +856,7 @@ export class ViewportEngine {
         }
         return points
       }
-      addLines(segments(preview.curves), this.palette.selection)
+      addLines(segments(preview.curves), this.palette.selection, false, 3)
       addLines(segments(preview.construction ?? []), this.palette.sketchConstruction, true)
     }
 
@@ -847,14 +879,16 @@ export class ViewportEngine {
           size,
           sizeAttenuation: false,
           depthTest: false,
+          transparent: true,
+          toneMapped: false,
         }),
       )
       points.renderOrder = 11
       this.sketchGroup.add(points)
     }
     if (this.sketchDisplay.points || highlight.points.length) {
-      addPoints(this.sketchDisplay.points ? locked : [], this.palette.sketchPoint, 6)
-      addPoints(this.sketchDisplay.points ? free : [], this.palette.sketchFree, 7)
+      addPoints(this.sketchDisplay.points ? locked : [], this.palette.sketchPoint, 7)
+      addPoints(this.sketchDisplay.points ? free : [], this.palette.sketchFree, 8)
     }
   }
 
@@ -2192,11 +2226,17 @@ export class ViewportEngine {
 
       const drawEdges = (coords: number[], colour: number) => {
         if (!coords.length) return
-        const geometry = new THREE.BufferGeometry()
-        geometry.setAttribute('position', new THREE.Float32BufferAttribute(coords, 3))
-        const lines = new THREE.LineSegments(
+        const geometry = new LineSegmentsGeometry().setPositions(coords)
+        const lines = new LineSegments2(
           geometry,
-          new THREE.LineBasicMaterial({ color: colour, depthTest: false }),
+          new LineMaterial({
+            color: colour,
+            linewidth: 3,
+            transparent: true,
+            depthTest: false,
+            depthWrite: false,
+            toneMapped: false,
+          }),
         )
         lines.renderOrder = 12
         holder.add(lines)
