@@ -501,6 +501,37 @@ button.workspace-tab {
   backdrop-filter: none;
   background: var(--okc-accent-soft);
 }
+html .action-dialog.action-dialog-corner:not(.command-dialog) {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  width: min(220px, calc(100vw - 16px));
+  max-width: calc(100vw - 16px);
+  max-height: calc(100dvh - 16px);
+  padding: 10px 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 18px #0003;
+}
+.action-dialog-corner::backdrop {
+  background: transparent;
+  backdrop-filter: none;
+}
+.action-dialog-corner .dialog-footer {
+  margin-top: 10px;
+  padding-top: 8px;
+  gap: 6px;
+}
+.action-dialog-corner .dialog-footer button {
+  min-height: 28px;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+.action-dialog-corner .action-field {
+  margin: 8px 0;
+}
+.action-dialog-corner .action-field > span {
+  margin-bottom: 4px;
+}
 .action-dialog h2 {
   font-size: 16px;
   letter-spacing: 0;

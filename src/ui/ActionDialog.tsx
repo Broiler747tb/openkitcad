@@ -1,10 +1,11 @@
 import { t } from '../i18n'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { quantity } from '../core/quantity'
 import type { ObjectAction } from './ObjectMenu'
 import type { SketchAction } from '../sketch/actions'
 import { useStore } from '../doc/store'
 import { lengthText } from '../core/units'
+import { placeAround } from './ContextMenu'
 
 export function chooseAction(action: ObjectAction) {
   if (action.prompt || action.choice) {
@@ -14,9 +15,10 @@ export function chooseAction(action: ObjectAction) {
   }
 }
 
-export function chooseSketchAction(action: SketchAction) {
+export function chooseSketchAction(action: SketchAction, anchor?: { x: number; y: number }) {
   chooseAction({
     ...action,
+    anchor,
     run: (a, b, c, choice) => {
       useStore.getState().applySketchAction(action.build(a, b, c, choice))
     },
@@ -45,6 +47,30 @@ function ActionDialog({ action, onClose }: { action: ObjectAction; onClose: () =
   const unitOf = (unit: string) => (unit === 'mm' ? units : unit)
   const shown = (value: number, unit: string) =>
     unit === 'mm' ? lengthText(value, units) : String(value)
+  useLayoutEffect(() => {
+    const dialog = ref.current
+    const anchor = action.anchor
+    if (!dialog || !anchor) return
+    const position = () => {
+      const next = placeAround(
+        anchor.x + 14,
+        anchor.y + 14,
+        dialog.offsetWidth,
+        dialog.offsetHeight,
+        null,
+      )
+      dialog.style.left = `${next.left}px`
+      dialog.style.top = `${next.top}px`
+    }
+    const observer = new ResizeObserver(position)
+    observer.observe(dialog)
+    window.addEventListener('resize', position)
+    position()
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', position)
+    }
+  }, [action.anchor])
   useEffect(() => {
     ref.current?.showModal()
     const firstField =
@@ -55,8 +81,19 @@ function ActionDialog({ action, onClose }: { action: ObjectAction; onClose: () =
   return (
     <dialog
       ref={ref}
-      className="action-dialog"
+      className={`action-dialog${action.anchor ? ' action-dialog-corner' : ''}`}
       onCancel={onClose}
+      onClick={(e) => {
+        if (!action.anchor || e.target !== e.currentTarget) return
+        const rect = e.currentTarget.getBoundingClientRect()
+        if (
+          e.clientX < rect.left ||
+          e.clientX > rect.right ||
+          e.clientY < rect.top ||
+          e.clientY > rect.bottom
+        )
+          onClose()
+      }}
       aria-labelledby="action-title"
       onKeyDown={(e) => e.stopPropagation()}
     >
@@ -84,13 +121,15 @@ function ActionDialog({ action, onClose }: { action: ObjectAction; onClose: () =
         }}
       >
         <div className="dialog-heading">
-          <span className="eyebrow">{t('PARAMETERS')}</span>
+          <span className="eyebrow" id={action.anchor ? 'action-title' : undefined}>
+            {t(action.anchor ? action.label : 'PARAMETERS')}
+          </span>
           <button type="button" onClick={onClose} aria-label={t('Close')}>
             ×
           </button>
         </div>
-        <h2 id="action-title">{t(action.label)}</h2>
-        {action.hint && <p className="hint">{t(action.hint)}</p>}
+        {!action.anchor && <h2 id="action-title">{t(action.label)}</h2>}
+        {action.hint && !action.anchor && <p className="hint">{t(action.hint)}</p>}
         {action.choice && (
           <label className="action-field">
             <span>{t(action.choice.label)}</span>
@@ -142,7 +181,7 @@ function ActionDialog({ action, onClose }: { action: ObjectAction; onClose: () =
             input
           )
         })}
-        {!!fields.length && (
+        {!!fields.length && !action.anchor && (
           <p className="hint">
             {t(
               'Arithmetic: 25.4/2, (10+5)*2, pi. Length fields accept mm, cm, m, in and ft; angles accept deg or rad. Values are evaluated once, not linked formulas.',

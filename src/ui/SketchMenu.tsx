@@ -1,5 +1,5 @@
 import { activeSketchFeature, useStore } from '../doc/store'
-import { sketchActions, SKETCH_GROUP_ORDER } from '../sketch/actions'
+import { sketchActions, SKETCH_GROUP_ORDER, type SketchAction } from '../sketch/actions'
 import type { Vec2 } from '../core/math'
 import { ContextMenu, type MenuRect } from './ContextMenu'
 import { chooseSketchAction } from './ActionDialog'
@@ -9,12 +9,14 @@ export function SketchMenu({
   cursor,
   onClose,
   avoid,
+  onPick,
 }: {
   x: number
   y: number
   cursor?: Vec2
   onClose: () => void
   avoid?: MenuRect | null
+  onPick?: (action: SketchAction) => void
 }) {
   const state = useStore()
   const sketch = activeSketchFeature(state)?.sketch
@@ -29,7 +31,8 @@ export function SketchMenu({
       onClose={onClose}
       onPick={(action) => {
         onClose()
-        chooseSketchAction(action)
+        if (onPick) onPick(action)
+        else chooseSketchAction(action)
       }}
     />
   )
