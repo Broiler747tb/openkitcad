@@ -179,21 +179,6 @@ export function faceFrame(state: BodyState, ref: ElementRef, offset: number): Fr
   }
 }
 
-function opensBesideCurvedFace(state: BodyState, openFaces: readonly ElementRef[]): boolean {
-  const { topology } = state.map
-  const openings = openFaces.flatMap((ref) => {
-    const resolution = resolveElement(state.map, ref)
-    return resolution.ok ? [resolution.element.index] : []
-  })
-  const borders = new Set(openings.flatMap((index) => topology.faceEdges[index]))
-  return topology.faceEdges.some(
-    (edges, index) =>
-      !openings.includes(index) &&
-      edges.some((edge) => borders.has(edge)) &&
-      !isPlanarFace(occ(), topology.faces[index]),
-  )
-}
-
 export function frameFromPlaneRef(
   ref: PlaneRef,
   bodies: ReadonlyMap<string, BodyState>,
@@ -1397,7 +1382,7 @@ function hintForFailure(feature: Feature, message: string): string | undefined {
     return 'The radius is probably too big for the edge it is being applied to. Try a smaller number.'
   }
   if (feature.kind === 'shell') {
-    return 'Hollowing fails when the wall is thicker than the smallest detail on the shape. Try a thinner wall.'
+    return 'Try a thinner wall, or create the shell before cutting openings, chamfering or rounding edges. For a finished body, subtract an inner solid to make the cavity.'
   }
   if (feature.kind === 'lid') {
     return 'A thinner wall, a smaller gap, or a plain drop-in fit will usually go through.'
@@ -2120,24 +2105,13 @@ function runFeature(ctx: FeatureContext, feature: Feature, key: string, stage: S
         shape: target.shape.clone(),
         frame: faceFrame(target, open, 0),
       })
-      let hollowed: NamedShape
-      try {
-        hollowed = namedShell(oc, {
-          featureId: feature.id,
-          bodyId: feature.bodyId,
-          body: namedOf(target),
-          openFaces: feature.openFaces.map((ref) => ref.name),
-          thickness: Math.abs(feature.thickness),
-        })
-      } catch (error) {
-        if (!opensBesideCurvedFace(target, feature.openFaces)) throw error
-        stage.report(
-          'error',
-          'OpenCascade cannot hollow through a face that a rounded edge blends into.',
-          'Hollow the part out before rounding the edges around the opening.',
-        )
-        return
-      }
+      const hollowed = namedShell(oc, {
+        featureId: feature.id,
+        bodyId: feature.bodyId,
+        body: namedOf(target),
+        openFaces: feature.openFaces.map((ref) => ref.name),
+        thickness: Math.abs(feature.thickness),
+      })
       set(feature.bodyId, hollowed)
       return
     }

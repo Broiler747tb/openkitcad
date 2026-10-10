@@ -2328,6 +2328,9 @@ export const ru: Readonly<Record<string, string>> = {
   'Set the distance apart': 'Задать расстояние',
   Shaft: 'Вал',
   'Shell failed': 'Не удалось создать оболочку',
+  'Shell produced an invalid solid': 'Оболочка получилась с повреждённой геометрией',
+  'Try a thinner wall, or create the shell before cutting openings, chamfering or rounding edges. For a finished body, subtract an inner solid to make the cavity.':
+    'Попробуй уменьшить толщину стенки или создать оболочку до вырезов, фасок и скруглений. В готовой детали полость можно сделать вычитанием внутреннего тела.',
   Sliding: 'Скользящая',
   Snug: 'Плотная',
   'Some of the sizes you have set contradict each other.':
